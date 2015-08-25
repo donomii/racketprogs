@@ -19,18 +19,19 @@ type MyButtonHandler struct {
 func (h *MyButtonHandler) HandleEvent(e gwu.Event) {
     if _, isButton := e.Src().(gwu.Button); isButton {
         ioutil.WriteFile(
-			"wikiFile.txt", 
-			[]byte(wikiText), os.FileMode(os.O_WRONLY|os.O_CREATE|os.O_TRUNC))
+			"wikiPages/wikiFile.txt", 
+			[]byte(wikiText), os.FileMode(os.O_WRONLY|os.O_CREATE|os.O_TRUNC|0777))
     }
 }
 
 func main() {
 	
-	wikifile, err := ioutil.ReadFile("wikiFile.txt")
+	os.Mkdir("wikiPages",os.FileMode(os.ModeDir|0777))
+	wikifile, err := ioutil.ReadFile("wikiPages/wikiFile.txt")
 	wikiText = string(wikifile)
 	if err!=nil { fmt.Printf("Couldn't load file: %v\n" , err)}
     // Create and build a window
-    win := gwu.NewWindow("main", "Test GUI Window")
+    win := gwu.NewWindow("main", "AlfaWiki")
     win.Style().SetFullWidth()
     win.SetHAlign(gwu.HA_CENTER)
     win.SetCellPadding(2)
