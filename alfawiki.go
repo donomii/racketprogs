@@ -2,7 +2,7 @@ package main
 
 import (
     "github.com/icza/gowut/gwu"
-    //"strconv"
+    "strconv"
 	"github.com/russross/blackfriday"
 	"io/ioutil"
 	"fmt"
@@ -10,8 +10,15 @@ import (
 )
 
 var  wikiText string
+var  fileName string
+var tb gwu.TextBox
+var html gwu.Html
 
 type MyButtonHandler struct {
+    counter int
+    text    string
+}
+type MyButtonHandler2 struct {
     counter int
     text    string
 }
@@ -19,17 +26,36 @@ type MyButtonHandler struct {
 func (h *MyButtonHandler) HandleEvent(e gwu.Event) {
     if _, isButton := e.Src().(gwu.Button); isButton {
         ioutil.WriteFile(
-			"wikiPages/wikiFile.txt", 
+			fmt.Sprintf("wikiPages/%s", fileName), 
 			[]byte(wikiText), os.FileMode(os.O_WRONLY|os.O_CREATE|os.O_TRUNC|0777))
     }
+}
+
+func (h *MyButtonHandler2) HandleEvent(e gwu.Event) {
+    if _, isButton := e.Src().(gwu.Button); isButton {
+			fmt.Println("Loading... ", h.text)
+			fileName = h.text
+			LoadFile(h.text)
+			tb.SetText(wikiText)
+			html.SetHtml(string(blackfriday.MarkdownCommon([]byte(tb.Text()))))
+			e.MarkDirty(tb)
+			e.MarkDirty(html)
+    }
+}
+
+
+func LoadFile ( fname string ) {
+	wikifile, err := ioutil.ReadFile(fmt.Sprintf("wikiPages/%s",fname))
+	wikiText = string(wikifile)
+	if err!=nil { fmt.Printf("Couldn't load file: %v\n" , err)}
+
 }
 
 func main() {
 	
 	os.Mkdir("wikiPages",os.FileMode(os.ModeDir|0777))
-	wikifile, err := ioutil.ReadFile("wikiPages/wikiFile.txt")
-	wikiText = string(wikifile)
-	if err!=nil { fmt.Printf("Couldn't load file: %v\n" , err)}
+	LoadFile("wikiFile.txt")
+	fileName = "wikiFile.txt"
     // Create and build a window
     win := gwu.NewWindow("main", "AlfaWiki")
     win.Style().SetFullWidth()
@@ -37,7 +63,7 @@ func main() {
     win.SetCellPadding(2)
     
     
-	   btn := gwu.NewButton("Save")
+  btn := gwu.NewButton("Save")
     
     win.Add(btn)
     // ListBox examples
@@ -53,11 +79,11 @@ func main() {
 	q := gwu.NewHorizontalPanel()
 	win.Add(q)
 	
-	h := gwu.NewHtml("")
-	p.Add(h)
+	html = gwu.NewHtml("")
+	p.Add(html)
 	
 	
-    tb := gwu.NewTextBox(string(wikifile))
+    tb = gwu.NewTextBox(string(wikiText))
 	tb.SetRows(24)
 	tb.SetCols(80)
     tb.AddSyncOnETypes(gwu.ETYPE_KEY_UP)
@@ -67,16 +93,23 @@ func main() {
 	
     
     tb.AddEHandlerFunc(func(e gwu.Event) {
-    wikiText = tb.Text()
-		h.SetHtml(string(blackfriday.MarkdownCommon([]byte(tb.Text()))))
-    
-		e.MarkDirty(h)
+    		wikiText = tb.Text()
+		html.SetHtml(string(blackfriday.MarkdownCommon([]byte(tb.Text()))))
+		e.MarkDirty(html)
     }, gwu.ETYPE_CHANGE, gwu.ETYPE_KEY_UP)
     
-    
-	
-	
-	
+        p.AddVSpace(20)
+        p.Add(gwu.NewLabel("Panel with vertical layout:"))
+        v := gwu.NewVerticalPanel()
+        p.Add(v)
+	files, _ := ioutil.ReadDir("wikiPages") 
+        for i,f := range files {
+                b:= gwu.NewButton(f.Name() + " " + strconv.Itoa(i))
+		b.AddEHandler(&MyButtonHandler2{text: f.Name()}, gwu.ETYPE_CLICK)
+                v.Add(b)
+        }
+
+        p.AddVSpace(20)
 
 
     // Create and start a GUI server (omitting error check)
