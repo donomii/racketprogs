@@ -5,7 +5,7 @@ IMAPbayes reads all your mail folders when it starts up, and trains an automatic
 
 ## Use
 
-   perl autofilter.pl INBOX
+    perl autofilter.pl INBOX
 
 Autofilter will start reading all your mail, which can take a long time.  When it finishes, it will start moving your mail out of INBOX and into your mail folders.
 
