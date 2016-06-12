@@ -19,3 +19,11 @@ If you already have your mail sorted into folders, you don't have to do anything
 
 IB will move your new mail into these folders, choosing the folder based on how close the new mail matches the mail in the folders.
 
+#Dependencies
+
+    Net::IMAP::Client 
+    Algorithm::NaiveBayes
+
+You can install these with 
+
+    cpan Net::IMAP::Client Algorithm::NaiveBayes
