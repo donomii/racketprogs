@@ -5,15 +5,15 @@ IMAPbayes reads all your mail folders when it starts up, and trains an automatic
 
 ## Use
 
-   perl autofilter.pl INBOX <password>
- 
+   perl autofilter.pl INBOX
+
 Autofilter will start reading all your mail, which can take a long time.  When it finishes, it will start moving your mail out of INBOX and into your mail folders.
- 
+
 ## Configuring
 
-Open the file and set the "server" and "user" config options.  You may also have to change the SSL and port settings, depending on your server
+Open the file "config.perl", and set the "server", "user", and password config options.  You may also have to change the SSL and port settings, depending on your server
 
 ## Setup mail folders
 
-If you already have your mail sorted into folders, you don't have to do anything more.  Otherwise, create some mail folders, and sort your mail into them.  
+If you already have your mail sorted into folders, you don't have to do anything more.  Otherwise, create some mail folders, and sort your mail into them.
 

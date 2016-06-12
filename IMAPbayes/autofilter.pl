@@ -8,20 +8,10 @@ my $nb = Algorithm::NaiveBayes->new;
 
 my $probabilityThreshold = 0.99;    #Messages that score lower than this will not be moved
 my $maxSpeakWords = 25;             #Trim the announce message to this
-my $config = {
-    server => '',
-    user   => '',
-    pass   => $password,
-    ssl    => 1,                              # (use SSL? default no)
-    ssl_verify_peer => 1,                     # (use ca to verify server, default yes)
-    #ssl_ca_file => '/etc/ssl/certs/certa.pm', # (CA file used for verify server) or
-    ssl_ca_path => '/etc/ssl/certs/',         # (CA path used for SSL)
-    port   => 993                             # (but defaults are sane)
-};
+my $config = eval `cat config.perl`;
 
 my $folder = shift;
-my $password = shift;
-($folder && $password) || die "
+($folder) || die "
 Use:
 
 autofilter <FOLDER>
@@ -30,6 +20,7 @@ Example:
 
 autofilter INBOX
 ";
+print "Connection details\n".Dumper($config);
 my %seen;
 
 my $imap = Net::IMAP::Client->new(
