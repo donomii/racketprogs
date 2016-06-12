@@ -17,3 +17,5 @@ Open the file "config.perl", and set the "server", "user", and password config o
 
 If you already have your mail sorted into folders, you don't have to do anything more.  Otherwise, create some mail folders, and sort your mail into them.
 
+IB will move your new mail into these folders, choosing the folder based on how close the new mail matches the mail in the folders.
+
