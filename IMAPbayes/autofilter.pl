@@ -78,59 +78,58 @@ foreach my $mess ( @$messages ) {
 print "Waiting for changes....";
 $imap->select($folder);
 while (1) {
+    $imap->noop;
+    my @notifications = $imap->notifications();
+    if (scalar (@notifications)) {
+        my $messages = $imap->search('ALL' ,undef,"US-ASCII" );
 
-$imap->noop;
-my @notifications = $imap->notifications();
-if (scalar (@notifications)) {
-    my $messages = $imap->search('ALL' ,undef,"US-ASCII" );
+        foreach my $mess ( @$messages ) {
+            if ($seen{$mess}==0) {
+                #autofilter($mess);
+                #print "unseen message: $mess\n";
+                $seen{$mess}++;
+                my $flags = $imap->get_flags($mess);
+                my $results = $imap->fetch([$mess], "BODY[TEXT]") ;
+                $imap->store($mess, '');
+                my $text = $results->[0]->{'BODY[TEXT]'};
+                my $summaries = $imap->get_summaries($mess);
+                my ($categories, $scores) =  predict(make_attribs($summaries,$text));
+                my $h = {};
+                foreach my $i (0..scalar(@$categories)) {
+                    $h->{$scores->[$i]} = $categories->[$i];
+                }
+                #Find highest score
+                my $highscore = 0;
+                foreach my $score (@$scores) {if ($score>$highscore) {$highscore = $score}}
 
-    foreach my $mess ( @$messages ) {
-        if ($seen{$mess}==0) {
-            #autofilter($mess);
-            #print "unseen message: $mess\n";
-            $seen{$mess}++;
-            my $flags = $imap->get_flags($mess);
-            my $results = $imap->fetch([$mess], "BODY[TEXT]") ;
-            $imap->store($mess, '');
-            my $text = $results->[0]->{'BODY[TEXT]'};
-            my $summaries = $imap->get_summaries($mess);
-            my ($categories, $scores) =  predict(make_attribs($summaries,$text));
-            my $h = {};
-            foreach my $i (0..scalar(@$categories)) {
-                $h->{$scores->[$i]} = $categories->[$i];
-            }
-            #Find highest score
-            my $highscore = 0;
-            foreach my $score (@$scores) {if ($score>$highscore) {$highscore = $score}}
+                my $choice = $h->{$highscore};
+                my $score = $highscore;
+                foreach (@$summaries) {
+                    my @from = map {$_} @{$_->from};
+                    my $from = join(",", @from);
+                        print "\n$choice($score): ",$from, " : ",$_->subject;
+                        my $sub  = $_->subject;
+                        $sub =~ s/^.+\]//g;
+                        $sub =~ s/\)|\(//g;
+                        my $displayChoice = $choice;
+                        $displayChoice =~ s!$folder/!!g;
+                        my @bits = split(/\s+/, $sub, $maxSpeakWords); #Limit the number of words we have to speak in case of a ridiculously long subject
+                        pop @bits;
+                        $sub = join(" ", @bits);
 
-            my $choice = $h->{$highscore};
-            my $score = $highscore;
-            foreach (@$summaries) {
-                my @from = map {$_} @{$_->from};
-                my $from = join(",", @from);
-                    print "\n$choice($score): ",$from, " : ",$_->subject;
-                    my $sub  = $_->subject;
-                    $sub =~ s/^.+\]//g;
-                    $sub =~ s/\)|\(//g;
-                    my $displayChoice = $choice;
-                    $displayChoice =~ s!$folder/!!g;
-                    my @bits = split(/\s+/, $sub, $maxSpeakWords); #Limit the number of words we have to speak in case of a ridiculously long subject
-                    pop @bits;
-                    $sub = join(" ", @bits);
-
-                    if ($score>$probabilityThreshold) {
-                        system("say", "-v", "Daniel",  "${displayChoice}. $sub");;
-                        system("svarmrMessage", "localhost", "4816",  "user-notify", "${displayChoice}: ". $sub);
-                        #FIXME check the folder exists before marking deleted
-                        $imap->copy([$mess], $choice);
-                        $imap->add_flags([$mess], '\\Deleted');
-                        #$imap->expunge;
-                    }
+                        if ($score>$probabilityThreshold) {
+                            system("say", "-v", "Daniel",  "${displayChoice}. $sub");;
+                            system("svarmrMessage", "localhost", "4816",  "user-notify", "${displayChoice}: ". $sub);
+                            #FIXME check the folder exists before marking deleted
+                            $imap->copy([$mess], $choice);
+                            $imap->add_flags([$mess], '\\Deleted');
+                            #$imap->expunge;
+                        }
+                }
             }
         }
+        sleep 1;
     }
-	sleep 1;
-}
 }
 
 
