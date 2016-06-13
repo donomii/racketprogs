@@ -9,6 +9,8 @@ IMAPbayes reads all your mail folders when it starts up, and trains an automatic
 
 Autofilter will start reading all your mail, which can take a long time.  When it finishes, it will start moving your mail out of INBOX and into your mail folders.
 
+If you are using MacOSX, then IB will announce each new mail as it is sorted.
+
 ## Configuring
 
 Open the file "config.perl", and set the "server", "user", and password config options.  You may also have to change the SSL and port settings, depending on your server
@@ -19,7 +21,12 @@ If you already have your mail sorted into folders, you don't have to do anything
 
 IB will move your new mail into these folders, choosing the folder based on how close the new mail matches the mail in the folders.
 
-#Dependencies
+# Notes
+
+* IB will not announce any mail that goes to a folder that has "spam" as part of its name.
+* IB does not ever access these folders: Draft, Sent, Deleted, Trash
+
+# Dependencies
 
     Net::IMAP::Client 
     Algorithm::NaiveBayes
