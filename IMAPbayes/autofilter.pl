@@ -108,7 +108,6 @@ if (scalar (@notifications)) {
             foreach (@$summaries) {
                 my @from = map {$_} @{$_->from};
                 my $from = join(",", @from);
-                unless (filter($mess)) {
                     print "\n$choice($score): ",$from, " : ",$_->subject;
                     my $sub  = $_->subject;
                     $sub =~ s/^.+\]//g;
@@ -127,7 +126,6 @@ if (scalar (@notifications)) {
                         $imap->add_flags([$mess], '\\Deleted');
                         #$imap->expunge;
                     }
-                }
             }
         }
     }
