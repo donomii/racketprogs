@@ -5,7 +5,7 @@ IMAPbayes reads all your mail folders when it starts up, and trains an automatic
 
 ## Use
 
-   perl autofilter.pl INBOX
+    perl autofilter.pl INBOX
 
 Autofilter will start reading all your mail, which can take a long time.  When it finishes, it will start moving your mail out of INBOX and into your mail folders.
 
@@ -19,3 +19,11 @@ If you already have your mail sorted into folders, you don't have to do anything
 
 IB will move your new mail into these folders, choosing the folder based on how close the new mail matches the mail in the folders.
 
+#Dependencies
+
+    Net::IMAP::Client 
+    Algorithm::NaiveBayes
+
+You can install these with 
+
+    cpan Net::IMAP::Client Algorithm::NaiveBayes
