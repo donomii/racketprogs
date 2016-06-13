@@ -118,8 +118,10 @@ while (1) {
                         $sub = join(" ", @bits);
 
                         if ($score>$probabilityThreshold) {
-                            system("say", "-v", "Daniel",  "${displayChoice}. $sub");;
-                            system("svarmrMessage", "localhost", "4816",  "user-notify", "${displayChoice}: ". $sub);
+                            if($choice !~ /spam/i) {
+                                system("say", "-v", "Daniel",  "${displayChoice}. $sub");;
+                                system("svarmrMessage", "localhost", "4816",  "user-notify", "${displayChoice}: ". $sub);
+                            }
                             #FIXME check the folder exists before marking deleted
                             $imap->copy([$mess], $choice);
                             $imap->add_flags([$mess], '\\Deleted');
