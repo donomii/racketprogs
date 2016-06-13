@@ -54,7 +54,6 @@ $nb->train;
 $imap->select($folder);
 
 foreach my $mess ( @$messages ) {
-    unless (filter($mess)) {
         my $flags = $imap->get_flags($mess);
         my $results = $imap->fetch([$mess], "BODY[TEXT]") ;
         $imap->store($mess, '');
@@ -70,7 +69,6 @@ foreach my $mess ( @$messages ) {
             $imap->add_flags([$mess], '\\Deleted');
             $imap->expunge;
         }
-    }
 }
 
 # fetch full messages
