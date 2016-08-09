@@ -8,8 +8,18 @@ use Getopt::Long qw/:config bundling/;
 use Algorithm::NaiveBayes;
 # Create a new network with 1 layer, 5 inputs, and 5 outputs.
 use AI::NeuralNet::BackProp;
-my $net = new AI::NeuralNet::BackProp(3,10,1);
- 
+my $net = new AI::NeuralNet::BackProp(3,30);
+my $nnfile = "nnsave.net";
+if ( -e $nnfile ) { 
+    $net->load($nnfile);
+}
+
+my @all_categories;
+sub make_nn_categories {
+    my $cat = shift;
+    my $out = join(" ", map { if ( $cat eq $_ ) { "yes" } else { "no" }} @all_categories);
+
+}
 # Add a small amount of randomness to the network
 $net->random(0.001);
 
@@ -29,7 +39,8 @@ sub ran {
 
 
 
-my $max_folder_messages = 2000;      #Maximum number of messages to process in each folder (because some of my folders have > 20,000 messages)
+my $tiered_classifiers = 0;
+my $max_folder_messages = 5000;      #Maximum number of messages to process in each folder (because some of my folders have > 20,000 messages)
 my $dryRun=0;
 my $use_nn = 0;
 my $probabilityThreshold = 0.999;    #Messages that score lower than this will not be moved
@@ -61,6 +72,7 @@ $imap->login or
 
 # get list of folders
 my @folders = $imap->folders();
+@all_categories = @folders;
 print "Folders: ".join(",",@folders)."\n";
 
 # select folder
@@ -100,7 +112,6 @@ if ($boost) {
             } else {
                 $nb->{adaboost}->{$pred}=$nb->{adaboost}->{$pred}-(1.0/scalar(@random_samples))/2.0;
             }
-
         } @mbayes;
     } @random_samples;
 }
@@ -253,7 +264,7 @@ sub make_attribs {
         }
         #Problem here, subjects seem to be duplicated?
         push @sel, $summ->subject;
-        warn "Making attribs from message with subject: ".$summ->subject ."\n";
+        #warn "Making attribs from message with subject: ".$summ->subject ."\n";
       }
     }
     push @sel, $text;
@@ -329,11 +340,13 @@ sub train_folders {
         if ( $use_nn ) {
                 if ($summaries->[0]) {
                     my $subject = $summaries->[0]->subject();
-                    warn "NN training subject: $subject\n";
-                    $net->learn($subject, $folder);
+                    warn "NN training subject: $subject to output ".make_nn_categories($folder) ."\n";
+                    $net->learn($subject, make_nn_categories($folder));
+                    warn "NN saving to $nnfile\n";
+                    $net->save($nnfile);
                     warn "Neural net predicts: ".$net->uncrunch($net->run($subject));
                 }
-    }
+        }
                 my $doc = $text;
                 if (scalar(keys %$attribs)>0) {
                     $count++;
@@ -357,18 +370,27 @@ sub train {
   $nb->add_instance (attributes => $features ->{attributes} , label => $features -> {label} );
   if (ran(10) == 1) {push @random_samples, $features}
   for (my $i=0;$i<scalar(@mbayes);$i) {
-      my $r = ran();
-      $nodes[$i]++;
-      if($i>1){warn Dumper($features->{orig})}
-      $mbayes[$i]->add_instance (attributes => $features ->{attributes} , label => $features -> {label} );
-      $mbayes[$i]->train();
-      my ($sorted, $vals) = single_predict($mbayes[$i], $features ->{attributes});
-      my $cat = $sorted->[0];
-      if( ($cat eq $features -> {label}) && (ran(10)>1)) { last}
-      $i++;
-      if ($i> $max_categorisers) { $max_categorisers = $i}
+      if ($tiered_classifiers) {
+          #Bump difficult examples to a new categoriser
+          my $r = ran();
+          $nodes[$i]++;
+          if($i>1){warn Dumper($features->{orig})}
+          $mbayes[$i]->add_instance (attributes => $features ->{attributes} , label => $features -> {label} );
+          $mbayes[$i]->train();
+          my ($sorted, $vals) = single_predict($mbayes[$i], $features ->{attributes});
+          my $cat = $sorted->[0];
+          if( ($cat eq $features -> {label}) && (ran(10)>1)) {last}
+          $i++;
+          if ($i> $max_categorisers) { $max_categorisers = $i}
+          warn Dumper(\@nodes);
+      } else {
+          #Train a subset of the categorisers
+          if (ran(100)<10) {
+            $mbayes[$i]->add_instance (attributes => $features ->{attributes} , label => $features -> {label} );
+          }
+          $i++;
+      }
   }
-  warn Dumper(\@nodes);
   #$dtree->add_instance (attributes => $features ->{attributes} , result => $features -> {label} );
 }
 
