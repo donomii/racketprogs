@@ -17,10 +17,14 @@ Adding a string is very slow, for various reasons, so it is best used in situati
 
 ## Use
 
+    import "github.com/donomii/goStringTable"
     s := goStringTable.New()
     n := s.LookupOrCreate("Hello World")
     fmt.Println(s.GetString(n))
 
+or lookup a string without creating it
+
+    sym, err := s.Lookup("Hello World")
 
 ## Similar projects
 
