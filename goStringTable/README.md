@@ -5,7 +5,7 @@ A thread-safe symbol table (string table) for Go
 
 A string table turns strings into numbers, and back again.  Popularised by LISP and Scheme, a string table is an efficient (and sometimes quick) way to store a lot of strings, when many of them are expected to be identical.  e.g. when parsing a program, function and variable names are usually put into a symbol table.
 
-It works like a hashmap, but it is lock-free to read (unlike Go hashmaps).  Unlike a normal map, a string table works both ways, which is why it is restricted to strings.
+It works like a hashmap, but it is lock-free to read from multiple threads(unlike Go hashmaps).  Unlike a normal map, a string table works both ways, which is why it is restricted to strings.
 
 ## Speed
 
