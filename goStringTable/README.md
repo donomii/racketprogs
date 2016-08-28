@@ -1,4 +1,4 @@
-# goSym
+# goStringTable
 A symbol table (string table) for Go
 
 ## Description
@@ -9,11 +9,11 @@ It works like a hashmap, but it is lock-free to read (unlike Go hashmaps).
 
 Going from number to string is an array lookup, so almost instant.
 
-Going from a string to a number requires a lookup in a Patricia (radix tree), which means the time should be roughly log(n), where n is the number of stored strings.
+Going from a string to a number requires a lookup in a Patricia (radix) tree, which means the time should be roughly log(n), where n is the number of stored strings.
 
 ## Use
 
-    s := New()
+    s := goStringTable.New()
     n := s.LookupOrCreate("Hello World")
     fmt.Println(s.GetString(n))
 
