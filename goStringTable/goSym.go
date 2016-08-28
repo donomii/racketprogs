@@ -28,6 +28,21 @@ func New () *symTable {
     return &s
 }
 
+func match_trie(string_table *patricia.Trie, key patricia.Prefix) bool {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Error while matching string", r, ", retrying")
+			time.Sleep(1 * time.Second)
+			match_trie(string_table, key)
+		}
+	}()
+
+	val := string_table.Match(key)
+
+	return val
+}
+
+
 func read_trie(string_table *patricia.Trie, key patricia.Prefix) int {
 	defer func() {
 		if r := recover(); r != nil {
