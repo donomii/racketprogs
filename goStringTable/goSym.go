@@ -28,6 +28,23 @@ func New () *symTable {
     return &s
 }
 
+func read_trie(string_table *patricia.Trie, key patricia.Prefix) int {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Error while reading string", r, ", retrying")
+			time.Sleep(1 * time.Second)
+			read_trie(string_table, key)
+		}
+	}()
+
+	val := string_table.Get(key)
+	if val == nil {
+		log.Printf("Got nil for string table lookup (key:%v)", key)
+		return 0
+	}
+	return val.(int)
+}
+
 func (s *symTable) GetString(index int) string {
 	if s.memory_db {
 		if s.debug {
