@@ -7,7 +7,8 @@ import (
     "database/sql"
     "time"
     "fmt"
-    "bytes"
+    //"bytes"
+    "sync"
 )
 
 
@@ -20,6 +21,7 @@ type symTable struct {
     next_string_index    int
     string_table         *patricia.Trie
     symbol_cache         map[string]int
+    writeMutex           sync.Mutex
 }
 
 func (s *symTable) count(c string) {
@@ -29,6 +31,9 @@ func (s *symTable) count(c string) {
 
 func New () *symTable {
     s := symTable{}
+    s.memory_db = true
+    s.string_table = patricia.NewTrie()
+    s.next_string_index = -1
     return &s
 }
 
@@ -232,37 +237,37 @@ func (s *symTable) LookupOrCreate(aStr string) int {
 				s.next_string_index = s.next_string_index + 1
 				if !s.memory_db {
 					
-					s.count("sql_insert")
+					//s.count("sql_insert")
 
-					stmt, err := s.dbHandle.Prepare("insert into StringTable(id, value) values(?, ?)")
+					//stmt, err := s.dbHandle.Prepare("insert into StringTable(id, value) values(?, ?)")
 					
-					if err != nil {
-						log.Println("While preparing to insert ", aStr, " into  StringTable: ", err)
-					}
+					//if err != nil {
+						//log.Println("While preparing to insert ", aStr, " into  StringTable: ", err)
+					//}
 					
-					defer stmt.Close()
+					//defer stmt.Close()
 					
- 					_, err = stmt.Exec( s.next_string_index, bytes(aStr))
-					//fmt.Printf("insert into StringTable(id, value) values(%v, %s)\n",s.next_string_index, aStr)
-					if err != nil {
-						log.Println("While trying to insert ", aStr, " into StringTable: ", err)
-					}
+ 					//_, err = stmt.Exec( s.next_string_index, bytes(aStr))
+					////fmt.Printf("insert into StringTable(id, value) values(%v, %s)\n",s.next_string_index, aStr)
+					//if err != nil {
+						//log.Println("While trying to insert ", aStr, " into StringTable: ", err)
+					//}
 					
 
-					s.count("sql_insert")
-					stmt, err = s.dbHandle.Prepare("insert into SymbolTable(id, value) values(?, ?)")
+					//s.count("sql_insert")
+					//stmt, err = s.dbHandle.Prepare("insert into SymbolTable(id, value) values(?, ?)")
 					
-					if err != nil {
-						log.Println("While preparing to insert  ", aStr, " into SymbolTable: ", err)
-					}
+					//if err != nil {
+						//log.Println("While preparing to insert  ", aStr, " into SymbolTable: ", err)
+					//}
 					
-					defer stmt.Close()
+					//defer stmt.Close()
 					
-					_, err = stmt.Exec(bytes(aStr), s.next_string_index)
-					//fmt.Printf("insert into SymbolTable(id, value) values(%s, %v)\n",aStr,  s.next_string_index)
-					if err != nil {
-						log.Println("While trying to insert ", aStr, " into SymbolTable: ", err)
-					}
+					//_, err = stmt.Exec(bytes(aStr), s.next_string_index)
+					////fmt.Printf("insert into SymbolTable(id, value) values(%s, %v)\n",aStr,  s.next_string_index)
+					//if err != nil {
+						//log.Println("While trying to insert ", aStr, " into SymbolTable: ", err)
+					//}
 					
 
 				} else {
@@ -290,24 +295,12 @@ func (s *symTable) LookupOrCreate(aStr string) int {
 }
 
 
-func (s *tagSilo) LockMe() {
+func (s *symTable) LockMe() {
 
 	//s.LockLog <- fmt.Sprintln("Attempting lock in silo ", s.id)
 	s.writeMutex.Lock()
-	s.LockLog <- fmt.Sprintln("Got lock in silo ", s.id)
 
 }
-func (s *tagSilo) UnlockMe() {
+func (s *symTable) UnlockMe() {
 	s.writeMutex.Unlock()
-
-	s.LockLog <- fmt.Sprintln("Released lock in silo ", s.id)
-
-}
-
-
-func (s *tagSilo) UnlockMe() {
-	s.writeMutex.Unlock()
-
-	s.LockLog <- fmt.Sprintln("Released lock in silo ", s.id)
-
 }
