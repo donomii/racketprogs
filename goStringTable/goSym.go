@@ -288,3 +288,26 @@ func (s *symTable) LookupOrCreate(aStr string) int {
 		}
 	}
 }
+
+
+func (s *tagSilo) LockMe() {
+
+	//s.LockLog <- fmt.Sprintln("Attempting lock in silo ", s.id)
+	s.writeMutex.Lock()
+	s.LockLog <- fmt.Sprintln("Got lock in silo ", s.id)
+
+}
+func (s *tagSilo) UnlockMe() {
+	s.writeMutex.Unlock()
+
+	s.LockLog <- fmt.Sprintln("Released lock in silo ", s.id)
+
+}
+
+
+func (s *tagSilo) UnlockMe() {
+	s.writeMutex.Unlock()
+
+	s.LockLog <- fmt.Sprintln("Released lock in silo ", s.id)
+
+}
