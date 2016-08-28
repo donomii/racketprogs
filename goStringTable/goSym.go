@@ -97,7 +97,7 @@ func (s *symTable) get_memdb_symbol(aStr string) (int, error) {
 	return retval, nil
 }
 
-func (s *tagSilo) Lookup(aStr string) (int, error) {
+func (s *symTable) Lookup(aStr string) (int, error) {
 	var retval int
 	var err error
 	if val, ok := s.symbol_cache[aStr]; ok {
@@ -118,7 +118,7 @@ func (s *tagSilo) Lookup(aStr string) (int, error) {
 	return retval, err
 }
 
-func (s *tagSilo) get_diskdb_symbol(aStr string) (int, error) {
+func (s *symTable) get_diskdb_symbol(aStr string) (int, error) {
 	var retval int
 	retval = 0
 	if debug {
