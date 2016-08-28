@@ -6,6 +6,8 @@ import (
     _ "github.com/mattn/go-sqlite3"
     "database/sql"
     "time"
+    "fmt"
+    "bytes"
 )
 
 
@@ -16,6 +18,8 @@ type symTable struct {
     debug                bool
     dbHandle             *sql.DB
     next_string_index    int
+    string_table         *patricia.Trie
+    symbol_cache         map[string]int
 }
 
 func (s *symTable) count(c string) {
@@ -85,7 +89,6 @@ func (s *symTable) get_memdb_symbol(aStr string) (int, error) {
 	key := patricia.Prefix(aStr)
 	if key == nil {
 		log.Printf("Got nil for radix string lookup on '%v'", aStr)
-		log.Printf("Number of Records: %v", len(s.database))
 		log.Printf("Number of tags: %v", s.next_string_index+1)
 		return 0, fmt.Errorf("Key not found in radix tree")
 	}
@@ -102,7 +105,6 @@ func (s *symTable) get_memdb_symbol(aStr string) (int, error) {
 		val := s.string_table.Get(key)
 		if val == nil {
 			log.Printf("Got nil for string table lookup (key:%v)", key)
-			log.Printf("Number of Records: %v", len(s.database))
 			log.Printf("Number of tags: %v", s.next_string_index+1)
 			return 0, fmt.Errorf("String '%s' not found in tag database", aStr)
 		}
@@ -123,7 +125,7 @@ func (s *symTable) Lookup(aStr string) (int, error) {
 		if s.memory_db {
 			retval, err = s.get_memdb_symbol(aStr)
 		} else {
-			retval, err = s.get_diskdb_symbol(aStr)
+			//retval, err = s.get_diskdb_symbol(aStr)
 
 		}
 		if retval != 0 && err == nil {
@@ -133,68 +135,65 @@ func (s *symTable) Lookup(aStr string) (int, error) {
 	return retval, err
 }
 
-func (s *symTable) get_diskdb_symbol(aStr string) (int, error) {
-	var retval int
-	retval = 0
-	if debug {
-		//log.Printf("Silo: %V\n", s)
-		log.Printf("string: %V\n", aStr)
-	}
-	//log.Printf("Silo: %V, string: %V, db: %V\n", s, aStr, s.dbHandle)
-	if s == nil {
-		panic("Silo is nil")
-	}
-	if s.dbHandle == nil {
-		panic("nil dbhandle!")
-	}
-	if s.memory_db {
-		key := patricia.Prefix(aStr)
-		if key == nil {
-			log.Printf("Got nil for radix string lookup on '%v'", aStr)
-			log.Printf("Number of Records: %v", len(s.database))
-			log.Printf("Number of tags: %v", s.next_string_index+1)
-			return 0, fmt.Errorf("Key not found in radix tree")
-		}
-		defer func() {
-			if r := recover(); r != nil {
-				log.Println("Error while reading string", r, ", retrying")
-				time.Sleep(1 * time.Second)
-				read_trie(s.string_table, key)
-			}
-		}()
+//func (s *symTable) get_diskdb_symbol(aStr string) (int, error) {
+	//var retval int
+	//retval = 0
+	//if debug {
+		////log.Printf("Silo: %V\n", s)
+		//log.Printf("string: %V\n", aStr)
+	//}
+	////log.Printf("Silo: %V, string: %V, db: %V\n", s, aStr, s.dbHandle)
+	//if s == nil {
+		//panic("Silo is nil")
+	//}
+	//if s.dbHandle == nil {
+		//panic("nil dbhandle!")
+	//}
+	//if s.memory_db {
+		//key := patricia.Prefix(aStr)
+		//if key == nil {
+			//log.Printf("Got nil for radix string lookup on '%v'", aStr)
+			//log.Printf("Number of tags: %v", s.next_string_index+1)
+			//return 0, fmt.Errorf("Key not found in radix tree")
+		//}
+		//defer func() {
+			//if r := recover(); r != nil {
+				//log.Println("Error while reading string", r, ", retrying")
+				//time.Sleep(1 * time.Second)
+				//read_trie(s.string_table, key)
+			//}
+		//}()
+//
+		//if match_trie(s.string_table, key) {
+			//val := s.string_table.Get(key)
+			//if val == nil {
+				//log.Printf("Got nil for string table lookup (key:%v)", key)
+				//log.Printf("Number of tags: %v", s.next_string_index+1)
+				//return 0, fmt.Errorf("String '%s' not found in tag database", aStr)
+			//}
+			//retval = val.(int)
+		//}
 
-		if match_trie(s.string_table, key) {
-			val := s.string_table.Get(key)
-			if val == nil {
-				log.Printf("Got nil for string table lookup (key:%v)", key)
-				log.Printf("Number of Records: %v", len(s.database))
-				log.Printf("Number of tags: %v", s.next_string_index+1)
-				return 0, fmt.Errorf("String '%s' not found in tag database", aStr)
-			}
-			retval = val.(int)
-		}
+	//} else {
 
-	} else {
+		//var res int
+		//s.count("sql_select")
 
-		var res int
-		s.count("sql_select")
+		//err := s.dbHandle.QueryRow("select value from SymbolTable where id like ?", bytes(aStr)).Scan(&res)
+		//if err != nil {
+			////s.LogChan["warning"] <- fmt.Sprintln("While trying to read  ", aStr, " from SymbolTable: ", err)
+		//}
 
-		err := s.dbHandle.QueryRow("select value from SymbolTable where id like ?", bytes(aStr)).Scan(&res)
-		if err != nil {
-			//s.LogChan["warning"] <- fmt.Sprintln("While trying to read  ", aStr, " from SymbolTable: ", err)
-		}
+		//if err == nil {
+			//retval = int(res)
+		//} else {
+			////log.Printf("Error retrieving symbol for '%v': %v", aStr, err)
+		//}
+	//}
+	//return retval, nil
+//}
 
-		if err == nil {
-			retval = int(res)
-		} else {
-			//log.Printf("Error retrieving symbol for '%v': %v", aStr, err)
-		}
-	}
-	return retval, nil
-
-}
-
-func (s *tagSilo) LookupOrCreate(aStr string) int {
+func (s *symTable) LookupOrCreate(aStr string) int {
 	for i := 0; s == nil; i = i + 1 {
 		time.Sleep(time.Millisecond * 100)
 	}
@@ -205,29 +204,28 @@ func (s *tagSilo) LookupOrCreate(aStr string) int {
 		s.count("get/create_symbol_cache_miss")
 		if aStr == "" {
 			log.Printf("Invalid insert!  Cannot insert empty string into symbol table")
-			log.Printf("Number of Records: %v", len(s.database))
 			log.Printf("Number of tags: %v", s.next_string_index+1)
 			return 0
 		}
 
-		val, _ := s.get_symbol(aStr)
+		val, _ := s.Lookup(aStr)
 		if val != 0 {
 			return val
 		} else {
-			if debug {
+			if s.debug {
 						log.Println("Attempting lock in get_or_create_symbol")
 					}
 					s.LockMe()
 					defer func() {
 						s.UnlockMe()
-						if debug {
+						if s.debug {
 							log.Println("Released lock in get_or_create_symbol")
 						}
 					}()
-					if debug {
+					if s.debug {
 						log.Println("Got lock in get_or_create_symbol")
 					}
-			val, _ := s.get_symbol(aStr)
+			val, _ := s.Lookup(aStr)
 			if val != 0 {
 				return val
 			} else {
@@ -239,7 +237,7 @@ func (s *tagSilo) LookupOrCreate(aStr string) int {
 					stmt, err := s.dbHandle.Prepare("insert into StringTable(id, value) values(?, ?)")
 					
 					if err != nil {
-						s.LogChan["error"] <- fmt.Sprintln("While preparing to insert ", aStr, " into  StringTable: ", err)
+						log.Println("While preparing to insert ", aStr, " into  StringTable: ", err)
 					}
 					
 					defer stmt.Close()
@@ -247,7 +245,7 @@ func (s *tagSilo) LookupOrCreate(aStr string) int {
  					_, err = stmt.Exec( s.next_string_index, bytes(aStr))
 					//fmt.Printf("insert into StringTable(id, value) values(%v, %s)\n",s.next_string_index, aStr)
 					if err != nil {
-						s.LogChan["error"] <- fmt.Sprintln("While trying to insert ", aStr, " into StringTable: ", err)
+						log.Println("While trying to insert ", aStr, " into StringTable: ", err)
 					}
 					
 
@@ -255,7 +253,7 @@ func (s *tagSilo) LookupOrCreate(aStr string) int {
 					stmt, err = s.dbHandle.Prepare("insert into SymbolTable(id, value) values(?, ?)")
 					
 					if err != nil {
-						s.LogChan["error"] <- fmt.Sprintln("While preparing to insert  ", aStr, " into SymbolTable: ", err)
+						log.Println("While preparing to insert  ", aStr, " into SymbolTable: ", err)
 					}
 					
 					defer stmt.Close()
@@ -263,40 +261,28 @@ func (s *tagSilo) LookupOrCreate(aStr string) int {
 					_, err = stmt.Exec(bytes(aStr), s.next_string_index)
 					//fmt.Printf("insert into SymbolTable(id, value) values(%s, %v)\n",aStr,  s.next_string_index)
 					if err != nil {
-						s.LogChan["error"] <- fmt.Sprintln("While trying to insert ", aStr, " into SymbolTable: ", err)
+						log.Println("While trying to insert ", aStr, " into SymbolTable: ", err)
 					}
 					
 
 				} else {
 					s.string_table.Insert(patricia.Prefix(aStr), s.next_string_index)
 					if s.next_string_index < len(s.reverse_string_table)-1 {
-						if debug {
+						if s.debug {
 							log.Println("Inserting tag into reverse string table: ", aStr)
 						}
 						s.reverse_string_table[s.next_string_index] = aStr
 
 					} else {
-						if debug {
+						if s.debug {
 							log.Println("Extending reverse string table for tag ", aStr)
 						}
 						s.reverse_string_table = append(s.reverse_string_table, aStr)
 					}
 				}
-				s.last_tag_record = s.last_tag_record + 1
-				if debug {
-					log.Printf("Storing mem tag %v and disk tag %v\n", s.next_string_index, s.last_tag_record)
-				}
-				if s.next_string_index < len(s.tag2file)-1 {
-					s.tag2file[s.next_string_index] = []*record{}
-
-				} else {
-					s.tag2file = append(s.tag2file, []*record{})
-
-				}
-				if debug {
+				if s.debug {
 					log.Printf("Finished store\n")
 				}
-				s.Dirty()
 				return s.next_string_index
 			}
 		}
