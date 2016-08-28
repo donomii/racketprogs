@@ -13,7 +13,7 @@ Going from a string to a number requires a lookup in a Patricia (radix tree), wh
 
 ## Use
 
-symTab := goSym.New()
-mySym := symTab.GetOrAdd("Hello World")
-fmt.Println(symTab.GetString(mySym))
+    s := New()
+    n := s.LookupOrCreate("Hello World")
+    fmt.Println(s.GetString(n))
 
