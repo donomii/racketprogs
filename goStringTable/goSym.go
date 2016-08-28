@@ -1,39 +1,50 @@
-func (s *tagSilo) getString(index int) string {
+package goSym
+
+import (
+    "github.com/tchap/go-patricia/patricia"
+    "log"
+    _ "github.com/mattn/go-sqlite3"
+    "database/sql"
+    "time"
+)
+
+
+type symTable struct {
+    reverse_string_table []string
+    counters             map[string]int
+    memory_db            bool
+    debug                bool
+    dbHandle             *sql.DB
+    next_string_index    int
+}
+
+func (s *symTable) count(c string) {
+    return
+    s.counters[c]++
+}
+
+func New () *symTable {
+    s := symTable{}
+    return &s
+}
+
+func (s *symTable) GetString(index int) string {
 	if s.memory_db {
-		if debug {
+		if s.debug {
 			log.Println("Fetching string: ", index)
 		}
 		return s.reverse_string_table[index]
-	} else {
-		var val string
-		if cache_val, ok := s.string_cache[index]; ok {
-			s.count("string_cache_hit")
-			return cache_val
-		} else {
-			s.count("string_cache_miss")
-			s.count("sql_select")
-
-			err := s.dbHandle.QueryRow("select value from StringTable where id like ?", index).Scan(&val)
-			if err != nil {
-				//s.LogChan["warning"] <- fmt.Sprintln("While trying to read StringTable: ", err)
-			}
-
-			if val != "" {
-				s.string_cache[index] = val
-			}
-			return val
-		}
 	}
+    return ""
 }
 
-func (s *tagSilo) get_memdb_symbol(aStr string) (int, error) {
-	if debug {
-		//log.Printf("Silo: %V\n", s)
+func (s *symTable) get_memdb_symbol(aStr string) (int, error) {
+	if s.debug {
 		log.Printf("string: %V\n", aStr)
 	}
 
 	if s == nil {
-		panic("Silo is nil")
+		panic("Symbol table is nil")
 	}
 	if s.dbHandle != nil {
 		panic("dbhandle not nil for memdb!")
@@ -69,7 +80,7 @@ func (s *tagSilo) get_memdb_symbol(aStr string) (int, error) {
 	return retval, nil
 }
 
-func (s *tagSilo) get_symbol(aStr string) (int, error) {
+func (s *tagSilo) Lookup(aStr string) (int, error) {
 	var retval int
 	var err error
 	if val, ok := s.symbol_cache[aStr]; ok {
@@ -151,7 +162,7 @@ func (s *tagSilo) get_diskdb_symbol(aStr string) (int, error) {
 
 }
 
-func (s *tagSilo) get_or_create_symbol(aStr string) int {
+func (s *tagSilo) LookupOrCreate(aStr string) int {
 	for i := 0; s == nil; i = i + 1 {
 		time.Sleep(time.Millisecond * 100)
 	}
