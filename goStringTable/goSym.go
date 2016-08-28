@@ -1,3 +1,134 @@
+func (s *tagSilo) getString(index int) string {
+	if s.memory_db {
+		if debug {
+			log.Println("Fetching string: ", index)
+		}
+		return s.reverse_string_table[index]
+	} else {
+		var val string
+		if cache_val, ok := s.string_cache[index]; ok {
+			s.count("string_cache_hit")
+			return cache_val
+		} else {
+			s.count("string_cache_miss")
+			s.count("sql_select")
+
+			err := s.dbHandle.QueryRow("select value from StringTable where id like ?", index).Scan(&val)
+			if err != nil {
+				//s.LogChan["warning"] <- fmt.Sprintln("While trying to read StringTable: ", err)
+			}
+
+			if val != "" {
+				s.string_cache[index] = val
+			}
+			return val
+		}
+	}
+}
+
+func (s *tagSilo) get_memdb_symbol(aStr string) (int, error) {
+	if debug {
+		//log.Printf("Silo: %V\n", s)
+		log.Printf("string: %V\n", aStr)
+	}
+
+	if s == nil {
+		panic("Silo is nil")
+	}
+	if s.dbHandle != nil {
+		panic("dbhandle not nil for memdb!")
+	}
+
+	key := patricia.Prefix(aStr)
+	if key == nil {
+		log.Printf("Got nil for radix string lookup on '%v'", aStr)
+		log.Printf("Number of Records: %v", len(s.database))
+		log.Printf("Number of tags: %v", s.next_string_index+1)
+		return 0, fmt.Errorf("Key not found in radix tree")
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Error while reading string", r, ", retrying")
+			time.Sleep(1 * time.Second)
+			read_trie(s.string_table, key)
+		}
+	}()
+	var retval int
+	retval = 0
+	if match_trie(s.string_table, key) {
+		val := s.string_table.Get(key)
+		if val == nil {
+			log.Printf("Got nil for string table lookup (key:%v)", key)
+			log.Printf("Number of Records: %v", len(s.database))
+			log.Printf("Number of tags: %v", s.next_string_index+1)
+			return 0, fmt.Errorf("String '%s' not found in tag database", aStr)
+		}
+		retval = val.(int)
+	}
+
+	return retval, nil
+}
+
+func (s *tagSilo) get_symbol(aStr string) (int, error) {
+	var retval int
+	var err error
+	if val, ok := s.symbol_cache[aStr]; ok {
+		s.count("symbol_cache_hit")
+		return val, nil
+	} else {
+		s.count("symbol_cache_miss")
+		if s.memory_db {
+			retval, err = s.get_memdb_symbol(aStr)
+		} else {
+			retval, err = s.get_diskdb_symbol(aStr)
+
+		}
+		if retval != 0 && err == nil {
+			s.symbol_cache[aStr] = retval
+		}
+	}
+	return retval, err
+}
+
+func (s *tagSilo) get_diskdb_symbol(aStr string) (int, error) {
+	var retval int
+	retval = 0
+	if debug {
+		//log.Printf("Silo: %V\n", s)
+		log.Printf("string: %V\n", aStr)
+	}
+	//log.Printf("Silo: %V, string: %V, db: %V\n", s, aStr, s.dbHandle)
+	if s == nil {
+		panic("Silo is nil")
+	}
+	if s.dbHandle == nil {
+		panic("nil dbhandle!")
+	}
+	if s.memory_db {
+		key := patricia.Prefix(aStr)
+		if key == nil {
+			log.Printf("Got nil for radix string lookup on '%v'", aStr)
+			log.Printf("Number of Records: %v", len(s.database))
+			log.Printf("Number of tags: %v", s.next_string_index+1)
+			return 0, fmt.Errorf("Key not found in radix tree")
+		}
+		defer func() {
+			if r := recover(); r != nil {
+				log.Println("Error while reading string", r, ", retrying")
+				time.Sleep(1 * time.Second)
+				read_trie(s.string_table, key)
+			}
+		}()
+
+		if match_trie(s.string_table, key) {
+			val := s.string_table.Get(key)
+			if val == nil {
+				log.Printf("Got nil for string table lookup (key:%v)", key)
+				log.Printf("Number of Records: %v", len(s.database))
+				log.Printf("Number of tags: %v", s.next_string_index+1)
+				return 0, fmt.Errorf("String '%s' not found in tag database", aStr)
+			}
+			retval = val.(int)
 		}
 
 	} else {
