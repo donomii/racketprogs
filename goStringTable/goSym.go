@@ -1,4 +1,4 @@
-package goSym
+package goStringTable
 
 import (
     "github.com/tchap/go-patricia/patricia"
@@ -12,7 +12,7 @@ import (
 )
 
 
-type symTable struct {
+type SymTable struct {
     reverse_string_table []string
     counters             map[string]int
     memory_db            bool
@@ -24,16 +24,18 @@ type symTable struct {
     writeMutex           sync.Mutex
 }
 
-func (s *symTable) count(c string) {
+func (s *SymTable) count(c string) {
     return
     s.counters[c]++
 }
 
-func New () *symTable {
-    s := symTable{}
+func New () *SymTable {
+    s := SymTable{}
     s.memory_db = true
     s.string_table = patricia.NewTrie()
     s.next_string_index = -1
+    s.symbol_cache = map[string]int{}
+    s.counters = map[string]int{}
     return &s
 }
 
@@ -69,7 +71,7 @@ func read_trie(string_table *patricia.Trie, key patricia.Prefix) int {
 	return val.(int)
 }
 
-func (s *symTable) GetString(index int) string {
+func (s *SymTable) GetString(index int) string {
 	if s.memory_db {
 		if s.debug {
 			log.Println("Fetching string: ", index)
@@ -79,7 +81,7 @@ func (s *symTable) GetString(index int) string {
     return ""
 }
 
-func (s *symTable) get_memdb_symbol(aStr string) (int, error) {
+func (s *SymTable) get_memdb_symbol(aStr string) (int, error) {
 	if s.debug {
 		log.Printf("string: %V\n", aStr)
 	}
@@ -119,7 +121,7 @@ func (s *symTable) get_memdb_symbol(aStr string) (int, error) {
 	return retval, nil
 }
 
-func (s *symTable) Lookup(aStr string) (int, error) {
+func (s *SymTable) Lookup(aStr string) (int, error) {
 	var retval int
 	var err error
 	if val, ok := s.symbol_cache[aStr]; ok {
@@ -140,7 +142,7 @@ func (s *symTable) Lookup(aStr string) (int, error) {
 	return retval, err
 }
 
-//func (s *symTable) get_diskdb_symbol(aStr string) (int, error) {
+//func (s *SymTable) get_diskdb_symbol(aStr string) (int, error) {
 	//var retval int
 	//retval = 0
 	//if debug {
@@ -198,7 +200,7 @@ func (s *symTable) Lookup(aStr string) (int, error) {
 	//return retval, nil
 //}
 
-func (s *symTable) LookupOrCreate(aStr string) int {
+func (s *SymTable) LookupOrCreate(aStr string) int {
 	for i := 0; s == nil; i = i + 1 {
 		time.Sleep(time.Millisecond * 100)
 	}
@@ -295,12 +297,12 @@ func (s *symTable) LookupOrCreate(aStr string) int {
 }
 
 
-func (s *symTable) LockMe() {
+func (s *SymTable) LockMe() {
 
 	//s.LockLog <- fmt.Sprintln("Attempting lock in silo ", s.id)
 	s.writeMutex.Lock()
 
 }
-func (s *symTable) UnlockMe() {
+func (s *SymTable) UnlockMe() {
 	s.writeMutex.Unlock()
 }

@@ -1,4 +1,4 @@
-package goSym
+package goStringTable
 
 import "testing"
 import "fmt"
