@@ -275,8 +275,8 @@ sub make_attribs {
 
     my $text = $hs->parse( $text );
     $text =~ s/\.\s+/ /g;
-    $text =~ s/['",(){}_]/ /g;
-    $text =~ s/\[|\]|=>/ /g;
+    #$text =~ s/['",(){}_]/ /g;
+    #$text =~ s/\[|\]|=>/ /g;
     $text =~ s/=\r\n/ /g;
     $text =~ s/=\n/ /g;
     $text =~ s/\n/ /g;
