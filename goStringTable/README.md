@@ -9,7 +9,7 @@ It works like a hashmap, but it is lock-free to read from multiple threads(unlik
 
 ## Speed
 
-Going from number to string is an array lookup, so almost instant.
+Going from a symbol(a number) to string is an array lookup, so almost instant.
 
 Going from a string to a number requires a lookup in a Patricia (radix) tree, which means the time should be roughly log(n), where n is the number of stored strings.
 
