@@ -1,0 +1,727 @@
+// Copyright 2014 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// +build darwin linux windows
+
+// An app that draws a green triangle on a red background.
+//
+// Note: This demo is an early preview of Go 1.5. In order to build this
+// program as an Android APK using the gomobile tool.
+//
+// See http://godoc.org/golang.org/x/mobile/cmd/gomobile to install gomobile.
+//
+// Get the basic example and use gomobile to build or install it on your device.
+//
+//   $ go get -d golang.org/x/mobile/example/basic
+//   $ gomobile build golang.org/x/mobile/example/basic # will build an APK
+//
+//   # plug your Android device to your computer or start an Android emulator.
+//   # if you have adb installed on your machine, use gomobile install to
+//   # build and deploy the APK to an Android target.
+//   $ gomobile install golang.org/x/mobile/example/basic
+//
+// Switch to your device or emulator to start the Basic application from
+// the launcher.
+// You can also run the application on your desktop by running the command
+// below. (Note: It currently doesn't work on Windows.)
+//   $ go install golang.org/x/mobile/example/basic && basic
+package main
+
+import "math/rand"
+import "github.com/pkg/profile"
+import (
+  "io/ioutil"
+"github.com/donomii/glim"
+"golang.org/x/mobile/event/key"
+    _ "strings"
+    "net"
+    "errors"
+    "encoding/binary"
+    "log"
+    "runtime"
+
+    "golang.org/x/mobile/app"
+    "golang.org/x/mobile/event/lifecycle"
+    "golang.org/x/mobile/event/paint"
+    "golang.org/x/mobile/event/mouse"
+    "golang.org/x/mobile/event/size"
+    "golang.org/x/mobile/exp/app/debug"
+    "golang.org/x/mobile/exp/f32"
+    "golang.org/x/mobile/exp/gl/glutil"
+    "golang.org/x/mobile/gl"
+    //"math"
+    "fmt"
+    "os"
+    "time"
+    "image"
+    //"math/rand"
+    _ "image/png"
+    _ "image/jpeg"
+    "github.com/donomii/sceneCamera"
+)
+import "github.com/go-gl/mathgl/mgl32"
+        import "golang.org/x/mobile/exp/sensor"
+
+var old, new []float32
+var oldColor, newColor []float32
+var currDiff int64
+var unique int
+var saveNum int
+
+var multiSample = uint(1)  //Make the internal pixel buffer larger to enable multisampling and eventually GL anti-aliasing
+var pixelTweakX =0
+var pixelTweakY =0
+var cursorX = 0
+var cursorY = 0
+var clientWidth=uint(800*multiSample)
+var clientHeight=uint(600*multiSample)
+var u8Pix []uint8
+var (
+    startDrawing bool
+    imageData image.Image
+    imageBounds image.Rectangle
+    images   *glutil.Images
+    fps      *debug.FPS
+    program  gl.Program
+    position gl.Attrib
+    u_Texture gl.Uniform
+    a_TexCoordinate gl.Attrib
+    colour gl.Attrib
+    buf      gl.Buffer
+    tbuf      gl.Buffer
+
+    screenWidth int
+    screenHeight int
+
+    green  float32
+    red  float32
+    blue  float32
+    touchX float32
+    touchY float32
+    selection int
+    gallery []string
+    reCalcNeeded bool
+    prevTime int64
+)
+
+var scanOn = true
+var triBuff[]byte
+var vTrisf map[string][]float32
+var vBuffs map[string]gl.Buffer
+
+var vCols map[string][]byte
+var vColsf map[string][]float32
+var vColBuffs map[string]gl.Buffer
+
+var trans  mgl32.Mat4
+var theatreCamera  mgl32.Mat4
+var transU gl.Uniform
+var recursion int = 4
+var threeD bool = false
+var polyCount int
+var clock float32 = 0.0
+var Tex gl.Texture
+var sceneCam *sceneCamera.SceneCamera
+
+var viewAngle [3]float32
+
+
+var texAlignData = f32.Bytes(binary.LittleEndian,
+    0.0, 0.0, // top left
+    0.0, 1.0, // top left
+    1.0, 0.0, // top left
+    0.0, 1.0, // top left
+    1.0, 1.0, // top left
+    1.0, 0.0, // top left
+)
+
+
+
+var triangleDataRaw = []float32{
+    -1.0, 1.0, 0.0, // top left
+    -1.0, -1.0, 0.0, // bottom left
+    1.0, 1.0, 0.0, // bottom right
+}
+
+
+
+var colorDataRaw = []float32{
+    1.0, 1.0, 0.0, 0.0,
+    1.0, 1.0, 0.0, 0.0,
+    1.0, 1.0, 0.0, 0.0,
+}
+
+func do_profile() {
+    //defer profile.Start(profile.MemProfile).Stop()
+    //defer profile.Start(profile.TraceProfile).Stop()
+    defer profile.Start(profile.CPUProfile).Stop()
+    time.Sleep(60*time.Second)
+}
+
+func main() {
+    log.Printf("Starting main...")
+    sceneCam = sceneCamera.New()
+    runtime.GOMAXPROCS(2)
+    app.Main(func(a app.App) {
+        log.Printf("Starting app...")
+        reCalcNeeded = true
+        var glctx gl.Context
+        var sz size.Event
+        sensor.Notify(a)
+        theatreCamera = mgl32.Ident4()
+        trans = mgl32.Ident4()
+        trans = trans.Mul4(mgl32.Translate3D(0.0, 0.0, 1.0))
+        if threeD {
+            trans = compose(trans, mgl32.Scale3D(1.6, 0.6,1.0))
+        }
+        theatreCamera = mgl32.LookAt(0.0, 0.0, 0.6, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+        for e := range a.Events() {
+            switch e := a.Filter(e).(type) {
+            case sensor.Event:
+                  delta := e.Timestamp - prevTime
+                  prevTime = e.Timestamp
+                  scale := float32(36000000.0/float32(delta))
+                  sceneCam.ProcessEvent(e)
+
+
+                  var sora_vec mgl32.Vec3   //The real sora
+                  sora_vec = mgl32.Vec3{float32(e.Data[1])/scale, -float32(e.Data[0])/scale,float32(-e.Data[2])/scale/float32(3.14)}
+
+                  if threeD {
+                  } else {
+                      theatreCamera = theatreCamera.Mul4(mgl32.Translate3D(sora_vec[1]/scale, -sora_vec[0]/scale, 0.0))
+                  }
+            case lifecycle.Event:
+                switch e.Crosses(lifecycle.StageVisible) {
+                case lifecycle.CrossOn:
+                    glctx, _ = e.DrawContext.(gl.Context)
+                    onStart(glctx)
+                    sensor.Enable(sensor.Gyroscope, 10 * time.Millisecond)
+                    a.Send(paint.Event{})
+                case lifecycle.CrossOff:
+                    sensor.Disable(sensor.Gyroscope)
+                    onStop(glctx)
+                    glctx = nil
+                }
+            case size.Event:
+                sz = e
+                reCalcNeeded = true
+                //reDimBuff(int(sz.WidthPx),int(sz.HeightPx))
+                touchX = float32(sz.WidthPx /2)
+                touchY = float32(sz.HeightPx * 9/10)
+                if (sz.Orientation == size.OrientationLandscape) {
+                    //threeD = true
+                } else {
+                    threeD = false
+                }
+            case paint.Event:
+                if glctx == nil || e.External {
+                    // As we are actively painting as fast as
+                    // we can (usually 60 FPS), skip any paint
+                    // events sent by the system.
+                    continue
+                }
+
+                onPaint(glctx, sz)
+                a.Publish()
+                // Drive the animation by preparing to paint the next frame
+                // after this one is shown.
+                a.Send(paint.Event{})
+            case key.Event:
+            case mouse.Event:
+                //log.Printf("%v", e)
+                //cursorX = int(e.X/2)
+                //cursorY = int(e.Y)
+            }
+        }
+    })
+}
+
+var connectCh chan bool
+
+
+func externalIP() (string, error) {
+    ifaces, err := net.Interfaces()
+    if err != nil {
+        return "", err
+    }
+    for _, iface := range ifaces {
+        if iface.Flags&net.FlagUp == 0 {
+            continue // interface down
+        }
+        if iface.Flags&net.FlagLoopback != 0 {
+            continue // loopback interface
+        }
+        addrs, err := iface.Addrs()
+        if err != nil {
+            return "", err
+        }
+        for _, addr := range addrs {
+            var ip net.IP
+            switch v := addr.(type) {
+            case *net.IPNet:
+                ip = v.IP
+            case *net.IPAddr:
+                ip = v.IP
+            }
+            if ip == nil || ip.IsLoopback() {
+                continue
+            }
+            ip = ip.To4()
+            if ip == nil {
+                continue // not an ipv4 address
+            }
+            return ip.String(), nil
+        }
+    }
+    return "", errors.New("are you connected to the network?")
+}
+
+func reDimBuff(x,y int) {
+    log.Printf("Resizing screen to %v, %v", x, y)
+    screenWidth = (pixelTweakX+x)*int(multiSample)
+    clientWidth = uint(pixelTweakX+x)*multiSample
+    screenHeight = (pixelTweakY+y)*int(multiSample)
+    clientHeight = uint(pixelTweakY+y)*multiSample
+    dim := clientWidth*clientHeight*4
+    u8Pix = make([]uint8, dim, dim)
+}
+
+var fname string
+
+
+
+var refImage []byte
+var rx int = 10
+var ry int = 10
+
+func UploadBufferData (glctx gl.Context, b gl.Buffer, data []byte) {
+    glctx.BindBuffer(gl.ARRAY_BUFFER, b)
+    //log.Printf("Data: %v elements for buffer %v\n", len(data), b)
+    glctx.BufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW)
+}
+
+func resetDiff() {
+    time.Sleep(3*time.Second)
+    currDiff = 999999999999999
+    startDrawing = true
+    //dump=true
+    //resetDiff()
+    }
+
+func onStart(glctx gl.Context) {
+    scale = 1.0
+    rand.Seed(time.Now().Unix())
+    log.Printf("Onstart callback...")
+    old = make([]float32,len(triangleDataRaw))
+    new = make([]float32,len(triangleDataRaw))
+    oldColor = make([]float32,len(colorDataRaw))
+    newColor = make([]float32,len(colorDataRaw))
+    for i:=0 ; i<101; i++ {
+        old = append(old,triangleDataRaw...)
+        new = append(new,triangleDataRaw...)
+        oldColor = append(oldColor,colorDataRaw...)
+        newColor = append(newColor,colorDataRaw...)
+    }
+    for i, _ := range oldColor {
+
+        oldColor[i] = 0.1 //rand.Float32() // v+ rand.Float32()*0.2*scale-0.1*scale
+    }
+//    for i:=0; i<len(old)-6; i=i+6 {
+    i :=0
+     for x:=-0.5; x<0.5; x=x+0.1 {
+     for y:=-0.5; y<0.5; y=y+0.1 {
+    
+        //old[i] =rand.Float32()*2.0-1.0 // v+ rand.Float32()*0.2*scale-0.1*scale
+        x :=rand.Float32()*0.5-0.25 // v+ rand.Float32()*0.2*scale-0.1*scale
+        y :=rand.Float32()*0.5-0.25 // v+ rand.Float32()*0.2*scale-0.1*scale
+        old[i] = x
+        old[i+1] = y
+
+        old[i+1] = x
+        old[i+2] = y
+
+        old[i+3] = x
+        old[i+4] = y
+        i = i + 6
+    }}
+
+
+    //For some reason, the framework feeds us the wrong window size at start.  Luckily we can query the context directly
+    screenWidth, screenHeight = glim.ScreenSize(glctx)
+    log.Printf("Start viewport: %v,%v\n", screenWidth, screenHeight)
+    reCalcNeeded = true
+    //reDimBuff(int(screenWidth),int(screenHeight))
+
+    if len(os.Args)>1 {
+        fname = os.Args[1]
+        log.Println("Loading file: ", fname)
+        refImage, rx, ry = glim.LoadImage(fname)
+        log.Printf("Loaded reference image %v:%v\n", rx, ry)
+    } else {
+        log.Fatal("please give a reference image on the command line")
+    }
+    var err error
+    program, err = glutil.CreateProgram(glctx, vertexShader, fragmentShader)
+    if err != nil {
+        log.Printf("error creating GL program: %v", err)
+        os.Exit(1)
+        return
+    }
+
+
+    position = glctx.GetAttribLocation(program, "position")
+    a_TexCoordinate = glctx.GetAttribLocation(program, "a_TexCoordinate")
+    transU = glctx.GetUniformLocation(program, "transform")
+    u_Texture = glctx.GetUniformLocation(program, "u_Texture")
+    //fmt.Println("Creating buffers")
+
+    buf = glctx.CreateBuffer()
+    triangleData := f32.Bytes(binary.LittleEndian,new...)
+    UploadBufferData(glctx, buf, triangleData)
+
+    tbuf = glctx.CreateBuffer()
+    colorData := f32.Bytes(binary.LittleEndian,newColor...)
+    UploadBufferData(glctx, tbuf, colorData)
+
+    Tex = glctx.CreateTexture()
+    glctx.BindTexture(gl.TEXTURE_2D, Tex)
+
+    glctx.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    glctx.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    go resetDiff()
+
+}
+
+func onStop(glctx gl.Context) {
+    log.Printf("Stopping...")
+    os.Exit(0)
+    //glctx.DeleteProgram(program)
+    //glctx.DeleteBuffer(buf)
+    //fps.Release()
+    //images.Release()
+}
+
+func transpose( m mgl32.Mat4) mgl32.Mat4{
+    var r mgl32.Mat4
+    for i, v := range []int{0,4,8,12,1,5,9,13,2,6,10,14,3,7,11,15} {
+        r[i] = m[v]
+    }
+    //fmt.Println(r)
+    return r
+}
+
+
+func clampAll(data []float32) {
+    for i, v:= range data {
+        if v< -1.0 {
+            data[i] = -1.0
+        }
+        if v>1.0 {
+            data[i] = 1.0
+        }
+    }
+}
+
+
+
+func clampAll01(data []float32) {
+    for i, v:= range data {
+        if v<0 {
+            data[i] = 0
+        }
+        if v>1.0 {
+            data[i] = 1.0
+        }
+    }
+}
+
+var mutateIndex int
+var mutateColIndex int = 1
+var dump bool
+var scale float32
+func sumArray (a []float32) float32 {
+  ret := float32(0)
+  for _,v := range a {
+    ret = ret + v
+  }
+  return ret
+}
+// Abs64 returns the absolute value of x.
+func Abs64(x int64) int64 {
+    if x < 0 {
+        return -x
+    }
+    return x
+}
+
+func copyBytes (a, b []float32) {
+    for i,_:= range b{
+        a[i] = b[i]
+    }
+}
+
+
+func loadPic(fname string) image.Image {
+    reader, err := os.Open(fname)
+    if err != nil {
+       panic(fmt.Sprintf("loadPic: %v %v", fname, err))
+    }  
+     defer reader.Close()
+    m, _, err1 := image.Decode(reader)
+    if err1 != nil {
+        panic(fmt.Sprintf("loadPic: %v %v",fname, err1))
+    }  
+    return m
+}
+
+
+// Abs32 returns the absolute value of x. 
+func Abs32(x uint32) uint32 {
+    if x < 0 {
+        return -x
+    }
+    return x
+}
+
+
+func calcDiff(renderPix, refImage, diffBuff []byte) int64{
+  diff :=int64(0)
+    //Calculate the difference between each picture by comparing the pixels, skipping the alpha channel
+    //for i, v := range renderPix {
+    for y := 0; y < ry; y++ {
+        for x := 0; x < rx; x++ {
+            for z:= 0 ; z< 3 ; z++ {
+                i := (x + y * rx) * 4 + z
+                //ii := (x + (ry-y-1)*rx) * 4 +z
+                //if (i+1) % 4 == 0 || (i) % 4 == 0 || (i+3) % 4 == 0 {
+                  //if (i+1) % 4 == 0  {
+                    //log.Printf("renderAlpha: %v, refAlpha: %v\n", renderPix[i], refImage[i])
+                    //diffBuff[i] = 255
+                    //renderPix[i]=255
+                    //continue
+                //}
+                //fmt.Println(ii, ry, y)
+
+                d := Abs64(int64(renderPix[i])-int64(refImage[i]))
+                if (dump) {log.Printf("%v - %v = %v\n", renderPix[i], refImage[i], d)}
+                diff = diff + d
+                diffBuff[i] = byte(uint8(d))
+            }
+        }
+    }
+    return diff
+}
+
+func dumpDetails(renderPix, diffBuff []byte) {
+    diff :=1
+    if dump {
+        log.Printf("o: %p, n: %p\n", old, new)
+        //fmt.Printf("\noSum: %v, \nnSum: %v\n", sumArray(oldColor), sumArray(newColor), diff)
+        //ioutil.WriteFile(fmt.Sprintf("pix/%v_new_%v_%v_render.txt", unique, diff, currDiff), []byte(fmt.Sprintf("%v",newColor)), 0644)
+        //Save render and diff pics
+        //glim.SaveBuff(rx, ry, renderPix, fmt.Sprintf("pix/%v_render.png", unique))
+        //glim.SaveBuff(rx, ry, diffBuff,  fmt.Sprintf("pix/%v_diff.png", unique))
+        ioutil.WriteFile(fmt.Sprintf("pix/%v_%v_%v_color_dump.txt", unique, diff, currDiff), []byte(fmt.Sprintf("\nold: %3.2v%v\nnew: %3.2v%v\n", oldColor, currDiff, newColor, diff)), 0644)
+        ioutil.WriteFile(fmt.Sprintf("pix/%v_%v_%v_position_dump.txt", unique, diff, currDiff), []byte(fmt.Sprintf("\nold: %3.2v%v\nnew: %3.2v%v\n", old, currDiff, new, diff)), 0644)
+    
+    //log.Printf("(%v)Diff: %v, olddiff: %v\n", unique, diff, currDiff)
+}
+
+
+}
+
+
+func compareAndSwap(diff int64, renderPix, diffBuff []byte) {
+    //If the new picture is less different to the reference than the previous best, make this the new best
+    if (diff < currDiff)  && startDrawing {
+        //log.Printf("Diff: %v is less than %v, copying new to old, saving as %v\n", diff, currDiff, unique)
+        //ioutil.WriteFile(fmt.Sprintf("pix/diff_%v_%v_%v.txt", unique, diff, currDiff), []byte(fmt.Sprintf("%v",oldColor)), 0644)
+        //glim.SaveBuff(rx, ry, diffBuff, fmt.Sprintf("pix/%v_%v_%v_new_choice_diff.png", unique, diff, currDiff))
+        //glim.SaveBuff(rx, ry, renderPix, fmt.Sprintf("pix/%v_new_choice.png", unique))
+        //log.Printf("(%v):*Changed* old: %p, new: %p\n", unique, oldColor, newColor)
+        copyBytes(old,new)
+        copyBytes(oldColor,newColor)
+        //log.Printf("(%v) %v -> %v", unique, currDiff, diff)
+        currDiff = diff
+    } else {
+        //log.Printf("Diff: %v is greater than %v, copying old to new, not saving\n", diff, currDiff)
+        copyBytes(new,old)
+        copyBytes(newColor,oldColor)
+        scale = scale -0.01
+        //currDiff = currDiff + 100
+    }
+}
+
+func doDraw(glctx gl.Context, new, newColor []float32) {
+    triangleData := f32.Bytes(binary.LittleEndian,new...)
+    UploadBufferData(glctx, buf, triangleData)
+
+    //log.Printf("colors: %v", newColor)
+    colorData := f32.Bytes(binary.LittleEndian,newColor...)
+    UploadBufferData(glctx, tbuf, colorData)
+
+    //glctx.Enable(gl.BLEND)
+    //glctx.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+    //glctx.Enable( gl.DEPTH_TEST );
+    //glctx.DepthFunc( gl.LEQUAL );
+    //glctx.DepthMask(true)
+    //glctx.ClearColor(newColor[0],newColor[1],newColor[2],255)
+    glctx.ClearColor(0,0,0,1.0)
+    glctx.Clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT)
+    glctx.UseProgram(program)
+
+
+
+    glctx.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    glctx.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+    var view mgl32.Mat4
+    view = compose(theatreCamera, trans)
+    glctx.UniformMatrix4fv(transU, view[0:16])
+
+    glctx.BindBuffer(gl.ARRAY_BUFFER, buf)
+    glctx.EnableVertexAttribArray(position)
+    glctx.VertexAttribPointer(position, 3, gl.FLOAT, false, 0, 0)
+
+
+    glctx.BindBuffer(gl.ARRAY_BUFFER, tbuf)
+    glctx.EnableVertexAttribArray(a_TexCoordinate)
+    glctx.VertexAttribPointer(a_TexCoordinate, 4, gl.FLOAT, false, 0, 0)
+
+    glctx.Viewport(0,0, rx, ry)
+    glctx.DrawArrays(gl.TRIANGLES, 0, len(new)/3)
+
+    glctx.DisableVertexAttribArray(position)
+    glctx.DisableVertexAttribArray(a_TexCoordinate)
+
+    //log.Println("Finished paint")
+}
+
+
+func mutate () {
+    if scale< 0.0 {
+      scale = 0.3
+    }
+
+    //------------------- Now make the new frame
+
+    for zzz:=0; zzz<len(new); zzz++ {
+        mutateIndex = mutateIndex + 1
+        if mutateIndex >= len(old) {
+            mutateIndex = 0
+        }
+
+        mutateColIndex = mutateColIndex + 1
+        if mutateColIndex >= len(oldColor) {
+            mutateColIndex = 0
+        }
+        //log.Printf("MutatColIndex: %v\n", mutateColIndex)
+
+        if startDrawing {
+          //log.Printf("Scale: %v\n", scale)
+          coin := rand.Float32()
+          if coin < 0.0 {
+            //i := int(rand.Float32()*float32(len(oldColor)))
+            //i:=mutateColIndex
+            //m:= rand.Float32()*2.0*scale-1.0*scale
+            //newColor[i] = newColor[i] + m
+            //log.Printf("Final: %v\n", newColor[i])
+          } else {
+            //i := int(rand.Float32()*float32(len(old)))
+            ic:=mutateColIndex
+            newColor[ic] = oldColor[ic] + rand.Float32()*2.0*scale-1.0*scale
+            new[mutateIndex]      = old[mutateIndex]      + rand.Float32()*2.0*scale-1.0*scale
+            //newColor[ic] = oldColor[ic] + 0.05
+            //log.Printf("Move: %v\n", ic)
+          }
+        }
+      }
+        clampAll(new)
+        //clampAll01(newColor)
+}
+
+
+func onPaint(glctx gl.Context, sz size.Event) {
+  //log.Println("Starting paint")
+  unique = unique +1
+    if unique % 2 == 1 { return }
+
+  //Fetch screen from graphics card
+  renderPix := glim.CopyScreen(glctx, rx, ry)
+    if unique % 101 == 1 {
+    saveNum = saveNum + 1
+    go glim.SaveBuff(rx, ry, renderPix, fmt.Sprintf("pix/render_%05d.png", saveNum))
+    }
+
+  //Prepare a blank byte array to hold the difference pic
+  diffBuff := make([]byte, len(renderPix))
+  for i, _ := range diffBuff {
+      diffBuff[i] = 0
+  }
+
+    //log.Printf("u8Pix size: %v, %v (%v)", screenWidth, screenHeight, len(u8Pix))
+    //log.Printf("Saving buffer %v:%v", rx, ry)
+    //glim.SaveBuff(rx, ry, refImage, fmt.Sprintf("ref_%v.png", unique))
+    //glim.SaveBuff(rx, ry, renderPix, fmt.Sprintf("pix/%v_render.png", unique))
+    //diff := glim.GDiff( loadPic(fname), loadPic(fmt.Sprintf("pix/%v_render.png", unique)))
+    diff := calcDiff(renderPix, refImage, diffBuff)
+    //log.Printf("Diff: %v, saving as %v\n", diff, unique)
+
+    dumpDetails(renderPix, diffBuff)
+    compareAndSwap(diff, renderPix, diffBuff);
+
+mutate()
+
+    for iii:=3;iii<len(newColor);iii=iii+4 {
+      newColor[iii]=1.0
+    }
+
+    if dump {
+    ioutil.WriteFile(fmt.Sprintf("pix/%v_%v_%v_position_colour_to_card.txt", unique, diff, currDiff), []byte(fmt.Sprintf("\npos: %3.2v%v\ncol: %3.2v%v\n", new, currDiff, newColor, diff)), 0644)
+    }
+    doDraw(glctx, new, newColor)
+
+}
+
+
+const vertexShader = `#version 100
+precision mediump float;
+uniform mat4 transform;
+
+attribute vec4 a_TexCoordinate; // Per-vertex texture coordinate information we will pass in.
+attribute vec4 position;
+varying vec4 color;
+
+void main() {
+        gl_Position = transform * position;
+        color = a_TexCoordinate;
+}
+`
+
+const fragmentShader = `#version 100
+precision mediump float;
+varying vec4 color;
+void main() {
+    gl_FragColor = color;
+}`
+
+
+
+func compose (a, b mgl32.Mat4) mgl32.Mat4 {
+return a.Mul4(b)
+}
+
+func compose3 (a, b, c mgl32.Mat4) mgl32.Mat4 {
+    t := b.Mul4(c)
+return a.Mul4(t)
+}
+
+func checkGlErr(glctx gl.Context) {
+    err := glctx.GetError()
+    if (err>0) {
+        fmt.Printf("GLerror: %v\n", err)
+        panic("GLERROR")
+    }
+}
