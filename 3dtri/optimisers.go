@@ -1,0 +1,251 @@
+//This package contains all the routines to set up and manipulate the "genome" that we are trying to optimise.  It receives calls from the gui:  InitOptimiser, Process, and StopOptimiser
+package main
+
+import (
+    "io/ioutil"
+    "github.com/donomii/glim"
+    "os"
+    "math/rand"
+    "time"
+    "log"
+    "fmt"
+    "encoding/json"
+)
+
+func InitOptimiser() {
+    scale = 0.1
+    rand.Seed(time.Now().Unix())
+    log.Printf("Initialiser callback...")
+    old = make([]float32,0)
+    new = make([]float32,0)
+    oldColor = make([]float32,0)
+    newColor = make([]float32,0)
+//    for i:=0; i<len(old)-6; i=i+6 {
+    i :=0
+     var x,y float32
+     for x=-0.5; x<0.5; x=x+0.1 {
+     for y=-0.5; y<0.5; y=y+0.1 {
+        old = append(old,triangleDataRaw...)
+        new = append(new,triangleDataRaw...)
+        oldColor = append(oldColor,colorDataRaw...)
+        newColor = append(newColor,colorDataRaw...)
+    
+        //old[i] =rand.Float32()*2.0-1.0 // v+ rand.Float32()*0.2*scale-0.1*scale
+        //x :=rand.Float32()*0.5-0.25 // v+ rand.Float32()*0.2*scale-0.1*scale
+        //y :=rand.Float32()*0.5-0.25 // v+ rand.Float32()*0.2*scale-0.1*scale
+        old[i] = x
+        old[i+1] = y
+        old[i+2] = 0
+
+        old[i+3] = x
+        old[i+4] = y
+        old[i+5] = 0
+
+        old[i+6] = x
+        old[i+7] = y
+        old[i+8] = 0
+        i = i + 9
+    }}
+
+
+    if len(os.Args)>1 {
+        fname = os.Args[1]
+        log.Println("Loading file: ", fname)
+        refImage, rx, ry = glim.LoadImage(fname)
+        log.Printf("Loaded reference image %v:%v\n", rx, ry)
+    } else {
+        log.Fatal("please give a reference image on the command line")
+    }
+    state.RefImage  = refImage
+    go resetDiff()
+
+}
+
+func StopOptimiser() {
+    log.Printf("Stopping...")
+    //Save your data
+}
+
+var mutateIndex int
+var mutateColIndex int = 1
+var dump bool
+var scale float32
+// Abs64 returns the absolute value of x.
+func Abs64(x int64) int64 {
+    if x < 0 {
+        return -x
+    }
+    return x
+}
+
+func copyBytes (a, b []float32) {
+    for i,_:= range b{
+        a[i] = b[i]
+    }
+}
+
+// Abs32 returns the absolute value of x. 
+func Abs32(x uint32) uint32 {
+    if x < 0 {
+        return -x
+    }
+    return x
+}
+
+func CalcDiff(renderPix, refImage, diffBuff []byte) int64{
+  diff :=int64(0)
+    //Calculate the difference between each picture by comparing the pixels, skipping the alpha channel
+    //for i, v := range renderPix {
+    for y := 0; y < ry; y++ {
+        for x := 0; x < rx; x++ {
+            for z:= 0 ; z< 3 ; z++ {
+                i := (x + y * rx) * 4 + z
+                //ii := (x + (ry-y-1)*rx) * 4 +z
+                //if (i+1) % 4 == 0 || (i) % 4 == 0 || (i+3) % 4 == 0 {
+                  //if (i+1) % 4 == 0  {
+                    //log.Printf("renderAlpha: %v, refAlpha: %v\n", renderPix[i], refImage[i])
+                    //diffBuff[i] = 255
+                    //renderPix[i]=255
+                    //continue
+                //}
+                //fmt.Println(ii, ry, y)
+
+                d := Abs64(int64(renderPix[i])-int64(refImage[i]))
+                if (dump) {log.Printf("%v - %v = %v\n", renderPix[i], refImage[i], d)}
+                diff = diff + d
+                diffBuff[i] = byte(uint8(d))
+            }
+        }
+    }
+    return diff
+}
+
+type StateExport struct {
+    Points  []float32
+    Colours []float32
+}
+
+func ReadStateFromFile(filename string) ([]float32, []float32) {
+    jdata, _ := ioutil.ReadFile(filename)
+    var out StateExport
+    json.Unmarshal(jdata, &out)
+    return out.Points, out.Colours
+}
+
+func DumpDetails(renderPix, diffBuff []byte) {
+        s:= StateExport{old, oldColor}
+        state_json, _ := json.Marshal(s)
+        //log.Printf("o: %p, n: %p\n", old, new)
+        ioutil.WriteFile(fmt.Sprintf("%v/state_%v.json", checkpointDir, unique), state_json, 0777)
+        ioutil.WriteFile(fmt.Sprintf("%v/current.json", checkpointDir), state_json, 0777)
+
+        status := fmt.Sprintf("#Number of times we have modified and tested the parameters (for this run)\nCycle: %v\n#How well the current state matches the target picture(0 is exact match)\nFitness: %v\n", unique, currDiff)
+        ioutil.WriteFile(fmt.Sprintf("%v/statistics.txt", checkpointDir), []byte(status), 0777)
+        
+        //ioutil.WriteFile(fmt.Sprintf("pix/%v_new_%v_%v_render.txt", unique, diff, currDiff), []byte(fmt.Sprintf("%v",newColor)), 0777)
+        //Save render and diff pics
+        //glim.SaveBuff(rx, ry, renderPix, fmt.Sprintf("pix/%v_render.png", unique))
+        //glim.SaveBuff(rx, ry, diffBuff,  fmt.Sprintf("pix/%v_diff.png", unique))
+        //ioutil.WriteFile(fmt.Sprintf("pix/%v_%v_%v_color_dump.txt", unique, diff, currDiff), []byte(fmt.Sprintf("\nold: %3.2v%v\nnew: %3.2v%v\n", oldColor, currDiff, newColor, diff)), 0777)
+        //ioutil.WriteFile(fmt.Sprintf("pix/%v_%v_%v_position_dump.txt", unique, diff, currDiff), []byte(fmt.Sprintf("\nold: %3.2v%v\nnew: %3.2v%v\n", old, currDiff, new, diff)), 0777)
+}
+
+
+func CompareAndSwap(diff int64, renderPix, diffBuff []byte) {
+    //If the new picture is less different to the reference than the previous best, make this the new best
+    if (diff < currDiff)  && startDrawing {
+        //log.Printf("Diff: %v is less than %v, copying new to old, saving as %v\n", diff, currDiff, unique)
+        //ioutil.WriteFile(fmt.Sprintf("pix/diff_%v_%v_%v.txt", unique, diff, currDiff), []byte(fmt.Sprintf("%v",oldColor)), 0777)
+        //glim.SaveBuff(rx, ry, diffBuff, fmt.Sprintf("pix/%v_%v_%v_new_choice_diff.png", unique, diff, currDiff))
+        //glim.SaveBuff(rx, ry, renderPix, fmt.Sprintf("pix/%v_new_choice.png", unique))
+        //log.Printf("(%v):*Changed* old: %p, new: %p\n", unique, oldColor, newColor)
+        copyBytes(old,new)
+        copyBytes(oldColor,newColor)
+        //log.Printf("(%v) %v -> %v", unique, currDiff, diff)
+        currDiff = diff
+    } else {
+        //log.Printf("Diff: %v is greater than %v, copying old to new, not saving\n", diff, currDiff)
+        copyBytes(new,old)
+        copyBytes(newColor,oldColor)
+        scale = scale -0.001
+        //currDiff = currDiff + 100
+    }
+}
+
+func Mutate () {
+    if scale< 0.05 {
+      scale = 0.5
+    }
+
+    //------------------- Now make the new frame
+    nChanges := 1
+    if unique < 500 {
+        nChanges = len(new)
+    }
+
+    for zzz:=0; zzz<nChanges; zzz++ {
+        mutateIndex = mutateIndex + 1
+        if mutateIndex >= len(old) {
+            mutateIndex = 0
+        }
+
+        mutateColIndex = mutateColIndex + 1
+        if mutateColIndex >= len(oldColor) {
+            mutateColIndex = 0
+        }
+        //log.Printf("MutatColIndex: %v\n", mutateColIndex)
+
+        if startDrawing {
+          //log.Printf("Scale: %v\n", scale)
+          coin := rand.Float32()
+          if coin < 0.0 {
+            //i := int(rand.Float32()*float32(len(oldColor)))
+            //i:=mutateColIndex
+            //m:= rand.Float32()*2.0*scale-1.0*scale
+            //newColor[i] = newColor[i] + m
+            //log.Printf("Final: %v\n", newColor[i])
+          } else {
+            //i := int(rand.Float32()*float32(len(old)))
+            ic:=mutateColIndex
+            newColor[ic] = oldColor[ic] + rand.Float32()*4.0*scale-2.0*scale
+            new[mutateIndex]      = old[mutateIndex]      + rand.Float32()*2.0*scale-1.0*scale
+            //newColor[ic] = oldColor[ic] + 0.05
+            //log.Printf("Move: %v\n", ic)
+          }
+        }
+      }
+        clampAll(new)
+        //clampAll01(newColor)
+}
+
+
+type RenderState struct {
+    RenderPix []byte
+    RefImage []byte
+    DiffBuff []byte
+}
+
+var state RenderState
+
+
+//Note that for reasons of speed, almost all the binary structs are modified in place.  If you want to keep the data between iterations, you need to copy it into a different spot in memory
+func Process(state RenderState) {
+    diff := CalcDiff(state.RenderPix, state.RefImage, state.DiffBuff)
+    if unique % 1001 == 1 {
+        saveNum = saveNum + 1
+        log.Printf("Diff: %v, saving as %v\n", diff, unique)
+        go glim.SaveBuff(rx, ry, state.RenderPix, fmt.Sprintf("pix/render_%05d.png", saveNum))
+        go DumpDetails(state.RenderPix, state.DiffBuff)
+    }
+
+    CompareAndSwap(diff, state.RenderPix, state.DiffBuff);
+
+    Mutate()
+
+    //Force the alpha channel to 1.0, we aren't doing transparent triangles yet
+    for iii:=3;iii<len(newColor);iii=iii+4 {
+      newColor[iii]=1.0
+    }
+
+    //The framework will now draw the picture, and copy it into RenderPix
+}

@@ -31,6 +31,7 @@ package main
 import "math/rand"
 import "github.com/pkg/profile"
 import (
+    "encoding/json"
   "io/ioutil"
 "github.com/donomii/glim"
 "golang.org/x/mobile/event/key"
@@ -68,6 +69,8 @@ var oldColor, newColor []float32
 var currDiff int64
 var unique int
 var saveNum int
+
+var defaultFilePerms = 0777
 
 var multiSample = uint(1)  //Make the internal pixel buffer larger to enable multisampling and eventually GL anti-aliasing
 var pixelTweakX =0
@@ -123,6 +126,9 @@ var polyCount int
 var clock float32 = 0.0
 var Tex gl.Texture
 var sceneCam *sceneCamera.SceneCamera
+var outputDir string = "./"
+var pixDir string = "./"
+var checkpointDir string = "./"
 
 var viewAngle [3]float32
 
@@ -160,7 +166,14 @@ func do_profile() {
 }
 
 func main() {
+    pixDir = fmt.Sprintf("%v/%v", outputDir, "pix")
+    checkpointDir = fmt.Sprintf("%v/%v", outputDir, "checkpoints")
+
+    os.MkdirAll(pixDir, 0777)
+    os.MkdirAll(checkpointDir, 0777)
     log.Printf("Starting main...")
+
+    InitOptimiser()
     sceneCam = sceneCamera.New()
     runtime.GOMAXPROCS(2)
     app.Main(func(a app.App) {
@@ -435,10 +448,6 @@ func clampAll01(data []float32) {
     }
 }
 
-var mutateIndex int
-var mutateColIndex int = 1
-var dump bool
-var scale float32
 func sumArray (a []float32) float32 {
   ret := float32(0)
   for _,v := range a {
@@ -446,20 +455,6 @@ func sumArray (a []float32) float32 {
   }
   return ret
 }
-// Abs64 returns the absolute value of x.
-func Abs64(x int64) int64 {
-    if x < 0 {
-        return -x
-    }
-    return x
-}
-
-func copyBytes (a, b []float32) {
-    for i,_:= range b{
-        a[i] = b[i]
-    }
-}
-
 
 func loadPic(fname string) image.Image {
     reader, err := os.Open(fname)
@@ -474,82 +469,11 @@ func loadPic(fname string) image.Image {
     return m
 }
 
-
-// Abs32 returns the absolute value of x. 
-func Abs32(x uint32) uint32 {
-    if x < 0 {
-        return -x
-    }
-    return x
-}
-
-
-func calcDiff(renderPix, refImage, diffBuff []byte) int64{
-  diff :=int64(0)
-    //Calculate the difference between each picture by comparing the pixels, skipping the alpha channel
-    //for i, v := range renderPix {
-    for y := 0; y < ry; y++ {
-        for x := 0; x < rx; x++ {
-            for z:= 0 ; z< 3 ; z++ {
-                i := (x + y * rx) * 4 + z
-                //ii := (x + (ry-y-1)*rx) * 4 +z
-                //if (i+1) % 4 == 0 || (i) % 4 == 0 || (i+3) % 4 == 0 {
-                  //if (i+1) % 4 == 0  {
-                    //log.Printf("renderAlpha: %v, refAlpha: %v\n", renderPix[i], refImage[i])
-                    //diffBuff[i] = 255
-                    //renderPix[i]=255
-                    //continue
-                //}
-                //fmt.Println(ii, ry, y)
-
-                d := Abs64(int64(renderPix[i])-int64(refImage[i]))
-                if (dump) {log.Printf("%v - %v = %v\n", renderPix[i], refImage[i], d)}
-                diff = diff + d
-                diffBuff[i] = byte(uint8(d))
-            }
-        }
-    }
-    return diff
-}
-
-func dumpDetails(renderPix, diffBuff []byte) {
-    diff :=1
-    if dump {
-        log.Printf("o: %p, n: %p\n", old, new)
-        //fmt.Printf("\noSum: %v, \nnSum: %v\n", sumArray(oldColor), sumArray(newColor), diff)
-        //ioutil.WriteFile(fmt.Sprintf("pix/%v_new_%v_%v_render.txt", unique, diff, currDiff), []byte(fmt.Sprintf("%v",newColor)), 0644)
-        //Save render and diff pics
-        //glim.SaveBuff(rx, ry, renderPix, fmt.Sprintf("pix/%v_render.png", unique))
-        //glim.SaveBuff(rx, ry, diffBuff,  fmt.Sprintf("pix/%v_diff.png", unique))
-        ioutil.WriteFile(fmt.Sprintf("pix/%v_%v_%v_color_dump.txt", unique, diff, currDiff), []byte(fmt.Sprintf("\nold: %3.2v%v\nnew: %3.2v%v\n", oldColor, currDiff, newColor, diff)), 0644)
-        ioutil.WriteFile(fmt.Sprintf("pix/%v_%v_%v_position_dump.txt", unique, diff, currDiff), []byte(fmt.Sprintf("\nold: %3.2v%v\nnew: %3.2v%v\n", old, currDiff, new, diff)), 0644)
-    
-    //log.Printf("(%v)Diff: %v, olddiff: %v\n", unique, diff, currDiff)
-}
-
-
-}
-
-
-func compareAndSwap(diff int64, renderPix, diffBuff []byte) {
-    //If the new picture is less different to the reference than the previous best, make this the new best
-    if (diff < currDiff)  && startDrawing {
-        //log.Printf("Diff: %v is less than %v, copying new to old, saving as %v\n", diff, currDiff, unique)
-        //ioutil.WriteFile(fmt.Sprintf("pix/diff_%v_%v_%v.txt", unique, diff, currDiff), []byte(fmt.Sprintf("%v",oldColor)), 0644)
-        //glim.SaveBuff(rx, ry, diffBuff, fmt.Sprintf("pix/%v_%v_%v_new_choice_diff.png", unique, diff, currDiff))
-        //glim.SaveBuff(rx, ry, renderPix, fmt.Sprintf("pix/%v_new_choice.png", unique))
-        //log.Printf("(%v):*Changed* old: %p, new: %p\n", unique, oldColor, newColor)
-        copyBytes(old,new)
-        copyBytes(oldColor,newColor)
-        //log.Printf("(%v) %v -> %v", unique, currDiff, diff)
-        currDiff = diff
-    } else {
-        //log.Printf("Diff: %v is greater than %v, copying old to new, not saving\n", diff, currDiff)
-        copyBytes(new,old)
-        copyBytes(newColor,oldColor)
-        scale = scale -0.001
-        //currDiff = currDiff + 100
-    }
+func readStateFromFile(filename string) ([]float32, []float32) {
+    jdata, _ := ioutil.ReadFile(filename)
+    var out StateExport
+    json.Unmarshal(jdata, &out)
+    return out.Points, out.Colours
 }
 
 func doDraw(glctx gl.Context, new, newColor []float32) {
@@ -648,42 +572,24 @@ func mutate () {
 func onPaint(glctx gl.Context, sz size.Event) {
   //log.Println("Starting paint")
   unique = unique +1
-    if unique % 2 == 1 { doDraw(glctx, new, newColor) ; return}
+    if unique % 2 == 1 { 
+        doDraw(glctx, new, newColor)
+        return
+    }
+    
 
   //Fetch screen from graphics card
   renderPix := glim.CopyScreen(glctx, rx, ry)
-     //Prepare a blank byte array to hold the difference pic
+ //Prepare a blank byte array to hold the difference pic
   diffBuff := make([]byte, len(renderPix))
   for i, _ := range diffBuff {
       diffBuff[i] = 0
   }
-
-    //log.Printf("u8Pix size: %v, %v (%v)", screenWidth, screenHeight, len(u8Pix))
-    //log.Printf("Saving buffer %v:%v", rx, ry)
-    //glim.SaveBuff(rx, ry, refImage, fmt.Sprintf("ref_%v.png", unique))
-    //glim.SaveBuff(rx, ry, renderPix, fmt.Sprintf("pix/%v_render.png", unique))
-    //diff := glim.GDiff( loadPic(fname), loadPic(fmt.Sprintf("pix/%v_render.png", unique)))
-    diff := calcDiff(renderPix, refImage, diffBuff)
-    //log.Printf("Diff: %v, saving as %v\n", diff, unique)
-     if unique % 1001 == 1 {
-        saveNum = saveNum + 1
-        log.Printf("Diff: %v, saving as %v\n", diff, unique)
-        go glim.SaveBuff(rx, ry, renderPix, fmt.Sprintf("pix/render_%05d.png", saveNum))
-    }
+    state.RenderPix = renderPix
+    state.DiffBuff = diffBuff
 
 
-    dumpDetails(renderPix, diffBuff)
-    compareAndSwap(diff, renderPix, diffBuff);
-
-mutate()
-
-    for iii:=3;iii<len(newColor);iii=iii+4 {
-      newColor[iii]=1.0
-    }
-
-    if dump {
-    ioutil.WriteFile(fmt.Sprintf("pix/%v_%v_%v_position_colour_to_card.txt", unique, diff, currDiff), []byte(fmt.Sprintf("\npos: %3.2v%v\ncol: %3.2v%v\n", new, currDiff, newColor, diff)), 0644)
-    }
+    Process(state)
     doDraw(glctx, new, newColor)
 
 }
@@ -708,7 +614,8 @@ precision mediump float;
 varying vec4 color;
 void main() {
     gl_FragColor = color;
-}`
+}
+`
 
 
 
