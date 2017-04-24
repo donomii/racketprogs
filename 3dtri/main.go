@@ -147,9 +147,9 @@ var triangleDataRaw = []float32{
 
 
 var colorDataRaw = []float32{
-    1.0, 1.0, 0.0, 0.0,
-    1.0, 1.0, 0.0, 0.0,
-    1.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 1.0,
+    0.0, 0.0, 0.0, 1.0,
+    0.0, 0.0, 0.0, 1.0,
 }
 
 func do_profile() {
@@ -311,40 +311,38 @@ func resetDiff() {
     }
 
 func onStart(glctx gl.Context) {
-    scale = 1.0
+    scale = 0.1
     rand.Seed(time.Now().Unix())
     log.Printf("Onstart callback...")
-    old = make([]float32,len(triangleDataRaw))
-    new = make([]float32,len(triangleDataRaw))
-    oldColor = make([]float32,len(colorDataRaw))
-    newColor = make([]float32,len(colorDataRaw))
-    for i:=0 ; i<101; i++ {
+    old = make([]float32,0)
+    new = make([]float32,0)
+    oldColor = make([]float32,0)
+    newColor = make([]float32,0)
+//    for i:=0; i<len(old)-6; i=i+6 {
+    i :=0
+     var x,y float32
+     for x=-0.5; x<0.5; x=x+0.1 {
+     for y=-0.5; y<0.5; y=y+0.1 {
         old = append(old,triangleDataRaw...)
         new = append(new,triangleDataRaw...)
         oldColor = append(oldColor,colorDataRaw...)
         newColor = append(newColor,colorDataRaw...)
-    }
-    for i, _ := range oldColor {
-
-        oldColor[i] = 0.1 //rand.Float32() // v+ rand.Float32()*0.2*scale-0.1*scale
-    }
-//    for i:=0; i<len(old)-6; i=i+6 {
-    i :=0
-     for x:=-0.5; x<0.5; x=x+0.1 {
-     for y:=-0.5; y<0.5; y=y+0.1 {
     
         //old[i] =rand.Float32()*2.0-1.0 // v+ rand.Float32()*0.2*scale-0.1*scale
-        x :=rand.Float32()*0.5-0.25 // v+ rand.Float32()*0.2*scale-0.1*scale
-        y :=rand.Float32()*0.5-0.25 // v+ rand.Float32()*0.2*scale-0.1*scale
+        //x :=rand.Float32()*0.5-0.25 // v+ rand.Float32()*0.2*scale-0.1*scale
+        //y :=rand.Float32()*0.5-0.25 // v+ rand.Float32()*0.2*scale-0.1*scale
         old[i] = x
         old[i+1] = y
-
-        old[i+1] = x
-        old[i+2] = y
+        old[i+2] = 0
 
         old[i+3] = x
         old[i+4] = y
-        i = i + 6
+        old[i+5] = 0
+
+        old[i+6] = x
+        old[i+7] = y
+        old[i+8] = 0
+        i = i + 9
     }}
 
 
@@ -549,7 +547,7 @@ func compareAndSwap(diff int64, renderPix, diffBuff []byte) {
         //log.Printf("Diff: %v is greater than %v, copying old to new, not saving\n", diff, currDiff)
         copyBytes(new,old)
         copyBytes(newColor,oldColor)
-        scale = scale -0.01
+        scale = scale -0.001
         //currDiff = currDiff + 100
     }
 }
@@ -601,13 +599,17 @@ func doDraw(glctx gl.Context, new, newColor []float32) {
 
 
 func mutate () {
-    if scale< 0.0 {
-      scale = 0.3
+    if scale< 0.05 {
+      scale = 0.5
     }
 
     //------------------- Now make the new frame
+    nChanges := 1
+    if unique < 500 {
+        nChanges = len(new)
+    }
 
-    for zzz:=0; zzz<len(new); zzz++ {
+    for zzz:=0; zzz<nChanges; zzz++ {
         mutateIndex = mutateIndex + 1
         if mutateIndex >= len(old) {
             mutateIndex = 0
@@ -631,7 +633,7 @@ func mutate () {
           } else {
             //i := int(rand.Float32()*float32(len(old)))
             ic:=mutateColIndex
-            newColor[ic] = oldColor[ic] + rand.Float32()*2.0*scale-1.0*scale
+            newColor[ic] = oldColor[ic] + rand.Float32()*4.0*scale-2.0*scale
             new[mutateIndex]      = old[mutateIndex]      + rand.Float32()*2.0*scale-1.0*scale
             //newColor[ic] = oldColor[ic] + 0.05
             //log.Printf("Move: %v\n", ic)
@@ -646,16 +648,11 @@ func mutate () {
 func onPaint(glctx gl.Context, sz size.Event) {
   //log.Println("Starting paint")
   unique = unique +1
-    if unique % 2 == 1 { return }
+    if unique % 2 == 1 { doDraw(glctx, new, newColor) ; return}
 
   //Fetch screen from graphics card
   renderPix := glim.CopyScreen(glctx, rx, ry)
-    if unique % 101 == 1 {
-    saveNum = saveNum + 1
-    go glim.SaveBuff(rx, ry, renderPix, fmt.Sprintf("pix/render_%05d.png", saveNum))
-    }
-
-  //Prepare a blank byte array to hold the difference pic
+     //Prepare a blank byte array to hold the difference pic
   diffBuff := make([]byte, len(renderPix))
   for i, _ := range diffBuff {
       diffBuff[i] = 0
@@ -668,6 +665,12 @@ func onPaint(glctx gl.Context, sz size.Event) {
     //diff := glim.GDiff( loadPic(fname), loadPic(fmt.Sprintf("pix/%v_render.png", unique)))
     diff := calcDiff(renderPix, refImage, diffBuff)
     //log.Printf("Diff: %v, saving as %v\n", diff, unique)
+     if unique % 1001 == 1 {
+        saveNum = saveNum + 1
+        log.Printf("Diff: %v, saving as %v\n", diff, unique)
+        go glim.SaveBuff(rx, ry, renderPix, fmt.Sprintf("pix/render_%05d.png", saveNum))
+    }
+
 
     dumpDetails(renderPix, diffBuff)
     compareAndSwap(diff, renderPix, diffBuff);
