@@ -1,0 +1,4 @@
+#Number of times we have modified and tested the parameters (for this run)
+Cycle: 855856
+#How well the current state matches the target picture(0 is exact match)
+Fitness: 9159226
