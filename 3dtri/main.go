@@ -64,8 +64,8 @@ import (
 import "github.com/go-gl/mathgl/mgl32"
         import "golang.org/x/mobile/exp/sensor"
 
-var old, new []float32
-var oldColor, newColor []float32
+var old, new, prevDrawTriangles []float32
+var oldColor, newColor, prevDrawColors []float32
 var currDiff int64
 var unique int
 var saveNum int
@@ -166,6 +166,8 @@ func do_profile() {
 }
 
 func main() {
+    DrawRequestCh = make(chan DrawRequest, 10)
+    DrawResultCh  = make(chan DrawResult, 10)
     pixDir = fmt.Sprintf("%v/%v", outputDir, "pix")
     checkpointDir = fmt.Sprintf("%v/%v", outputDir, "checkpoints")
 
@@ -316,9 +318,10 @@ func UploadBufferData (glctx gl.Context, b gl.Buffer, data []byte) {
 }
 
 func resetDiff() {
-    time.Sleep(3*time.Second)
+    /*time.Sleep(3*time.Second)
     currDiff = 999999999999999
     startDrawing = true
+    */
     //dump=true
     //resetDiff()
     }
@@ -327,6 +330,7 @@ func onStart(glctx gl.Context) {
     scale = 0.1
     rand.Seed(time.Now().Unix())
     log.Printf("Onstart callback...")
+/*
     old = make([]float32,0)
     new = make([]float32,0)
     oldColor = make([]float32,0)
@@ -357,6 +361,7 @@ func onStart(glctx gl.Context) {
         old[i+8] = 0
         i = i + 9
     }}
+*/
 
 
     //For some reason, the framework feeds us the wrong window size at start.  Luckily we can query the context directly
@@ -460,7 +465,7 @@ func loadPic(fname string) image.Image {
     reader, err := os.Open(fname)
     if err != nil {
        panic(fmt.Sprintf("loadPic: %v %v", fname, err))
-    }  
+    }
      defer reader.Close()
     m, _, err1 := image.Decode(reader)
     if err1 != nil {
@@ -569,29 +574,36 @@ func mutate () {
 }
 
 
+type DrawRequest struct {
+    Triangles, Colours []float32
+}
+
+type DrawResult struct {
+    Render []byte
+}
+
+var DrawRequestCh chan DrawRequest
+var DrawResultCh chan DrawResult
+
 func onPaint(glctx gl.Context, sz size.Event) {
   //log.Println("Starting paint")
   unique = unique +1
     if unique % 2 == 1 { 
-        doDraw(glctx, new, newColor)
+        doDraw(glctx, prevDrawTriangles, prevDrawColors)
         return
     }
-    
 
-  //Fetch screen from graphics card
-  renderPix := glim.CopyScreen(glctx, rx, ry)
- //Prepare a blank byte array to hold the difference pic
-  diffBuff := make([]byte, len(renderPix))
-  for i, _ := range diffBuff {
-      diffBuff[i] = 0
-  }
-    state.RenderPix = renderPix
-    state.DiffBuff = diffBuff
+    prevDrawColors = newColor
+    prevDrawTriangles = new
 
+    //Fetch screen from graphics card
+    renderPix := glim.CopyScreen(glctx, rx, ry)
 
-    Process(state)
-    doDraw(glctx, new, newColor)
-
+    //log.Println("Sending result to optimiser")
+    DrawResultCh <- DrawResult{renderPix}
+    //log.Println("Fetching request from optimiser")
+    req := <- DrawRequestCh
+    doDraw(glctx, req.Triangles, req.Colours)
 }
 
 

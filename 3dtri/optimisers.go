@@ -13,18 +13,17 @@ import (
 )
 
 func InitOptimiser() {
-    scale = 0.1
+    scale = 1.0
     rand.Seed(time.Now().Unix())
     log.Printf("Initialiser callback...")
     old = make([]float32,0)
     new = make([]float32,0)
     oldColor = make([]float32,0)
     newColor = make([]float32,0)
-//    for i:=0; i<len(old)-6; i=i+6 {
     i :=0
      var x,y float32
-     for x=-0.5; x<0.5; x=x+0.1 {
-     for y=-0.5; y<0.5; y=y+0.1 {
+     for x=-1.0; x<1.0; x=x+0.6 {
+     for y=-1.0; y<1.0; y=y+0.6 {
         old = append(old,triangleDataRaw...)
         new = append(new,triangleDataRaw...)
         oldColor = append(oldColor,colorDataRaw...)
@@ -35,15 +34,20 @@ func InitOptimiser() {
         //y :=rand.Float32()*0.5-0.25 // v+ rand.Float32()*0.2*scale-0.1*scale
         old[i] = x
         old[i+1] = y
-        old[i+2] = 0
+        old[i+2] = 1.0
 
-        old[i+3] = x
+        oldColor[i] = x
+        oldColor[i+1] = y
+        oldColor[i+2] = 1.0
+
+
+        old[i+3] = x+0.1
         old[i+4] = y
-        old[i+5] = 0
+        old[i+5] = -1.0
 
         old[i+6] = x
-        old[i+7] = y
-        old[i+8] = 0
+        old[i+7] = y+0.1
+        old[i+8] = 0.0
         i = i + 9
     }}
 
@@ -58,7 +62,10 @@ func InitOptimiser() {
     }
     state.RefImage  = refImage
     go resetDiff()
+    go OptimiserWorker()
 
+    currDiff = 999999999999999
+    startDrawing = true
 }
 
 func StopOptimiser() {
@@ -113,7 +120,7 @@ func CalcDiff(renderPix, refImage, diffBuff []byte) int64{
                 d := Abs64(int64(renderPix[i])-int64(refImage[i]))
                 if (dump) {log.Printf("%v - %v = %v\n", renderPix[i], refImage[i], d)}
                 diff = diff + d
-                diffBuff[i] = byte(uint8(d))
+                //diffBuff[i] = byte(uint8(d)) //FIXME
             }
         }
     }
@@ -167,23 +174,13 @@ func CompareAndSwap(diff int64, renderPix, diffBuff []byte) {
         //log.Printf("Diff: %v is greater than %v, copying old to new, not saving\n", diff, currDiff)
         copyBytes(new,old)
         copyBytes(newColor,oldColor)
-        scale = scale -0.001
         //currDiff = currDiff + 100
     }
 }
 
-func Mutate () {
-    if scale< 0.05 {
-      scale = 0.5
-    }
+func Mutate (scale float32) {
 
     //------------------- Now make the new frame
-    nChanges := 1
-    if unique < 500 {
-        nChanges = len(new)
-    }
-
-    for zzz:=0; zzz<nChanges; zzz++ {
         mutateIndex = mutateIndex + 1
         if mutateIndex >= len(old) {
             mutateIndex = 0
@@ -195,7 +192,7 @@ func Mutate () {
         }
         //log.Printf("MutatColIndex: %v\n", mutateColIndex)
 
-        if startDrawing {
+        //if startDrawing {
           //log.Printf("Scale: %v\n", scale)
           coin := rand.Float32()
           if coin < 0.0 {
@@ -212,10 +209,14 @@ func Mutate () {
             //newColor[ic] = oldColor[ic] + 0.05
             //log.Printf("Move: %v\n", ic)
           }
-        }
-      }
+        //}
         clampAll(new)
         //clampAll01(newColor)
+
+    //Force the alpha channel to 1.0, we aren't doing transparent triangles yet
+    for iii:=3;iii<len(newColor);iii=iii+4 {
+      newColor[iii]=1.0
+    }
 }
 
 
@@ -227,9 +228,117 @@ type RenderState struct {
 
 var state RenderState
 
+func RenderIt(triangles, colours []float32) []byte {
+    //log.Println("Optimiser: Sending request to renderer")
+    DrawRequestCh <- DrawRequest{triangles, colours}
+    //log.Println("Optimiser: Fetching result from renderer")
+    res := <- DrawResultCh
+    return res.Render
+}
+
+func randomiseTriangle(index int, triangles []float32) {
+    for i:=index*9; i<index*9+9; i++ {
+        triangles[i] = rand.Float32()*2.0-1.0
+    }
+}
+
+func randomiseColour(index int, colours []float32) {
+    for i:=index*12; i<index*12+12; i++ {
+        colours[i] = rand.Float32()*1.0
+    }
+}
+
+func evaluateTriangle(index int, triangles []float32) {
+    temp := []float32{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+    for i:=0; i<9; i++ {
+        temp[i] = triangles[index+i]
+        triangles[index+i] = 0.0
+    }
+    state.RenderPix = RenderIt(new, newColor)
+    diff := CalcDiff(state.RenderPix, state.RefImage, state.DiffBuff)
+    if diff <= currDiff + 5 {
+        randomiseTriangle(index, new)
+        randomiseColour(index, newColor)
+        state.RenderPix = RenderIt(new, newColor)
+        diff := CalcDiff(state.RenderPix, state.RefImage, state.DiffBuff)
+        currDiff = diff
+        for i:=0; i<len(new); i++ {
+            old[i] = new[i]
+            oldColor[i] = newColor[i]
+        }
+    } else {
+        for i:=0; i<9; i++ {
+            triangles[index+i] = temp[i]
+        }
+    }
+}
+
+func swapTriangles(n1, n2 int, triangles []float32) {
+    temp := []float32{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+    for i:=0; i<9; i++ {
+        temp[i] = triangles[n1+i]
+    }
+    for i:=0; i<9; i++ {
+        triangles[n1+i] = triangles[n2+i]
+    }
+    for i:=0; i<9; i++ {
+        triangles[n2+i] = temp[i]
+    }
+}
+
+func OptimiserWorker() {
+    <- DrawResultCh
+    currentTriangle := 0
+    for {
+        nTriangles := len(new)/9
+        log.Println("Processing ", nTriangles, " triangles")
+        scale = scale -0.001
+        if scale < 0.01 {
+            scale = 1.0
+        }
+        log.Println("Starting shaker")
+        for zz:=0;zz<100;zz++ {
+            for zzz:=0; zzz<nTriangles*9; zzz++ {
+                Mutate(1.0/100.0)
+            }
+            state.RenderPix = RenderIt(new, newColor)
+            Process(state)
+        }
+
+        if unique > 10 {  //FIXME, link to average fitness change per second
+            for zzz:=0; zzz<nTriangles; zzz++ {
+                currentTriangle = currentTriangle + 1
+                if ! (currentTriangle < len(new)/9) {
+                    currentTriangle = 0
+                }
+                //randomiseTriangle(currentTriangle, new)
+                //randomiseColour(currentTriangle, newColor)
+                //state.RenderPix = RenderIt(new, newColor)
+                //Process(state)
+                evaluateTriangle(currentTriangle, new)
+            }
+        }
+        log.Println("Starting triangle tweaker")
+        for zz:=0;zz<1;zz++ {
+            for zzz:=0; zzz<nTriangles*9; zzz++ {
+                for i := -1; i<2; i++ {
+                    Mutate(float32(i)/50.0)
+                    state.RenderPix = RenderIt(new, newColor)
+                    Process(state)
+                }
+            }
+        }
+    }
+}
 
 //Note that for reasons of speed, almost all the binary structs are modified in place.  If you want to keep the data between iterations, you need to copy it into a different spot in memory
 func Process(state RenderState) {
+         //Prepare a blank byte array to hold the difference pic
+          diffBuff := make([]byte, len(state.RenderPix))
+          for i, _ := range diffBuff {
+              diffBuff[i] = 0
+          }
+        state.DiffBuff = diffBuff
     diff := CalcDiff(state.RenderPix, state.RefImage, state.DiffBuff)
     if unique % 1001 == 1 {
         saveNum = saveNum + 1
@@ -240,12 +349,4 @@ func Process(state RenderState) {
 
     CompareAndSwap(diff, state.RenderPix, state.DiffBuff);
 
-    Mutate()
-
-    //Force the alpha channel to 1.0, we aren't doing transparent triangles yet
-    for iii:=3;iii<len(newColor);iii=iii+4 {
-      newColor[iii]=1.0
-    }
-
-    //The framework will now draw the picture, and copy it into RenderPix
 }
