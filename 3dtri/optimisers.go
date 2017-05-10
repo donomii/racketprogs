@@ -2,6 +2,8 @@
 package main
 
 import (
+    //"math"
+    "github.com/go-gl/mathgl/mgl32"
     "io/ioutil"
     "github.com/donomii/glim"
     "os"
@@ -228,12 +230,35 @@ type RenderState struct {
 
 var state RenderState
 
+func renderAll(triangles, colours []float32) ([]byte, []byte, int64) {
+    p1 := RenderIt(new, newColor)
+    diff := CalcDiff(p1, state.RefImage, state.DiffBuff)
+    p2 := renderSide(new, newColor)
+    diff2 := CalcDiff(p2, state.RefImage, state.DiffBuff)
+    diff = diff + diff2
+    return p1, p2, diff
+}
+
+
 func RenderIt(triangles, colours []float32) []byte {
     //log.Println("Optimiser: Sending request to renderer")
     DrawRequestCh <- DrawRequest{triangles, colours}
     //log.Println("Optimiser: Fetching result from renderer")
     res := <- DrawResultCh
     return res.Render
+}
+
+func renderSide (triangles, colours []float32) []byte {
+    r := mgl32.Rotate3DY(3.14159/2.0)
+    sideTris := make([]float32, len(triangles))
+    for i:= 0 ; i < len(triangles) ; i=i+3 {
+        v := mgl32.Vec3{triangles[i], triangles[i+1], triangles[i+2]}
+        v1 := r.Mul3x1(v)
+        sideTris[i] = v1[0]
+        sideTris[i+1] = v1[1]
+        sideTris[i+2] = v1[2]
+    }
+    return RenderIt(sideTris, newColor)
 }
 
 func randomiseTriangle(index int, triangles []float32) {
@@ -256,12 +281,13 @@ func evaluateTriangle(index int, triangles []float32) {
     }
     state.RenderPix = RenderIt(new, newColor)
     diff := CalcDiff(state.RenderPix, state.RefImage, state.DiffBuff)
-    if diff <= currDiff + 5 {
+    p:= renderSide(new, newColor)
+    diff2 := CalcDiff(p, state.RefImage, state.DiffBuff)
+    diff = diff + diff2
+    if Abs64(diff - currDiff)< 5 {
         randomiseTriangle(index, new)
         randomiseColour(index, newColor)
-        state.RenderPix = RenderIt(new, newColor)
-        diff := CalcDiff(state.RenderPix, state.RefImage, state.DiffBuff)
-        currDiff = diff
+        state.RenderPix, _, currDiff = renderAll(new, newColor)
         for i:=0; i<len(new); i++ {
             old[i] = new[i]
             oldColor[i] = newColor[i]
@@ -292,16 +318,18 @@ func OptimiserWorker() {
     for {
         nTriangles := len(new)/9
         log.Println("Processing ", nTriangles, " triangles")
-        scale = scale -0.001
-        if scale < 0.01 {
+        //scale = scale -0.001
+        if scale < 0.1 {
             scale = 1.0
         }
         log.Println("Starting shaker")
-        for zz:=0;zz<100;zz++ {
+        for zz:=0;zz<1000;zz++ {
             for zzz:=0; zzz<nTriangles*9; zzz++ {
-                Mutate(1.0/100.0)
+                Mutate(1.0/25.0)
             }
-            state.RenderPix = RenderIt(new, newColor)
+            diff := int64(0)
+            state.RenderPix, _, diff = renderAll(new, newColor)
+            CompareAndSwap(diff, state.RenderPix, state.DiffBuff);
             Process(state)
         }
 
@@ -323,14 +351,15 @@ func OptimiserWorker() {
             for zzz:=0; zzz<nTriangles*9; zzz++ {
                 for i := -1; i<2; i++ {
                     Mutate(float32(i)/50.0)
-                    state.RenderPix = RenderIt(new, newColor)
+                    diff := int64(0)
+                    state.RenderPix, _, diff = renderAll(new, newColor)
+                    CompareAndSwap(diff, state.RenderPix, state.DiffBuff);
                     Process(state)
                 }
             }
         }
     }
 }
-
 //Note that for reasons of speed, almost all the binary structs are modified in place.  If you want to keep the data between iterations, you need to copy it into a different spot in memory
 func Process(state RenderState) {
          //Prepare a blank byte array to hold the difference pic
@@ -339,14 +368,13 @@ func Process(state RenderState) {
               diffBuff[i] = 0
           }
         state.DiffBuff = diffBuff
-    diff := CalcDiff(state.RenderPix, state.RefImage, state.DiffBuff)
     if unique % 1001 == 1 {
         saveNum = saveNum + 1
-        log.Printf("Diff: %v, saving as %v\n", diff, unique)
         go glim.SaveBuff(rx, ry, state.RenderPix, fmt.Sprintf("pix/render_%05d.png", saveNum))
+        p := renderSide(new, newColor)
+        go glim.SaveBuff(rx, ry, p, fmt.Sprintf("pix/side_%05d.png", saveNum))
         go DumpDetails(state.RenderPix, state.DiffBuff)
     }
 
-    CompareAndSwap(diff, state.RenderPix, state.DiffBuff);
 
 }

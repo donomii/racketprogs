@@ -527,6 +527,7 @@ func doDraw(glctx gl.Context, new, newColor []float32) {
 }
 
 
+/*
 func mutate () {
     if scale< 0.05 {
       scale = 0.5
@@ -572,6 +573,7 @@ func mutate () {
         clampAll(new)
         //clampAll01(newColor)
 }
+*/
 
 
 type DrawRequest struct {
