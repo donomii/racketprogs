@@ -14,6 +14,22 @@ import (
     "encoding/json"
 )
 
+type RenderState struct {
+    CameraAngles    []euler
+    RenderPix []byte
+    RefImage []byte
+    DiffBuff []byte
+}
+
+type StateExport struct {
+    Points          []float32
+    Colours         []float32
+    CameraAngles    []euler
+}
+
+var state RenderState
+type euler []float32
+
 func InitOptimiser() {
     scale = 1.0
     rand.Seed(time.Now().Unix())
@@ -30,7 +46,7 @@ func InitOptimiser() {
         new = append(new,triangleDataRaw...)
         oldColor = append(oldColor,colorDataRaw...)
         newColor = append(newColor,colorDataRaw...)
-    
+
         //old[i] =rand.Float32()*2.0-1.0 // v+ rand.Float32()*0.2*scale-0.1*scale
         //x :=rand.Float32()*0.5-0.25 // v+ rand.Float32()*0.2*scale-0.1*scale
         //y :=rand.Float32()*0.5-0.25 // v+ rand.Float32()*0.2*scale-0.1*scale
@@ -43,12 +59,12 @@ func InitOptimiser() {
         oldColor[i+2] = 1.0
 
 
-        old[i+3] = x+0.1
+        old[i+3] = x+0.3
         old[i+4] = y
         old[i+5] = -1.0
 
         old[i+6] = x
-        old[i+7] = y+0.1
+        old[i+7] = y+0.3
         old[i+8] = 0.0
         i = i + 9
     }}
@@ -63,7 +79,22 @@ func InitOptimiser() {
         log.Fatal("please give a reference image on the command line")
     }
     state.RefImage  = refImage
-    go resetDiff()
+
+     //Prepare a blank byte array to hold the difference pic
+      diffBuff := make([]byte, len(state.RenderPix))
+      for i, _ := range diffBuff {
+          diffBuff[i] = 0
+      }
+
+    state.DiffBuff = diffBuff
+    state.CameraAngles = []euler{
+        euler{0.0, 0.0, 0.0},
+        euler{0.0, 3.14159/2.0, 0.0},
+        euler{0.0, -3.14159/2.0, 0.0},
+        euler{3.14159/2.0, 0.0, 0.0},
+        euler{-3.14159/2.0, 0.0, 0.0},
+        euler{0.0, 3.14159, 0.0},
+    }
     go OptimiserWorker()
 
     currDiff = 999999999999999
@@ -129,10 +160,6 @@ func CalcDiff(renderPix, refImage, diffBuff []byte) int64{
     return diff
 }
 
-type StateExport struct {
-    Points  []float32
-    Colours []float32
-}
 
 func ReadStateFromFile(filename string) ([]float32, []float32) {
     jdata, _ := ioutil.ReadFile(filename)
@@ -142,7 +169,7 @@ func ReadStateFromFile(filename string) ([]float32, []float32) {
 }
 
 func DumpDetails(renderPix, diffBuff []byte) {
-        s:= StateExport{old, oldColor}
+        s:= StateExport{old, oldColor, state.CameraAngles}
         state_json, _ := json.Marshal(s)
         //log.Printf("o: %p, n: %p\n", old, new)
         ioutil.WriteFile(fmt.Sprintf("%v/state_%v.json", checkpointDir, unique), state_json, 0777)
@@ -150,8 +177,7 @@ func DumpDetails(renderPix, diffBuff []byte) {
 
         status := fmt.Sprintf("#Number of times we have modified and tested the parameters (for this run)\nCycle: %v\n#How well the current state matches the target picture(0 is exact match)\nFitness: %v\n", unique, currDiff)
         ioutil.WriteFile(fmt.Sprintf("%v/statistics.txt", checkpointDir), []byte(status), 0777)
-        
-        //ioutil.WriteFile(fmt.Sprintf("pix/%v_new_%v_%v_render.txt", unique, diff, currDiff), []byte(fmt.Sprintf("%v",newColor)), 0777)
+
         //Save render and diff pics
         //glim.SaveBuff(rx, ry, renderPix, fmt.Sprintf("pix/%v_render.png", unique))
         //glim.SaveBuff(rx, ry, diffBuff,  fmt.Sprintf("pix/%v_diff.png", unique))
@@ -163,20 +189,12 @@ func DumpDetails(renderPix, diffBuff []byte) {
 func CompareAndSwap(diff int64, renderPix, diffBuff []byte) {
     //If the new picture is less different to the reference than the previous best, make this the new best
     if (diff < currDiff)  && startDrawing {
-        //log.Printf("Diff: %v is less than %v, copying new to old, saving as %v\n", diff, currDiff, unique)
-        //ioutil.WriteFile(fmt.Sprintf("pix/diff_%v_%v_%v.txt", unique, diff, currDiff), []byte(fmt.Sprintf("%v",oldColor)), 0777)
-        //glim.SaveBuff(rx, ry, diffBuff, fmt.Sprintf("pix/%v_%v_%v_new_choice_diff.png", unique, diff, currDiff))
-        //glim.SaveBuff(rx, ry, renderPix, fmt.Sprintf("pix/%v_new_choice.png", unique))
-        //log.Printf("(%v):*Changed* old: %p, new: %p\n", unique, oldColor, newColor)
         copyBytes(old,new)
         copyBytes(oldColor,newColor)
-        //log.Printf("(%v) %v -> %v", unique, currDiff, diff)
         currDiff = diff
     } else {
-        //log.Printf("Diff: %v is greater than %v, copying old to new, not saving\n", diff, currDiff)
         copyBytes(new,old)
         copyBytes(newColor,oldColor)
-        //currDiff = currDiff + 100
     }
 }
 
@@ -222,21 +240,26 @@ func Mutate (scale float32) {
 }
 
 
-type RenderState struct {
-    RenderPix []byte
-    RefImage []byte
-    DiffBuff []byte
-}
-
-var state RenderState
 
 func renderAll(triangles, colours []float32) ([]byte, []byte, int64) {
     p1 := RenderIt(new, newColor)
     diff := CalcDiff(p1, state.RefImage, state.DiffBuff)
-    p2 := renderSide(new, newColor)
+    p2:= renderSide(new, newColor, []float32{3.14159/2.0,0.0,0.0})
     diff2 := CalcDiff(p2, state.RefImage, state.DiffBuff)
     diff = diff + diff2
     return p1, p2, diff
+}
+
+func renderAll2(triangles, colours []float32, angles []euler) ([][]byte, int64) {
+    outbytes := [][]byte{}
+    diff := int64(0)
+    for _,a:= range angles {
+        p2:= renderSide(new, newColor, a)
+        outbytes = append(outbytes, p2)
+        diff2 := CalcDiff(p2, state.RefImage, state.DiffBuff)
+        diff = diff + diff2
+    }
+    return outbytes, diff
 }
 
 
@@ -248,12 +271,14 @@ func RenderIt(triangles, colours []float32) []byte {
     return res.Render
 }
 
-func renderSide (triangles, colours []float32) []byte {
-    r := mgl32.Rotate3DY(3.14159/2.0)
+func renderSide (triangles, colours []float32, angle euler) []byte {
+    x := mgl32.Rotate3DX(angle[0])
+    y := mgl32.Rotate3DY(angle[1])
     sideTris := make([]float32, len(triangles))
     for i:= 0 ; i < len(triangles) ; i=i+3 {
         v := mgl32.Vec3{triangles[i], triangles[i+1], triangles[i+2]}
-        v1 := r.Mul3x1(v)
+        v1 := x.Mul3x1(v)
+        v1 = y.Mul3x1(v1)
         sideTris[i] = v1[0]
         sideTris[i+1] = v1[1]
         sideTris[i+2] = v1[2]
@@ -279,15 +304,13 @@ func evaluateTriangle(index int, triangles []float32) {
         temp[i] = triangles[index+i]
         triangles[index+i] = 0.0
     }
-    state.RenderPix = RenderIt(new, newColor)
-    diff := CalcDiff(state.RenderPix, state.RefImage, state.DiffBuff)
-    p:= renderSide(new, newColor)
-    diff2 := CalcDiff(p, state.RefImage, state.DiffBuff)
-    diff = diff + diff2
+    _, diff := renderAll2(new, newColor, state.CameraAngles)
     if Abs64(diff - currDiff)< 5 {
         randomiseTriangle(index, new)
         randomiseColour(index, newColor)
-        state.RenderPix, _, currDiff = renderAll(new, newColor)
+        pix, diff := renderAll2(new, newColor, state.CameraAngles)
+        currDiff = diff
+        dumpAll(pix)
         for i:=0; i<len(new); i++ {
             old[i] = new[i]
             oldColor[i] = newColor[i]
@@ -314,67 +337,64 @@ func swapTriangles(n1, n2 int, triangles []float32) {
 
 func OptimiserWorker() {
     <- DrawResultCh
-    currentTriangle := 0
+    pix := [][]byte{}
+    diff := int64(0)
     for {
         nTriangles := len(new)/9
         log.Println("Processing ", nTriangles, " triangles")
         //scale = scale -0.001
+        scale = rand.Float32()
         if scale < 0.1 {
             scale = 1.0
         }
+        log.Println("Chose scale: ", scale)
         log.Println("Starting shaker")
-        for zz:=0;zz<1000;zz++ {
+        for zz:=0;zz<100;zz++ {
             for zzz:=0; zzz<nTriangles*9; zzz++ {
-                Mutate(1.0/25.0)
+                Mutate(scale)
             }
-            diff := int64(0)
-            state.RenderPix, _, diff = renderAll(new, newColor)
-            CompareAndSwap(diff, state.RenderPix, state.DiffBuff);
-            Process(state)
+            pix, diff = renderAll2(new, newColor, state.CameraAngles)
+            dumpAll(pix)
+            CompareAndSwap(diff, pix[0], state.DiffBuff);
         }
 
+        log.Println("Starting dead triangle randomiser")
         if unique > 10 {  //FIXME, link to average fitness change per second
-            for zzz:=0; zzz<nTriangles; zzz++ {
-                currentTriangle = currentTriangle + 1
+            for currentTriangle:=0; currentTriangle<nTriangles; currentTriangle++ {
                 if ! (currentTriangle < len(new)/9) {
                     currentTriangle = 0
                 }
-                //randomiseTriangle(currentTriangle, new)
-                //randomiseColour(currentTriangle, newColor)
-                //state.RenderPix = RenderIt(new, newColor)
-                //Process(state)
                 evaluateTriangle(currentTriangle, new)
             }
         }
         log.Println("Starting triangle tweaker")
-        for zz:=0;zz<1;zz++ {
-            for zzz:=0; zzz<nTriangles*9; zzz++ {
+        for zz:=0;zz<10;zz++ {
+            for zzz:=0; zzz<len(old); zzz++ {
                 for i := -1; i<2; i++ {
-                    Mutate(float32(i)/50.0)
-                    diff := int64(0)
-                    state.RenderPix, _, diff = renderAll(new, newColor)
-                    CompareAndSwap(diff, state.RenderPix, state.DiffBuff);
-                    Process(state)
+                    //Mutate(float32(i)/50.0)
+                    Mutate(scale)
+                    //state.RenderPix, _, diff = renderAll(new, newColor)
+                    pix, diff = renderAll2(new, newColor, state.CameraAngles)
+                    dumpAll(pix)
+                    CompareAndSwap(diff, pix[0], state.DiffBuff);
                 }
             }
         }
     }
 }
-//Note that for reasons of speed, almost all the binary structs are modified in place.  If you want to keep the data between iterations, you need to copy it into a different spot in memory
-func Process(state RenderState) {
-         //Prepare a blank byte array to hold the difference pic
-          diffBuff := make([]byte, len(state.RenderPix))
-          for i, _ := range diffBuff {
-              diffBuff[i] = 0
-          }
-        state.DiffBuff = diffBuff
-    if unique % 1001 == 1 {
+
+func dumpAll(pix [][]byte) {
+    if unique % 101 == 1 {
         saveNum = saveNum + 1
-        go glim.SaveBuff(rx, ry, state.RenderPix, fmt.Sprintf("pix/render_%05d.png", saveNum))
-        p := renderSide(new, newColor)
-        go glim.SaveBuff(rx, ry, p, fmt.Sprintf("pix/side_%05d.png", saveNum))
         go DumpDetails(state.RenderPix, state.DiffBuff)
+        go dumpPics(pix)
     }
+}
 
-
+func dumpPics (pix [][]byte) {
+    n:=0
+    for _,p := range pix {
+        n = n + 1
+        go glim.SaveBuff(rx, ry, p, fmt.Sprintf("pix/side_%d_%05d.png", n, saveNum))
+    }
 }

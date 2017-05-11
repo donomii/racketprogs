@@ -29,6 +29,7 @@
 package main
 
 import "math/rand"
+import "flag"
 import "github.com/pkg/profile"
 import (
     "encoding/json"
@@ -173,9 +174,17 @@ func main() {
 
     os.MkdirAll(pixDir, 0777)
     os.MkdirAll(checkpointDir, 0777)
+
+    resumeFile := flag.String("resume", "", "File containing resume data")
+    flag.Parse()
+
     log.Printf("Starting main...")
 
     InitOptimiser()
+    if *resumeFile != "" {
+        old, oldColor = ReadStateFromFile(*resumeFile)
+    }
+
     sceneCam = sceneCamera.New()
     runtime.GOMAXPROCS(2)
     app.Main(func(a app.App) {
@@ -317,52 +326,10 @@ func UploadBufferData (glctx gl.Context, b gl.Buffer, data []byte) {
     glctx.BufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW)
 }
 
-func resetDiff() {
-    /*time.Sleep(3*time.Second)
-    currDiff = 999999999999999
-    startDrawing = true
-    */
-    //dump=true
-    //resetDiff()
-    }
-
 func onStart(glctx gl.Context) {
     scale = 0.1
     rand.Seed(time.Now().Unix())
     log.Printf("Onstart callback...")
-/*
-    old = make([]float32,0)
-    new = make([]float32,0)
-    oldColor = make([]float32,0)
-    newColor = make([]float32,0)
-//    for i:=0; i<len(old)-6; i=i+6 {
-    i :=0
-     var x,y float32
-     for x=-0.5; x<0.5; x=x+0.1 {
-     for y=-0.5; y<0.5; y=y+0.1 {
-        old = append(old,triangleDataRaw...)
-        new = append(new,triangleDataRaw...)
-        oldColor = append(oldColor,colorDataRaw...)
-        newColor = append(newColor,colorDataRaw...)
-    
-        //old[i] =rand.Float32()*2.0-1.0 // v+ rand.Float32()*0.2*scale-0.1*scale
-        //x :=rand.Float32()*0.5-0.25 // v+ rand.Float32()*0.2*scale-0.1*scale
-        //y :=rand.Float32()*0.5-0.25 // v+ rand.Float32()*0.2*scale-0.1*scale
-        old[i] = x
-        old[i+1] = y
-        old[i+2] = 0
-
-        old[i+3] = x
-        old[i+4] = y
-        old[i+5] = 0
-
-        old[i+6] = x
-        old[i+7] = y
-        old[i+8] = 0
-        i = i + 9
-    }}
-*/
-
 
     //For some reason, the framework feeds us the wrong window size at start.  Luckily we can query the context directly
     screenWidth, screenHeight = glim.ScreenSize(glctx)
@@ -406,8 +373,6 @@ func onStart(glctx gl.Context) {
 
     glctx.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     glctx.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    go resetDiff()
-
 }
 
 func onStop(glctx gl.Context) {
@@ -481,11 +446,15 @@ func readStateFromFile(filename string) ([]float32, []float32) {
     return out.Points, out.Colours
 }
 
+func clearScreen(glctx gl.Context) {
+    glctx.ClearColor(0,0,0,1.0)
+    glctx.Clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT)
+}
+
 func doDraw(glctx gl.Context, new, newColor []float32) {
     triangleData := f32.Bytes(binary.LittleEndian,new...)
     UploadBufferData(glctx, buf, triangleData)
 
-    //log.Printf("colors: %v", newColor)
     colorData := f32.Bytes(binary.LittleEndian,newColor...)
     UploadBufferData(glctx, tbuf, colorData)
 
@@ -522,58 +491,8 @@ func doDraw(glctx gl.Context, new, newColor []float32) {
 
     glctx.DisableVertexAttribArray(position)
     glctx.DisableVertexAttribArray(a_TexCoordinate)
-
-    //log.Println("Finished paint")
 }
 
-
-/*
-func mutate () {
-    if scale< 0.05 {
-      scale = 0.5
-    }
-
-    //------------------- Now make the new frame
-    nChanges := 1
-    if unique < 500 {
-        nChanges = len(new)
-    }
-
-    for zzz:=0; zzz<nChanges; zzz++ {
-        mutateIndex = mutateIndex + 1
-        if mutateIndex >= len(old) {
-            mutateIndex = 0
-        }
-
-        mutateColIndex = mutateColIndex + 1
-        if mutateColIndex >= len(oldColor) {
-            mutateColIndex = 0
-        }
-        //log.Printf("MutatColIndex: %v\n", mutateColIndex)
-
-        if startDrawing {
-          //log.Printf("Scale: %v\n", scale)
-          coin := rand.Float32()
-          if coin < 0.0 {
-            //i := int(rand.Float32()*float32(len(oldColor)))
-            //i:=mutateColIndex
-            //m:= rand.Float32()*2.0*scale-1.0*scale
-            //newColor[i] = newColor[i] + m
-            //log.Printf("Final: %v\n", newColor[i])
-          } else {
-            //i := int(rand.Float32()*float32(len(old)))
-            ic:=mutateColIndex
-            newColor[ic] = oldColor[ic] + rand.Float32()*4.0*scale-2.0*scale
-            new[mutateIndex]      = old[mutateIndex]      + rand.Float32()*2.0*scale-1.0*scale
-            //newColor[ic] = oldColor[ic] + 0.05
-            //log.Printf("Move: %v\n", ic)
-          }
-        }
-      }
-        clampAll(new)
-        //clampAll01(newColor)
-}
-*/
 
 
 type DrawRequest struct {
@@ -591,7 +510,7 @@ func onPaint(glctx gl.Context, sz size.Event) {
   //log.Println("Starting paint")
   unique = unique +1
     if unique % 2 == 1 { 
-        doDraw(glctx, prevDrawTriangles, prevDrawColors)
+        clearScreen(glctx)
         return
     }
 
