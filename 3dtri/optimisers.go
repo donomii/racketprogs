@@ -17,6 +17,7 @@ import (
 type RenderState struct {
     CameraAngles    []euler
     RenderPix []byte
+    RefImages [][]byte
     RefImage []byte
     DiffBuff []byte
 }
@@ -95,6 +96,28 @@ func InitOptimiser() {
         euler{-3.14159/2.0, 0.0, 0.0},
         euler{0.0, 3.14159, 0.0},
     }
+    files := []string{
+        "input/front.png",
+        "input/rside.png",
+        "input/lside.png",
+        "input/top.png",
+        "input/bottom.png",
+        "input/back.png",
+}
+    for _, fname := range files {
+        refImage, _, _ := glim.LoadImage(fname)
+        state.RefImages = append(state.RefImages, refImage)
+    }
+/*
+    state.RefImages = [][]byte{
+        refImage,
+        refImage,
+        refImage,
+        refImage,
+        refImage,
+        refImage,
+    }
+*/
     go OptimiserWorker()
 
     currDiff = 999999999999999
@@ -241,6 +264,7 @@ func Mutate (scale float32) {
 
 
 
+/*
 func renderAll(triangles, colours []float32) ([]byte, []byte, int64) {
     p1 := RenderIt(new, newColor)
     diff := CalcDiff(p1, state.RefImage, state.DiffBuff)
@@ -249,14 +273,17 @@ func renderAll(triangles, colours []float32) ([]byte, []byte, int64) {
     diff = diff + diff2
     return p1, p2, diff
 }
+*/
 
-func renderAll2(triangles, colours []float32, angles []euler) ([][]byte, int64) {
+func renderAll2(triangles, colours []float32, angles []euler, refs [][]byte) ([][]byte, int64) {
     outbytes := [][]byte{}
     diff := int64(0)
-    for _,a:= range angles {
+    for i:=0;i<len(angles);i=i+1 {
+        a:= angles[i]
+        ref:= refs[i]
         p2:= renderSide(new, newColor, a)
         outbytes = append(outbytes, p2)
-        diff2 := CalcDiff(p2, state.RefImage, state.DiffBuff)
+        diff2 := CalcDiff(p2, ref, state.DiffBuff)
         diff = diff + diff2
     }
     return outbytes, diff
@@ -304,11 +331,11 @@ func evaluateTriangle(index int, triangles []float32) {
         temp[i] = triangles[index+i]
         triangles[index+i] = 0.0
     }
-    _, diff := renderAll2(new, newColor, state.CameraAngles)
+    _, diff := renderAll2(new, newColor, state.CameraAngles, state.RefImages)
     if Abs64(diff - currDiff)< 5 {
         randomiseTriangle(index, new)
         randomiseColour(index, newColor)
-        pix, diff := renderAll2(new, newColor, state.CameraAngles)
+        pix, diff := renderAll2(new, newColor, state.CameraAngles, state.RefImages)
         currDiff = diff
         dumpAll(pix)
         for i:=0; i<len(new); i++ {
@@ -353,7 +380,7 @@ func OptimiserWorker() {
             for zzz:=0; zzz<nTriangles*9; zzz++ {
                 Mutate(scale)
             }
-            pix, diff = renderAll2(new, newColor, state.CameraAngles)
+            pix, diff = renderAll2(new, newColor, state.CameraAngles, state.RefImages)
             dumpAll(pix)
             CompareAndSwap(diff, pix[0], state.DiffBuff);
         }
@@ -374,7 +401,7 @@ func OptimiserWorker() {
                     //Mutate(float32(i)/50.0)
                     Mutate(scale)
                     //state.RenderPix, _, diff = renderAll(new, newColor)
-                    pix, diff = renderAll2(new, newColor, state.CameraAngles)
+                    pix, diff = renderAll2(new, newColor, state.CameraAngles, state.RefImages)
                     dumpAll(pix)
                     CompareAndSwap(diff, pix[0], state.DiffBuff);
                 }
