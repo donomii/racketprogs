@@ -519,6 +519,9 @@ func onPaint(glctx gl.Context, sz size.Event) {
     prevDrawColors = newColor
     prevDrawTriangles = new
 
+    //Wait until the graphics card has finished drawing
+    glctx.Finish()
+
     //Fetch screen from graphics card
     renderPix := glim.CopyScreen(glctx, rx, ry)
 
