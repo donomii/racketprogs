@@ -506,11 +506,13 @@ type DrawResult struct {
 var DrawRequestCh chan DrawRequest
 var DrawResultCh chan DrawResult
 
+var lastTris, lastCols []float32
+
 func onPaint(glctx gl.Context, sz size.Event) {
   //log.Println("Starting paint")
   unique = unique +1
     if unique % 2 == 1 { 
-        doDraw(glctx, req.Triangles, req.Colours)
+        doDraw(glctx, lastTris, lastCols)
         return
     }
 
@@ -525,6 +527,8 @@ func onPaint(glctx gl.Context, sz size.Event) {
     //log.Println("Fetching request from optimiser")
     req := <- DrawRequestCh
     doDraw(glctx, req.Triangles, req.Colours)
+    lastTris = req.Triangles
+    lastCols = req.Colours
 }
 
 
