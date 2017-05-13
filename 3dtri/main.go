@@ -510,7 +510,7 @@ func onPaint(glctx gl.Context, sz size.Event) {
   //log.Println("Starting paint")
   unique = unique +1
     if unique % 2 == 1 { 
-        clearScreen(glctx)
+        doDraw(glctx, req.Triangles, req.Colours)
         return
     }
 
