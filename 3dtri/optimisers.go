@@ -14,6 +14,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
+//Contains the 'global' render data
 type RenderState struct {
 	CameraAngles []euler
 	RenderPix    []byte
@@ -21,6 +22,7 @@ type RenderState struct {
 	DiffBuff     []byte
 }
 
+//Holds all the data to import/export
 type StateExport struct {
 	Points          []float32
 	Colours         []float32
