@@ -178,8 +178,11 @@ func main() {
 	log.Printf("Starting main...")
 
 	InitOptimiser()
+    log.Println("Resume file name: ", *resumeFile)
 	if *resumeFile != "" {
-		old, oldColor = ReadStateFromFile(*resumeFile)
+        log.Println("Loading triangle data from file: ", *resumeFile)
+		old, oldColor, currDiff = ReadStateFromFile(*resumeFile)
+		new, newColor, currDiff = ReadStateFromFile(*resumeFile)
 	}
 
 	sceneCam = sceneCamera.New()
@@ -309,7 +312,6 @@ func reDimBuff(x, y int) {
 
 var fname string
 
-var refImage []byte
 var rx int = 10
 var ry int = 10
 
@@ -330,6 +332,7 @@ func onStart(glctx gl.Context) {
 	reCalcNeeded = true
 	//reDimBuff(int(screenWidth),int(screenHeight))
 
+/*
 	if len(os.Args) > 1 {
 		fname = os.Args[1]
 		log.Println("Loading file: ", fname)
@@ -338,6 +341,7 @@ func onStart(glctx gl.Context) {
 	} else {
 		log.Fatal("please give a reference image on the command line")
 	}
+*/
 	var err error
 	program, err = glutil.CreateProgram(glctx, vertexShader, fragmentShader)
 	if err != nil {
