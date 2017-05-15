@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
-	"os"
 	"time"
 
 	"github.com/donomii/glim"
@@ -19,14 +18,14 @@ type RenderState struct {
 	CameraAngles []euler
 	RenderPix    []byte
 	RefImages    [][]byte
-	RefImage     []byte
 	DiffBuff     []byte
 }
 
 type StateExport struct {
-	Points       []float32
-	Colours      []float32
-	CameraAngles []euler
+	Points          []float32
+	Colours         []float32
+	CameraAngles    []euler
+    Fitness         int64
 }
 
 var state RenderState
@@ -72,6 +71,7 @@ func InitOptimiser() {
 		}
 	}
 
+/*
 	if len(os.Args) > 1 {
 		fname = os.Args[1]
 		log.Println("Loading file: ", fname)
@@ -81,6 +81,7 @@ func InitOptimiser() {
 		log.Fatal("please give a reference image on the command line")
 	}
 	state.RefImage = refImage
+*/
 
 	//Prepare a blank byte array to hold the difference pic
 	diffBuff := make([]byte, len(state.RenderPix))
@@ -106,8 +107,10 @@ func InitOptimiser() {
 		"input/back.png",
 	}
 	for _, fname := range files {
-		refImage, _, _ := glim.LoadImage(fname)
+		refImage, x, y := glim.LoadImage(fname)
 		state.RefImages = append(state.RefImages, refImage)
+        rx = x
+        ry = y
 	}
 	go OptimiserWorker()
 
@@ -177,15 +180,15 @@ func CalcDiff(renderPix, refImage, diffBuff []byte) int64 {
 	return diff
 }
 
-func ReadStateFromFile(filename string) ([]float32, []float32) {
+func ReadStateFromFile(filename string) ([]float32, []float32, int64) {
 	jdata, _ := ioutil.ReadFile(filename)
 	var out StateExport
 	json.Unmarshal(jdata, &out)
-	return out.Points, out.Colours
+	return out.Points, out.Colours, out.Fitness
 }
 
 func DumpDetails(renderPix, diffBuff []byte) {
-	s := StateExport{old, oldColor, state.CameraAngles}
+	s := StateExport{old, oldColor, state.CameraAngles, currDiff}
 	state_json, _ := json.Marshal(s)
 	//log.Printf("o: %p, n: %p\n", old, new)
 	ioutil.WriteFile(fmt.Sprintf("%v/state_%v.json", checkpointDir, unique), state_json, 0777)
