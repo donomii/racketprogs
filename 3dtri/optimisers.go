@@ -109,16 +109,6 @@ func InitOptimiser() {
 		refImage, _, _ := glim.LoadImage(fname)
 		state.RefImages = append(state.RefImages, refImage)
 	}
-	/*
-	   state.RefImages = [][]byte{
-	       refImage,
-	       refImage,
-	       refImage,
-	       refImage,
-	       refImage,
-	       refImage,
-	   }
-	*/
 	go OptimiserWorker()
 
 	currDiff = 999999999999999
