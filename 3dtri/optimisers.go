@@ -16,18 +16,28 @@ import (
 
 //Contains the 'global' render data
 type RenderState struct {
-	CameraAngles []euler
 	RenderPix    []byte
 	RefImages    [][]byte
 	DiffBuff     []byte
+    Views        []View
 }
 
 //Holds all the data to import/export
 type StateExport struct {
-	Points          []float32
-	Colours         []float32
-	CameraAngles    []euler
-    Fitness         int64
+	Points          []float32   //Triangle data (or other shapes)
+	Colours         []float32   //Vertex colours
+    Fitness         int64       //Current difference in fit from the reference picture
+    Views           []View
+}
+
+//Contains the input photo + control data for one "view" of the scene
+//
+//Will eventually hold camera angles and translation as well
+type View struct {
+    Pix         []byte  //The input photo
+    Width       int     //Width, in pixels
+    Height      int     //Height in pixels
+    Angle       euler   //The euler angles to position the camera, looking towards the origin
 }
 
 var state RenderState
@@ -92,7 +102,7 @@ func InitOptimiser() {
 	}
 
 	state.DiffBuff = diffBuff
-	state.CameraAngles = []euler{
+	cameraAngles := []euler{
 		euler{0.0, 0.0, 0.0},
 		euler{0.0, 3.14159 / 2.0, 0.0},
 		euler{0.0, -3.14159 / 2.0, 0.0},
@@ -108,12 +118,14 @@ func InitOptimiser() {
 		"input/bottom.png",
 		"input/back.png",
 	}
-	for _, fname := range files {
+	for i, fname := range files {
 		refImage, x, y := glim.LoadImage(fname)
 		state.RefImages = append(state.RefImages, refImage)
         rx = x
         ry = y
+        state.Views = append(state.Views, View{refImage, rx, ry, cameraAngles[i]})
 	}
+
 	go OptimiserWorker()
 
 	currDiff = 999999999999999
@@ -190,13 +202,13 @@ func ReadStateFromFile(filename string) ([]float32, []float32, int64) {
 }
 
 func DumpDetails(renderPix, diffBuff []byte) {
-	s := StateExport{old, oldColor, state.CameraAngles, currDiff}
+	s := StateExport{old, oldColor, currDiff, state.Views}
 	state_json, _ := json.Marshal(s)
 	//log.Printf("o: %p, n: %p\n", old, new)
 	ioutil.WriteFile(fmt.Sprintf("%v/state_%v.json", checkpointDir, unique), state_json, 0777)
 	ioutil.WriteFile(fmt.Sprintf("%v/current.json", checkpointDir), state_json, 0777)
 
-	status := fmt.Sprintf("#Number of times we have modified and tested the parameters (for this run)\nCycle: %v\n#How well the current state matches the target picture(0 is exact match)\nFitness: %v\n", unique, currDiff)
+	status := fmt.Sprintf("#Number of times we have modified and tested the parameters (for this run)\nCycle: %v\n#How well the current state matches the target picture(0 is exact match)\nFitness: %v\nView angle1: %v", unique, currDiff, state.Views[0].Angle)
 	ioutil.WriteFile(fmt.Sprintf("%v/statistics.txt", checkpointDir), []byte(status), 0777)
 
 	//Save render and diff pics
@@ -206,7 +218,7 @@ func DumpDetails(renderPix, diffBuff []byte) {
 	//ioutil.WriteFile(fmt.Sprintf("pix/%v_%v_%v_position_dump.txt", unique, diff, currDiff), []byte(fmt.Sprintf("\nold: %3.2v%v\nnew: %3.2v%v\n", old, currDiff, new, diff)), 0777)
 }
 
-func CompareAndSwap(diff int64, renderPix, diffBuff []byte) {
+func CompareAndSwap(diff int64) {
 	//If the new picture is less different to the reference than the previous best, make this the new best
 	if (diff < currDiff) && startDrawing {
 		copyBytes(old, new)
@@ -270,12 +282,12 @@ func renderAll(triangles, colours []float32) ([]byte, []byte, int64) {
 }
 */
 
-func renderAll2(triangles, colours []float32, angles []euler, refs [][]byte) ([][]byte, int64) {
+func renderAll2(triangles, colours []float32, views []View) ([][]byte, int64) {
 	outbytes := [][]byte{}
 	diff := int64(0)
-	for i := 0; i < len(angles); i = i + 1 {
-		a := angles[i]
-		ref := refs[i]
+	for i := 0; i < len(views); i = i + 1 {
+		a := views[i].Angle
+		ref := views[i].Pix
 		p2 := renderSide(new, newColor, a)
 		outbytes = append(outbytes, p2)
 		diff2 := CalcDiff(p2, ref, state.DiffBuff)
@@ -325,11 +337,11 @@ func evaluateTriangle(index int, triangles []float32) {
 		temp[i] = triangles[index+i]
 		triangles[index+i] = 0.0
 	}
-	_, diff := renderAll2(new, newColor, state.CameraAngles, state.RefImages)
+	_, diff := renderAll2(new, newColor, state.Views)
 	if Abs64(diff-currDiff) < 5 {
 		randomiseTriangle(index, new)
 		randomiseColour(index, newColor)
-		pix, diff := renderAll2(new, newColor, state.CameraAngles, state.RefImages)
+		pix, diff := renderAll2(new, newColor, state.Views)
 		currDiff = diff
 		dumpAll(pix)
 		for i := 0; i < len(new); i++ {
@@ -356,6 +368,30 @@ func swapTriangles(n1, n2 int, triangles []float32) {
 	}
 }
 
+func r (s float32) float32 {
+    return rand.Float32()*s-s/2.0
+}
+
+func randomiseView(views []View, index int) ([]View) {
+    newA := make([]View, len(views))
+    oldV := views[index]
+    newE := euler{oldV.Angle[0]+r(0.1), oldV.Angle[1]+r(0.1), oldV.Angle[2]+r(0.1) }
+    newV := View{
+        Pix: oldV.Pix,
+        Width: oldV.Width,
+        Height: oldV.Height,
+        Angle: newE,
+    }
+    for i, v := range views {
+        if (i == index) {
+            newA[i] = newV
+        } else {
+            newA[i] = v
+        }
+    }
+    return newA
+}
+
 func OptimiserWorker() {
 	<-DrawResultCh
 	pix := [][]byte{}
@@ -370,14 +406,25 @@ func OptimiserWorker() {
 		}
 		log.Println("Chose scale: ", scale)
 		log.Println("Starting shaker")
+/*
 		for zz := 0; zz < 100; zz++ {
 			for zzz := 0; zzz < nTriangles*9; zzz++ {
 				Mutate(scale)
 			}
-			pix, diff = renderAll2(new, newColor, state.CameraAngles, state.RefImages)
+			pix, diff = renderAll2(new, newColor, state.Views)
 			dumpAll(pix)
-			CompareAndSwap(diff, pix[0], state.DiffBuff)
+			CompareAndSwap(diff)
 		}
+*/
+
+        for i, _ := range state.Views {
+            newV := randomiseView(state.Views, i)
+            pix, diff = renderAll2(old, oldColor, newV)
+            if (diff < currDiff) && startDrawing {
+                state.Views = newV
+                currDiff = diff
+            }
+        }
 
 		log.Println("Starting dead triangle randomiser")
 		if unique > 10 { //FIXME, link to average fitness change per second
@@ -395,9 +442,9 @@ func OptimiserWorker() {
 					//Mutate(float32(i)/50.0)
 					Mutate(scale)
 					//state.RenderPix, _, diff = renderAll(new, newColor)
-					pix, diff = renderAll2(new, newColor, state.CameraAngles, state.RefImages)
+					pix, diff = renderAll2(new, newColor, state.Views)
 					dumpAll(pix)
-					CompareAndSwap(diff, pix[0], state.DiffBuff)
+					CompareAndSwap(diff)
 				}
 			}
 		}
