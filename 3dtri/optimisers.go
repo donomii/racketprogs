@@ -271,17 +271,6 @@ func Mutate(scale float32) {
 	}
 }
 
-/*
-func renderAll(triangles, colours []float32) ([]byte, []byte, int64) {
-    p1 := RenderIt(new, newColor)
-    diff := CalcDiff(p1, state.RefImage, state.DiffBuff)
-    p2:= renderSide(new, newColor, []float32{3.14159/2.0,0.0,0.0})
-    diff2 := CalcDiff(p2, state.RefImage, state.DiffBuff)
-    diff = diff + diff2
-    return p1, p2, diff
-}
-*/
-
 func renderAll2(triangles, colours []float32, views []View) ([][]byte, int64) {
 	outbytes := [][]byte{}
 	diff := int64(0)
@@ -307,11 +296,13 @@ func RenderIt(triangles, colours []float32) []byte {
 func renderSide(triangles, colours []float32, angle euler) []byte {
 	x := mgl32.Rotate3DX(angle[0])
 	y := mgl32.Rotate3DY(angle[1])
+	z := mgl32.Rotate3DZ(angle[2])
 	sideTris := make([]float32, len(triangles))
 	for i := 0; i < len(triangles); i = i + 3 {
 		v := mgl32.Vec3{triangles[i], triangles[i+1], triangles[i+2]}
 		v1 := x.Mul3x1(v)
 		v1 = y.Mul3x1(v1)
+		v1 = z.Mul3x1(v1)
 		sideTris[i] = v1[0]
 		sideTris[i+1] = v1[1]
 		sideTris[i+2] = v1[2]
@@ -441,7 +432,6 @@ func OptimiserWorker() {
 				for i := -1; i < 2; i++ {
 					//Mutate(float32(i)/50.0)
 					Mutate(scale)
-					//state.RenderPix, _, diff = renderAll(new, newColor)
 					pix, diff = renderAll2(new, newColor, state.Views)
 					dumpAll(pix)
 					CompareAndSwap(diff)
