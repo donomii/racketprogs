@@ -34,10 +34,11 @@ type StateExport struct {
 //
 //Will eventually hold camera angles and translation as well
 type View struct {
-    Pix         []byte  //The input photo
-    Width       int     //Width, in pixels
-    Height      int     //Height in pixels
-    Angle       euler   //The euler angles to position the camera, looking towards the origin
+    Pix         []byte      //The input photo
+    Width       int         //Width, in pixels
+    Height      int         //Height in pixels
+    Angle       euler       //The euler angles to position the camera, looking towards the origin
+    Translate   []float32   //Translation vector, applied after rotation
 }
 
 var state RenderState
@@ -119,11 +120,12 @@ func InitOptimiser() {
 		"input/back.png",
 	}
 	for i, fname := range files {
+        log.Println("Loading ", fname)
 		refImage, x, y := glim.LoadImage(fname)
 		state.RefImages = append(state.RefImages, refImage)
         rx = x
         ry = y
-        state.Views = append(state.Views, View{refImage, rx, ry, cameraAngles[i]})
+        state.Views = append(state.Views, View{refImage, rx, ry, cameraAngles[i], []float32{0.0, 0.0, 0.0}})
 	}
 
 	go OptimiserWorker()
@@ -366,12 +368,16 @@ func r (s float32) float32 {
 func randomiseView(views []View, index int) ([]View) {
     newA := make([]View, len(views))
     oldV := views[index]
+    //Create a mutated angle
     newE := euler{oldV.Angle[0]+r(0.1), oldV.Angle[1]+r(0.1), oldV.Angle[2]+r(0.1) }
+    //Create a mutated translate
+    newT := []float32{oldV.Translate[0]+r(0.1), oldV.Translate[1]+r(0.1), oldV.Translate[2]+r(0.1) }
     newV := View{
         Pix: oldV.Pix,
         Width: oldV.Width,
         Height: oldV.Height,
         Angle: newE,
+        Translate: newT,
     }
     for i, v := range views {
         if (i == index) {
@@ -396,49 +402,59 @@ func OptimiserWorker() {
 			scale = 1.0
 		}
 		log.Println("Chose scale: ", scale)
-		log.Println("Starting shaker")
-/*
-		for zz := 0; zz < 100; zz++ {
-			for zzz := 0; zzz < nTriangles*9; zzz++ {
-				Mutate(scale)
-			}
-			pix, diff = renderAll2(new, newColor, state.Views)
-			dumpAll(pix)
-			CompareAndSwap(diff)
-		}
-*/
-
-        for i, _ := range state.Views {
-            newV := randomiseView(state.Views, i)
-            pix, diff = renderAll2(old, oldColor, newV)
-            if (diff < currDiff) && startDrawing {
-                state.Views = newV
-                currDiff = diff
+        if strategies["shaker"] {
+            log.Println("Starting shaker")
+            for zz := 0; zz < 100; zz++ {
+                for zzz := 0; zzz < nTriangles*9; zzz++ {
+                    Mutate(scale)
+                }
+                pix, diff = renderAll2(new, newColor, state.Views)
+                dumpAll(pix)
+                CompareAndSwap(diff)
             }
         }
 
-		log.Println("Starting dead triangle randomiser")
-		if unique > 10 { //FIXME, link to average fitness change per second
-			for currentTriangle := 0; currentTriangle < nTriangles; currentTriangle++ {
-				if !(currentTriangle < len(new)/9) {
-					currentTriangle = 0
-				}
-				evaluateTriangle(currentTriangle, new)
-			}
-		}
-		log.Println("Starting triangle tweaker")
-		for zz := 0; zz < 10; zz++ {
-			for zzz := 0; zzz < len(old); zzz++ {
-				for i := -1; i < 2; i++ {
-					//Mutate(float32(i)/50.0)
-					Mutate(scale)
-					pix, diff = renderAll2(new, newColor, state.Views)
-					dumpAll(pix)
-					CompareAndSwap(diff)
-				}
-			}
-		}
-	}
+
+q
+        if strategies["dead_triangle"] {
+            log.Println("Starting dead triangle randomiser")
+            if unique > 10 { //FIXME, link to average fitness change per second
+                for currentTriangle := 0; currentTriangle < nTriangles; currentTriangle++ {
+                    if !(currentTriangle < len(new)/9) {
+                        currentTriangle = 0
+                    }
+                    evaluateTriangle(currentTriangle, new)
+                }
+            }
+        }
+
+        if strategies["tweak"] {
+            log.Println("Starting triangle tweaker")
+            for zz := 0; zz < 10; zz++ {
+                for zzz := 0; zzz < len(old); zzz++ {
+                    for i := -1; i < 2; i++ {
+                        //Mutate(float32(i)/50.0)
+                        Mutate(scale)
+                        pix, diff = renderAll2(new, newColor, state.Views)
+                        dumpAll(pix)
+                        CompareAndSwap(diff)
+                    }
+                }
+            }
+        }
+
+        if strategies["view"] {
+            log.Println("Starting view mutator")
+            for i, _ := range state.Views {
+                newV := randomiseView(state.Views, i)
+                pix, diff = renderAll2(old, oldColor, newV)
+                if (diff < currDiff) && startDrawing {
+                    state.Views = newV
+                    currDiff = diff
+                }
+            }
+        }
+    }
 }
 
 func dumpAll(pix [][]byte) {

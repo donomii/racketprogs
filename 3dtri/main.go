@@ -163,7 +163,11 @@ func do_profile() {
 	time.Sleep(60 * time.Second)
 }
 
+
+var strategies map[string]bool
+
 func main() {
+    strategies = make(map[string]bool)
 	DrawRequestCh = make(chan DrawRequest, 10)
 	DrawResultCh = make(chan DrawResult, 10)
 	pixDir = fmt.Sprintf("%v/%v", outputDir, "pix")
@@ -173,7 +177,19 @@ func main() {
 	os.MkdirAll(checkpointDir, 0777)
 
 	resumeFile := flag.String("resume", "", "File containing resume data")
+	viewStrat := flag.Bool("no-mutate-view", false, "Do not optimise camera positions")
+	shakerStrat := flag.Bool("no-mutate-shaker", false, "Do not attempt shaker optimisation")
+	deadStrat := flag.Bool("no-mutate-dead", false, "Do not attempt dead triangle randomisation")
+	tweakStrat := flag.Bool("no-mutate-tweak", false, "Do not attempt triangle tweaker optimisation")
 	flag.Parse()
+    strategies["view"] = !*viewStrat
+    strategies["shaker"] = !*shakerStrat
+    strategies["dead_triangle"] = !*deadStrat
+    strategies["tweak"] = !*tweakStrat
+    log.Println("Using strategies:")
+    for k, v := range strategies {
+        log.Println( k, " : ", v )
+    }
 
 	log.Printf("Starting main...")
 
@@ -457,7 +473,7 @@ func doDraw(glctx gl.Context, new, newColor []float32) {
 	//glctx.DepthFunc( gl.LEQUAL );
 	//glctx.DepthMask(true)
 	//glctx.ClearColor(newColor[0],newColor[1],newColor[2],255)
-	glctx.ClearColor(0, 0, 0, 1.0)
+	glctx.ClearColor(1.0, 1.0, 1.0, 1.0)
 	glctx.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	glctx.UseProgram(program)
 
