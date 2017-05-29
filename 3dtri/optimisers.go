@@ -62,23 +62,25 @@ func InitOptimiser() {
 			oldColor = append(oldColor, colorDataRaw...)
 			newColor = append(newColor, colorDataRaw...)
 
-			//old[i] =rand.Float32()*2.0-1.0 // v+ rand.Float32()*0.2*scale-0.1*scale
+            for i:= 0; i<9; i=i+1 {
+                old[i] =rand.Float32()*2.0-1.0 // v+ rand.Float32()*0.2*scale-0.1*scale
+            }
 			//x :=rand.Float32()*0.5-0.25 // v+ rand.Float32()*0.2*scale-0.1*scale
 			//y :=rand.Float32()*0.5-0.25 // v+ rand.Float32()*0.2*scale-0.1*scale
-			old[i] = x
-			old[i+1] = y
-			old[i+2] = 1.0
+			old[i] = 0.0 //x
+			old[i+1] = 0.0 //y
+			old[i+2] = 0.0
 
-			oldColor[i] = x
-			oldColor[i+1] = y
-			oldColor[i+2] = 1.0
+			oldColor[i] = 0.0 //x
+			oldColor[i+1] = 0.0 //y
+			oldColor[i+2] = 0.0 //1.0
 
-			old[i+3] = x + 0.3
-			old[i+4] = y
-			old[i+5] = -1.0
+			old[i+3] = 0.0 //x + 0.3
+			old[i+4] = 0.0 //y
+			old[i+5] = 0.0 //-1.0
 
-			old[i+6] = x
-			old[i+7] = y + 0.3
+			old[i+6] = 0.0 //x
+			old[i+7] = 0.0 //y + 0.3
 			old[i+8] = 0.0
 			i = i + 9
 		}
@@ -220,12 +222,13 @@ func DumpDetails(renderPix, diffBuff []byte) {
 	//ioutil.WriteFile(fmt.Sprintf("pix/%v_%v_%v_position_dump.txt", unique, diff, currDiff), []byte(fmt.Sprintf("\nold: %3.2v%v\nnew: %3.2v%v\n", old, currDiff, new, diff)), 0777)
 }
 
-func CompareAndSwap(diff int64) {
+func CompareAndSwap(diff int64, pix [][]byte ) {
 	//If the new picture is less different to the reference than the previous best, make this the new best
 	if (diff < currDiff) && startDrawing {
 		copyBytes(old, new)
 		copyBytes(oldColor, newColor)
 		currDiff = diff
+        dumpAll(pix)
 	} else {
 		copyBytes(new, old)
 		copyBytes(newColor, oldColor)
@@ -402,23 +405,14 @@ func OptimiserWorker() {
 			scale = 1.0
 		}
 		log.Println("Chose scale: ", scale)
-        if strategies["shaker"] {
-            log.Println("Starting shaker")
-            for zz := 0; zz < 100; zz++ {
-                for zzz := 0; zzz < nTriangles*9; zzz++ {
-                    Mutate(scale)
-                }
-                pix, diff = renderAll2(new, newColor, state.Views)
-                dumpAll(pix)
-                CompareAndSwap(diff)
-            }
-        }
+
+		pix, diff = renderAll2(old, oldColor, state.Views)
+		currDiff = diff
 
 
-q
         if strategies["dead_triangle"] {
             log.Println("Starting dead triangle randomiser")
-            if unique > 10 { //FIXME, link to average fitness change per second
+            if unique > 1 { //FIXME, link to average fitness change per second
                 for currentTriangle := 0; currentTriangle < nTriangles; currentTriangle++ {
                     if !(currentTriangle < len(new)/9) {
                         currentTriangle = 0
@@ -430,14 +424,13 @@ q
 
         if strategies["tweak"] {
             log.Println("Starting triangle tweaker")
-            for zz := 0; zz < 10; zz++ {
+            for zz := 0; zz < 1; zz++ {
                 for zzz := 0; zzz < len(old); zzz++ {
                     for i := -1; i < 2; i++ {
                         //Mutate(float32(i)/50.0)
                         Mutate(scale)
                         pix, diff = renderAll2(new, newColor, state.Views)
-                        dumpAll(pix)
-                        CompareAndSwap(diff)
+                        CompareAndSwap(diff, pix)
                     }
                 }
             }
@@ -454,15 +447,24 @@ q
                 }
             }
         }
+
+        if strategies["shaker"] {
+            log.Println("Starting shaker")
+            for zz := 0; zz < len(new); zz++ {
+                Mutate(scale)
+                pix, diff = renderAll2(new, newColor, state.Views)
+                CompareAndSwap(diff, pix)
+            }
+        }
     }
 }
 
 func dumpAll(pix [][]byte) {
-	if unique%101 == 1 {
+	//if unique%101 == 1 {
 		saveNum = saveNum + 1
 		go DumpDetails(state.RenderPix, state.DiffBuff)
 		go dumpPics(pix)
-	}
+	//}
 }
 
 func dumpPics(pix [][]byte) {

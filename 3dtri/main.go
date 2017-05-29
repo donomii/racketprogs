@@ -145,9 +145,9 @@ var texAlignData = f32.Bytes(binary.LittleEndian,
 )
 
 var triangleDataRaw = []float32{
-	-1.0, 1.0, 0.0, // top left
-	-1.0, -1.0, 0.0, // bottom left
-	1.0, 1.0, 0.0, // bottom right
+	0.0, 0.0, 0.0, // top left
+	0.0, 0.0, 0.0, // bottom left
+	0.0, 0.0, 0.0, // bottom right
 }
 
 var colorDataRaw = []float32{
@@ -165,6 +165,7 @@ func do_profile() {
 
 
 var strategies map[string]bool
+var resetFitness *bool
 
 func main() {
     strategies = make(map[string]bool)
@@ -181,6 +182,7 @@ func main() {
 	shakerStrat := flag.Bool("no-mutate-shaker", false, "Do not attempt shaker optimisation")
 	deadStrat := flag.Bool("no-mutate-dead", false, "Do not attempt dead triangle randomisation")
 	tweakStrat := flag.Bool("no-mutate-tweak", false, "Do not attempt triangle tweaker optimisation")
+	resetFitness = flag.Bool("reset-fitness", false, "Reset fitness after resuming")
 	flag.Parse()
     strategies["view"] = !*viewStrat
     strategies["shaker"] = !*shakerStrat
@@ -197,8 +199,12 @@ func main() {
     log.Println("Resume file name: ", *resumeFile)
 	if *resumeFile != "" {
         log.Println("Loading triangle data from file: ", *resumeFile)
-		old, oldColor, currDiff = ReadStateFromFile(*resumeFile)
-		new, newColor, currDiff = ReadStateFromFile(*resumeFile)
+        newDiff := int64(0)
+		old, oldColor, newDiff = ReadStateFromFile(*resumeFile)
+		new, newColor, newDiff = ReadStateFromFile(*resumeFile)
+        if !*resetFitness {
+            currDiff = newDiff
+        }
 	}
 
 	sceneCam = sceneCamera.New()
@@ -493,7 +499,9 @@ func doDraw(glctx gl.Context, new, newColor []float32) {
 	glctx.VertexAttribPointer(a_TexCoordinate, 4, gl.FLOAT, false, 0, 0)
 
 	glctx.Viewport(0, 0, rx, ry)
-	glctx.DrawArrays(gl.TRIANGLES, 0, len(new)/3)
+	glctx.DrawArrays(gl.TRIANGLES, 0, len(new))
+	//glctx.DrawArrays(gl.LINE_STRIP, 0, len(new))
+	//glctx.DrawArrays(gl.POINTS, 0, len(new))
 
 	glctx.DisableVertexAttribArray(position)
 	glctx.DisableVertexAttribArray(a_TexCoordinate)
@@ -550,7 +558,9 @@ attribute vec4 position;
 varying vec4 color;
 
 void main() {
-        gl_Position = transform * position;
+        vec4 pos = vec4(position.x, position.y, position.z, 1.0);
+        gl_Position = transform * pos;
+        gl_PointSize = 15.0;
         color = a_TexCoordinate;
 }
 `
