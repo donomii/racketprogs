@@ -183,11 +183,13 @@ func main() {
 	deadStrat := flag.Bool("no-mutate-dead", false, "Do not attempt dead triangle randomisation")
 	tweakStrat := flag.Bool("no-mutate-tweak", false, "Do not attempt triangle tweaker optimisation")
 	resetFitness = flag.Bool("reset-fitness", false, "Reset fitness after resuming")
+	doDiffs := flag.Bool("show-diffs", false, "Calculate and save diffs")
 	flag.Parse()
     strategies["view"] = !*viewStrat
     strategies["shaker"] = !*shakerStrat
     strategies["dead_triangle"] = !*deadStrat
     strategies["tweak"] = !*tweakStrat
+    strategies["diffs"] = *doDiffs
     log.Println("Using strategies:")
     for k, v := range strategies {
         log.Println( k, " : ", v )
@@ -334,9 +336,6 @@ func reDimBuff(x, y int) {
 
 var fname string
 
-var rx int = 10
-var ry int = 10
-
 func UploadBufferData(glctx gl.Context, b gl.Buffer, data []byte) {
 	glctx.BindBuffer(gl.ARRAY_BUFFER, b)
 	//log.Printf("Data: %v elements for buffer %v\n", len(data), b)
@@ -466,13 +465,14 @@ func clearScreen(glctx gl.Context) {
 	glctx.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 }
 
-func doDraw(glctx gl.Context, new, newColor []float32) {
+func doDraw(glctx gl.Context, new, newColor []float32, width, height int) {
 	triangleData := f32.Bytes(binary.LittleEndian, new...)
 	UploadBufferData(glctx, buf, triangleData)
 
 	colorData := f32.Bytes(binary.LittleEndian, newColor...)
 	UploadBufferData(glctx, tbuf, colorData)
 
+	glctx.Disable(gl.CULL_FACE)
 	//glctx.Enable(gl.BLEND)
 	//glctx.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 	//glctx.Enable( gl.DEPTH_TEST );
@@ -498,7 +498,7 @@ func doDraw(glctx gl.Context, new, newColor []float32) {
 	glctx.EnableVertexAttribArray(a_TexCoordinate)
 	glctx.VertexAttribPointer(a_TexCoordinate, 4, gl.FLOAT, false, 0, 0)
 
-	glctx.Viewport(0, 0, rx, ry)
+	glctx.Viewport(0, 0, width, height)
 	glctx.DrawArrays(gl.TRIANGLES, 0, len(new))
 	//glctx.DrawArrays(gl.LINE_STRIP, 0, len(new))
 	//glctx.DrawArrays(gl.POINTS, 0, len(new))
@@ -509,6 +509,7 @@ func doDraw(glctx gl.Context, new, newColor []float32) {
 
 type DrawRequest struct {
 	Triangles, Colours []float32
+    Width, Height int
 }
 
 type DrawResult struct {
@@ -520,11 +521,13 @@ var DrawResultCh chan DrawResult
 
 var lastTris, lastCols []float32
 
+var lastWidth, lastHeight int
+
 func onPaint(glctx gl.Context, sz size.Event) {
 	//log.Println("Starting paint")
 	unique = unique + 1
 	if unique%2 == 1 {
-		doDraw(glctx, lastTris, lastCols)
+		doDraw(glctx, lastTris, lastCols, lastWidth, lastHeight)
 		return
 	}
 
@@ -536,13 +539,15 @@ func onPaint(glctx gl.Context, sz size.Event) {
 	glctx.Finish()
 
 	//Fetch screen from graphics card
-	renderPix := glim.CopyScreen(glctx, rx, ry)
+	renderPix := glim.CopyScreen(glctx, lastWidth, lastHeight)
 
 	//log.Println("Sending result to optimiser")
 	DrawResultCh <- DrawResult{renderPix}
 	//log.Println("Fetching request from optimiser")
 	req := <-DrawRequestCh
-	doDraw(glctx, req.Triangles, req.Colours)
+    lastWidth = req.Width
+    lastHeight = req.Height
+	doDraw(glctx, req.Triangles, req.Colours, lastWidth, lastHeight)
 	lastTris = req.Triangles
 	lastCols = req.Colours
 	glctx.Flush()
