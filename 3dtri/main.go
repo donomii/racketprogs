@@ -165,10 +165,15 @@ func do_profile() {
 
 
 var strategies map[string]bool
+var strOpts map[string]string
+var intOpts map[string]int
 var resetFitness *bool
+
 
 func main() {
     strategies = make(map[string]bool)
+    strOpts = make(map[string]string)
+    intOpts = make(map[string]int)
 	DrawRequestCh = make(chan DrawRequest, 10)
 	DrawResultCh = make(chan DrawResult, 10)
 	pixDir = fmt.Sprintf("%v/%v", outputDir, "pix")
@@ -181,15 +186,23 @@ func main() {
 	viewStrat := flag.Bool("no-mutate-view", false, "Do not optimise camera positions")
 	shakerStrat := flag.Bool("no-mutate-shaker", false, "Do not attempt shaker optimisation")
 	deadStrat := flag.Bool("no-mutate-dead", false, "Do not attempt dead triangle randomisation")
+	deadStratPoint := flag.Bool("mutate-dead-point", false, "Do attempt dead point randomisation")
 	tweakStrat := flag.Bool("no-mutate-tweak", false, "Do not attempt triangle tweaker optimisation")
 	resetFitness = flag.Bool("reset-fitness", false, "Reset fitness after resuming")
 	doDiffs := flag.Bool("show-diffs", false, "Calculate and save diffs")
+	poly := flag.String("poly-mode", "TRIANGLES", "Draw shape (TRIANGLES, TRIANGLE_STRIP, LINE_STRIP, POINTS)")
+	triCount := flag.Int("triangle-count", 100, "Number of triangles to start with")
 	flag.Parse()
     strategies["view"] = !*viewStrat
     strategies["shaker"] = !*shakerStrat
     strategies["dead_triangle"] = !*deadStrat
+    strategies["dead_point"] = *deadStratPoint
     strategies["tweak"] = !*tweakStrat
     strategies["diffs"] = *doDiffs
+    strOpts["poly_mode"] = *poly
+
+    intOpts["triCount"] = *triCount
+
     log.Println("Using strategies:")
     for k, v := range strategies {
         log.Println( k, " : ", v )
@@ -276,6 +289,7 @@ func main() {
 				// after this one is shown.
 				a.Send(paint.Event{})
 			case key.Event:
+                addTriangle()
 			case mouse.Event:
 				//log.Printf("%v", e)
 				//cursorX = int(e.X/2)
@@ -409,29 +423,6 @@ func transpose(m mgl32.Mat4) mgl32.Mat4 {
 	//fmt.Println(r)
 	return r
 }
-
-func clampAll(data []float32) {
-	for i, v := range data {
-		if v < -1.0 {
-			data[i] = -1.0
-		}
-		if v > 1.0 {
-			data[i] = 1.0
-		}
-	}
-}
-
-func clampAll01(data []float32) {
-	for i, v := range data {
-		if v < 0 {
-			data[i] = 0
-		}
-		if v > 1.0 {
-			data[i] = 1.0
-		}
-	}
-}
-
 func sumArray(a []float32) float32 {
 	ret := float32(0)
 	for _, v := range a {
@@ -499,9 +490,15 @@ func doDraw(glctx gl.Context, new, newColor []float32, width, height int) {
 	glctx.VertexAttribPointer(a_TexCoordinate, 4, gl.FLOAT, false, 0, 0)
 
 	glctx.Viewport(0, 0, width, height)
-	glctx.DrawArrays(gl.TRIANGLES, 0, len(new))
-	//glctx.DrawArrays(gl.LINE_STRIP, 0, len(new))
-	//glctx.DrawArrays(gl.POINTS, 0, len(new))
+    if strOpts["poly_mode"] == "POINTS" {
+	    glctx.DrawArrays(gl.POINTS, 0, len(new))
+    } else if strOpts["poly_mode"] == "LINE_STRIP" {
+	    glctx.DrawArrays(gl.LINE_STRIP, 0, len(new))
+    } else if strOpts["poly_mode"] == "TRIANGLE_STRIP" {
+        glctx.DrawArrays(gl.TRIANGLE_STRIP, 0, len(new))
+    } else {
+        glctx.DrawArrays(gl.TRIANGLES, 0, len(new))
+    }
 
 	glctx.DisableVertexAttribArray(position)
 	glctx.DisableVertexAttribArray(a_TexCoordinate)
@@ -559,7 +556,7 @@ precision mediump float;
 uniform mat4 transform;
 
 attribute vec4 a_TexCoordinate; // Per-vertex texture coordinate information we will pass in.
-attribute vec4 position;
+attribute vec3 position;
 varying vec4 color;
 
 void main() {
