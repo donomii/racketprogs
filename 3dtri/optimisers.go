@@ -45,6 +45,59 @@ var state RenderState
 
 type euler []float32
 
+func addTriangle() {
+    old = append(old, triangleDataRaw...)
+    new = append(new, triangleDataRaw...)
+    oldColor = append(oldColor, colorDataRaw...)
+    newColor = append(newColor, colorDataRaw...)
+}
+
+func extrudeTriangle() {
+    nTri := len(old)/3
+    addTriangle()
+    t := rand.Intn(nTri)
+    old = append(old, triangleDataRaw...)
+    new = append(new, triangleDataRaw...)
+    oldColor = append(oldColor, colorDataRaw...)
+    newColor = append(newColor, colorDataRaw...)
+    old[nTri*3]   = old[t*3]
+    old[nTri*3+1] = old[t*3+1]
+    old[nTri*3+2] = old[t*3+2]
+}
+
+func max32(a, b float32) float32 {
+    if a > b {
+        return a
+    } else {
+        return b
+    }
+}
+
+func triangleArea ( indexes []float32) float32 {
+    if strOpts["poly_mode"] == "TRIANGLES" {
+    a:=mgl32.Vec3{indexes[0], indexes[1], indexes[2]}
+    b:=mgl32.Vec3{indexes[3], indexes[4], indexes[5]}
+    c:=mgl32.Vec3{indexes[6], indexes[7], indexes[8]}
+    /*
+    This is the real area, but if we use this we end up with long thin triangles
+    aa:= a.Sub(c)
+    bb:= b.Sub(c)
+    v3:=aa.Cross(bb)
+    l:= v3.Len()
+    return l
+    */
+
+    longSide := max32(a.Len(), max32(b.Len(),c.Len()))
+    length := longSide*longSide*longSide*longSide*longSide*longSide*longSide*longSide
+    if length < 1.0 {
+        length = 1.0/(1.0-length)
+    }
+    return length*10000.0
+    } else {
+        return 0.0
+    }
+}
+
 func InitOptimiser() {
 	scale = 1.0
 	rand.Seed(time.Now().Unix())
@@ -53,14 +106,18 @@ func InitOptimiser() {
 	new = make([]float32, 0)
 	oldColor = make([]float32, 0)
 	newColor = make([]float32, 0)
+    //Must have one triangle, no matter what
+    addTriangle()
+    for i:=0; i<intOpts["triCount"]; i++ {
+            extrudeTriangle()
+            randomiseTriangle(i, old)
+    }
+/*
 	i := 0
 	var x, y float32
-	for x = -1.0; x < 1.0; x = x + 0.3 {
-		for y = -1.0; y < 1.0; y = y + 0.3 {
-			old = append(old, triangleDataRaw...)
-			new = append(new, triangleDataRaw...)
-			oldColor = append(oldColor, colorDataRaw...)
-			newColor = append(newColor, colorDataRaw...)
+	for x = -1.0; x < 1.0; x = x + 0.5 {
+		for y = -1.0; y < 1.0; y = y + 0.5 {
+            addTriangle()
 
             for i:= 0; i<9; i=i+1 {
                 old[i] =rand.Float32()*2.0-1.0 // v+ rand.Float32()*0.2*scale-0.1*scale
@@ -85,6 +142,7 @@ func InitOptimiser() {
 			i = i + 9
 		}
 	}
+*/
 
 /*
 	if len(os.Args) > 1 {
@@ -132,6 +190,9 @@ func InitOptimiser() {
 
 	currDiff = 999999999999999
 	startDrawing = true
+    for i, v := range old {
+        new[i] = v
+    }
 }
 
 func StopOptimiser() {
@@ -183,6 +244,10 @@ func CalcDiff(renderPix, refImage, diffBuff []byte, width, height int) int64 {
 			}
 		}
 	}
+    for i:=0; i<len(old); i=i+9 {
+        area := int64(triangleArea(old[i:i+9]))
+        diff = diff + area*area
+    }
 	return diff
 }
 
@@ -196,9 +261,13 @@ func ReadStateFromFile(filename string) ([]float32, []float32, int64) {
 func DumpDetails(renderPix, diffBuff []byte) {
 	s := StateExport{old, oldColor, currDiff, state.Views}
 	state_json, _ := json.Marshal(s)
+    obj := []byte(export_obj(old))
 	//log.Printf("o: %p, n: %p\n", old, new)
-	ioutil.WriteFile(fmt.Sprintf("%v/state_%v.json", checkpointDir, unique), state_json, 0777)
 	ioutil.WriteFile(fmt.Sprintf("%v/current.json", checkpointDir), state_json, 0777)
+	ioutil.WriteFile(fmt.Sprintf("%v/backup.json", checkpointDir), state_json, 0777)
+
+	ioutil.WriteFile(fmt.Sprintf("%v/current.obj", checkpointDir), obj, 0777)
+	ioutil.WriteFile(fmt.Sprintf("%v/backup.obj", checkpointDir), obj, 0777)
 
 	status := fmt.Sprintf("#Number of times we have modified and tested the parameters (for this run)\nCycle: %v\n#How well the current state matches the target picture(0 is exact match)\nFitness: %v\nView angle1: %v", unique, currDiff, state.Views[0].Angle)
 	ioutil.WriteFile(fmt.Sprintf("%v/statistics.txt", checkpointDir), []byte(status), 0777)
@@ -223,6 +292,21 @@ func CompareAndSwap(diff int64, pix [][]byte ) {
 	}
 }
 
+func MutateColour(scale float32) {
+
+	mutateColIndex = mutateColIndex + 1
+	if mutateColIndex >= len(oldColor) {
+		mutateColIndex = 0
+	}
+    ic := mutateColIndex
+    newColor[ic] = oldColor[ic] + rand.Float32()*4.0*scale - 2.0*scale
+
+	//Force the alpha channel to 1.0, we aren't doing transparent triangles yet
+	for iii := 3; iii < len(newColor); iii = iii + 4 {
+		newColor[iii] = 1.0
+	}
+}
+
 func Mutate(scale float32) {
 
 	//------------------- Now make the new frame
@@ -231,37 +315,8 @@ func Mutate(scale float32) {
 		mutateIndex = 0
 	}
 
-	mutateColIndex = mutateColIndex + 1
-	if mutateColIndex >= len(oldColor) {
-		mutateColIndex = 0
-	}
-	//log.Printf("MutatColIndex: %v\n", mutateColIndex)
+    new[mutateIndex] = old[mutateIndex] + rand.Float32()*2.0*scale - 1.0*scale
 
-	//if startDrawing {
-	//log.Printf("Scale: %v\n", scale)
-	coin := rand.Float32()
-	if coin < 0.0 {
-		//i := int(rand.Float32()*float32(len(oldColor)))
-		//i:=mutateColIndex
-		//m:= rand.Float32()*2.0*scale-1.0*scale
-		//newColor[i] = newColor[i] + m
-		//log.Printf("Final: %v\n", newColor[i])
-	} else {
-		//i := int(rand.Float32()*float32(len(old)))
-		ic := mutateColIndex
-		newColor[ic] = oldColor[ic] + rand.Float32()*4.0*scale - 2.0*scale
-		new[mutateIndex] = old[mutateIndex] + rand.Float32()*2.0*scale - 1.0*scale
-		//newColor[ic] = oldColor[ic] + 0.05
-		//log.Printf("Move: %v\n", ic)
-	}
-	//}
-	clampAll(new)
-	//clampAll01(newColor)
-
-	//Force the alpha channel to 1.0, we aren't doing transparent triangles yet
-	for iii := 3; iii < len(newColor); iii = iii + 4 {
-		newColor[iii] = 1.0
-	}
 }
 
 func renderAll2(triangles, colours []float32, views []View) ([][]byte, int64) {
@@ -307,8 +362,18 @@ func renderSide(triangles, colours []float32, angle euler, width, height int) []
 }
 
 func randomiseTriangle(index int, triangles []float32) {
-	for i := index * 9; i < index*9+9; i++ {
-		triangles[i] = rand.Float32()*2.0 - 1.0
+    p := []float32{rand.Float32()*2.0 - 1.0, rand.Float32()*2.0 - 1.0, rand.Float32()*2.0 - 1.0}
+	for i := index * 9; i < index*9+9; i=i+3 {
+        triangles[i] = p[0]
+        triangles[i+1] = p[1]
+        triangles[i+2] = p[2]
+	}
+}
+
+func randomisePoint(index int, triangles []float32) {
+	for i := index; i < index+3; i++ {
+        new := rand.Float32()*2.0 - 1.0
+        triangles[i] = new
 	}
 }
 
@@ -318,16 +383,67 @@ func randomiseColour(index int, colours []float32) {
 	}
 }
 
-func evaluateTriangle(index int, triangles []float32) {
-	temp := []float32{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
-	for i := 0; i < 9; i++ {
-		temp[i] = triangles[index+i]
-		triangles[index+i] = 0.0
+
+func randomisePointColour(index int, colours []float32) {
+	for i := index ; i < index+4; i++ {
+		colours[i] = rand.Float32() * 1.0
+	}
+}
+
+
+
+//Fix this so it doesn't access global vars
+func evaluatePoint(index int, triangles []float32) {
+    //log.Println("Checking point ", index)
+	temp := []float32{0.0, 0.0, 0.0}
+	for i := 0; i < 3; i++ {
+		temp[i] = new[index+i]
+		new[index+i] = 0.0
 	}
 	_, diff := renderAll2(new, newColor, state.Views)
+
+    if oldColor[index*4/3] > 0.95 {
+        diff = currDiff
+        log.Println("Resetting triangle that is background colour: ", index)
+    }
+	if diff<currDiff {
+        //Removing this point improves the picture
+        log.Println("Resetting point ", index)
+		randomisePoint(index, new)
+		randomisePointColour(index, newColor)
+		pix, diff := renderAll2(new, newColor, state.Views)
+		currDiff = diff
+		dumpAll(pix, state.Views)
+		for i := 0; i < len(new); i++ {
+			old[i] = new[i]
+			oldColor[i] = newColor[i]
+		}
+	} else {
+		for i := 0; i < 3; i++ {
+			new[index+i] = temp[i]
+		}
+	}
+}
+
+//Fix this so it doesn't access global vars
+func evaluateTriangle(tri_index int, triangles []float32) {
+    log.Println("Checking triangle ", tri_index)
+    index := tri_index*3
+	temp := []float32{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+	for i := 0; i < 9; i++ {
+		temp[i] = new[index+i]
+		new[index+i] = 0.0
+	}
+	_, diff := renderAll2(new, newColor, state.Views)
+
+    if oldColor[tri_index*4] >0.95 {
+        diff = currDiff
+        log.Println("Resetting triangle that is background colour: ", tri_index)
+    }
 	if Abs64(diff-currDiff) < 5 {
-		randomiseTriangle(index, new)
-		randomiseColour(index, newColor)
+        log.Println("Resetting triangle ", tri_index)
+		randomiseTriangle(tri_index, new)
+		randomiseColour(tri_index, newColor)
 		pix, diff := renderAll2(new, newColor, state.Views)
 		currDiff = diff
 		dumpAll(pix, state.Views)
@@ -337,7 +453,7 @@ func evaluateTriangle(index int, triangles []float32) {
 		}
 	} else {
 		for i := 0; i < 9; i++ {
-			triangles[index+i] = temp[i]
+			new[index+i] = temp[i]
 		}
 	}
 }
@@ -383,59 +499,95 @@ func randomiseView(views []View, index int) ([]View) {
     return newA
 }
 
+func registerDiff (in []int64, ind, val int64) ([]int64, int64) {
+    in[ind] = val
+    ind = ind+1
+    if ! (ind < int64(len(in)) ) {
+        ind = 0
+    }
+    log.Println("Old diffs: ", in)
+    return in, ind
+}
+
 func OptimiserWorker() {
 	<-DrawResultCh
 	pix := [][]byte{}
 	diff := int64(0)
+    diffArray := []int64{0,0,0,0,0,0,0,0,0,0}
+    nextDiffArray := int64(0)
 	for {
 		nTriangles := len(new) / 9
 		log.Println("Processing ", nTriangles, " triangles")
 		//scale = scale -0.001
 		scale = rand.Float32()
 		if scale < 0.1 {
-			scale = 1.0
+			scale = 0.1
 		}
 		log.Println("Chose scale: ", scale)
 
 		pix, diff = renderAll2(old, oldColor, state.Views)
 		currDiff = diff
+        var oldDiff = currDiff
+
+        diffArray, nextDiffArray = registerDiff(diffArray, nextDiffArray, currDiff)
 
         if strategies["shaker"] {
-            log.Println("Starting shaker")
-            for zz := 0; zz < len(new); zz++ {
+            log.Println("Starting shaker with scale at ", scale)
+            for zz := 0; zz < 10; zz++ {
                 for zzz:=0; zzz<len(new);zzz=zzz+1 {
                     Mutate(scale/10.0)
                 }
                 pix, diff = renderAll2(new, newColor, state.Views)
                 CompareAndSwap(diff, pix)
             }
+            diffArray, nextDiffArray = registerDiff(diffArray, nextDiffArray, currDiff)
         }
+        
 
         if strategies["dead_triangle"] {
             log.Println("Starting dead triangle randomiser")
-            if unique > 1 { //FIXME, link to average fitness change per second
-                for currentTriangle := 0; currentTriangle < nTriangles; currentTriangle++ {
-                    if !(currentTriangle < len(new)/9) {
-                        currentTriangle = 0
-                    }
+            if unique > 10000 { //FIXME, link to average fitness change per second
+                for currentTriangle := 0; currentTriangle < nTriangles; currentTriangle = currentTriangle +1 {
                     evaluateTriangle(currentTriangle, new)
-                }
+              }
             }
+            diffArray, nextDiffArray = registerDiff(diffArray, nextDiffArray, currDiff)
         }
+
+
+        if strategies["dead_point"] {
+            log.Println("Starting dead point randomiser")
+            //if unique > 1000 { //FIXME, link to average fitness change per second
+                for currentPoint := 0; currentPoint < len(new); currentPoint = currentPoint + 3 {
+                    evaluatePoint(currentPoint, new)
+              //  }
+            }
+            diffArray, nextDiffArray = registerDiff(diffArray, nextDiffArray, currDiff)
+        }
+
 
         if strategies["tweak"] {
             log.Println("Starting triangle tweaker")
             for zz := 0; zz < 1; zz++ {
                 for zzz := 0; zzz < len(old); zzz++ {
-                    for i := -1; i < 2; i++ {
-                        //Mutate(float32(i)/50.0)
-                        Mutate(scale)
-                        pix, diff = renderAll2(new, newColor, state.Views)
-                        CompareAndSwap(diff, pix)
+                    Mutate(scale)
+                    pix, diff = renderAll2(new, newColor, state.Views)
+                    CompareAndSwap(diff, pix)
+
+                    MutateColour(scale)
+                    pix, diff = renderAll2(new, newColor, state.Views)
+                    CompareAndSwap(diff, pix)
+
+                    for _, v := range []int{-11, -7, -5, -3, -1, 1, 3, 5, 7, 11} {
+                    Mutate(scale)
+                    pix, diff = renderAll2(new, newColor, state.Views)
+                    CompareAndSwap(diff, pix)
                     }
                 }
             }
+            diffArray, nextDiffArray = registerDiff(diffArray, nextDiffArray, currDiff)
         }
+
 
         if strategies["view"] {
             log.Println("Starting view mutator")
@@ -447,17 +599,51 @@ func OptimiserWorker() {
                     currDiff = diff
                 }
             }
+            diffArray, nextDiffArray = registerDiff(diffArray, nextDiffArray, currDiff)
         }
 
+		go DumpDetails(state.RenderPix, state.DiffBuff)
+        if currDiff == oldDiff {
+            //We have probably reached a stable state, we should either quit or change things a bit
+            log.Println("Reached stability, adding triangle")
+            addTriangle()
+        }
+        clampAll(old)
+        clampAll01(oldColor)
+        log.Println("Current fitness: ", currDiff)
     }
 }
 
+
+func clampAll(data []float32) {
+	for i, v := range data {
+		if v < -1.0 {
+			data[i] = -1.0
+		}
+		if v > 1.0 {
+			data[i] = 1.0
+		}
+	}
+}
+
+func clampAll01(data []float32) {
+	for i, v := range data {
+		if v < 0 {
+			data[i] = 0
+		}
+		if v > 1.0 {
+			data[i] = 1.0
+		}
+	}
+}
+
+
 func dumpAll(pix [][]byte, views []View) {
-	if unique%11 == 1 {
+//	if unique%11 == 1 {
 		saveNum = saveNum + 1
 		go DumpDetails(state.RenderPix, state.DiffBuff)
 		go dumpPics(pix, views)
-	}
+//	}
 }
 
 func dumpPics(pix [][]byte, views []View) {
@@ -472,8 +658,18 @@ func dumpDiff(pix []byte, ind int, width, height int) {
     go glim.SaveBuff(width, height, pix, fmt.Sprintf("diffs/diff_%d.png", ind))
 }
 
-func CopyState(in State) State {
+//FIXME
+func CopyState(in RenderState) RenderState {
     //err := deepcopy.Copy(dst interface{}, src interface{})
     return in
 }
     
+func export_obj(vertexes []float32) string {
+    out := ""
+    faces := ""
+    for i:=0; i<len(vertexes) ; i=i+3 {
+        out = fmt.Sprintf("%vv %v %v %v\n", out, vertexes[i], vertexes[i+1], vertexes[i+2])
+        faces = fmt.Sprintf("%vf %v %v %v\n", faces, i+1, i+2, i+3)
+    }
+    return fmt.Sprintf("%s%s", out, faces)
+}
