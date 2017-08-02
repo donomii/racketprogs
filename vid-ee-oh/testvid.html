@@ -12,6 +12,7 @@ var video;
 var canvas;
 var ctx ;
 var localMediaStream = null;
+	   var updateDelay = 50;  //Milliseconds
 
 
   var onFailSoHard = function(e) {
@@ -68,7 +69,7 @@ document.getElementById('display').src = canvas.toDataURL('image/webp');
   
 	}
 		//alert("Copying");
-               setTimeout("imagePump();", 100);
+               setTimeout("imagePump();", updateDelay);
 }
 
 function snapBackground() {
@@ -102,7 +103,7 @@ function makeForeground() {
 		  data.data[i+2]=newBackgroundData.data[i+2];
 		}
         }
-    setTimeout("makeForeground()", 100);
+    setTimeout("makeForeground()", updateDelay);
     document.getElementById('foreground').getContext('2d').putImageData(data,0,0);
     
 }
@@ -126,7 +127,7 @@ function temporalAverage() {
                }
                
                document.getElementById('output').getContext('2d').putImageData(newdata,0,0);
-               setTimeout("temporalAverage();", 100);
+               setTimeout("temporalAverage();", updateDelay);
 }
 
 
