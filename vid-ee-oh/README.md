@@ -16,9 +16,8 @@ This is all done using the HTML 5 video API, without plugins or downloads.
 
 vid-ee-oh uses the HTML5 video API, a standard that changes constantly as the committee chases the latest fads in Javscript programming.
 
-The most recent fad is promises, which are vastly superior to calling functions, for reasons that are obvious to Javscript programmers, and nobody else.
+The most recent fad is promises, so fire up your text editors and replace 
 
-Fire up your text editors and replace 
 ```javascript
 navigator.webkitGetUserMedia({video: true}, function(stream) {
 ```
