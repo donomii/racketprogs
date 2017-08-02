@@ -27,143 +27,143 @@
       navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.mediaDevices.getUserMedia);
     }
 
-  function getUserMedia() {
+    function getUserMedia() {
 
-    return (navigator.getUserMedia || navigator.webkitGetUserMedia ||
-      navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.mediaDevices.getUserMedia);
-    }
-
-
-  if (hasGetUserMedia()) {
-    // Good to go!
-  } else {
-    alert('getUserMedia() is not supported in your browser');
-  }
+      return (navigator.getUserMedia || navigator.webkitGetUserMedia ||
+        navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.mediaDevices.getUserMedia);
+      }
 
 
-  function setPixel(imageData, x, y, r, g, b, a) {
-    index = (x + y * imageData.width) * 4;
-    imageData.data[index+0] = r;
-    imageData.data[index+1] = g;
-    imageData.data[index+2] = b;
-    imageData.data[index+3] = a;
-  }
-
-  function getPixel(imageData, x, y) {
-    index = (x + y * imageData.width) * 4;
-    var retval = [];
-    retval[index+0] = imageData.data[index+0];
-    retval[index+1] = imageData.data[index+1];
-    retval[index+2] = imageData.data[index+2];
-    retval[index+3] = imageData.data[index+3];
-    return retval;
-  }
-
-  function imagePump() {
-    if (localMediaStream) {
-      ctx.drawImage(video, 0, 0);
-
-      document.getElementById('display').src = canvas.toDataURL('image/webp');
-      //alert(video.videoWidth);
-      //ctx.width = video.src.width;
-      //ctx.height = video.src.height;
-
-
-    }
-    //alert("Copying");
-    setTimeout("imagePump();", updateDelay);
-  }
-
-  function snapBackground() {
-    var data = document.getElementById('output').getContext('2d').getImageData(0,0,picWidth,picHeight);
-    document.getElementById('background').getContext('2d').putImageData(data,0,0);
-  }
-
-  function makeForeground() {
-
-    var data = document.getElementById('output').getContext('2d').getImageData(0,0,picWidth,picHeight);
-    document.getElementById('newBackgroundCanvas').getContext('2d').drawImage(document.getElementById('newBackground'),0,0);
-    var newBackgroundData = document.getElementById('newBackgroundCanvas').getContext('2d').getImageData(0,0,picWidth,picHeight);
-
-    var backgroundData = document.getElementById('background').getContext('2d').getImageData(0,0,picWidth,picHeight);
-
-    var i;
-    for ( i=0; i<data.data.length ; i=i+4) {
-      if ( (1 + i)%4 == 0 ) { continue; }
-      //alert(data.data[i]);
-      //if (data.data[i] > 50) {
-      var diff=Math.abs(data.data[i] - backgroundData.data[i])     +
-      Math.abs(data.data[i+1] - backgroundData.data[i+1]) +
-      Math.abs(data.data[i+2] - backgroundData.data[i+2])
-      ;
-      //alert ("i: " + i + " diff: " + diff);
-      if (Math.abs(diff)> 60) {
-        //it's the foreground, leave it
+      if (hasGetUserMedia()) {
+        // Good to go!
       } else {
-        data.data[i]=newBackgroundData.data[i];
-        data.data[i+1]=newBackgroundData.data[i+1];
-        data.data[i+2]=newBackgroundData.data[i+2];
-      }
-    }
-    setTimeout("makeForeground()", updateDelay);
-    document.getElementById('foreground').getContext('2d').putImageData(data,0,0);
-
-  }
-
-
-  function temporalAverage() {
-    document.getElementById('transform').getContext('2d').drawImage(document.getElementById('display'),0,0);
-
-    var data = document.getElementById('transform').getContext('2d').getImageData(0,0,picWidth,picHeight);
-    var newdata = document.getElementById('output').getContext('2d').getImageData(0,0,picWidth,picHeight);
-    var i;
-    for ( i=0; i<data.data.length ; i=i+4 ) {
-      //alert(data.data[i]);
-      //if (data.data[i] > 50) {
-      newdata.data[i]=newdata.data[i] + (1.0*data.data[i]-newdata.data[i])/fade;
-      newdata.data[i+1]=newdata.data[i+1] + (1.0*data.data[i+1]-newdata.data[i+1])/fade;
-      newdata.data[i+2]=newdata.data[i+2] + (1.0*data.data[i+2]-newdata.data[i+2])/fade;
-      newdata.data[i+3]=255;
-      //alert(data.data[i]);
-      //}
-    }
-
-    document.getElementById('output').getContext('2d').putImageData(newdata,0,0);
-    setTimeout("temporalAverage();", updateDelay);
-  }
-
-
-
-  function snapshot() {
-    imagePump();
-    temporalAverage();
-    return;
-
-    if (localMediaStream) {
-      ctx.drawImage(video, 0, 0);
-      // "image/webp" works in Chrome 18. In other browsers, this will fall back to image/png.
-      document.getElementById('display').src = canvas.toDataURL('image/webp');
-      // ctx;
-      setTimeout(function() { document.getElementById('transform').getContext('2d').drawImage(document.getElementById('display'),0,0);
-
-      var data = document.getElementById('transform').getContext('2d').getImageData(0,0,picWidth,picHeight);
-      var newdata = document.getElementById('output').getContext('2d').getImageData(0,0,picWidth,picHeight);
-      var i;
-      for ( i=0; i<data.data.length ; i=i+4 ) {
-        //alert(data.data[i]);
-        //if (data.data[i] > 50) {
-        //data.data[i]=data.data[i]-(data.data[i]-newdata.data[i])/100;
-        //data.data[i+1]=data.data[i]-(data.data[i+1]-newdata.data[i+1])/100;
-        //data.data[i+2]=data.data[i]-(data.data[i+1]-newdata.data[i+2])/100;
-        //data.data[i+3]=255;
-
-        //}
+        alert('getUserMedia() is not supported in your browser');
       }
 
-      document.getElementById('output').getContext('2d').putImageData(data,0,0);
 
-    }
-    , updateDelay*10);
+      function setPixel(imageData, x, y, r, g, b, a) {
+        index = (x + y * imageData.width) * 4;
+        imageData.data[index+0] = r;
+        imageData.data[index+1] = g;
+        imageData.data[index+2] = b;
+        imageData.data[index+3] = a;
+      }
+
+      function getPixel(imageData, x, y) {
+        index = (x + y * imageData.width) * 4;
+        var retval = [];
+        retval[index+0] = imageData.data[index+0];
+        retval[index+1] = imageData.data[index+1];
+        retval[index+2] = imageData.data[index+2];
+        retval[index+3] = imageData.data[index+3];
+        return retval;
+      }
+
+      function imagePump() {
+        if (localMediaStream) {
+          ctx.drawImage(video, 0, 0);
+
+          document.getElementById('display').src = canvas.toDataURL('image/webp');
+          //alert(video.videoWidth);
+          //ctx.width = video.src.width;
+          //ctx.height = video.src.height;
+
+
+        }
+        //alert("Copying");
+        setTimeout("imagePump();", updateDelay);
+      }
+
+      function snapBackground() {
+        var data = document.getElementById('output').getContext('2d').getImageData(0,0,picWidth,picHeight);
+        document.getElementById('background').getContext('2d').putImageData(data,0,0);
+      }
+
+      function makeForeground() {
+
+        var data = document.getElementById('output').getContext('2d').getImageData(0,0,picWidth,picHeight);
+        document.getElementById('newBackgroundCanvas').getContext('2d').drawImage(document.getElementById('newBackground'),0,0);
+        var newBackgroundData = document.getElementById('newBackgroundCanvas').getContext('2d').getImageData(0,0,picWidth,picHeight);
+
+        var backgroundData = document.getElementById('background').getContext('2d').getImageData(0,0,picWidth,picHeight);
+
+        var i;
+        for ( i=0; i<data.data.length ; i=i+4) {
+          if ( (1 + i)%4 == 0 ) { continue; }
+          //alert(data.data[i]);
+          //if (data.data[i] > 50) {
+          var diff=Math.abs(data.data[i] - backgroundData.data[i])     +
+          Math.abs(data.data[i+1] - backgroundData.data[i+1]) +
+          Math.abs(data.data[i+2] - backgroundData.data[i+2])
+          ;
+          //alert ("i: " + i + " diff: " + diff);
+          if (Math.abs(diff)> 60) {
+            //it's the foreground, leave it
+          } else {
+            data.data[i]=newBackgroundData.data[i];
+            data.data[i+1]=newBackgroundData.data[i+1];
+            data.data[i+2]=newBackgroundData.data[i+2];
+          }
+        }
+        setTimeout("makeForeground()", updateDelay);
+        document.getElementById('foreground').getContext('2d').putImageData(data,0,0);
+
+      }
+
+
+      function temporalAverage() {
+        document.getElementById('transform').getContext('2d').drawImage(document.getElementById('display'),0,0);
+
+        var data = document.getElementById('transform').getContext('2d').getImageData(0,0,picWidth,picHeight);
+        var newdata = document.getElementById('output').getContext('2d').getImageData(0,0,picWidth,picHeight);
+        var i;
+        for ( i=0; i<data.data.length ; i=i+4 ) {
+          //alert(data.data[i]);
+          //if (data.data[i] > 50) {
+          newdata.data[i]=newdata.data[i] + (1.0*data.data[i]-newdata.data[i])/fade;
+          newdata.data[i+1]=newdata.data[i+1] + (1.0*data.data[i+1]-newdata.data[i+1])/fade;
+          newdata.data[i+2]=newdata.data[i+2] + (1.0*data.data[i+2]-newdata.data[i+2])/fade;
+          newdata.data[i+3]=255;
+          //alert(data.data[i]);
+          //}
+        }
+
+        document.getElementById('output').getContext('2d').putImageData(newdata,0,0);
+        setTimeout("temporalAverage();", updateDelay);
+      }
+
+
+
+      function snapshot() {
+        imagePump();
+        temporalAverage();
+        return;
+
+        if (localMediaStream) {
+          ctx.drawImage(video, 0, 0);
+          // "image/webp" works in Chrome 18. In other browsers, this will fall back to image/png.
+          document.getElementById('display').src = canvas.toDataURL('image/webp');
+          // ctx;
+          setTimeout(function() { document.getElementById('transform').getContext('2d').drawImage(document.getElementById('display'),0,0);
+
+          var data = document.getElementById('transform').getContext('2d').getImageData(0,0,picWidth,picHeight);
+          var newdata = document.getElementById('output').getContext('2d').getImageData(0,0,picWidth,picHeight);
+          var i;
+          for ( i=0; i<data.data.length ; i=i+4 ) {
+            //alert(data.data[i]);
+            //if (data.data[i] > 50) {
+            //data.data[i]=data.data[i]-(data.data[i]-newdata.data[i])/100;
+            //data.data[i+1]=data.data[i]-(data.data[i+1]-newdata.data[i+1])/100;
+            //data.data[i+2]=data.data[i]-(data.data[i+1]-newdata.data[i+2])/100;
+            //data.data[i+3]=255;
+
+            //}
+          }
+
+          document.getElementById('output').getContext('2d').putImageData(data,0,0);
+
+        }
+        , updateDelay);
 
 
       }
@@ -176,7 +176,7 @@
       localMediaStream = null;
 
 
-      video.addEventListener('click', snapshot, false);
+
       //video.bind('loadedmetadata', function() { alert('hello');}, false);
 
       // Not showing vendor prefixes or code that works cross-browser.
@@ -229,20 +229,50 @@
     </script>
   </head>
   <body onLoad="start();">
-    <video id='vid' autoplay></video>
+    <video id='vid' onClick='snapshot()' style="display:none;" autoplay ></video>
+    This is the HTML5 video demo.  Click start to begin processing video from your webcam.
+    <button class="mdc-button mdc-button--raised" onClick="snapshot()">
+      Start
+    </button>
     <img id="display" style="display:none;" src="">
-    <canvas style="display:none;" onload="alert('Resizing');this.width=picWidth;this.height=picHeight;" ></canvas>
 
-    <canvas id="transform" style="display:none;" onload="this.width=picWidth;this.height=picHeight;" ></canvas>
+    <canvas id="transform" style="display:none;"  ></canvas>
+
+    <canvas id="output"   onClick="snapBackground()"></canvas>
+    Now move out of sight and click "set background".  This picture will be used to calculate which parts of the video are background, and need to be replaced with the new background picture.
     <button class="mdc-button mdc-button--raised" onClick="snapBackground()">
-  Set background
-</button>
-    <canvas id="output"  onload="this.width=picWidth;this.height=picHeight;"  onClick="snapBackground()"></canvas>
-    <canvas id="background"  onload="this.width=picWidth;this.height=picHeight;"  onClick="makeForeground();"></canvas>
-    <canvas id="foreground"  onload="this.width=picWidth;this.height=picHeight;" ></canvas>
+      Set background
+    </button>
+    <canvas id="background"   onClick="makeForeground();"></canvas>
+    We are ready to start replacing the background from your video!
+    <button class="mdc-button mdc-button--raised" onClick="makeForeground()">
+      Start video
+    </button>
+    <canvas id="foreground"   ></canvas>
+    <button class="mdc-button mdc-button--raised" onClick="savePic();">
+      Save picture
+    </button>
     <img id="newBackground" src="background.jpg" />
-    <canvas id="newBackgroundCanvas" onload="this.width=picWidth;"this.height=picHeight;  />
+    <canvas id="newBackgroundCanvas"  />
     <div onClick="savePic();" >Save Image</div>
+    <script>
+    document.getElementById("transform").width=picWidth;
+    document.getElementById("transform").height=picHeight;
 
+    document.getElementById("display").width=picWidth;
+    document.getElementById("display").height=picHeight;
+
+    document.getElementById("output").width=picWidth;
+    document.getElementById("output").height=picHeight;
+
+    document.getElementById("background").width=picWidth;
+    document.getElementById("background").height=picHeight;
+
+    document.getElementById("foreground").width=picWidth;
+    document.getElementById("foreground").height=picHeight;
+
+    document.getElementById("newBackgroundCanvas").width=picWidth;
+    document.getElementById("newBackgroundCanvas").height=picHeight;
+    </script>
   </body>
   </html>
