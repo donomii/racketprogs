@@ -1,4 +1,4 @@
-picHeight<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset = "utf-8" />
@@ -233,8 +233,8 @@ picHeight<!DOCTYPE html>
     <canvas style="display:none;" onload="this.width=picWidth;this.height=picHeight;" width=640 height=480></canvas>
 
     <canvas id="transform" style="display:none;" onload="this.width=picWidth;this.height=picHeight;" width=640 height=480></canvas>
-    <button class="mdc-button mdc-button--raised">
-  Start
+    <button class="mdc-button mdc-button--raised" onClick="snapBackground(); ">
+  Set background
 </button>
     <canvas id="output"  onload="this.width=picWidth;this.height=picHeight;" width=640 height=480 onClick="snapBackground()"></canvas>
     <canvas id="background"  onload="this.width=picWidth;this.height=picHeight;" width="xwidth" height=480 onClick="makeForeground();"></canvas>
