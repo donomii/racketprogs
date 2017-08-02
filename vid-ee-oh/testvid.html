@@ -231,7 +231,7 @@
   <body onLoad="start();">
     <video id='vid' autoplay></video>
     <img id="display" style="display:none;" src="">
-    <canvas style="display:none;" onload="this.width=picWidth;this.height=picHeight;" ></canvas>
+    <canvas style="display:none;" onload="alert('Resizing');this.width=picWidth;this.height=picHeight;" ></canvas>
 
     <canvas id="transform" style="display:none;" onload="this.width=picWidth;this.height=picHeight;" ></canvas>
     <button class="mdc-button mdc-button--raised" onClick="snapBackground()">
