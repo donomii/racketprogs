@@ -1,6 +1,6 @@
 # vid-ee-oh
 
-Try it [here](testvid.html).
+Try it [here](https://donomii.github.io/vid-ee-oh/testvid.html).
 
 ## Real time, in browser, video mixing
 
