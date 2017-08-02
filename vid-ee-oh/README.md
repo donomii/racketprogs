@@ -1,6 +1,6 @@
 # vid-ee-oh
 
-Try it [testvid.html](here).
+Try it [here](testvid.html).
 
 ## Real time, in browser, video mixing
 
