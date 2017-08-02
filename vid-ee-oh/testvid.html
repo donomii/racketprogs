@@ -185,9 +185,14 @@ video.src = window.URL.createObjectURL(stream);
 //canvas.width = 640 ; //v.width;
 //canvas.height = 480;
 
-  }, onFailSoHard);
+  }).catch(function(err) {
+  alert("Could not access video camera!");
+});
 
   }
+	   
+	   
+	   
   function savePic() {
   var oCanvas = document.getElementById("output");  
   
