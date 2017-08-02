@@ -1,37 +1,31 @@
-## Welcome to GitHub Pages
+# vid-ee-oh
 
-You can use the [editor on GitHub](https://github.com/donomii/vid-ee-oh/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+Try it [testvid.html](here).
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+## Real time, in browser, video mixing
 
-### Markdown
+vid-ee-oh is a demonstration of the HTML5 video API.  It takes video from your webcam, and swaps out the background of your room for another scene.  It's effectively a greenscreen, but you don't need the greenscreen.
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+### Features
 
-```markdown
-Syntax highlighted code block
+vid-ee-oh shows off several features, by copying images from the video feed, applying a temporal blur to smooth out noise from  the camera, then switching the background of the image.
 
-# Header 1
-## Header 2
-### Header 3
+This is all done using the HTML 5 video API, without plugins or downloads.
 
-- Bulleted
-- List
+### Video API
 
-1. Numbered
-2. List
+vid-ee-oh uses the HTML5 video API, a standard that changes constantly as the committee chases the latest fads in Javscript programming.
 
-**Bold** and _Italic_ and `Code` text
+The most recent fad is promises, which are vastly superior to calling functions, for reasons that are obvious to Javscript programmers, and nobody else.
 
-[Link](url) and ![Image](src)
+Fire up your text editors and replace 
+```javascript
+navigator.webkitGetUserMedia({video: true}, function(stream) {
+```
+with
+
+```javascript
+navigator.mediaDevices.getUserMedia({video: true}).then(function(stream) {
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/donomii/vid-ee-oh/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+which is vastly superior, possibly because Javscript programmers are paid by character.
