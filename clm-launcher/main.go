@@ -2,7 +2,6 @@
 package main
 
 import (
-	"os/exec"
 	"strings"
 	"github.com/donomii/tagdb/tagbrowser"
 	"runtime"
@@ -68,26 +67,6 @@ func FetchLine(f string, lineNum int) (line string, lastLine int, err error) {
     }
 }
 
-func shellout (command []string) string {
-	command = append([]string{"/c"}, command...)
-	cmd := exec.Command("cmd", command...)
-	stdoutStderr, err := cmd.Output()
-	if err != nil {
-		statuses["Error"] = fmt.Sprintf("%v", err)
-	}
-	return string(stdoutStderr)
-}
-
-
-func powershellout (command []string) string {
-	cmd := exec.Command("powershell", command...)
-	stdoutStderr, err := cmd.Output()
-	if err != nil {
-		statuses["Error"] = fmt.Sprintf("%v", err)
-	}
-	return string(stdoutStderr)
-}
-
 func ToLines (s string) []string {
 	return strings.Split(s,"\n")
 }
@@ -104,11 +83,6 @@ func powershellLines (command []string) []string {
 	return ret
 }
 
-func man(search string) []string {
-	lines := CacheLines("manpage index", func()[]string{return shellLines([]string{"help", search})})
-	res := lines[0]
-	return []string{res}
-}
 
 func environ(search string) []string {
 	allvars := CacheLines("environment variables", func()[]string{return os.Environ()})
@@ -124,29 +98,6 @@ func stringGrep (needle string, haystack []string) []string {
 	}
 	return matches
 
-}
-
-func installedApps(search string) []string {
-	ret := powershellLines([]string{`Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* | Select-Object DisplayName, InstallLocation`})
-	return stringGrep(search, ret);
-}
-
-func manPredict(search string) []string {
-	lines := shellLines([]string{"help"})
-	return stringGrep(search, lines)
-}
-
-func history(search string) []string {
-	return stringGrep(search, shellLines([]string{"doskey", "/History"}))
-}
-
-func desktop(search string) []string {
-	ret := stringGrep(search,shellLines([]string{"dir", os.Getenv("USERPROFILE")+`\`+ "Desktop"}))
-	return ret
-}
-
-func directory(directory, search string) []string {
-	return stringGrep(search,shellLines([]string{"dir", "/b", "/w", directory}))
 }
 
 //Things we need in return struct:  short value, full value, description, source, launch command
