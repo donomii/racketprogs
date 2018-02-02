@@ -43,7 +43,7 @@ var spinner []string
 var spinner_index = 0
 
 var predictResults []string
-
+var redrawNeeded bool = true
 var refreshMutex sync.Mutex
 
 
@@ -78,20 +78,41 @@ func shellout (command []string) string {
 	return string(stdoutStderr)
 }
 
+
+func powershellout (command []string) string {
+	cmd := exec.Command("powershell", command...)
+	stdoutStderr, err := cmd.Output()
+	if err != nil {
+		statuses["Error"] = fmt.Sprintf("%v", err)
+	}
+	return string(stdoutStderr)
+}
+
 func ToLines (s string) []string {
 	return strings.Split(s,"\n")
 }
 
 func shellLines (command []string) []string {
-	ret := ToLines(shellout(command))
+	ret := CacheLines(fmt.Sprintf("%v", command), func ()[]string{return ToLines(shellout(command))})
+	//log.Println(ret)
+	return ret
+}
+
+func powershellLines (command []string) []string {
+	ret := CacheLines(fmt.Sprintf("%v", command), func ()[]string{return ToLines(powershellout(command))})
 	//log.Println(ret)
 	return ret
 }
 
 func man(search string) []string {
-	lines := shellLines([]string{"help", search})
+	lines := CacheLines("manpage index", func()[]string{return shellLines([]string{"help", search})})
 	res := lines[0]
 	return []string{res}
+}
+
+func environ(search string) []string {
+	allvars := CacheLines("environment variables", func()[]string{return os.Environ()})
+	return CacheLines("environment variable: "+search, func()[]string{return stringGrep(search, allvars)})
 }
 
 func stringGrep (needle string, haystack []string) []string {
@@ -103,6 +124,11 @@ func stringGrep (needle string, haystack []string) []string {
 	}
 	return matches
 
+}
+
+func installedApps(search string) []string {
+	ret := powershellLines([]string{`Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* | Select-Object DisplayName, InstallLocation`})
+	return stringGrep(search, ret);
 }
 
 func manPredict(search string) []string {
@@ -142,6 +168,20 @@ func search(searchTerm string, numResults int) []Entry {
 	res := man(searchTerm)
 	for _, a := range res {
 			ret = append(ret, Entry{a, searchTerm, a, "Help page", []string{"help", "XXXXXX"}, "1", ""})
+		}
+	
+	res = environ(searchTerm)
+	for _, a := range res {
+			ret = append(ret, Entry{a, a, a, "Environment Variable", []string{"echo", "XXXXXX"}, "1", ""})
+		}
+	
+	for _, a := range res {
+			ret = append(ret, Entry{a, searchTerm, a, "Help page", []string{"help", "XXXXXX"}, "1", ""})
+		}
+	
+	res = installedApps(searchTerm)
+	for _, a := range res {
+			ret = append(ret, Entry{a, a, a, "Applications", []string{"start", "XXXXXX"}, "1", ""})
 		}
 	
 	for _, d := range []string{os.Getenv("USERPROFILE")+`\`+ "Desktop", os.Getenv("USERPROFILE")+`\`+ "Downloads", os.Getenv("USERPROFILE")+`\`+ "Dropbox", os.Getenv("USERPROFILE")+`\`+ "Documents"} {
@@ -410,6 +450,7 @@ func doInput() {
 					focus = "input"
 					refreshTerm()
 				}
+				redrawNeeded = true
 			}
 		}
 	}
@@ -440,12 +481,12 @@ func putStr(x, y int, aStr string) {
 
 //Redraw screen every 200 Milliseconds
 func automaticRefreshTerm() {
-	for i := 0; i < 1; i = 0 {
-		refreshTerm()
-		time.Sleep(time.Millisecond * 200)
-		if !serverActive {
-			statuses["Status"] = "Closed"
-			return
+	for {
+		if redrawNeeded {
+			refreshTerm()
+			redrawNeeded = false
+		} else {
+			time.Sleep(time.Millisecond * 10)
 		}
 	}
 }
@@ -453,11 +494,7 @@ func automaticRefreshTerm() {
 func automaticdoInput() {
 	for i := 0; i < 1; i = 0 {
 		doInput()
-		time.Sleep(20 * time.Millisecond)
-		if !serverActive {
-			statuses["Input"] = "Closed"
-			return
-		}
+		time.Sleep(10 * time.Millisecond)
 	}
 }
 
