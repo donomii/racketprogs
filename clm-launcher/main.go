@@ -26,7 +26,7 @@ var serverActive = false
 var use_gui = true
 
 var statuses map[string]string
-var results []tagbrowser.ResultRecordTransmittable
+var results []Entry
 
 var selection = 0
 var itempos = 0
@@ -130,21 +130,27 @@ type Entry struct {
 	Description	string			//A user friendly description of the item. (around 80 chars)
 	Source		string			//A useful-to-the-user description of where the item is located.  e.g. a directory name, a website name, name of the program that generated the item....
 	Launch		[]string		//An array of strings, that are the command name and args.  There must be one string with the value XXXXXX, which will be replaced with the Value string
+	Score		string
+	Line		string
 }
 
 //Contact server with search string
-func search(searchTerm string, numResults int) []tagbrowser.ResultRecordTransmittable {
+func search(searchTerm string, numResults int) []Entry {
 	statuses["Status"] = "Searching"
 
+	ret := []Entry{}
 	res := man(searchTerm)
+	for _, a := range res {
+			ret = append(ret, Entry{a, searchTerm, a, "Help page", []string{"help", "XXXXXX"}, "1", ""})
+		}
+	
 	for _, d := range []string{os.Getenv("USERPROFILE")+`\`+ "Desktop", os.Getenv("USERPROFILE")+`\`+ "Downloads", os.Getenv("USERPROFILE")+`\`+ "Dropbox", os.Getenv("USERPROFILE")+`\`+ "Documents"} {
-		res = append(res, directory(d, searchTerm)...)
+		answer := directory(d, searchTerm)
+		for _, a := range answer {
+			ret = append(ret, Entry{a, d+`\`+a, d+`\`+a, "Local Drive", []string{"start", "XXXXXX"}, "1", ""})
+		}
 	}
-	ret := []tagbrowser.ResultRecordTransmittable{}
 
-	for _, s := range res {
-		ret = append(ret, tagbrowser.ResultRecordTransmittable{s, "", []string{""}, "", ""})
-	}
 	return ret
 }
 
@@ -228,18 +234,18 @@ func refreshTerm() {
 		putStr(0, 1, fmt.Sprintf("Search for:%v", searchStr))
 		_, height := termbox.Size()
 		//prevRecord := tagbrowser.ResultRecordTransmittable{"", -1, makeFingerprintFromData(""), "", 0}
-		prevRecord := tagbrowser.ResultRecordTransmittable{}
+		prevRecord := Entry{}
 		dispLine := 2
 		if len(results) > 0 {
-			putStr(5, dispLine, fmt.Sprintf("%v (line %v)", results[0].Filename, results[0].Line))
+			putStr(5, dispLine, fmt.Sprintf("%v (line %v)", results[0].Name, results[0].Value))
 			dispLine++
 			prevRecord = results[0]
 		}
 		itempos = 0
 		for i, elem := range results {
 			if dispLine < height-4 {
-				if !(i == 0) && !(elem.Filename == prevRecord.Filename) {
-					putStr(3, dispLine, fmt.Sprintf("%v", elem.Filename))
+				if !(i == 0) && !(elem.Name == prevRecord.Name) {
+					putStr(3, dispLine, fmt.Sprintf("%v", elem.Name))
 					dispLine++
 				}
 				if itempos == selection {
@@ -247,11 +253,13 @@ func refreshTerm() {
 					selectPosX = 0
 					selectPosY = dispLine
 				}
-                //if elem.Line != "-1" && strings.HasPrefix(elem.Filename, "http") {
+                /*if elem.Line != "-1" && strings.HasPrefix(elem.Name, "http") {
                     putStr(1, dispLine, fmt.Sprintf("%v", elem.Score))
                     l, _:= strconv.Atoi(elem.Line)
                     LineStr, _, _ := FetchLine(elem.Filename, l)
-                    putStr(8, dispLine, fmt.Sprintf("(line %v) %v", elem.Line,  LineStr))
+					*/
+                    putStr(8, dispLine, fmt.Sprintf("%v",  elem.Description))
+					
                     dispLine++
                     itempos++
                     prevRecord = elem
@@ -341,11 +349,17 @@ func doInput() {
 					if line < 0 { line = 0 }
 					if isLinux() || isDarwin()  {
 						termbox.Close()
-						tagbrowser.Launch(results[selection].Filename, fmt.Sprintf("%v", line))
+						tagbrowser.Launch(results[selection].Name, fmt.Sprintf("%v", line))
 						termbox.Init()
 						refreshTerm()
 					} else {
-						tagbrowser.Launch(results[selection].Filename, fmt.Sprintf("%v", line))
+						launcher := results[selection].Launch
+						for i, _ := range launcher {
+							if launcher[i] == "XXXXXX" {
+								launcher[i] = results[selection].Value
+							}
+						}
+						shellout(launcher)
 						refreshTerm()
 					}
 				case termbox.KeyArrowDown:
@@ -470,7 +484,7 @@ func main() {
 
 	refreshMutex = sync.Mutex{}
 	predictResults = []string{}
-	results = []tagbrowser.ResultRecordTransmittable{}
+	results = []Entry{}
 	statuses = map[string]string{}
 
 	termbox.Init()
