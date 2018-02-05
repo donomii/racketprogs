@@ -3,6 +3,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"os/exec"
 	"fmt"
@@ -12,8 +13,9 @@ import (
 
 //Run a command in the basic linux shell, and return the result as a chunk of text
 func shellout (command []string) string {
-	command = append([]string{"-c"}, command...)
-	cmd := exec.Command(os.Getenv("SHELL"), command...)
+	args := []string{"-c", command[0] + " $0 $1 $2 $3 $4 $5 $6 $7 $8 $9"}
+	args = append(args, command[1:]...)
+	cmd := exec.Command(os.Getenv("SHELL"), args...)
 	stdoutStderr, err := cmd.Output()
 	if err != nil {
 		statuses["Error"] = fmt.Sprintf("%v", err)
@@ -48,3 +50,21 @@ func history(search string) []string {
 func directory(directory, search string) []string {
 	return stringGrep(search,CacheLines("directory listing for " + directory, func()[]string{return shellLines([]string{"ls", "-l", directory})}))
 }
+
+func csearch(search string) []string {
+	log.Println("csearch: ", shellLines([]string{"csearch", search}))
+	return CacheLines("csearch for " + search, 
+		func()[]string{return stringGrep(search, shellLines([]string{"csearch", search}))})
+
+}
+
+
+func default_directories(searchTerm string) []string {
+	res := []string{}
+	h := os.Getenv("HOME")
+	for _, d := range []string{h+`/`+ "Downloads", h+`/`+ "bin", `/usr/bin`, `/bin`} {
+		res = append(res, directory(d, searchTerm)...)
+	}
+	return res
+}
+

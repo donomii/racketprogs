@@ -1,5 +1,6 @@
 package main
 
+import ( "log")
 var cacheL map[string][]string
 
 func CacheLines(key string, f func() []string) []string{
@@ -11,5 +12,6 @@ func CacheLines(key string, f func() []string) []string{
 		cacheL[key] = f()
 		val = CacheLines(key, f)
 	}
+	log.Println("Cache for "+key, val)
 	return val
 }

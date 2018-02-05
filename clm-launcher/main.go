@@ -112,29 +112,33 @@ func search(searchTerm string, numResults int) []Entry {
 
 	ret := []Entry{}
 	res := man(searchTerm)
+	log.Println("Manpages: ", res)
 	for _, a := range res {
-			ret = append(ret, Entry{a, searchTerm, a, "Help page", []string{"help", "XXXXXX"}, "1", ""})
+			ret = append(ret, Entry{a, searchTerm, a, "Help page", []string{"man", "XXXXXX"}, "1", ""})
 		}
 	
 	res = environ(searchTerm)
+	log.Println("Environemnt: ", res)
 	for _, a := range res {
 			ret = append(ret, Entry{a, a, a, "Environment Variable", []string{"echo", "XXXXXX"}, "1", ""})
 		}
 	
-	for _, a := range res {
-			ret = append(ret, Entry{a, searchTerm, a, "Help page", []string{"help", "XXXXXX"}, "1", ""})
-		}
-	
 	res = installedApps(searchTerm)
+	log.Println("Installed Apps: ", res)
 	for _, a := range res {
-			ret = append(ret, Entry{a, a, a, "Applications", []string{"start", "XXXXXX"}, "1", ""})
+			ret = append(ret, Entry{a, a, a, "Applications", []string{"XXXXXX"}, "1", ""})
 		}
+	res = csearch(searchTerm)
+	log.Println("CodeSearch: ", res)
+	for _, a := range res {
+			ret = append(ret, Entry{a, a, a, "codesearch", []string{"vim", "XXXXXX"}, "1", ""})
+		}
+
 	
-	for _, d := range []string{os.Getenv("USERPROFILE")+`\`+ "Desktop", os.Getenv("USERPROFILE")+`\`+ "Downloads", os.Getenv("USERPROFILE")+`\`+ "Dropbox", os.Getenv("USERPROFILE")+`\`+ "Documents"} {
-		answer := directory(d, searchTerm)
-		for _, a := range answer {
-			ret = append(ret, Entry{a, d+`\`+a, d+`\`+a, "Local Drive", []string{"start", "XXXXXX"}, "1", ""})
-		}
+	answer := default_directories(searchTerm)
+	log.Println("Directories: ", answer)
+	for _, a := range answer {
+		ret = append(ret, Entry{a, a, a, "Local Drive", []string{"vim", "XXXXXX"}, "1", ""})
 	}
 
 	return ret
