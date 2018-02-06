@@ -128,11 +128,9 @@ func search(searchTerm string, numResults int) []Entry {
 	for _, a := range res {
 			ret = append(ret, Entry{a, a, a, "Applications", []string{"XXXXXX"}, "1", ""})
 		}
-	res = csearch(searchTerm)
+	resE  := csearch(searchTerm)
 	log.Println("CodeSearch: ", res)
-	for _, a := range res {
-			ret = append(ret, Entry{a, a, a, "codesearch", []string{"vim", "XXXXXX"}, "1", ""})
-		}
+	ret = append(ret, resE...)
 
 	
 	answer := default_directories(searchTerm)

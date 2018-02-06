@@ -3,6 +3,7 @@
 package main
 
 import (
+	"strings"
 	"log"
 	"os"
 	"os/exec"
@@ -31,6 +32,7 @@ func man(search string) []string {
 
 //Use the system's application registry to look up the search term
 func installedApps(search string) []string {
+	return[]string{}
 	ret := CacheLines("installed apps", func()[]string{return shellLines([]string{"apt", "list"})})
 	return stringGrep(search, ret);
 }
@@ -51,11 +53,34 @@ func directory(directory, search string) []string {
 	return stringGrep(search,CacheLines("directory listing for " + directory, func()[]string{return shellLines([]string{"ls", "-l", directory})}))
 }
 
-func csearch(search string) []string {
-	log.Println("csearch: ", shellLines([]string{"csearch", search}))
-	return CacheLines("csearch for " + search, 
-		func()[]string{return stringGrep(search, shellLines([]string{"csearch", search}))})
 
+
+func csearch(search string) []Entry {
+	if len(search)>2 {
+	args := []string{"csearch", "-n", search}
+	log.Println("csearch args: ", args)
+	//log.Println("csearch: ", shellLines(args))
+	raw := CacheLines("csearch for " + search, 
+		func()[]string{return stringGrep(search, shellLines(args))})
+		out  := []Entry{}
+		for _, l := range raw {
+			log.Println("Working on ", l)
+			bits := strings.SplitN(l, ":", 3)
+			log.Println("csearch bits", bits)
+			if len(bits)>1 {
+				e := Entry{}
+				e.Name = bits[0]
+				e.Value = bits[0]
+				e.Line = bits[1]
+				e.Description = bits[2]
+				e.Launch = []string{"vim", "XXXXXX"}
+				out = append(out, e)
+			}
+		}
+		return out
+	} else {
+		return []Entry{}
+	}
 }
 
 
