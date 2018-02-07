@@ -24,6 +24,18 @@ func shellout (command []string) string {
 	return string(stdoutStderr)
 }
 
+func subshellout (command []string)  {
+		//fmt.Printf("$V", argv)
+		//cmd := []string{os.Getenv("SHELL"), "-c", command[0] + " $0 $1 $2 $3 $4 $5 $6 $7 $8 $9"}
+		attr := os.ProcAttr{
+			Files: []*os.File{os.Stdin, os.Stdout, os.Stderr},
+		}
+		//command = append(cmd, command[1:]...)
+		log.Println("HEERE",command[1:])
+		proc,err :=os.StartProcess("/usr/bin/vim", command, &attr)
+		log.Println(err)
+		proc.Wait()
+	}
 //Lookup the search string using the system's help function (help for windows, man for linux)
 func man(search string) []string {
 	lines := CacheLines("manpage index", func()[]string{return shellLines([]string{"man", search})})

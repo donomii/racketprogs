@@ -331,18 +331,20 @@ func doInput() {
 				case termbox.KeyArrowRight:
 					line, _ := strconv.ParseInt(results[selection].Line, 10, 0)
 					if line < 0 { line = 0 }
+					launcher := results[selection].Launch
+					for i, _ := range launcher {
+						if launcher[i] == "XXXXXX" {
+							launcher[i] = results[selection].Value
+						}
+					}
 					if isLinux() || isDarwin()  {
 						termbox.Close()
-						tagbrowser.Launch(results[selection].Name, fmt.Sprintf("%v", line))
+						//tagbrowser.Launch(results[selection].Name, fmt.Sprintf("%v", line))
+						subshellout(launcher)
+						log.Println("subshell complete")
 						termbox.Init()
 						refreshTerm()
 					} else {
-						launcher := results[selection].Launch
-						for i, _ := range launcher {
-							if launcher[i] == "XXXXXX" {
-								launcher[i] = results[selection].Value
-							}
-						}
 						shellout(launcher)
 						refreshTerm()
 					}
