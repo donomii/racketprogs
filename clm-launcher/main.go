@@ -481,5 +481,6 @@ func main() {
 	for display_thread && input_thread {
 		time.Sleep(1 * time.Second)
 	}
+	log.Println("clm finished")
 
 }
