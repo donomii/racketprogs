@@ -23,6 +23,8 @@ import (
 var serverActive = false
 
 var use_gui = true
+var display_thread = true
+var input_thread = true
 
 var statuses map[string]string
 var results []Entry
@@ -77,13 +79,6 @@ func shellLines (command []string) []string {
 	return ret
 }
 
-func powershellLines (command []string) []string {
-	ret := CacheLines(fmt.Sprintf("%v", command), func ()[]string{return ToLines(powershellout(command))})
-	//log.Println(ret)
-	return ret
-}
-
-
 func environ(search string) []string {
 	allvars := CacheLines("environment variables", func()[]string{return os.Environ()})
 	return CacheLines("environment variable: "+search, func()[]string{return stringGrep(search, allvars)})
@@ -117,29 +112,31 @@ func search(searchTerm string, numResults int) []Entry {
 
 	ret := []Entry{}
 	res := man(searchTerm)
+	log.Println("Manpages: ", res)
 	for _, a := range res {
-			ret = append(ret, Entry{a, searchTerm, a, "Help page", []string{"help", "XXXXXX"}, "1", ""})
+			ret = append(ret, Entry{a, searchTerm, a, "Help page", []string{"man", "XXXXXX"}, "1", ""})
 		}
 	
 	res = environ(searchTerm)
+	log.Println("Environemnt: ", res)
 	for _, a := range res {
 			ret = append(ret, Entry{a, a, a, "Environment Variable", []string{"echo", "XXXXXX"}, "1", ""})
 		}
 	
-	for _, a := range res {
-			ret = append(ret, Entry{a, searchTerm, a, "Help page", []string{"help", "XXXXXX"}, "1", ""})
-		}
-	
 	res = installedApps(searchTerm)
+	log.Println("Installed Apps: ", res)
 	for _, a := range res {
-			ret = append(ret, Entry{a, a, a, "Applications", []string{"start", "XXXXXX"}, "1", ""})
+			ret = append(ret, Entry{a, a, a, "Applications", []string{"XXXXXX"}, "1", ""})
 		}
+	resE  := csearch(searchTerm)
+	log.Println("CodeSearch: ", res)
+	ret = append(ret, resE...)
+
 	
-	for _, d := range []string{os.Getenv("USERPROFILE")+`\`+ "Desktop", os.Getenv("USERPROFILE")+`\`+ "Downloads", os.Getenv("USERPROFILE")+`\`+ "Dropbox", os.Getenv("USERPROFILE")+`\`+ "Documents"} {
-		answer := directory(d, searchTerm)
-		for _, a := range answer {
-			ret = append(ret, Entry{a, d+`\`+a, d+`\`+a, "Local Drive", []string{"start", "XXXXXX"}, "1", ""})
-		}
+	answer := default_directories(searchTerm)
+	log.Println("Directories: ", answer)
+	for _, a := range answer {
+		ret = append(ret, Entry{a, a, a, "Local Drive", []string{"vim", "XXXXXX"}, "1", ""})
 	}
 
 	return ret
@@ -315,10 +312,6 @@ func extractWord(aLine string, pos int) string {
 	return aLine[start:pos]
 }
 func doInput() {
-	if !serverActive {
-		return
-	}
-
 	if use_gui {
 		//statuses["Input"] = "Waiting"
 		//width, height := termbox.Size()
@@ -338,18 +331,20 @@ func doInput() {
 				case termbox.KeyArrowRight:
 					line, _ := strconv.ParseInt(results[selection].Line, 10, 0)
 					if line < 0 { line = 0 }
+					launcher := results[selection].Launch
+					for i, _ := range launcher {
+						if launcher[i] == "XXXXXX" {
+							launcher[i] = results[selection].Value
+						}
+					}
 					if isLinux() || isDarwin()  {
 						termbox.Close()
-						tagbrowser.Launch(results[selection].Name, fmt.Sprintf("%v", line))
+						//tagbrowser.Launch(results[selection].Name, fmt.Sprintf("%v", line))
+						subshellout(launcher)
+						log.Println("subshell complete")
 						termbox.Init()
 						refreshTerm()
 					} else {
-						launcher := results[selection].Launch
-						for i, _ := range launcher {
-							if launcher[i] == "XXXXXX" {
-								launcher[i] = results[selection].Value
-							}
-						}
 						shellout(launcher)
 						refreshTerm()
 					}
@@ -430,34 +425,32 @@ func putStr(x, y int, aStr string) {
 	}
 }
 
-//Redraw screen every 200 Milliseconds
+//Redraw screen every 10 Milliseconds
 func automaticRefreshTerm() {
-	for {
+	for use_gui {
 		if redrawNeeded {
 			refreshTerm()
 			redrawNeeded = false
 		} else {
-			time.Sleep(time.Millisecond * 10)
+			time.Sleep(time.Millisecond * 1)
 		}
 	}
+	display_thread = false
 }
 
 func automaticdoInput() {
-	for i := 0; i < 1; i = 0 {
+	for use_gui {
+		time.Sleep(1 * time.Millisecond)
 		doInput()
-		time.Sleep(10 * time.Millisecond)
 	}
+	input_thread = false
 }
 
 //Clean up and exit
 func shutdown() {
 	//Shut down resources so the display thread doesn't panic when the display driver goes away first
-	//When we get a file persistence layer, it will go here
 	statuses["Status"] = "Shutting down"
 	use_gui = false
-	serverActive = false
-	os.Exit(0)
-
 }
 func main() {
     LineCache = map[string]string{}
@@ -476,17 +469,18 @@ func main() {
 	statuses = map[string]string{}
 
 	termbox.Init()
-	termbox.SetInputMode(termbox.InputEsc)
-	//termbox.SetInputMode(termbox.InputAlt)
 	defer termbox.Close()
+	termbox.SetInputMode(termbox.InputEsc)
+	termbox.SetOutputMode(termbox.OutputNormal)
 	use_gui = true
 	serverActive = true
 	go automaticRefreshTerm()
 
 	go automaticdoInput()
 
-	for {
+	for display_thread && input_thread {
 		time.Sleep(1 * time.Second)
 	}
+	log.Println("clm finished")
 
 }

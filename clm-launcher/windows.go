@@ -1,4 +1,5 @@
 // +build windows
+
 package main
 
 import (
@@ -27,6 +28,12 @@ func powershellout (command []string) string {
 		statuses["Error"] = fmt.Sprintf("%v", err)
 	}
 	return string(stdoutStderr)
+}
+
+func powershellLines (command []string) []string {
+       ret := CacheLines(fmt.Sprintf("%v", command), func ()[]string{return ToLines(powershellout(command))})
+       //log.Println(ret)
+       return ret
 }
 
 //Lookup the search string using the system's help function (help for windows, man for linux)
