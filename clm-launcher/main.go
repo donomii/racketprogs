@@ -2,23 +2,23 @@
 package main
 
 import (
-	"strings"
-	"github.com/donomii/tagdb/tagbrowser"
-	"runtime"
-	"strconv"
-	"io"
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"log"
+	"net/rpc"
 	"net/rpc/jsonrpc"
 	"os"
-	"time"
-	"net/rpc"
-	"github.com/nsf/termbox-go"
+	"runtime"
+	"strconv"
+	"strings"
 	"sync"
-)
+	"time"
 
+	"github.com/donomii/tagdb/tagbrowser"
+	"github.com/nsf/termbox-go"
+)
 
 var serverActive = false
 
@@ -47,44 +47,43 @@ var predictResults []string
 var redrawNeeded bool = true
 var refreshMutex sync.Mutex
 
-
 var LineCache map[string]string
 
 func FetchLine(f string, lineNum int) (line string, lastLine int, err error) {
-    key := fmt.Sprintf("%v%v", f, lineNum)
-    if val, ok := LineCache[key]; ok {
-        return val, -1, nil
-    } else {
-        r, _ := os.Open(f)
-        sc := bufio.NewScanner(r)
-        for sc.Scan() {
-            lastLine++
-            if lastLine == lineNum {
-                LineCache[key] = sc.Text()
-                return sc.Text(), lastLine, sc.Err()
-            }
-        }
-        LineCache[key] = line
-        return line, lastLine, io.EOF
-    }
+	key := fmt.Sprintf("%v%v", f, lineNum)
+	if val, ok := LineCache[key]; ok {
+		return val, -1, nil
+	} else {
+		r, _ := os.Open(f)
+		sc := bufio.NewScanner(r)
+		for sc.Scan() {
+			lastLine++
+			if lastLine == lineNum {
+				LineCache[key] = sc.Text()
+				return sc.Text(), lastLine, sc.Err()
+			}
+		}
+		LineCache[key] = line
+		return line, lastLine, io.EOF
+	}
 }
 
-func ToLines (s string) []string {
-	return strings.Split(s,"\n")
+func ToLines(s string) []string {
+	return strings.Split(s, "\n")
 }
 
-func shellLines (command []string) []string {
-	ret := CacheLines(fmt.Sprintf("%v", command), func ()[]string{return ToLines(shellout(command))})
+func shellLines(command []string) []string {
+	ret := CacheLines(fmt.Sprintf("%v", command), func() []string { return ToLines(shellout(command)) })
 	//log.Println(ret)
 	return ret
 }
 
 func environ(search string) []string {
-	allvars := CacheLines("environment variables", func()[]string{return os.Environ()})
-	return CacheLines("environment variable: "+search, func()[]string{return stringGrep(search, allvars)})
+	allvars := CacheLines("environment variables", func() []string { return os.Environ() })
+	return CacheLines("environment variable: "+search, func() []string { return stringGrep(search, allvars) })
 }
 
-func stringGrep (needle string, haystack []string) []string {
+func stringGrep(needle string, haystack []string) []string {
 	var matches []string
 	for _, s := range haystack {
 		if strings.Contains(strings.ToLower(s), strings.ToLower(needle)) {
@@ -97,13 +96,13 @@ func stringGrep (needle string, haystack []string) []string {
 
 //Things we need in return struct:  short value, full value, description, source, launch command
 type Entry struct {
-	Name     	string			//A short name.  e.g. a filename, username, etc (around 20 chars)
-	Value	 	string			//Usually the location of the thing.  e.g. a directory, a url (as long as you need)
-	Description	string			//A user friendly description of the item. (around 80 chars)
-	Source		string			//A useful-to-the-user description of where the item is located.  e.g. a directory name, a website name, name of the program that generated the item....
-	Launch		[]string		//An array of strings, that are the command name and args.  There must be one string with the value XXXXXX, which will be replaced with the Value string
-	Score		string
-	Line		string
+	Name        string   //A short name.  e.g. a filename, username, etc (around 20 chars)
+	Value       string   //Usually the location of the thing.  e.g. a directory, a url (as long as you need)
+	Description string   //A user friendly description of the item. (around 80 chars)
+	Source      string   //A useful-to-the-user description of where the item is located.  e.g. a directory name, a website name, name of the program that generated the item....
+	Launch      []string //An array of strings, that are the command name and args.  There must be one string with the value XXXXXX, which will be replaced with the Value string
+	Score       string
+	Line        string
 }
 
 //Contact server with search string
@@ -114,25 +113,24 @@ func search(searchTerm string, numResults int) []Entry {
 	res := man(searchTerm)
 	log.Println("Manpages: ", res)
 	for _, a := range res {
-			ret = append(ret, Entry{a, searchTerm, a, "Help page", []string{"man", "XXXXXX"}, "1", ""})
-		}
-	
+		ret = append(ret, Entry{a, searchTerm, a, "Help page", []string{"man", "XXXXXX"}, "1", ""})
+	}
+
 	res = environ(searchTerm)
 	log.Println("Environemnt: ", res)
 	for _, a := range res {
-			ret = append(ret, Entry{a, a, a, "Environment Variable", []string{"echo", "XXXXXX"}, "1", ""})
-		}
-	
+		ret = append(ret, Entry{a, a, a, "Environment Variable", []string{"echo", "XXXXXX"}, "1", ""})
+	}
+
 	res = installedApps(searchTerm)
 	log.Println("Installed Apps: ", res)
 	for _, a := range res {
-			ret = append(ret, Entry{a, a, a, "Applications", []string{"XXXXXX"}, "1", ""})
-		}
-	resE  := csearch(searchTerm)
+		ret = append(ret, Entry{a, a, a, "Applications", []string{"XXXXXX"}, "1", ""})
+	}
+	resE := csearch(searchTerm)
 	log.Println("CodeSearch: ", res)
 	ret = append(ret, resE...)
 
-	
 	answer := default_directories(searchTerm)
 	log.Println("Directories: ", answer)
 	for _, a := range answer {
@@ -152,7 +150,7 @@ func predictString(searchTerm string) []string {
 	err := client.Call("TagResponder.PredictString", args, preply)
 	if err != nil {
 		//log.Println("RPC error:", err)
-		statuses["Status"] = fmt.Sprintf("RPC error:", err)
+		statuses["Status"] = fmt.Sprintf("RPC error: %v", err)
 	} else {
 		statuses["Status"] = "Predict complete"
 	}
@@ -199,15 +197,14 @@ func status() {
 }
 
 var completeMatch = false
-func isLinux() bool {
-    return (runtime.GOOS == "linux")
-}
 
+func isLinux() bool {
+	return (runtime.GOOS == "linux")
+}
 
 func isDarwin() bool {
-    return (runtime.GOOS == "darwin")
+	return (runtime.GOOS == "darwin")
 }
-
 
 func refreshTerm() {
 	if !serverActive {
@@ -241,24 +238,26 @@ func refreshTerm() {
 					selectPosX = 0
 					selectPosY = dispLine
 				}
-                /*if elem.Line != "-1" && strings.HasPrefix(elem.Name, "http") {
-                    putStr(1, dispLine, fmt.Sprintf("%v", elem.Score))
-                    l, _:= strconv.Atoi(elem.Line)
-                    LineStr, _, _ := FetchLine(elem.Filename, l)
-					*/
-                    putStr(8, dispLine, fmt.Sprintf("%v",  elem.Description))
-					
-                    dispLine++
-                    itempos++
-                    prevRecord = elem
-                //}
+				/*if elem.Line != "-1" && strings.HasPrefix(elem.Name, "http") {
+				  putStr(1, dispLine, fmt.Sprintf("%v", elem.Score))
+				  l, _:= strconv.Atoi(elem.Line)
+				  LineStr, _, _ := FetchLine(elem.Filename, l)
+				*/
+				putStr(8, dispLine, fmt.Sprintf("%v", elem.Description))
+
+				dispLine++
+				itempos++
+				prevRecord = elem
+				//}
 			}
 		}
 		putStr(1, height-3, fmt.Sprintf("%v results", len(results)))
 		//putStr(20, height-3, fmt.Sprintf("%v", statuses))
 		putStr(20, height-3, fmt.Sprintf("%v", spinner[spinner_index]))
 		spinner_index += 1
-		if spinner_index >= len(spinner) { spinner_index = 0 }
+		if spinner_index >= len(spinner) {
+			spinner_index = 0
+		}
 		putStr(1, height-2, fmt.Sprintf("Type your search terms, add a - to the end of word to remove that word (word-)"))
 		putStr(1, height-1, fmt.Sprintf("Up/Down Arrows to select a result, Right Arrow to edit that file, Escape Quits"))
 		if focus == "input" {
@@ -306,7 +305,6 @@ func searchRight(aStr string, pos int) int {
 	return len(aStr) - 1
 }
 
-
 func extractWord(aLine string, pos int) string {
 	start := searchLeft(aLine, pos)
 	return aLine[start:pos]
@@ -330,14 +328,16 @@ func doInput() {
 				switch ev.Key {
 				case termbox.KeyArrowRight:
 					line, _ := strconv.ParseInt(results[selection].Line, 10, 0)
-					if line < 0 { line = 0 }
+					if line < 0 {
+						line = 0
+					}
 					launcher := results[selection].Launch
 					for i, _ := range launcher {
 						if launcher[i] == "XXXXXX" {
 							launcher[i] = results[selection].Value
 						}
 					}
-					if isLinux() || isDarwin()  {
+					if isLinux() || isDarwin() {
 						termbox.Close()
 						//tagbrowser.Launch(results[selection].Name, fmt.Sprintf("%v", line))
 						subshellout(launcher)
@@ -350,15 +350,15 @@ func doInput() {
 					}
 				case termbox.KeyArrowDown:
 					selection++
-					    if selection > len(results) {
+					if selection > len(results) {
 						selection = len(results)
-					    }
+					}
 					focus = "selection"
 				case termbox.KeyArrowUp:
 					selection--
-					    if selection < 0 {
+					if selection < 0 {
 						selection = 0
-					    }
+					}
 					focus = "selection"
 				case termbox.KeyEsc:
 					shutdown()
@@ -406,6 +406,7 @@ func doInput() {
 func foreGround() termbox.Attribute {
 	return termbox.ColorBlack
 }
+
 //Background colour
 func backGround() termbox.Attribute {
 	return termbox.ColorWhite
@@ -453,8 +454,8 @@ func shutdown() {
 	use_gui = false
 }
 func main() {
-    LineCache = map[string]string{}
-    spinner = []string{"◜ ", " ◝", " ◞", "◟ "}
+	LineCache = map[string]string{}
+	spinner = []string{"◜ ", " ◝", " ◞", "◟ "}
 	flag.StringVar(&tagbrowser.ServerAddress, "server", tagbrowser.ServerAddress, fmt.Sprintf("Server IP and Port.  Default: %s", tagbrowser.ServerAddress))
 	flag.Parse()
 	//terms := flag.Args()
