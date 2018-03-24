@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/donomii/goStringTable.svg?branch=master)](https://travis-ci.org/donomii/goStringTable)
+[![GoDoc](https://godoc.org/github.com/donomii/goStringTable?status.svg)](https://godoc.org/github.com/donomii/goStringTable)
+
 # goStringTable
 A thread-safe symbol table (string table) for Go
 
