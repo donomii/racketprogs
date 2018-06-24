@@ -41,6 +41,25 @@
 
 [define [shell-out a-string a-handler] [apply a-handler [process a-string]]]
 
+
+[define keymaps
+`[
+  ["c:r" "close-varedit" "Close variable viewport"]
+  ["c:b" "pop-varedit" "Open variable viewport"]
+  ["c:n" "pop-listvars" "Open viewport and list variables"]
+  ["c:l" "open-let" "dunno"]
+  ["c:e" "eval-selection" "Run selection in scheme evaluator"]
+  ["c:up" "pop-viewport" "Open empty viewport"]
+  ["c:m" "open-mexpr" "Open m-expression"]
+  ["c:h" "open-html" "Open html"]
+  ["c:s" "system-command"  "Shell out"]
+  ["c:down" "shutdown-dispatcher" "Close the viewport and run the default action on the text"]
+  ["c:k" "pop-keybindings" "Open viewport and show keybindings"]
+  ["c:d" "pop-defs" "Open viewport and show definitions"]
+  ]
+  ]
+
+
 [define defs '[["word" . 
 "The Helpful Editor will open a text portal when you press Control + Up.  Exactly 
 what appears in the portal depends on context.  Here it is just text, but it can 
@@ -131,7 +150,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 (send c set-editor t)
 [send t set-max-undo-history 50]
 [send t insert welcome-text]
-;text% is relentless its desire to apply ANY style other than the one I want
+;text% is relentless in its desire to apply ANY style other than the one I want
 [define force-fucking-style [lambda [a-text]
                               [send [send t get-wordbreak-map] set-map #\- [list 'selection]]
                               [send [send t get-wordbreak-map] set-map #\_ [list 'selection]]
@@ -273,6 +292,55 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                                           
                                                                           [hash-set! vars var-name [read [open-input-string the-text]]]
                                                                           ""]]]]
+[define pop-listvars  [make-pop-func [lambda [a-box word] [write "popping listvars"]
+                                      ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
+                                       [pretty-format [hash-keys vars ]]
+                                      ]
+                                    
+                                    [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
+                                                                              [the-set! [format "(set! ~a [quote ~a])" var-name the-text]]]
+                                                                          [display [format "Evalling ~a~n" the-set!]]
+                                                                          ;[eval-string the-set!]
+                                                                          
+                                                                          [hash-set! vars var-name [read [open-input-string the-text]]]
+                                                                          ""]]]]
+
+[define pop-keybindings  [make-pop-func [lambda [a-box word] [write "popping keybindings"]
+                                      ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
+                                       [format "`~a" [pretty-format keymaps]]
+                                      ]
+                                    
+                                    [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
+]
+                                                                          [display [format "closing ~a~n" var-name]]
+                                                                          ;[eval-string the-set!]
+                                                                          
+
+                                                                          [set! keymaps [eval-string the-text]]
+                                                                          [map [lambda [definition]
+       [display [format "Binding ~a to ~a~n" [first definition] [second definition]]]
+       [send a-keymap map-function [first definition] [second definition]]]
+     keymaps]
+                                                                          [insert-keybindings t]
+                                                                          ""]]]]
+
+
+[define pop-defs  [make-pop-func [lambda [a-box word] [write "popping defs"]
+                                      ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
+                                       [format "`~a" [pretty-format defs]]
+                                      ]
+                                    
+                                    [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
+]
+                                                                          [display [format "closing ~a~n" var-name]]
+                                                                          ;[eval-string the-set!]
+                                                                          
+
+                                                                          [set! defs [eval-string the-text]]
+                                                                          
+                                                                          ""]]]]
+
+
 [define [shutdown-dispatcher b e] [ letrec [[snip [send  [send b get-admin] get-snip]]
                                             [t [send [send snip get-admin] get-editor]]
                                             [ed-snip [send snip get-editor]]
@@ -370,27 +438,36 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 
 [new button% [label "Close viewport"] [parent f] [callback close-let]]
 
+
+; Ideally, we would be able to display these to the user, let them edit, then read them back
 [define [set-keybindings a-keymap]
   [send a-keymap add-function "close-varedit" shutdown-dispatcher]
-  [send a-keymap map-function "c:r" "close-varedit"]
+  
   [send a-keymap add-function "pop-varedit" pop-varedit]
-  [send a-keymap map-function "c:b" "pop-varedit"]
+  
+  [send a-keymap add-function "pop-listvars" pop-listvars]
+  [send a-keymap add-function "pop-keybindings" pop-keybindings]
+  [send a-keymap add-function "pop-defs" pop-defs]
+  
   [send a-keymap add-function "close-viewport" close-viewport]
   [send a-keymap add-function "pop-viewport" pop-viewport]
   [send a-keymap add-function "open-let" open-let1]
-  [send a-keymap map-function "c:l" "open-let"]
+
   [send a-keymap add-function "eval-selection" eval-selection]
-  [send a-keymap map-function "c:e" "eval-selection"]
-  [send a-keymap map-function "c:up" "pop-viewport"]
   [send a-keymap add-function "open-mexpr" open-mexpr]
-  [send a-keymap map-function "c:m" "open-mexpr"]
+  
   ;[send a-keymap add-function "open-html" open-html]
-  [send a-keymap map-function "c:h" "open-html"]
+  
   [send a-keymap add-function "system-command" system-command]
-  [send a-keymap map-function "c:s" "system-command"]
+  
   [send a-keymap add-function "shutdown-dispatcher" shutdown-dispatcher]
   [send a-keymap map-function "c:down" "shutdown-dispatcher"]
   ;[send a-keymap map-function "c:," "close-let"]
+  
+[map [lambda [definition]
+       [display [format "Binding ~a to ~a~n" [first definition] [second definition]]]
+       [send a-keymap map-function [first definition] [second definition]]]
+     keymaps]
   ]
 
 [insert-keybindings t]
