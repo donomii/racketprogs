@@ -475,13 +475,14 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 
 
 
-
+(define last-file-name #f)
 (define mb (new menu-bar% [parent f]))
 (define m-file (new menu% [label "File"] [parent mb]))
 [new menu-item% [label "Open..."] [parent m-file] [callback [lambda args [load-file [get-file]]]] [shortcut #\o]]
 [new menu-item% [label "Open Scheme"] [parent m-file] [callback [lambda args [load-scheme-file [get-file]]]] [shortcut #\o]]
 [new menu-item% [label "Open Perl"] [parent m-file] [callback [lambda args [load-perl-file [get-file]]]] [shortcut #\o]]
-[new menu-item% [label "Save..."] [parent m-file] [callback [lambda args [save-file [put-file]]]] [shortcut #\o]]
+[new menu-item% [label "Save..."] [parent m-file] [callback [lambda args [save-file last-file-name]]] [shortcut #\a]]
+[new menu-item% [label "Save As..."] [parent m-file] [callback [lambda args [save-file [put-file]]]] [shortcut #\a]]
 [new menu-item% [label "Exit"] [parent m-file] [callback [lambda args [put-preferences '[vars] [list [hash->list vars]] ][exit]]] [shortcut #\q]]
 (define m-edit (new menu% [label "Edit"] [parent mb]))
 (define m-font (new menu% [label "Font"] [parent mb]))
@@ -523,6 +524,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                            [send t erase]
                            
                                                   [let  [[file-source [call-with-input-file a-path [lambda [in] [read-string 999999 in]] #:mode 'text]]]
+                                                    (set! last-file-name a-path)
                              [send t insert file-source]]
                            ]]
 [define load-scheme-file [lambda  [a-path]
@@ -530,6 +532,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                            [read-accept-reader #t]
                            [set! defs [get-multi-defs [cons a-path [hash-ref vars "project-files" [lambda [] '[]]]]]]
                                                   [let  [[file-source [call-with-input-file a-path [lambda [in] [read-string 999999 in]] #:mode 'text]]]
+                                                    (set! last-file-name a-path)
                              [send t insert file-source]]
                            [pretty-write defs]]]
 [define [get-perl-multi-defs input-files]
@@ -553,7 +556,10 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                          [status [format "Loaded ~a" a-path]]]]
 [define save-file [lambda [a-path]
                     [when a-path
-                      [call-with-output-file a-path [lambda [a-port] [display [send t get-text 0 9999999] a-port]]]]]]
+                      [call-with-atomic-output-file
+                       a-path
+                       [lambda [a-port another-path]
+                           [display [send t get-text 0 9999999] a-port]]]]]]
 
 
 
