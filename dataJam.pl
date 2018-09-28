@@ -12,12 +12,14 @@ sub uuid {
 
 my $cmd = shift;
 
+my $home = $ENV{"HOME"} || $ENV{"HOMEPATH"};
+my $dir = $home . "/myData";
+mkdir($dir);
 
-`mkdir -p ~/myData`;
-
-my $file = "/Users/jeremyprice/myData/default.sqlite";
+my $file = $dir . "/default.sqlite";
+print "Using db file $file\n";
 unless (-e $file) {
-    print "Can't find database file $file!";
+    print "Can't find database file $file!\n";
 }
 my $dbh = DBI->connect("dbi:SQLite:dbname=$file","","");
 if (!$dbh) {
@@ -53,40 +55,54 @@ sub make_table_name {
 #
 #Returns:  The table name
 sub AoH2Table {
+    my $timestamp = time();
+    my $add_timestamp = 0;
     my $table_name = make_table_name();
     if (@_==2) {
         $table_name = shift;
+	print "Dropping table $table_name\n";
         $dbh->do("DROP TABLE IF EXISTS $table_name");
 
     }
     my $AoH = shift;
-    my @headers = keys %{$AoH->[0]};
+    if (!$AoH->[0]->{imported}) {
+    	$add_timestamp=1;
+	$AoH->[0]->{imported} = $timestamp;
+    }
+    my %headers;
+    foreach my $h (@$AoH) {
+  	my @keys = keys %$h;
+	$headers{$_}++ foreach @keys;
+	}
+	my @headers = keys %headers;
     my $numCols = @headers;
     my $cmd = "CREATE TABLE IF NOT EXISTS $table_name ( ".makeHeaderDecls(@headers).makeIndexDecls(@headers)  ." )\n";
-    print $cmd."\n";
+    print "Creating table: ".$cmd."\n";
     $dbh->do($cmd);
-    foreach my $h ( @$AoH) {
-        #print Dumper($h);
-        my @headers = keys %$h;
-        my @vals = values %$h;
+	my $headerqry = '"'.join('","', @headers).'"';
         my $interp = join(",", ("?")x$numCols);
-        #print "INSERT INTO $table_name (".join(",", @headers)." ) VALUES($interp);\n";
-        my $sth = $dbh->prepare("INSERT INTO $table_name (".join(",",@headers)." ) VALUES($interp);");
+	my $cmd = "INSERT INTO $table_name ($headerqry) VALUES($interp);";
+        my $sth = $dbh->prepare($cmd);
+    foreach my $h ( @$AoH) {
+	$h->{imported} = $timestamp if $add_timestamp;
+	my %h = (%$h);
+        my @vals = @h{@headers};
+	#print $cmd;
             $sth->execute(@vals);
         }
     return $table_name;
 }
 
 
-sub dateRange {
-    use Date::Simple qw/date/;
-    use Date::Range;
-    my ( $start, $end ) = @_;
-    my $range = Date::Range->new( $start, $end );
-    my @all_dates = $range->dates;
-
-    return oneColTable(@all_dates);
-}
+#sub dateRange {
+#use Date::Simple qw/date/;
+#use Date::Range;
+#my ( $start, $end ) = @_;
+#my $range = Date::Range->new( $start, $end );
+#my @all_dates = $range->dates;
+#
+#return oneColTable(@all_dates);
+#}
 
 my $default_sql = q!
 ! ;
@@ -114,15 +130,14 @@ sub oneColTable {
 
 sub makeHeaderDecls {
     my @cols = @_;
-    $_.=" real" foreach @cols;
-    my $decls = join(",", @cols);
+    my $decls = '"'.join('" real,"', @cols).'" real';
     return $decls;
 }
 
 sub makeIndexDecls {
     my @cols = @_;
-    #$_.=" real" foreach @cols;
-    my $decls = ",\nPRIMARY KEY (".join(",", @cols).")\n";
+    my $d = '"'.join('","', @cols).'"';
+    my $decls = ",\nPRIMARY KEY (".$d.")\n";
     return $decls;
 }
 
