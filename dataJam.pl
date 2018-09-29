@@ -57,14 +57,14 @@ sub make_table_name {
 sub AoH2Table {
     my $timestamp = time();
     my $add_timestamp = 0;
-    my $table_name = make_table_name();
-    if (@_==2) {
-        $table_name = shift;
+       my $table_name = shift;
+    my $AoH = shift;
+    return unless @$AoH;
+    my @options = @_;
+    if (grep (/^DROP$/, @options)) {
 	print "Dropping table $table_name\n";
         $dbh->do("DROP TABLE IF EXISTS $table_name");
-
-    }
-    my $AoH = shift;
+}
     if (!$AoH->[0]->{imported}) {
     	$add_timestamp=1;
 	$AoH->[0]->{imported} = $timestamp;
