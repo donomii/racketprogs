@@ -121,7 +121,7 @@ my $sql = $cmd || $default_sql;
 sub oneColTable {
     my @res = @_;
     my $table_name = make_table_name();
-    $dbh->do("CREATE TABLE IF NOT EXISTS $table_name ( data real )");
+    $dbh->do("CREATE TABLE IF NOT EXISTS $table_name ( data NUMERIC )");
     my $sth = $dbh->prepare("INSERT INTO $table_name (data) VALUES(?);");
     chomp $_ foreach @res;
     $sth->execute($_) foreach @res;
@@ -130,7 +130,7 @@ sub oneColTable {
 
 sub makeHeaderDecls {
     my @cols = @_;
-    my $decls = '"'.join('" real,"', @cols).'" real';
+    my $decls = '"'.join('" NUMERIC,"', @cols).'" NUMERIC';
     return $decls;
 }
 
