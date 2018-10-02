@@ -8,10 +8,12 @@ require './dataJam.pl';
 use LWP::Simple;
 $|++;
 my $tablename = shift;
+die "Tablename required!" unless $tablename;
 my $str = join("", <STDIN>);
-my $data = eval {decode_json($str)};
+my $data = decode_json($str);
 my @httpdump;
 
+#use Data::Dumper;
 loadEntity($tablename, $data);
 
 	DataJam::AoH2Table("UrlStore", \@httpdump);
