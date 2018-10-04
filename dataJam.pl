@@ -3,6 +3,7 @@ package DataJam;
 use strict;
 use Data::Dumper;
 use DBI;
+use JSON;
 use Digest::MD5 qw(md5 md5_hex md5_base64);
 my $uuid_num = 1;
 
@@ -17,6 +18,7 @@ my $dir = $home . "/myData";
 mkdir($dir);
 
 my $file = $dir . "/default.sqlite";
+my $private = $dir . "/private.sqlite";
 print "Using db file $file\n";
 unless (-e $file) {
     print "Can't find database file $file!\n";
@@ -25,6 +27,25 @@ my $dbh = DBI->connect("dbi:SQLite:dbname=$file","","");
 if (!$dbh) {
     print "Could not open $file\n";
     exit(1);
+}
+my $private_dbh = DBI->connect("dbi:SQLite:dbname=$private","","");
+if (!$private_dbh) {
+    print "Could not open $private\n";
+    exit(1);
+}
+    my $cmd = "CREATE TABLE IF NOT EXISTS config ( key varchar, value varchar )\n";
+    print "Creating table: ".$cmd."\n";
+    $private_dbh->do($cmd);
+
+sub get_config {
+	my $key = shift;
+	my @row_ary = $private_dbh->selectrow_array("SELECT value FROM config WHERE key=?", {}, $key);
+	my $val =  shift @row_ary;
+	my $ret = {};
+	if ($val) {
+		$ret = decode_json($val);
+	}
+	return $ret;
 }
 
 #sub link {
@@ -77,7 +98,7 @@ sub AoH2Table {
 	my @headers = keys %headers;
     my $numCols = @headers;
     my $cmd = "CREATE TABLE IF NOT EXISTS $table_name ( ".makeHeaderDecls(@headers).makeIndexDecls(@headers)  ." )\n";
-    print "Creating table: ".$cmd."\n";
+    #print "Creating table: ".$cmd."\n";
     $dbh->do($cmd);
 	my $headerqry = '"'.join('","', @headers).'"';
         my $interp = join(",", ("?")x$numCols);
