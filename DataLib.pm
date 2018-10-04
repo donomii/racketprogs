@@ -1,17 +1,68 @@
-package DataJam;
+package DataLib;
+
+=head1 NAME DataLib
+
+DataLib - Imports data into a workspace
+
+=head1 SYNOPSIS
+
+    use DataLib;
+
+    my $gh = Net::GitHub->new( version => 3, login => conf(qw/github username/), pass => conf(qw/github password/ ));
+    my @myrepos = $gh->repos->list;
+    DataLib::AoH2Table("MyRepos", \@myrepos, "DROP");
+
+This imports the details about my github repositories into the default workspace.  It creates a table called "MyRepos", creates columns based on the keys in @myrepos, and loads the data in, row by row.  The "DROP" argument means that any existing table called "MyRepos" will be dropped to make way for the new one.
+
+    my $aoh = [];
+    push @$aoh, {like => "cake", dislike => "brocolli"};
+    push @$aoh, {like => "chocolate", dislike => "parsely"};
+    push @$aoh, {like => "tea", dislike => "coffee"};
+    DataLib::AoH2Table("Foods", $aoh);
+
+This will create the table "Foods" if it doesn't already exist, and add three rows to it.  If the table is created, the only columns it has will be "like" and "dislike".  If the table already exists but the "like" column does not exist, it will not be created and the import will fail.  Because there is no "DROP" argument, the data will be appended to an existing table, if there is one.
+
+=head1 GENERAL
+
+DataLib is a convenience library for easily importing tabular data into a database.  It automatically detects the columns that will be needed, creates the tables, and inserts the data.  You can import data from many different sources, and then use SQL to query and manipulate your data, create views, and all the other good things SQL can do.
+
+DataLib comes with many importer programs to load data from many sources, as well as some general importers that will load CSV, JSON, and other formats.  Often, you can import data from a new website simply by running C<curl http://exampledata.com/ | perl json.pl MyNewTableName>.
+
+=head1 INTERFACE
+
+You can write your own importer in very few lines of code:
+
+
+
+ =pod
+    =head1 Heading Text
+    =head2 Heading Text
+    =head3 Heading Text
+    =head4 Heading Text
+    =over indentlevel
+    =item stuff
+    =back
+    =begin format
+    =end format
+    =for format text...
+    =encoding type
+    =cut
+
+=cut
 
 use strict;
 use Data::Dumper;
 use DBI;
 use JSON;
+use Exporter;
+use base qw(Exporter);
 use Digest::MD5 qw(md5 md5_hex md5_base64);
 my $uuid_num = 1;
+our @EXPORT = qw/conf/;
 
 sub uuid {
     return $uuid_num++;
 }
-
-my $cmd = shift;
 
 my $home = $ENV{"HOME"} || $ENV{"HOMEPATH"};
 my $dir = $home . "/myData";
@@ -37,9 +88,21 @@ if (!$private_dbh) {
     print "Creating table: ".$cmd."\n";
     $private_dbh->do($cmd);
 
+sub conf {
+	my $key = shift;
+	my $valkey = shift;
+	my $val	 = get_config($key);
+    #print Dumper($val);
+	if ($val) {
+		return $val->{$valkey};
+	}
+	return undef;
+}
+
 sub get_config {
 	my $key = shift;
 	my @row_ary = $private_dbh->selectrow_array("SELECT value FROM config WHERE key=?", {}, $key);
+    die "Could not find configuration key $key in private database\n" unless @row_ary;
 	my $val =  shift @row_ary;
 	my $ret = {};
 	if ($val) {
@@ -128,7 +191,7 @@ sub AoH2Table {
 my $default_sql = q!
 ! ;
 
-my $sql = $cmd || $default_sql;
+#my $sql = $cmd || $default_sql;
 
 #Get a list of installed cpan modules
 #SELECT * FROM -[multiColSpaceTable([qw/name version/],`ssh -A server.com "cpan -l"`)]- ;
@@ -209,11 +272,11 @@ sub doOneInsert {
     return $sql;
 }
 
-my $old_sql = "";
-while ($sql ne $old_sql) {
-    $old_sql = $sql;
-    $sql = doOneInsert($sql);
-}
+#my $old_sql = "";
+#while ($sql ne $old_sql) {
+#$old_sql = $sql;
+#$sql = doOneInsert($sql);
+#}
 #print $sql."\n";
 #my @res = @{$dbh->selectall_arrayref($sql)};
 #print(join(",", @$_)."\n") foreach @res;

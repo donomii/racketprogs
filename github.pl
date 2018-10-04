@@ -3,26 +3,17 @@
 use strict;
 
 use Net::GitHub;
-require "./DataJam.pl";
+use lib "./";
 use JSON;
-sub dt {
-	my $key = shift;
-	my $valkey = shift;
-	my $val	 = DataJam::get_config($key);
-	print Dumper($val);
-	if ($val) {
-		return $val->{$valkey};
-	}
-	return undef;
-}
 
+use DataLib qw/conf/;
 
-my $gh = Net::GitHub->new( version => 3, login => dt(qw/github username/), pass => dt(qw/github password/));
+my $gh = Net::GitHub->new( version => 3, login => conf(qw/github username/), pass => conf(qw/github password/));
 
 my @myrepos = $gh->repos->list;
 use Data::Dumper;
 #print Dumper @repos;
-DataJam::AoH2Table("MyRepos", \@myrepos, "DROP");
+DataLib::AoH2Table("MyRepos", \@myrepos, "DROP");
 
 
 my %data = $gh->search->repositories({
@@ -31,10 +22,10 @@ my %data = $gh->search->repositories({
 	sort  => 'stars',
     order => 'desc',
 });
-DataJam::AoH2Table("PerlGithub",$data{items}, "DROP");
+DataLib::AoH2Table("PerlGithub",$data{items}, "DROP");
 while ($gh->search->has_next_page) {
 	    my %more =  $gh->search->next_page;
-DataJam::AoH2Table("PerlGithub",$more{items});
+DataLib::AoH2Table("PerlGithub",$more{items});
 	        ## OR ##
 		#    push @issues, $gh->issue->next_page;
 		    }

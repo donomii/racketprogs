@@ -4,7 +4,7 @@ use strict;
 use JSON;
 use LWP::Simple;
 use Data::Dumper;
-require './dataJam.pl';
+use DataLib;
 use LWP::Simple;
 $|++;
 my $tablename = shift;
@@ -16,8 +16,9 @@ my @httpdump;
 #use Data::Dumper;
 loadEntity($tablename, $data);
 
-	DataJam::AoH2Table("UrlStore", \@httpdump);
-	DataJam::AoH2Table("ImportLog", [{Name=>$tablename, Url=>""}]);
+	DataLib::AoH2Table("UrlStore", \@httpdump);
+	DataLib::AoH2Table("ImportLog", [{Name=>$tablename, Url=>""}]);
+
 sub loadEntity {
 	my $tablename = shift;
 	my $str = shift;
@@ -63,7 +64,7 @@ sub loadEntity {
 	}
 
 	print "Loading ".scalar(@out)." rows into $tablename\n";
-	DataJam::AoH2Table($tablename, \@out, "DROP");
+	DataLib::AoH2Table($tablename, \@out, "DROP");
 }
 
 

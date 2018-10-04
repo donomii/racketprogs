@@ -77,9 +77,9 @@ sub loadEntity {
 	}
 
 	print "Loading ".scalar(@out)." rows into $tablename\n";
-	DataJam::AoH2Table($tablename, \@out, "DROP");
-	DataJam::AoH2Table("UrlStore", \@httpdump);
-	DataJam::AoH2Table("ImportLog", [{Name=>$tablename, Url=>$url}]);
+	DataLib::AoH2Table($tablename, \@out, "DROP");
+	DataLib::AoH2Table("UrlStore", \@httpdump);
+	DataLib::AoH2Table("ImportLog", [{Name=>$tablename, Url=>$url}]);
 }
 
 

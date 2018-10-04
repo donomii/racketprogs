@@ -1,6 +1,6 @@
 use Paws;
 use Data::Dumper;
-require "./DataJam.pl";
+require "./DataLib.pm";
 use strict;
  
 my $dynamodb = Paws->service('DynamoDB', region => "eu-west-1");
@@ -29,7 +29,7 @@ while (my $last =  $ListTablesOutput->{LastEvaluatedTableName}) {
 }
 
 my @t = map { { TableName => $_ } } @$TableNames;
-#DataJam::AoH2Table("DynamoDbNames", \@t);
+#DataLib::AoH2Table("DynamoDbNames", \@t);
 
 my $TableDeets = [];
 foreach my $table (@$TableNames) {
@@ -73,4 +73,4 @@ foreach my $item (@{$ScanOutput->Items}){
 print "\n";
 }
 
-DataJam::AoH2Table("DynamoDbDetails", $TableDeets);
+DataLib::AoH2Table("DynamoDbDetails", $TableDeets);

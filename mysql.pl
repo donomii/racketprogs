@@ -5,12 +5,16 @@ use DBI;
 use JSON;
 use DBD::mysql;
 use Data::Dumper;
-require "./DataJam.pl";
-my $deets = DataJam::get_config("mysql");
+use DataLib;
+my $deets = DataLib::get_config("mysql");
+
+if (!$deets) {
+    die "Could not locate mysql connect details in the private database";
+}
 
 my @connect = ("DBI:mysql:database=$deets->{database};host=$deets->{server};port=$deets->{port}", $deets->{username}, $deets->{password});
 
-print "Connecting to: @connect\n";
+print "Connecting to: $deets->{database}\n";
 my $dbh = DBI->connect(@connect);
 
 
@@ -22,4 +26,4 @@ while (my $ref = $sth->fetchrow_hashref()) {
     push @out, $ref;
     #print "Found a row: id = $ref->{'id'}, name = $ref->{'name'}\n";
 }
-DataJam::AoH2Table("Mysql", \@out, "DROP");
+DataLib::AoH2Table("Mysql", \@out, "DROP");

@@ -4,7 +4,7 @@ use strict;
 
 use Text::CSV;
 use Data::Dumper;
-require "./DataJam.pl";
+use DataLib;
  
 my $tablename = shift;
 
@@ -21,5 +21,5 @@ my $csv = Text::CSV->new ( { binary => 1 } )  # should set binary attribute.
 		}
 		$csv->eof or $csv->error_diag();
 
-DataJam::AoH2Table($tablename, \@rows, "DROP");
-DataJam::AoH2Table("ImportLog",[{Name=>$tablename, Url=>""}]);
+DataLib::AoH2Table($tablename, \@rows, "DROP");
+DataLib::AoH2Table("ImportLog",[{Name=>$tablename, Url=>""}]);

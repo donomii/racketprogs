@@ -26,9 +26,9 @@ sub convertWMIC{
 	$table;
 }
 for my $t (["Processes", "process"], ["Programs","product"], ["Services","service"], ["Startup","startup"] ) {
-	#DataJam::AoH2Table($t->[0], convertWMIC(`wmic $t->[1] list full`));
+	#DataLib::AoH2Table($t->[0], convertWMIC(`wmic $t->[1] list full`));
 }
 
 for my $t (@$classes) {
-	DataJam::AoH2Table('t_'.$t, convertWMIC(`wmic $t list full`));
+	DataLib::AoH2Table('t_'.$t, convertWMIC(`wmic $t list full`));
 }

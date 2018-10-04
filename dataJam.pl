@@ -1,4 +1,4 @@
-package DataJam;
+package DataLib.pm;
 
 use strict;
 use Data::Dumper;
