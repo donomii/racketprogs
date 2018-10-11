@@ -58,34 +58,37 @@ use Exporter;
 use base qw(Exporter);
 use Digest::MD5 qw(md5 md5_hex md5_base64);
 my $uuid_num = 1;
-our @EXPORT = qw/conf/;
+our @EXPORT = qw/conf dbhandle/;
 
 sub uuid {
     return $uuid_num++;
 }
+sub dbhandle {
+    my $dbname = shift;
 
 my $home = $ENV{"HOME"} || $ENV{"HOMEPATH"};
 my $dir = $home . "/myData";
 mkdir($dir);
 
-my $file = $dir . "/default.sqlite";
-my $private = $dir . "/private.sqlite";
-print "Using db file $file\n";
+my $file = $dir . "/$dbname.sqlite";
+#print "Using db file $file\n";
 unless (-e $file) {
-    print "Can't find database file $file!\n";
+    warn "Can't find database file $file!\n";
 }
-my $dbh = DBI->connect("dbi:SQLite:dbname=$file","","");
-if (!$dbh) {
-    print "Could not open $file\n";
-    exit(1);
+
+    my $dbh = DBI->connect("dbi:SQLite:dbname=$file","","");
+    if (!$dbh) {
+       warn "Could not open $file\n";
+        exit(1);
+    }
+    return $dbh;
 }
-my $private_dbh = DBI->connect("dbi:SQLite:dbname=$private","","");
-if (!$private_dbh) {
-    print "Could not open $private\n";
-    exit(1);
-}
+
+my $dbh = dbhandle("default");
+
+my $private_dbh = dbhandle("private");
     my $cmd = "CREATE TABLE IF NOT EXISTS config ( key varchar, value varchar )\n";
-    print "Creating table: ".$cmd."\n";
+    #warn "Creating table: ".$cmd."\n";
     $private_dbh->do($cmd);
 
 sub conf {
@@ -146,7 +149,7 @@ sub AoH2Table {
     return unless @$AoH;
     my @options = @_;
     if (grep (/^DROP$/, @options)) {
-	print "Dropping table $table_name\n";
+	warn "Dropping table $table_name\n";
         $dbh->do("DROP TABLE IF EXISTS $table_name");
 }
     if (!$AoH->[0]->{imported}) {
@@ -161,11 +164,12 @@ sub AoH2Table {
 	my @headers = keys %headers;
     my $numCols = @headers;
     my $cmd = "CREATE TABLE IF NOT EXISTS $table_name ( ".makeHeaderDecls(@headers).makeIndexDecls(@headers)  ." )\n";
-    #print "Creating table: ".$cmd."\n";
+    warn "Creating table: ".$cmd."\n";
     $dbh->do($cmd);
 	my $headerqry = '"'.join('","', @headers).'"';
         my $interp = join(",", ("?")x$numCols);
 	my $cmd = "INSERT INTO $table_name ($headerqry) VALUES($interp);";
+    warn $cmd;
         my $sth = $dbh->prepare($cmd);
     foreach my $h ( @$AoH) {
 	$h->{imported} = $timestamp if $add_timestamp;
@@ -214,6 +218,7 @@ sub oneColTable {
 
 sub makeHeaderDecls {
     my @cols = @_;
+    s/\./_/g foreach @cols;
     my $decls = '"'.join('" NUMERIC,"', @cols).'" NUMERIC';
     return $decls;
 }
