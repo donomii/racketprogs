@@ -41,7 +41,7 @@ my $QueryOutput = $dynamodb->Scan(
       }
       my $tname = $table;
         $tname =~ s/\./_/g;
-    DataLib::AoH2Table($tname, \@t, "DROP");
+    DataLib::AoH2Table($tname, \@t, "DROP", "DEAMAZONIFY");
     exit 0 ;
 
     #print "Query: ";

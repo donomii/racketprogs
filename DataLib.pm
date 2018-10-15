@@ -175,6 +175,9 @@ sub AoH2Table {
 	$h->{imported} = $timestamp if $add_timestamp;
 	my %h = (%$h);
         my @vals = @h{@headers};
+        if (grep /DEAMAZONIFY/, @options) {
+            $_ = deAmazonify($_) foreach @vals;
+        }
 	#print $cmd;
             $sth->execute(@vals);
         }
@@ -285,4 +288,31 @@ sub doOneInsert {
 #print $sql."\n";
 #my @res = @{$dbh->selectall_arrayref($sql)};
 #print(join(",", @$_)."\n") foreach @res;
+
+
+sub deAmazonify {
+    my @keys = qw/B BOOL N S/;
+    my $json = shift;
+    print $json."\n";
+
+    my $inVal  ;
+    eval {$inVal = decode_json($json)->[0];};
+    return $json unless (defined($inVal));
+    my $outVal;
+    foreach my $key (@keys) {
+        $outVal //= $inVal->{$key};
+    }
+
+    $outVal //= $inVal;
+
+    if (ref($outVal) =~ /HASH|ARRAY/) {
+        $outVal = encode_json($outVal);
+    }
+
+    $outVal=undef if ($inVal->{NULL});
+    return $outVal;
+}
+
+
+
 1;
