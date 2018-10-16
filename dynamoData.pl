@@ -1,4 +1,5 @@
 use Paws;
+use Storable qw/dclone/;
 use Data::Dumper;
 use JSON;
 use Data::Structure::Util qw(
@@ -7,11 +8,8 @@ use Data::Structure::Util qw(
 );
 require "./DataLib.pm";
 use strict;
- 
 
-
-
-my $dynamodb = Paws->service('DynamoDB', region => "eu-west-1");
+my $dynamodb = Paws->service( 'DynamoDB', region => "eu-west-1" );
 my $table = shift;
 chomp $table;
 
@@ -20,40 +18,52 @@ chomp $table;
 print "Scanning table '$table'\n";
 my @t;
 my $QueryOutput = $dynamodb->Scan(
-      'TableName'              => $table,
-      #'Limit' => 100
-      );
-      unbless($QueryOutput);
+    'TableName' => $table,
+    'Limit'     => 1000
+);
+my $qo = dclone($QueryOutput);
+unbless($qo);
+ProcessQuery($qo);
 
-      foreach my $item ($QueryOutput->{Items}) {
+#while (my $last =  $QueryOutput->{LastEvaluatedKey}) {
+#$QueryOutput = $dynamodb->Scan('TableName' => $table, ExclusiveStartKey=>$last);
+#my $qo = dclone($QueryOutput);
+#unbless($qo);
+#ProcessQuery($qo);
+#warn "Fetching more...\n";
+#}
+
+sub ProcessQuery {
+    my $QueryOutput = shift;
+    foreach my $item ( $QueryOutput->{Items} ) {
         foreach my $i (@$item) {
-            warn Dumper($i);
-              my $data =  encode_json($i->{Map})."\n";
-              print $data."\n";
-              my %n;
-              my $m = $i->{Map};
-              foreach my $key (keys %$m) {
-                $n{$key} = encode_json([$m->{$key}]);
-              }
-              warn Dumper(\%n);
-              push @t, \%n; 
-          }
-      }
-      my $tname = $table;
-        $tname =~ s/\./_/g;
-    DataLib::AoH2Table($tname, \@t, "DROP", "DEAMAZONIFY");
-    exit 0 ;
 
-    #print "Query: ";
-    #my $QueryOutput = $dynamodb->Query(
-    #'TableName'              => $table
-    #);
-    #print Dumper($QueryOutput);
-    #
-    #
-    #my $GetItemOutput = $dynamodb->GetItem(
-    #'TableName' => 'Testing'
-    #);
-    #
-    #print "Get item:";
-    #print Dumper($GetItemOutput);
+            my $data = encode_json( $i->{Map} ) . "\n";
+            my %n;
+            my $m = $i->{Map};
+            foreach my $key ( keys %$m ) {
+                $n{$key} = encode_json( [ $m->{$key} ] );
+            }
+            push @t, \%n;
+        }
+    }
+}
+
+my $tname = $table;
+$tname =~ s/\./_/g;
+DataLib::AoH2Table( $tname, \@t, "DROP", "DEAMAZONIFY" );
+exit 0;
+
+#print "Query: ";
+#my $QueryOutput = $dynamodb->Query(
+#'TableName'              => $table
+#);
+#print Dumper($QueryOutput);
+#
+#
+#my $GetItemOutput = $dynamodb->GetItem(
+#'TableName' => 'Testing'
+#);
+#
+#print "Get item:";
+#print Dumper($GetItemOutput);
