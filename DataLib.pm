@@ -104,22 +104,24 @@ our @EXPORT = qw/conf dbhandle/;
 sub uuid {
     return $uuid_num++;
 }
+
 sub dbhandle {
     my $dbname = shift;
 
-my $home = $ENV{"HOME"} || $ENV{"HOMEPATH"};
-my $dir = $home . "/myData";
-mkdir($dir);
+    my $home = $ENV{"HOME"} || $ENV{"HOMEPATH"};
+    my $dir = $home . "/myData";
+    mkdir($dir);
 
-my $file = $dir . "/$dbname.sqlite";
-#print "Using db file $file\n";
-unless (-e $file) {
-    warn "Can't find database file $file!\n";
-}
+    my $file = $dir . "/$dbname.sqlite";
 
-    my $dbh = DBI->connect("dbi:SQLite:dbname=$file","","");
-    if (!$dbh) {
-       warn "Could not open $file\n";
+    #print "Using db file $file\n";
+    unless ( -e $file ) {
+        warn "Can't find database file $file!\n";
+    }
+
+    my $dbh = DBI->connect( "dbi:SQLite:dbname=$file", "", "" );
+    if ( !$dbh ) {
+        warn "Could not open $file\n";
         exit(1);
     }
     return $dbh;
@@ -128,51 +130,57 @@ unless (-e $file) {
 my $dbh = dbhandle("default");
 
 my $private_dbh = dbhandle("private");
-    my $cmd = "CREATE TABLE IF NOT EXISTS config ( key varchar, value varchar )\n";
-    #warn "Creating table: ".$cmd."\n";
-    $private_dbh->do($cmd);
+my $cmd = "CREATE TABLE IF NOT EXISTS config ( key varchar, value varchar )\n";
+
+#warn "Creating table: ".$cmd."\n";
+$private_dbh->do($cmd);
 
 sub conf {
-	my $key = shift;
-	my $valkey = shift;
-	my $val	 = get_config($key);
+    my $key    = shift;
+    my $valkey = shift;
+    my $val    = get_config($key);
+
     #print Dumper($val);
-	if ($val) {
-		return $val->{$valkey};
-	}
-	return undef;
+    if ($val) {
+        return $val->{$valkey};
+    }
+    return undef;
 }
 
 sub get_config {
-	my $key = shift;
-	my @row_ary = $private_dbh->selectrow_array("SELECT value FROM config WHERE key=?", {}, $key);
-    die "Could not find configuration key $key in private database\n" unless @row_ary;
-	my $val =  shift @row_ary;
-	my $ret = {};
-	if ($val) {
-		$ret = decode_json($val);
-	}
-	return $ret;
+    my $key = shift;
+    my @row_ary =
+      $private_dbh->selectrow_array( "SELECT value FROM config WHERE key=?",
+        {}, $key );
+    die "Could not find configuration key $key in private database\n"
+      unless @row_ary;
+    my $val = shift @row_ary;
+    my $ret = {};
+    if ($val) {
+        $ret = decode_json($val);
+    }
+    return $ret;
 }
 
 #sub link {
-    #my $col = pop @_;
-    #my @tables = @_;
+#my $col = pop @_;
+#my @tables = @_;
 #
-    #my @tableNames=();
-    #my @tableBits=();
-    #foreach (@tables) {
-        #my $tname = uuid();
-        #push @tableBits, $_."AS ".$tname." ";
-        #push @tableNames, $tname;
-    #}
-    #my $q = join(" JOIN ", @tableBits);
-    #$q .= " ON $tableNames[0] = $tableNames[1] ";
-    #return $q;
+#my @tableNames=();
+#my @tableBits=();
+#foreach (@tables) {
+#my $tname = uuid();
+#push @tableBits, $_."AS ".$tname." ";
+#push @tableNames, $tname;
+#}
+#my $q = join(" JOIN ", @tableBits);
+#$q .= " ON $tableNames[0] = $tableNames[1] ";
+#return $q;
 #}
 
 sub make_table_name {
-    return "table_".uuid();
+    return "table_" . uuid();
+
     #my $input = shift;
     #return md5_hex($input);
 }
@@ -180,51 +188,52 @@ sub make_table_name {
 #Puts an Array of Hashes into a new table
 #
 #The column names are taken from the keys of the first hash in the array
-#
-#Returns:  The table name
 sub AoH2Table {
-    my $timestamp = time();
+    my $timestamp     = time();
     my $add_timestamp = 0;
-       my $table_name = shift;
-    my $AoH = shift;
+    my $table_name    = shift;
+    my $AoH           = shift;
     return unless @$AoH;
     my @options = @_;
-    if (grep (/^DROP$/, @options)) {
-	warn "Dropping table $table_name\n";
+    if ( grep ( /^DROP$/, @options ) ) {
+        warn "Dropping table $table_name\n";
         $dbh->do("DROP TABLE IF EXISTS $table_name");
-}
-    if (!$AoH->[0]->{imported}) {
-    	$add_timestamp=1;
-	$AoH->[0]->{imported} = $timestamp;
+    }
+    if ( !$AoH->[0]->{imported} ) {
+        $add_timestamp = 1;
+        $AoH->[0]->{imported} = $timestamp;
     }
     my %headers;
     foreach my $h (@$AoH) {
-  	my @keys = keys %$h;
-	$headers{$_}++ foreach @keys;
-	}
-	my @headers = keys %headers;
+        my @keys = keys %$h;
+        $headers{$_}++ foreach @keys;
+    }
+    my @headers = keys %headers;
     my $numCols = @headers;
-    my $cmd = "CREATE TABLE IF NOT EXISTS $table_name ( ".makeHeaderDecls(@headers).makeIndexDecls(@headers)  ." )\n";
-    warn "Creating table: ".$cmd."\n";
+    my $cmd =
+        "CREATE TABLE IF NOT EXISTS $table_name ( "
+      . makeHeaderDecls(@headers)
+      . makeIndexDecls(@headers) . " )\n";
+    warn "Creating table: " . $cmd . "\n";
     $dbh->do($cmd);
-	my $headerqry = '"'.join('","', @headers).'"';
-        my $interp = join(",", ("?")x$numCols);
-	my $cmd = "INSERT INTO $table_name ($headerqry) VALUES($interp);";
+    my $headerqry = '"' . join( '","', @headers ) . '"';
+    my $interp = join( ",", ("?") x $numCols );
+    my $cmd = "INSERT INTO $table_name ($headerqry) VALUES($interp);";
     warn $cmd;
-        my $sth = $dbh->prepare($cmd);
-    foreach my $h ( @$AoH) {
-	$h->{imported} = $timestamp if $add_timestamp;
-	my %h = (%$h);
+    my $sth = $dbh->prepare($cmd);
+
+    foreach my $h (@$AoH) {
+        $h->{imported} = $timestamp if $add_timestamp;
+        my %h    = (%$h);
         my @vals = @h{@headers};
-        if (grep /DEAMAZONIFY/, @options) {
+        if ( grep /DEAMAZONIFY/, @options ) {
             $_ = deAmazonify($_) foreach @vals;
         }
-	#print $cmd;
-            $sth->execute(@vals);
-        }
-    return $table_name;
-}
 
+        #print $cmd;
+        $sth->execute(@vals);
+    }
+}
 
 #sub dateRange {
 #use Date::Simple qw/date/;
@@ -237,7 +246,7 @@ sub AoH2Table {
 #}
 
 my $default_sql = q!
-! ;
+!;
 
 #my $sql = $cmd || $default_sql;
 
@@ -259,22 +268,20 @@ Creates $tablename with a single column called "data", and loads @data into it.
 
 sub oneColTable {
     my $table_name = shift;
-    my @res = @{shift};
-    my @options = @_;
+    my @res        = @{shift};
+    my @options    = @_;
 
-
-
-    if (grep (/^DROP$/, @options)) {
-	warn "Dropping table $table_name\n";
+    if ( grep ( /^DROP$/, @options ) ) {
+        warn "Dropping table $table_name\n";
         $dbh->do("DROP TABLE IF EXISTS $table_name");
-}
+    }
 
     $dbh->do("CREATE TABLE IF NOT EXISTS $table_name ( data NUMERIC )");
     my $sth = $dbh->prepare("INSERT INTO $table_name (data) VALUES(?);");
     chomp $_ foreach @res;
-        if (grep /DEAMAZONIFY/, @options) {
-            $_ = deAmazonify($_) foreach @vals;
-        }
+    if ( grep /DEAMAZONIFY/, @options ) {
+        $_ = deAmazonify($_) foreach @vals;
+    }
     $sth->execute($_) foreach @res;
     return $table_name;
 }
@@ -282,14 +289,14 @@ sub oneColTable {
 sub makeHeaderDecls {
     my @cols = @_;
     s/\./_/g foreach @cols;
-    my $decls = '"'.join('" NUMERIC,"', @cols).'" NUMERIC';
+    my $decls = '"' . join( '" NUMERIC,"', @cols ) . '" NUMERIC';
     return $decls;
 }
 
 sub makeIndexDecls {
-    my @cols = @_;
-    my $d = '"'.join('","', @cols).'"';
-    my $decls = ",\nPRIMARY KEY (".$d.")\n";
+    my @cols  = @_;
+    my $d     = '"' . join( '","', @cols ) . '"';
+    my $decls = ",\nPRIMARY KEY (" . $d . ")\n";
     return $decls;
 }
 
@@ -302,38 +309,47 @@ sub multiColSpaceHeaderTable {
     $headerLine =~ s/\//_/g;
     my @cols = split /\s+/, $headerLine;
     warn "Found headers @cols\n";
-    return multiColSpaceTable(\@cols, @lines);
+    return multiColSpaceTable( \@cols, @lines );
 }
 
 #Mainly used to import from command line apps like ps
 #Give it an array of column names, and the lines in text format, and it will break the lines in columns (based on spaces) and put them in a table
 sub multiColSpaceTable {
-    my $headers = shift;
-    my $numCols = scalar(@$headers);
-    my $interp = join(",", ("?")x$numCols);
-    my @res = @_;
+    my $headers    = shift;
+    my $numCols    = scalar(@$headers);
+    my $interp     = join( ",", ("?") x $numCols );
+    my @res        = @_;
     my $table_name = make_table_name();
-    #print "CREATE TABLE IF NOT EXISTS $table_name ( ".makeHeaderDecls(@$headers)." )\n";
-    $dbh->do("CREATE TABLE IF NOT EXISTS $table_name ( ".makeHeaderDecls(@$headers)." )");
-    #print "INSERT INTO $table_name (".join(",", @$headers)." ) VALUES($interp);\n";
-    my $sth = $dbh->prepare("INSERT INTO $table_name (".join(",",@$headers)." ) VALUES($interp);");
+
+#print "CREATE TABLE IF NOT EXISTS $table_name ( ".makeHeaderDecls(@$headers)." )\n";
+    $dbh->do( "CREATE TABLE IF NOT EXISTS $table_name ( "
+          . makeHeaderDecls(@$headers)
+          . " )" );
+
+#print "INSERT INTO $table_name (".join(",", @$headers)." ) VALUES($interp);\n";
+    my $sth =
+      $dbh->prepare( "INSERT INTO $table_name ("
+          . join( ",", @$headers )
+          . " ) VALUES($interp);" );
     chomp $_ foreach @res;
     foreach (@res) {
         my @cols = split /\s+/, $_, $numCols;
-        next unless (scalar(@cols) == $numCols);
+        next unless ( scalar(@cols) == $numCols );
         $sth->execute(@cols);
     }
     return $table_name;
 }
 
-
 sub doOneInsert {
     my $sql = shift;
+
     #print "Processing $sql\n";
     $sql =~ s/-\[(.+?)\]-/PLACEHOLDER/;
     return $sql unless $1;
+
     #print $sql."\n";
     my $table = eval $1;
+
     #print $@;
 
     $sql =~ s/PLACEHOLDER/$table/;
@@ -349,15 +365,14 @@ sub doOneInsert {
 #my @res = @{$dbh->selectall_arrayref($sql)};
 #print(join(",", @$_)."\n") foreach @res;
 
-
 sub deAmazonify {
     my @keys = qw/B BOOL N S/;
     my $json = shift;
-    print $json."\n";
+    print $json. "\n";
 
-    my $inVal  ;
-    eval {$inVal = decode_json($json)->[0];};
-    return $json unless (defined($inVal));
+    my $inVal;
+    eval { $inVal = decode_json($json)->[0]; };
+    return $json unless ( defined($inVal) );
     my $outVal;
     foreach my $key (@keys) {
         $outVal //= $inVal->{$key};
@@ -365,14 +380,12 @@ sub deAmazonify {
 
     $outVal //= $inVal;
 
-    if (ref($outVal) =~ /HASH|ARRAY/) {
+    if ( ref($outVal) =~ /HASH|ARRAY/ ) {
         $outVal = encode_json($outVal);
     }
 
-    $outVal=undef if ($inVal->{NULL});
+    $outVal = undef if ( $inVal->{NULL} );
     return $outVal;
 }
-
-
 
 1;
