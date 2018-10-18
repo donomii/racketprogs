@@ -2,13 +2,15 @@ package DataLib;
 
 =head1 NAME DataLib
 
-DataLib - Imports data into a workspace
+DataLib - Imports data into a SQLite database
 
 =head1 SYNOPSIS
 
     use DataLib;
 
-    my $gh = Net::GitHub->new( version => 3, login => conf(qw/github username/), pass => conf(qw/github password/ ));
+    my $gh = Net::GitHub->new( version => 3, 
+                login => conf(qw/github username/), 
+                pass => conf(qw/github password/ ));
     my @myrepos = $gh->repos->list;
     DataLib::AoH2Table("MyRepos", \@myrepos, "DROP");
 
@@ -22,9 +24,9 @@ This imports the details about my github repositories into the default workspace
 
 This will create the table "Foods" if it doesn't already exist, and add three rows to it.  If the table is created, the only columns it has will be "like" and "dislike".  If the table already exists but the "like" column does not exist, it will not be created and the import will fail.  Because there is no "DROP" argument, the data will be appended to an existing table, if there is one.
 
-=head1 GENERAL
+=head1 DESCRIPTION
 
-DataLib is a convenience library for easily importing tabular data into a database.  It automatically detects the columns that will be needed, creates the tables, and inserts the data.  You can import data from many different sources, and then use SQL to query and manipulate your data, create views, and all the other good things SQL can do.
+DataLib is a convenience library for easily importing data into a database.  It automatically detects the columns that will be needed, creates the tables, and inserts the data.  You can import data from many different sources, and then use SQL to query and manipulate your data, create views, and all the other good things SQL can do.
 
 DataLib comes with many importer programs to load data from many sources, as well as some general importers that will load CSV, JSON, and other formats.  Often, you can import data from a new website simply by running C<curl http://exampledata.com/ | perl json.pl MyNewTableName>.
 
@@ -32,7 +34,46 @@ DataLib comes with many importer programs to load data from many sources, as wel
 
 You can write your own importer in very few lines of code:
 
+     use Text::CSV;
+     use DataLib;
 
+     my $tablename = shift;
+     $tablename || die "Please provide tablename";
+
+     my @rows;
+     my $csv = Text::CSV->new ( { binary => 1 } ) or die "Cannot use CSV: ".Text::CSV- >error_diag ();
+
+         my @columns = $csv->getline( *STDIN );
+         $csv->column_names(@columns);
+         while ( my $row = $csv->getline_hr( *STDIN ) ) {
+                     push @rows, $row;
+             }
+             $csv->eof or $csv->error_diag();
+
+     DataLib::AoH2Table($tablename, \@rows, "DROP");
+     DataLib::AoH2Table("ImportLog",[{Name=>$tablename, Url=>""}]);
+
+=head1 FUNCTIONS
+
+=head2 AoH2Table ($tablename, \@rows, "OPTION", "OPTION")
+
+Creates a table called $tablename, and loads the data from @rows into it.  
+
+Each element of @row must be a hash.  AoH2Table will examine every @row, collect all the keys from all the hashes and use them as column names.
+
+AoH2Table supports several options:
+
+=over 1
+
+=item DROP
+
+DROP drops the table from the database and creates a new one before loading the data.  Use this if you expect the columns to change between each run.
+
+=item DEAMAZONIFY
+
+Amazon returns data in a complicated format, that has type information mixed with data.  DEAMAZONIFY strips away all the type glurge, leaving nice clean data.
+
+=back
 
  =pod
     =head1 Heading Text
@@ -209,12 +250,31 @@ my $default_sql = q!
 #
 #SELECT DISTINCT A.data FROM -[oneColTable(`ls`)]- AS A  JOIN -[oneColTable(`ls *pl`) ]- AS B ON A.data = B.data ;
 #SELECT data FROM -[dateRange('2016-10-01', '2016-10-16')]-;
+
+=head2 onColTable ($tablename, \@data, "OPTION", "OPTION", ...)
+
+Creates $tablename with a single column called "data", and loads @data into it.
+
+=cut
+
 sub oneColTable {
-    my @res = @_;
-    my $table_name = make_table_name();
+    my $table_name = shift;
+    my @res = @{shift};
+    my @options = @_;
+
+
+
+    if (grep (/^DROP$/, @options)) {
+	warn "Dropping table $table_name\n";
+        $dbh->do("DROP TABLE IF EXISTS $table_name");
+}
+
     $dbh->do("CREATE TABLE IF NOT EXISTS $table_name ( data NUMERIC )");
     my $sth = $dbh->prepare("INSERT INTO $table_name (data) VALUES(?);");
     chomp $_ foreach @res;
+        if (grep /DEAMAZONIFY/, @options) {
+            $_ = deAmazonify($_) foreach @vals;
+        }
     $sth->execute($_) foreach @res;
     return $table_name;
 }
