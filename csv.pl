@@ -3,16 +3,13 @@
 use strict;
 
 use Text::CSV;
-use Data::Dumper;
 use DataLib;
  
 my $tablename = shift;
-
 $tablename || die "Please provide tablename";
 
 my @rows;
-my $csv = Text::CSV->new ( { binary => 1 } )  # should set binary attribute.
-                or die "Cannot use CSV: ".Text::CSV->error_diag ();
+my $csv = Text::CSV->new ( { binary => 1 } ) or die "Cannot use CSV: ".Text::CSV->error_diag ();
 	 
 	my @columns = $csv->getline( *STDIN );
 	$csv->column_names(@columns);
