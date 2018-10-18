@@ -32,6 +32,12 @@ sub loadEntity {
 		return $v unless ref($v);
 		#print Dumper $v;
 		#print "***".ref($v)."***\n";
+		if (!ref($v)) {
+			return $v
+		}
+		if (ref($v) eq 'JSON::PP::Boolean') {
+			return $v
+		}
 		if (ref($v) eq 'SCALAR') {
 			return $v
 		}
