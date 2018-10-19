@@ -1,4 +1,5 @@
 use Paws;
+use strict;
 use Storable qw/dclone/;
 use Data::Dumper;
 use JSON;
@@ -11,6 +12,8 @@ use strict;
 
 my $dynamodb = Paws->service( 'DynamoDB', region => "eu-west-1" );
 my $table = shift;
+my $limit = 1000;
+my $count = 0;
 chomp $table;
 
 #Get data from dynamoDB
@@ -19,25 +22,56 @@ print "Scanning table '$table'\n";
 my @t;
 my $QueryOutput = $dynamodb->Scan(
     'TableName' => $table,
-    'Limit'     => 1000
+    'Limit'     => $limit,
 );
 my $qo = dclone($QueryOutput);
-unbless($qo);
-ProcessQuery($qo);
-
-#while (my $last =  $QueryOutput->{LastEvaluatedKey}) {
-#$QueryOutput = $dynamodb->Scan('TableName' => $table, ExclusiveStartKey=>$last);
-#my $qo = dclone($QueryOutput);
 #unbless($qo);
-#ProcessQuery($qo);
-#warn "Fetching more...\n";
-#}
+ProcessQuery($QueryOutput);
+
+#$count += $QueryOutput->Items;
+
+print "Starting loop\n";
+
+sub CleanUpAttribute {
+    my $a = shift;
+    foreach my $attr (values %$a) {
+        foreach my $key ( keys %$attr ) {
+            unless (
+                    $attr->{$key} eq '0'  ||
+                    (!ref($attr->{$key}) && length($attr->{$key}) >0) ||
+                    (ref($attr->{$key}) eq 'HASH' && scalar keys %{$$attr->{$key}}) ||
+                    (ref($attr->{$key}) eq 'ARRAY' && scalar @{$attr->{$key}})
+                    ) { delete $attr->{$key} }
+        }
+    }
+    return $a;
+}
+
+while (my $lastObj =  $QueryOutput->LastEvaluatedKey) {
+    warn "More to fetch" if ($lastObj);
+    my $last = $lastObj->Map;
+    CleanUpAttribute($last);
+    #print Dumper($last);
+
+    #$count += $QueryOutput->Items;
+if($count>$limit) {
+    warn "Fetched $count items, exceeded limit $limit";
+    last;
+}
+    $QueryOutput = $dynamodb->Scan('TableName' => $table, Limit => $limit,ExclusiveStartKey=>$last);
+    #my $qo = dclone($QueryOutput);
+    #unbless($qo);
+    ProcessQuery($QueryOutput);
+    warn "Fetching more...\n";
+}
 
 sub ProcessQuery {
     my $QueryOutput = shift;
-    foreach my $item ( $QueryOutput->{Items} ) {
+    die "Query failed" unless $QueryOutput;
+    foreach my $item ( $QueryOutput->Items ) {
         foreach my $i (@$item) {
 
+            unbless($i);
             my $data = encode_json( $i->{Map} ) . "\n";
             my %n;
             my $m = $i->{Map};
@@ -45,6 +79,7 @@ sub ProcessQuery {
                 $n{$key} = encode_json( [ $m->{$key} ] );
             }
             push @t, \%n;
+            $count++;
         }
     }
 }
