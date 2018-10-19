@@ -209,6 +209,7 @@ sub AoH2Table {
         $headers{$_}++ foreach @keys;
     }
     my @headers = keys %headers;
+    #warn "Columns: @headers\n";
     my $numCols = @headers;
     my $cmd =
         "CREATE TABLE IF NOT EXISTS $table_name ( "
@@ -219,7 +220,7 @@ sub AoH2Table {
     my $headerqry = '"' . join( '","', @headers ) . '"';
     my $interp = join( ",", ("?") x $numCols );
     my $cmd = "INSERT INTO $table_name ($headerqry) VALUES($interp);";
-    warn $cmd;
+    #warn $cmd;
     my $sth = $dbh->prepare($cmd);
 
     foreach my $h (@$AoH) {
@@ -268,7 +269,7 @@ Creates $tablename with a single column called "data", and loads @data into it.
 
 sub oneColTable {
     my $table_name = shift;
-    my @res        = @{shift};
+    my @res        = @{shift()};
     my @options    = @_;
 
     if ( grep ( /^DROP$/, @options ) ) {
@@ -280,7 +281,7 @@ sub oneColTable {
     my $sth = $dbh->prepare("INSERT INTO $table_name (data) VALUES(?);");
     chomp $_ foreach @res;
     if ( grep /DEAMAZONIFY/, @options ) {
-        $_ = deAmazonify($_) foreach @vals;
+        $_ = deAmazonify($_) foreach @res;
     }
     $sth->execute($_) foreach @res;
     return $table_name;
@@ -368,7 +369,6 @@ sub doOneInsert {
 sub deAmazonify {
     my @keys = qw/B BOOL N S/;
     my $json = shift;
-    print $json. "\n";
 
     my $inVal;
     eval { $inVal = decode_json($json)->[0]; };
