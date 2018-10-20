@@ -69,7 +69,7 @@ func translateRecursive(original reflect.Value, buff *bytes.Buffer) {
 			f := original.Field(i)
 			fname := original.Type().Field(i).Name
 			//log.Println(fmt.Sprintf("%v", original.Field(i).Name))
-			buff.WriteString(fmt.Sprintf("%v ,: ", encodeString(fname)))
+			buff.WriteString(fmt.Sprintf("%v :: ", encodeString(fname)))
 			//log.Println(EncodeString(fmt.Sprintf("%v", original.Field(i).Name)))
 			translateRecursive(f, buff)
 		}
