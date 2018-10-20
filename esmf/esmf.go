@@ -77,6 +77,7 @@ func translateRecursive(original reflect.Value, buff *bytes.Buffer) {
 
 	// If it is a slice we create a new slice and translate each element
 	case reflect.Slice:
+		buff.WriteString("[[ ")
 		for i := 0; i < original.Len(); i += 1 {
 			if i != 0 {
 				buff.WriteString(" ,, ")
@@ -85,6 +86,7 @@ func translateRecursive(original reflect.Value, buff *bytes.Buffer) {
 			translateRecursive(original.Index(i), buff)
 
 		}
+		buff.WriteString(" ]]")
 
 	// If it is a map we create a new map and translate each value
 	case reflect.Map:
