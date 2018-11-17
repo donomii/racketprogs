@@ -96,7 +96,7 @@ func main() {
         //fmt.Println("Labels:")
         //for _, l := range r.Labels {
                 //fmt.Printf("- %s\n", l.Name)
-        //}
+        }
 
         getMessages(srv)
 }

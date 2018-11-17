@@ -135,6 +135,7 @@ my $cmd = "CREATE TABLE IF NOT EXISTS config ( key varchar, value varchar )\n";
 #warn "Creating table: ".$cmd."\n";
 $private_dbh->do($cmd);
 
+
 sub conf {
     my $key    = shift;
     my $valkey = shift;
@@ -185,6 +186,34 @@ sub make_table_name {
     #return md5_hex($input);
 }
 
+sub safe_headers {
+    my @cols = @_;
+    s/\./_/g foreach @cols;
+    s/\ /_/g foreach @cols;
+    s/\+/_/g foreach @cols;
+    s/\//_/g foreach @cols;
+    s/\[/_/g foreach @cols;
+    s/\]/_/g foreach @cols;
+    s/\(/_/g foreach @cols;
+    s/\)/_/g foreach @cols;
+    s/\-/_/g foreach @cols;
+    return @cols;
+}
+
+sub safe_name {
+    my @cols = @_;
+    s/\ /_/g foreach @cols;
+    s/\+/_/g foreach @cols;
+    s/\./_/g foreach @cols;
+    s/\-/_/g foreach @cols;
+    s/\//_/g foreach @cols;
+    s/\[/_/g foreach @cols;
+    s/\]/_/g foreach @cols;
+    s/\(/_/g foreach @cols;
+    s/\)/_/g foreach @cols;
+    return $cols[0];
+}
+
 #Puts an Array of Hashes into a new table
 #
 #The column names are taken from the keys of the first hash in the array
@@ -193,8 +222,10 @@ sub AoH2Table {
     my $add_timestamp = 0;
     my $table_name    = shift;
     my $AoH           = shift;
+    $table_name = safe_name($table_name);
     return unless @$AoH;
     my @options = @_;
+    $dbh->do("PRAGMA schema.journal_mode = WAL");
     if ( grep ( /^DROP$/, @options ) ) {
         warn "Dropping table $table_name\n";
         $dbh->do("DROP TABLE IF EXISTS $table_name");
@@ -209,18 +240,22 @@ sub AoH2Table {
         $headers{$_}++ foreach @keys;
     }
     my @headers = keys %headers;
+    if ( grep ( /^DROP$/, @options ) ) {
+        @headers = sort @headers;
+    }
+
     #warn "Columns: @headers\n";
     my $numCols = @headers;
     my $cmd =
         "CREATE TABLE IF NOT EXISTS $table_name ( "
-      . makeHeaderDecls(@headers)
-      . makeIndexDecls(@headers) . " )\n";
+      . makeHeaderDecls(safe_headers(@headers))
+      . makeIndexDecls(safe_headers(@headers)) . " )\n";
     warn "Creating table: " . $cmd . "\n";
     $dbh->do($cmd);
-    my $headerqry = '"' . join( '","', @headers ) . '"';
     my $interp = join( ",", ("?") x $numCols );
+    my $headerqry = '"' . join( '","', safe_headers(@headers) ) . '"';
     my $cmd = "INSERT INTO $table_name ($headerqry) VALUES($interp);";
-    #warn $cmd;
+    warn $cmd;
     my $sth = $dbh->prepare($cmd);
 
     foreach my $h (@$AoH) {
@@ -289,8 +324,7 @@ sub oneColTable {
 
 sub makeHeaderDecls {
     my @cols = @_;
-    s/\./_/g foreach @cols;
-    my $decls = '"' . join( '" NUMERIC,"', @cols ) . '" NUMERIC';
+    my $decls = '`' . join( '` NUMERIC,`', @cols ) . '` NUMERIC';
     return $decls;
 }
 
