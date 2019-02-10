@@ -3,7 +3,6 @@
 ; Support functions
 [define [id x] x]
 [define [walk tree func]
-  ;[displayln tree]
   [if [list? tree]
       [map [lambda [branch] [walk branch func]] [func tree]]
       tree
@@ -44,199 +43,332 @@
 
 ; C output functions
 
-;
-;[define [includes tree]
-;  [list
-;   [map [lambda [x]  [format "#include <~s>~n" x] ] [cons 'stdio.h [cdr [codeof tree]]]]
-;   "\n"
-;   ]]
-;
-;[define [arguments tree]
-;  [list "("
-;        [string-join [map [lambda [x]  [format "~a ~a" [typemap [car x]] [cadr x]]] [make-pairs [codeof tree]]] ", "]
-;        ")"
-;        ]]
-;
-;
-;[define [statement tree]
-;  [displayln  "!!!"]
-;  [displayln [codeof tree]]
-;  
-;  [list
-;   [case [car [codeof  tree]]
-;     ['set  [format "    ~a=~a;~n" [cadr [codeof tree]] [caddr [codeof tree]]]]
-;     [else [list [format "    ~a(" [car [codeof tree]]]
-;                 [string-join [map [lambda [x] [format "~s" x]] [cdr [codeof tree]]] ", "]
-;                 ");\n"]]]
-;   ]]
-;
-;[define [declaration tree]
-;  [match-let [[[list type name value] [codeof tree]]]
-;    [format "    ~a ~a = ~s;\n"  [typemap type] name  value]]]
-;
-;
-;
-;
-;[define [body tree]
-;  [displayln tree]
-;  ;[exit 0]
-;  [list
-;   [map statement  tree]
-;   "}\n\n"]]
-;
-;
-;
-;[define [function tree]  [match-let [[[list type name args decs  bod] [childrenof tree]]]
-;    
-;                           [list
-;                            [format "~a ~a " [typemap [codeof type]] [codeof name]]
-;                            [arguments args]
-;                            [format " {~n" ]
-;                            [declarations decs]
-;                            [body bod]]]]
-;
-;
-;[define [typemap type]
-;  [case type
-;    ['string "char*"]
-;    [else type]]]
+
+[define [clang_includes tree]
+  [list
+   [map [lambda [x]  [format "#include <~s>~n" x] ] [cons 'stdio.h [cdr [codeof tree]]]]
+   "\n"
+   ]]
+
+[define [clang_arguments tree]
+  [list "("
+        [string-join [map [lambda [x]  [format "~a ~a" [clang_typemap [car x]] [cadr x]]] [make-pairs [codeof tree]]] ", "]
+        ")"
+        ]]
+
+
+[define [clang_expression tree]
+ 
+  [if [list? tree]
+      [if [empty? tree]
+          ""
+          [string-join [list [format "~a(" [clang_funcmap [car  tree]]]
+                             [if [empty? tree]
+          ""
+                             [string-join [map [lambda [x] [format "~s" x]] [cdr  tree]] ", "]]
+                             ")"]]]
+      [clang_funcmap tree]]
+  ]
+
+[define [clang_statement tree]
+ 
+  [list
+   [case [car [codeof  tree]]
+     ['if [format "    if ( ~a ) {\n      ~a    } else {\n      ~a    }"
+                  [clang_expression  [codeof [first [childrenof tree]]]]
+                  [string-join [flatten [clang_body  [second [childrenof tree]]]]]
+                  [string-join [flatten[clang_body [third [childrenof tree]]]]]
+                  ]]
+     ['set  [format "    ~a=~a;" [cadr [codeof tree]] [go_expression [third [codeof tree]]]]]
+     [else [list [format "    ~a(" [car [codeof tree]]]
+                 [string-join [map [lambda [x] [format "~s" x]] [cdr [codeof tree]]] ", "]
+                 ");"]]]
+   "\n"]]
+
+[define [clang_declaration tree]
+  [match-let [[[list type name value] [codeof tree]]]
+    [format "    ~a ~a = ~s;\n"  [clang_typemap type] name  value]]]
+
+
+
+
+[define [clang_body tree]
+  
+  [list
+   [map clang_statement  tree]
+   ]]
+
+
+
+[define [clang_function tree]  [match-let [[[list type name args decs  bod] [childrenof tree]]]
+    
+                                 [list
+                                  [format "~a ~a" [clang_typemap [codeof type]] [codeof name]]
+                                  [clang_arguments args]
+                                  [format " {~n" ]
+                                  [clang_declarations decs]
+                                  [clang_body bod]
+                                  "}\n\n"]]]
+
+
+[define [clang_typemap type]
+  [case type
+    ['string "char*"]
+    [else type]]]
+
+[define [clang_funcmap name]
+  [case name
+    ['true '1]
+    [else name]]]
+
+
+
+[define [clang_declarations tree]
+  [map clang_declaration  [childrenof tree]]]
+
+
+[define [clang_functions tree]
+  [map clang_function [childrenof tree]]]
+
+[define [clang_dispatch tree]
+  [case [nameof tree]
+    [(functions)   [clang_functions tree]]
+    [(includes)  [clang_includes tree]]]]
+
+[define [clang_program tree]
+  [string-join [flatten [map clang_dispatch  [childrenof tree]]] ""]]
+
+[define clang_test_filename "test.c"]
+
+[define clang_test_commands '["gcc test.c" "./a.out" "a.out"]]
 
 
 
 ; Golang output functions
 
-[define [includes tree]
+[define [go_includes tree]
   [list
    "package main\n\nimport \"fmt\"\n\n"
    [map [lambda [x]  [format "import \"~a\"~n" x] ] [cdr [codeof tree]]]
    ]]
 
-[define [arguments tree]
+[define [go_arguments tree]
   [list "("
         [string-join [map [lambda [x]  [format "~a ~a" [cadr x] [car x]]] [make-pairs [codeof tree]]] ", "]
         ")"
         ]]
 
+[define [go_expression tree]
+  [if [list? tree]
+      [string-join [list [format "~a(" [go_funcmap [car  tree]]]
+                         [string-join [map [lambda [x] [format "~s" x]] [cdr  tree]] ", "]
+                         ")"] ""]
+      tree]
+  ]
 
-[define [statement tree]
-  ;[displayln  "!!!"]
-  ;[displayln [codeof tree]]
+[define [go_statement tree]
+  
   [list
    [case [car [codeof  tree]]
-     ['set  [format "    ~a=~a~n" [cadr [codeof tree]] [caddr [codeof tree]]]]
-     [else [list [format "    ~a(" [funcmap [car [codeof tree]]]]
+     ['if [format "    if ~a {\n      ~a    } else {\n      ~a    }"
+                  [go_expression  [codeof [first [childrenof tree]]]]
+                  [string-join [flatten [go_body  [second [childrenof tree]]]]]
+                  [string-join [flatten[go_body [third [childrenof tree]]]]]
+                  ]]
+     ['set  [format "    ~a=~a" [cadr [codeof tree]] [go_expression [third [codeof tree]]]]]
+     [else [list [format "    ~a(" [go_funcmap [car [codeof tree]]]]
                  [string-join [map [lambda [x] [format "~s" x]] [cdr [codeof tree]]] ", "]
-                 ")\n"]]]]]
+                 ")"]]]
+   "\n"]]
 
-[define [declaration tree]
+[define [go_declaration tree]
   [match-let [[[list type name value] [codeof tree]]]
     [format "    var ~a ~a = ~s\n"  name type value]]]
 
 
 
-[define [main tree]
-  [displayln tree]
+[define [go_main tree]
   [match-let [[[list type name args decs  bod] [childrenof tree]]]
     [list
      "func main() {\n"
-     [declarations decs]
-     [body bod]
+     [go_declarations decs]
+     [go_body bod]
+     "}\n"
      ]]]
 
-[define [body tree]
-  [displayln tree]
-  ;[exit 0]
+[define [go_body tree]
   [list
-   [map statement  tree]
-   "}\n"]]
+   [map go_statement  tree]
+   ]]
 
 
 
-[define [function tree]
+[define [go_function tree]
   [match-let [[[list type name args decs  bod] [childrenof tree]]]
     [if [equal? [codeof name] 'main]
-        [main tree]
+        [go_main tree]
         [list
          [format "func ~a " [codeof name]]
-         [arguments args]
-         [format " ~a {~n" [typemap [codeof type]]]
-         [declarations decs]
-         [body bod]]]]]
+         [go_arguments args]
+         [format " ~a {~n" [go_typemap [codeof type]]]
+         [go_declarations decs]
+         [go_body bod]
+         "}\n\n"]]]]
 
 
-[define [typemap type]
+[define [go_typemap type]
   [case type
     ['void ""]
     [else type]]]
 
-[define [funcmap name]
+[define [go_funcmap name]
   [case name
     ['printf 'fmt.Printf]
     [else name]]]
 
 
+[define [go_declarations tree]
+  [map go_declaration  [childrenof tree]]]
+
+
+[define [go_functions tree]
+  [map go_function [childrenof tree]]]
+
+[define [go_dispatch tree]
+  [case [nameof tree]
+    [(functions)   [go_functions tree]]
+    [(includes)  [go_includes tree]]]]
+
+[define [go_program tree]
+  [string-join [flatten [map go_dispatch  [childrenof tree]]] ""]]
+
+[define go_test_filename "test.go"]
+
+[define go_test_commands '["/Users/jeremyprice/go-git/bin/go run test.go"]]
+
+
+
 ;
 ;; BASH output functions
-;
-;[define [includes tree]
-;  [list "#!/bin/bash\n\n"
-;        [map [lambda [x]  [format "~n"] ] [cdr tree]]
-;        ]]
-;
-;[define [arguments tree]
-;  [list "{\n"
-;        [map [lambda [x i] [format "    local ~a=$~a~n" x i]] [nth-places 2 tree -1] [iota [length tree] 1 1]]]]
-;
-;[define [statement tree]
-;  [list
-;   [case [car tree]
-;     ['set [format "    local ~a=~a~n" [cadr tree] [caddr tree]]]
-;     [else [list
-;             [format "    ~a " [car tree]]
-;             [map [lambda [x]  [format "~s " x]] [cdr tree]]
-;             ]]]
-;   "\n"]]
-;
-;[define [declaration tree]
-;  [match-let [[[list type name value] tree]]
-;    [format "    local ~a=~a~n"  name value]]]
-;
-;[define [main tree]
-;  [match-let [[[list type name args decs  bod] tree]]
-;    [list
-;     "function " name " {\n" 
-;     [declarations decs]
-;     [map [lambda [x] [statement x]] [cdr bod]]
-;     "}\n"
-;     "main"
-;     ]]]
-;
-;[define [body tree]
-;  [list
-;   [map [lambda [x] [statement x]] [cdr tree]]
-;   "}"
-;   "\n"
-;   ]]
-;
-;
-;
-;[define [function tree]
-;  [match-let [[[list type name args decs  bod] tree]]
-;    [if [equal? name 'main]
-;        [main tree]
-;        [list
-;         [format "function ~a " name]
-;         [arguments args]
-;         [format " ~a" [typemap type]]
-;         [declarations decs]
-;         [body bod]
-;         ]]]
-;  ]
-;
-;
-;[define [typemap type]
-;  ""
-;  ]
+
+[define [bash_includes tree]
+  [list "#!/bin/bash\n\n"
+        [map [lambda [x]  [format "~n"] ] [cdr tree]]
+        ]]
+
+[define [bash_arguments tree]
+  
+  [displayln tree]
+  [list 
+   [map [lambda [x i] [format "    local ~a=$~a~n" x i]] [nth-places 1 [codeof tree] 1] [iota [length tree] 1 1]]]]
+
+
+[define [bash_expression types tree]
+  [if [list? tree]
+      [string-join [list [format "~a " [go_funcmap [car  tree]]]
+                         [string-join [map [lambda [x] [format "~s" [bash_detect_variable types x]]] [cdr  tree]] ", "]
+                         ] ""]
+      [bash_detect_variable types tree]]
+  ]
+
+[define [bash_detect_variable types atom]
+  ;[display [format "Types: ~s    Atom: ~s~n" types atom]]
+  [if [assoc atom types]
+      [format "$~a"  atom ]
+      atom
+      ]
+  ]
+
+[define [bash_statement tree]
+  ;[displayln tree]
+  [list
+   [case [car [codeof tree]]
+     ['if [format "    if [ ~a ]\n    then\n      ~a    else\n      ~a    fi"
+                  [bash_expression [typesof tree] [codeof [first [childrenof tree]]]]
+                  [string-join [flatten [bash_body  [second [childrenof tree]]]] ""]
+                  [string-join [flatten[bash_body [third [childrenof tree]]]]""]
+                  ]]
+     ['set [format "    ~a\n    local ~a=$returnValue"  [bash_expression [typesof tree] [third [codeof tree]]]  [cadr [codeof tree]]  ]]
+     ['return [format "returnValue=~s" [bash_expression [typesof tree] [second [codeof tree]]]]]
+     [else [list
+            [format "    ~a " [bash_funcmap [car [codeof tree]]]]
+            [map [lambda [x]  [format "~s " [bash_detect_variable [typesof tree] x]]] [cdr [codeof tree]]]
+            ]]]
+   "\n"]]
+
+[define [bash_declaration tree]
+  [match-let [[[list type name value] [codeof tree]]]
+    [format "    local ~a=~a~n"   name value]]]
+
+
+
+
+[define [bash_main tree]
+  [match-let [[[list type name args decs  bod] [childrenof tree]]]
+    [list
+     "function main {\n" 
+     [bash_declarations decs]
+     [bash_body bod]
+     "}\n"
+     "main"
+     ]]]
+
+[define [bash_body tree]
+  [map [lambda [x] [bash_statement x]] tree]
+  ]
+
+
+
+
+[define [bash_function tree]
+  [match-let [[[list type name args decs  bod] [childrenof tree]]]
+    [if [equal? [codeof name] 'main]
+        [bash_main tree]
+        [list
+         [format "function ~a {\n" [codeof name]]
+         [bash_arguments args]
+         [format " ~a" [bash_typemap [codeof type]]]
+         [bash_declarations decs]
+         [bash_body bod]
+         "}\n\n"
+         ]]]
+  ]
+
+
+[define [bash_typemap type]
+  ""
+  ]
+
+
+
+[define [bash_funcmap name]
+  [case name
+    ['printf 'printf]
+    [else name]]]
+
+
+[define [bash_declarations tree]
+  [map bash_declaration  [childrenof tree]]]
+
+
+[define [bash_functions tree]
+  [map bash_function [childrenof tree]]]
+
+[define [bash_dispatch tree]
+  [case [nameof tree]
+    [(functions)   [bash_functions tree]]
+    [(includes)  [bash_includes tree]]]]
+
+[define [bash_program tree]
+  [string-join [flatten [map bash_dispatch  [childrenof tree]]] ""]]
+
+[define bash_test_filename "test.bash"]
+
+[define bash_test_commands '["bash test.bash"]]
+
+
+
+
 ;
 ;; BAT output functions
 ;
@@ -326,7 +458,6 @@
 
 
 [define [type_arguments tree]
-  ;[displayln tree]
   [make-node   [map [lambda [x]  [cons  [cadr x] [car x]]] [make-pairs tree]]
                tree
                'function_arguments
@@ -334,7 +465,13 @@
 
 
 [define [type_statement scope tree]
-  [make-node scope tree "statement" '[]]]
+  [case [car tree]
+    ['if [letrec [[condition  [make-node '[] [second tree] 'expression '[]  ]]
+                  [truBranch [type_body scope  [third tree]]]
+                  [falseBranch [type_body scope [fourth tree] ]]]
+           [make-node '[] '[if] 'statement [list condition truBranch falseBranch]]]]
+    [else
+     [make-node scope tree "statement" '[]]]]]
 
 [define [type_declaration tree]
   [match-let [[[list type name value] tree]]
@@ -345,15 +482,12 @@
     ]]
 
 [define [typesof x]
-  ;[displayln x]
   [if [equal? [length x] 1]
       '[]
       [cdr [assoc 'types  x]]]]
 
 
 [define [codeof x]
-  ;[newline]
-  ;[displayln x]
   [if [equal? [length x] 1]
       '[]
       [cdr [assoc 'code  x]]
@@ -361,16 +495,11 @@
   ]
 
 [define [nameof x]
-  [newline]
-  [newline]
-  [displayln x]
   [if [equal? [length x] 1]
       '[]
       [cdr [assoc 'name  x]]]]
 
 [define [childrenof x]
-  [newline]
-  [displayln x]
   [if [equal? [length x] 1]
       '[]
       [cdr [assoc 'children  x]]
@@ -379,14 +508,11 @@
  
 
 [define [type_body scope tree]
-  ;[display scope]
-  [displayln [format "fucntion types: ~a" scope]]
   [map [lambda [x] [type_statement scope x]] [cdr tree]]]
 
 
 
 [define [type_function tree]
-  ;[displayln tree]
   [match-let [[[list type name args decs  bod] tree]]
       
     [letrec [[typeArgs [typesof [type_arguments args]]]
@@ -443,16 +569,6 @@
 
 ;Common funcs
 
-[define [declarations tree]
-  [map declaration  [childrenof tree]]]
-
-
-[define [functions tree]
-  [map function [childrenof tree]]]
-
-[define [program tree]
-  [string-join [flatten [map dispatch  [childrenof tree]]]]]
-
 [define prog
   '[
     ;[includes stdio.h stdlib.h]
@@ -478,38 +594,55 @@
      
      [void test3 [] [declare]
            [body [test3_do 42 "Fourty-two"]]]
-          
+
+     [string test4_do [] [declare]
+             [body [return "pass Return works"]]]
+
+     [string returnThis [string returnMessage] [declare]
+             [body [return returnMessage]]]
+
+     [void test4 [] [declare [string message "fail"]]
+           [body
+            [set message [test4_do]]
+            [printf "4. %s\n" message]]]
+
+     [void test5 [] [declare [string message "fail"]]
+           [body
+            [set message [returnThis "pass return passthrough string"]]
+            [printf "5. %s\n" message]
+            ]]
+     
      [int main [int argc  char** argv]
-          [declare [int a 10] [string b "quonverter"]]
+          [declare ;[int a 10]
+           ]
           [body
            [test1]
            [test2]
            [test3]
-           [set a 12]
+           [test4]
+           [test5]
+           [if true
+               [body [printf "yay\n"]]
+               [body [printf "boo\n"]]]
            ;[echo a is a]
            ]]]]]
 
 
-[define [dispatch tree]
-  [newline]
-  [newline]
-  [displayln tree]
-  [case [nameof tree]
-    [(functions)   [functions tree]]
-    [(includes)  [includes tree]]
-    ]]
+
 
 [let [[nodes [type_program prog]]]
-  ;[displayln "nodes"]
-  ;[displayln   nodes]
-  
-  [displayln [program  nodes]]
-  [exit 0]]
-[display-to-file [program prog] "testprog.go" #:exists 'replace]
-;[displayln [walk prog [lambda [x]
-;  [dispatch x]
-;    x]]]
-
+  [pretty-display nodes]
+  [displayln "Go output"]
+  [display-to-file [go_program  nodes] go_test_filename #:exists 'replace]
+  [map system go_test_commands]
+  [displayln "C output"]
+  [display-to-file [clang_program nodes] clang_test_filename #:exists 'replace]
+  ;[map system clang_test_commands]
+  [display-to-file [bash_program nodes] bash_test_filename #:exists 'replace]
+  ;[map system bash_test_commands]
+  [display [go_program nodes] ]
+  [displayln "Job's a good 'un, boss"]
+  ]
 
 ;Prune all empty leafs from the tree
 [define [noEmpty tree]
