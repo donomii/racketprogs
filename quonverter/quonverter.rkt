@@ -64,8 +64,8 @@
           ""
           [string-join [list [format "~a(" [clang_funcmap [car  tree]]]
                              [if [empty? tree]
-          ""
-                             [string-join [map [lambda [x] [format "~s" x]] [cdr  tree]] ", "]]
+                                 ""
+                                 [string-join [map [lambda [x] [format "~s" x]] [cdr  tree]] ", "]]
                              ")"]]]
       [clang_funcmap tree]]
   ]
@@ -140,7 +140,7 @@
 
 [define clang_test_filename "test.c"]
 
-[define clang_test_commands '["gcc test.c" "./a.out" "a.out"]]
+[define clang_test_commands '["gcc test.c" "./a.out > results.c"]]
 
 
 
@@ -244,7 +244,7 @@
 
 [define go_test_filename "test.go"]
 
-[define go_test_commands '["/Users/jeremyprice/go-git/bin/go run test.go"]]
+[define go_test_commands '["/Users/jeremyprice/go-git/bin/go run test.go > results.go"]]
 
 
 
@@ -257,8 +257,6 @@
         ]]
 
 [define [bash_arguments tree]
-  
-  [displayln tree]
   [list 
    [map [lambda [x i] [format "    local ~a=$~a~n" x i]] [nth-places 1 [codeof tree] 1] [iota [length tree] 1 1]]]]
 
@@ -364,7 +362,7 @@
 
 [define bash_test_filename "test.bash"]
 
-[define bash_test_commands '["bash test.bash"]]
+[define bash_test_commands '["bash test.bash > results.bash"]]
 
 
 
@@ -604,12 +602,19 @@
      [void test4 [] [declare [string message "fail"]]
            [body
             [set message [test4_do]]
-            [printf "4. %s\n" message]]]
+            [printf "4.  %s\n" message]]]
 
      [void test5 [] [declare [string message "fail"]]
            [body
             [set message [returnThis "pass return passthrough string"]]
-            [printf "5. %s\n" message]
+            [printf "5.  %s\n" message]
+            ]]
+
+     [void test6 [] [declare]
+           [body
+            [if true
+                [body [printf "6.  pass If statement works\n"]]
+                [body [printf "6.  fail If statement works\n"]]]
             ]]
      
      [int main [int argc  char** argv]
@@ -621,9 +626,7 @@
            [test3]
            [test4]
            [test5]
-           [if true
-               [body [printf "yay\n"]]
-               [body [printf "boo\n"]]]
+           [test6]
            ;[echo a is a]
            ]]]]]
 
@@ -632,16 +635,22 @@
 
 [let [[nodes [type_program prog]]]
   [pretty-display nodes]
-  [displayln "Go output"]
   [display-to-file [go_program  nodes] go_test_filename #:exists 'replace]
   [map system go_test_commands]
-  [displayln "C output"]
   [display-to-file [clang_program nodes] clang_test_filename #:exists 'replace]
-  ;[map system clang_test_commands]
+  [map system clang_test_commands]
   [display-to-file [bash_program nodes] bash_test_filename #:exists 'replace]
-  ;[map system bash_test_commands]
-  [display [go_program nodes] ]
-  [displayln "Job's a good 'un, boss"]
+  [map system bash_test_commands]
+  ;[display [go_program nodes] ]
+
+  [let [[gout [file->string "results.go"]]
+        [cout [file->string "results.c"]]
+        [bout [file->string "results.bash"]]
+        ]
+    [if [and [equal? cout gout][equal? gout bout]]
+        [displayln "Job's a good 'un, boss"]
+             [displayln "Outputs differ!"]
+  ]]
   ]
 
 ;Prune all empty leafs from the tree
