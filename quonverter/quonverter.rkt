@@ -48,7 +48,8 @@
   [list
    [map [lambda [x]  [format "#include <~s>~n
 int sub(int a, int b) { return a - b; }
-int greaterthan(int a, int b) { return a > b; } "
+int greaterthan(int a, int b) { return a > b; }
+int equal(int a, int b) { return a == b; }"
                              x] ] [cons 'stdio.h [cdr [codeof tree]]]]
    "\n"]]
 
@@ -65,23 +66,31 @@ int greaterthan(int a, int b) { return a > b; } "
       ]
   ]
 
+[define [clang_subexpression node]
+  [displayln[format  "subexpr: ~s" node]][newline]
+  [if [is-leaf? node]
+      [format "~s" [codeof node]]
+      [clang_expression node]]]
+
 ;output an expression.  Soon, recursive!
 [define [clang_expression tree]
-  [displayln[format  "expression: ~s" tree]][newline]
+  ;[displayln[format  "expression: ~s" tree]][newline]
   [when [not [is-node? tree]] [error "Not a node!"]]
   [if [is-leaf? tree]
       [begin [displayln "atom"]
-      [format "~s" [clang_funcmap [codeof tree]]]]
-     
-          [begin [displayln [format  "definite function ~s" [childrenof tree]]]
-            [string-join [list [format "~a(" [clang_funcmap [codeof [car  [childrenof tree]]]]]
-                             [string-join [map [lambda [x] [format "~s" [codeof x]]  ] [cdr  [childrenof tree]]] ", "]
-                             ")"] ""]]]
-      ]
+             [format "~s" [clang_funcmap [codeof tree]]]]
+     [if [equal? 1 [length tree]]
+          ;a function with no args
+          [format "~a()" [codeof [first  tree]]]
+      [begin [displayln [format  "definite function ~s" [childrenof tree]]]
+             [string-join [list [format "~a(" [clang_funcmap [codeof [car  [childrenof tree]]]]]
+                                [string-join [map [lambda [x] [format "~a" [clang_subexpression x]  ]] [cdr  [childrenof tree]]] ", "]
+                                ")"] ""]]]]
+  ]
 
 ;output a statement.  This is where all the builtins go, like "if, set, for"
 [define [clang_statement tree]
-  [displayln [format  "statement: ~s" [pretty-print tree]]][newline]
+  [displayln [format  "clang statement: ~s" [pretty-print tree]]][newline]
   [list
    [case [car [codeof  tree]]
      ['if [format "    if ( ~a ) {\n      ~a    } else {\n      ~a    }"
@@ -89,7 +98,7 @@ int greaterthan(int a, int b) { return a > b; } "
                   [string-join [flatten [clang_body  [second [childrenof tree]]]]]
                   [string-join [flatten[clang_body [third [childrenof tree]]]]]
                   ]]
-     ['set  [format "    ~a=~a;" [cadr [codeof tree]] [clang_expression [third [childrenof tree]]]]]
+     ['set  [format "    ~a=~a;" [codeof [first [childrenof tree]]] [clang_expression  [second [childrenof tree]]]]]
      [else [list [format "    ~a(" [car [codeof tree]]]
                  [string-join [map [lambda [x] [format "~s" x]] [cdr [codeof tree]]] ", "]
                  ");"]]]
@@ -127,6 +136,7 @@ int greaterthan(int a, int b) { return a > b; } "
 ;Renames quonverter funcs into C funcs.
 [define [clang_funcmap name]
   [case name
+    ['= 'equal]
     ['true '1]
     ['- 'sub]
     ['> 'greaterthan]
@@ -170,6 +180,9 @@ return a-b
 func greaterthan(a, b int) bool {
 return a>b
 }
+func equal(a,b int) bool {
+return a==b
+}
 "
    [map [lambda [x]  [format "import \"~a\"~n" x] ] [cdr [codeof tree]]]
    ]]
@@ -187,24 +200,38 @@ return a>b
 [define [is-leaf? n]
   [equal? [nameof n] 'leaf]]
 
+[define [is-expression? n]
+  [equal? [nameof n] 'expression]]
+
+
+
+[define [go_subexpression node]
+  [displayln[format  "subexpr: ~s" node]][newline]
+  [if [is-leaf? node]
+      [format "~s" [codeof node]]
+      [go_expression node]]]
+
 ;output an expression.  Soon, recursive!
 [define [go_expression tree]
-  [displayln[format  "expression: ~s" tree]][newline]
+  ;[displayln[format  "expression: ~s" tree]][newline]
   [when [not [is-node? tree]] [error "Not a node!"]]
   [if [is-leaf? tree]
       [begin [displayln "atom"]
-      [format "~s" [codeof tree]]]
-     
-          [begin [displayln [format  "definite function ~s" [childrenof tree]]]
-            [string-join [list [format "~a(" [go_funcmap [codeof [car  [childrenof tree]]]]]
-                             [string-join [map [lambda [x] [format "~s" [codeof x]]  ] [cdr  [childrenof tree]]] ", "]
-                             ")"] ""]]]
-      ]
+             [format "~s" [go_funcmap [codeof tree]]]]
+     [if [equal? 1 [length tree]]
+          ;a function with no args
+          [format "~a()" [codeof [first  tree]]]
+      [begin [displayln [format  "definite function ~s" [childrenof tree]]]
+             [string-join [list [format "~a(" [go_funcmap [codeof [car  [childrenof tree]]]]]
+                                [string-join [map [lambda [x] [format "~a" [go_subexpression x]  ]] [cdr  [childrenof tree]]] ", "]
+                                ")"] ""]]]]
+  ]
 
 
 
 [define [go_statement tree]
-  [writeln tree][newline]
+  [write "go statement:"][writeln tree][newline]
+  [write "go childrenof statement:"][writeln [childrenof tree]][newline]
   [list
    [case [car [codeof  tree]]
      ['if [format "    if ~a {\n      ~a    } else {\n      ~a    }"
@@ -212,7 +239,7 @@ return a>b
                   [string-join [flatten [go_body  [second [childrenof tree]]]]]
                   [string-join [flatten[go_body [third [childrenof tree]]]]]
                   ]]
-     ['set  [format "    ~a=~a" [cadr [codeof tree]] [go_expression [third [childrenof tree]]]]]
+     ['set  [format "    ~a=~a"  [codeof [first [childrenof tree]]] [go_subexpression [second  [childrenof tree]]]]]
      [else [list [format "    ~a(" [go_funcmap [car [codeof tree]]]]
                  [string-join [map [lambda [x] [format "~s" x]] [cdr [codeof tree]]] ", "]
                  ")"]]]
@@ -260,10 +287,11 @@ return a>b
 
 [define [go_funcmap name]
   [case name
+    ['= 'equal]
     ['printf 'fmt.Printf]
     ['- 'sub]
     ['> 'greaterthan]
-    ['true 'soTrue]
+    ['true 'true]
     [else name]]]
 
 
@@ -338,7 +366,7 @@ let returnValue=true
                   [string-join [flatten [bash_body [second [childrenof tree]]]] ""]
                   [string-join [flatten [bash_body [third [childrenof tree]]]]""]
                   ]]
-     ['set [format "    ~a\n    local ~a=$returnValue"  [bash_expression [typesof tree] [third [codeof tree]]]  [cadr [codeof tree]]  ]]
+     ['set [format "    ~a\n    local ~a=$returnValue"  [bash_expression [typesof tree] [second [childrenof tree]]]  [first [childrenof tree]]  ]]
      ['return [format "returnValue=~s" [bash_expression [typesof tree] [second [codeof tree]]]]]
      [else [list
             [format "    ~a " [bash_funcmap [car [codeof tree]]]]
@@ -518,20 +546,22 @@ let returnValue=true
                '[]]]
 
 [define [type_expression scope tree]
+  [displayln [format "type_expr: ~s" tree]]
   [if [list? tree]
-      [map [lambda [x] [make-node scope x 'expression [type_expression scope x]  ]] tree]
+       [make-node scope tree 'expression [map [lambda [x] [type_expression scope x]] tree]]
        [make-node scope tree 'leaf '[]  ]
       ]]
 
 [define [type_statement scope tree]
-  [display [format "statement: ~s~n" tree]]
+  [display [format "type statement: ~s~n" tree]]
   [case [car tree]
     ['if [letrec [[condition  [type_condition scope [second tree]]]
                   [truBranch [type_body scope  [third tree]]]
                   [falseBranch [type_body scope [fourth tree] ]]]
            [make-node scope '[if] 'statement [list condition truBranch falseBranch]]]]
+    ['set [make-node scope '[set] 'statement [list [default_node [second tree] [second tree]]   [type_expression scope [third tree]] ] ]]
     [else
-     [make-node scope tree "statement" [type_expression scope tree]]]]]
+     [make-node scope tree "statement" [list [type_expression scope tree]]]]]]
 
 [define [type_declaration tree]
   [match-let [[[list type name value] tree]]
@@ -569,8 +599,8 @@ let returnValue=true
 
 [define [type_condition scope tree]
   [if [list? tree]
-  [type_statement scope tree]
-  [make-node scope tree 'leaf '[]]]]
+      [type_expression scope tree]
+      [make-node scope tree 'leaf '[]]]]
 
 [define [type_body scope tree]
   [map [lambda [x] [type_statement scope x]] [cdr tree]]]
@@ -687,17 +717,20 @@ let returnValue=true
      [int test7_do [int count] [declare]
           [body
            [set count [sub count 1]]
-           [printf "Count: %d\n" count]
+           ;[printf "Count: %d\n" count]
            [if [> count 0]
                [body [set count [test7_do count]]]
                [body [return count]]]
            [return count]
            ]]
      
-     [void test7 [] [declare]
+     [void test7 [] [declare ]
            [body
+            
             [printf "Counting down from 10\n"]
-            [test7_do 10]
+            [if [= 0 [test7_do 10]]
+                [body [printf "7.  pass count works\n"]]
+                [body [printf "7.  fail count fails\n"]]]
             ]]
 
      [void beer [] [declare] [body
@@ -706,12 +739,17 @@ let returnValue=true
           [body
            [set newcount [sub count 1]]
            [printf "%d bottles of beer on the wall, %d bottles of beer.  Take one down, pass it round, %d bottles of beer on the wall\n" count count newcount]
-           [if [> count 1]
+           [if [> count 2]
                [body [set count [beers newcount]]]
                [body [beer]]]
            [return count]
            ]]
 
+     [void test8 [] [declare] [body
+                        [if [equal [sub  [sub 2 1] 1] 0]
+                            [body [printf "8. pass Nested expressions work\n"]]
+                            [body [printf "8. fail Nested expressions don't work"]]
+                        ]]]
      [void test9 [] [declare] [body
                                [printf "Counting down from 10\n"]
                                [beers 9]]]
@@ -727,6 +765,7 @@ let returnValue=true
            [test5]
            [test6]
            [test7]
+           [test8]
            [test9]
            ;[echo a is a]
            ]]]]]
