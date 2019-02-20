@@ -1,12 +1,25 @@
 #lang racket
 [require srfi/1]
+[require srfi/13]
 ; Support functions
+
+[define debug_expressions #f]
+
+[define debug [lambda messages
+                [when debug_expressions
+                  [apply printf messages]]]]
+
+[define annotate [lambda messages
+                   [if debug_expressions
+                       [format "**!!~a!!**" messages]
+                       ""]]]
 
 [define [id x] x]
 
 [define [walk tree func]
   [if [list? tree]
-      [map [lambda [branch] [walk branch func]] [func tree]]
+      [let [[newTree [map [lambda [branch] [func branch]] [func tree]]]]
+        [map [lambda [branch] [walk branch func]] [func newTree]]]
       tree
       ]]
 
@@ -44,7 +57,7 @@
  
 [define [idof x]
  
-      [cdr [assoc 'id  x]]
+  [cdr [assoc 'id  x]]
     
   ]
 
@@ -83,10 +96,31 @@
 
 ;output include statements
 [define [clang_includes tree]
+  [list "//Include libraries and headers\n"
+        [map [lambda [x]  [format "#include <~s>~n"
+                                  x] ] [cons 'stdio.h [cdr [codeof tree]]]]
+        "\n"]]
+
+
+;typedef struct Pairs {
+;char * car;
+;struct Pairs * cdr;
+;} Pair;
+;output type definition statements
+[define [clang_struct tree]
   [list
-   [map [lambda [x]  [format "#include <~s>~n"
-                             x] ] [cons 'stdio.h [cdr [codeof tree]]]]
-   "\n"]]
+   tree
+   ]]
+
+;output type definition statements
+[define [clang_types tree]
+  [list "//Type definitions\n"
+        ;actually all types will be a list, need to check for 'stuct
+        [if [list? [cdr [codeof tree]]]
+            ;it is a struct
+            [clang_struct [cdr [codeof tree]]]
+            ""]
+        "\n"]]
 
 [define [clang_arguments tree]
   [list "("
@@ -102,9 +136,9 @@
   ]
 
 [define [clang_subexpression node]
-  [displayln[format  "subexpr: ~s" node]][newline]
+  ;[displayln[format  "subexpr: ~s" node]][newline]
   [if [is-leaf? node]
-      [format "~s" [codeof node]]
+      [format "~s" [clang_funcmap[codeof node]]]
       [clang_expression node]]]
 
 ;output an expression.  Soon, recursive!
@@ -112,20 +146,20 @@
   ;[displayln[format  "expression: ~s" tree]][newline]
   [when [not [is-node? tree]] [error "Not a node!"]]
   [if [is-leaf? tree]
-      [begin [displayln "atom"]
-             [format "~s" [clang_funcmap [codeof tree]]]]
-     [if [equal? 1 [length tree]]
+      [begin ;[displayln "atom"]
+        [format "~s" [clang_funcmap [codeof tree]]]]
+      [if [equal? 1 [length tree]]
           ;a function with no args
           [format "~a()" [codeof [first  tree]]]
-      [begin [displayln [format  "definite function ~s" [childrenof tree]]]
-             [string-join [list [format "~a(" [clang_funcmap [codeof [car  [childrenof tree]]]]]
-                                [string-join [map [lambda [x] [format "~a" [clang_subexpression x]  ]] [cdr  [childrenof tree]]] ", "]
-                                ")"] ""]]]]
+          [begin ;[displayln [format  "definite function ~s" [childrenof tree]]]
+            [string-join [list [format "~a(" [clang_funcmap [codeof [car  [childrenof tree]]]]]
+                               [string-join [map [lambda [x] [format "~a" [clang_subexpression x]  ]] [cdr  [childrenof tree]]] ", "]
+                               ")"] ""]]]]
   ]
 
 ;output a statement.  This is where all the builtins go, like "if, set, for"
 [define [clang_statement tree]
-  [displayln [format  "clang statement: ~s" [pretty-print tree]]][newline]
+  ;[displayln [format  "clang statement: ~s" [pretty-print tree]]][newline]
   [list
    [case [car [codeof  tree]]
      ['if [format "    if ( ~a ) {\n      ~a    } else {\n      ~a    }"
@@ -134,15 +168,15 @@
                   [string-join [flatten[clang_body [third [childrenof tree]]]]]
                   ]]
      ['set  [format "    ~a=~a;" [codeof [first [childrenof tree]]] [clang_expression  [second [childrenof tree]]]]]
-     [else [list [format "    ~a(" [car [codeof tree]]]
-                 [string-join [map [lambda [x] [format "~s" x]] [cdr [codeof tree]]] ", "]
-                 ");"]]]
+     ['setAt  [format "    ~a[~a]=~a;"  [codeof [first [childrenof tree]]] [codeof [second [childrenof tree]]] [clang_subexpression [third  [childrenof tree]]]]]
+     ['set-struct [format "    ~a->~a=~a;"  [codeof [second [childrenof [first [childrenof tree]]]]] [codeof [third [childrenof [first [childrenof tree]]]]] [clang_subexpression [fourth  [childrenof [first [childrenof tree]]]]]]]
+     [else [list [clang_subexpression [first [childrenof tree]]] ";"]]]
    "\n"]]
 
 ;All variables in a function must be declared at the start in one block.  Declarations cannot reference other declarations
 [define [clang_declaration tree]
   [match-let [[[list type name value] [codeof tree]]]
-    [format "    ~a ~a = ~s;\n"  [clang_typemap type] name  value]]]
+    [format "    ~a ~a = ~s;\n"  [clang_typemap type] name  [clang_funcmap value]]]]  ;fixme don't use funcmap for this
 
 
 ;Print the body of the function, all statements
@@ -185,23 +219,28 @@
 ;All of the "top level" blocks are completely distinct
 [define [clang_dispatch tree]
   [case [nameof tree]
-    [(functions)   [map clang_function [childrenof tree]]]
-    [(includes)  [clang_includes tree]]]]
+    [(functions)   [list "//Function definitions\n" [map clang_function [childrenof tree]]]]
+    [(includes)  [clang_includes tree]]
+    [(types)  [clang_types tree]]
+    [else '[]]]]
 
 ;The top level node
 [define [clang_program tree]
   [string-join [flatten
                 [list "
 #include <stdlib.h>
+#include <string.h>
 int sub(int a, int b) { return a - b; }
 int greaterthan(int a, int b) { return a > b; }
 int equal(int a, int b) { return a == b; }
+int equalString(char* a, char* b) { return !strcmp(a,b); }
 
 typedef struct Pairs {
 char * car;
 struct Pairs * cdr;
 } Pair;
 typedef Pair* pair;
+typedef int*  array;
 
 void * gc_malloc( unsigned int size ) {
 return malloc( size);
@@ -223,8 +262,21 @@ pair cdr(pair list) {
 return list->cdr;
 }
 
+int* makeArray(int length) {
+    int * array = gc_malloc(length*sizeof(int));
+    return array;
+}
+
+int at(int* arr, int index) {
+  return arr[index];
+}
+
+void setAt(int* array, int index, int value) {
+    array[index] = value;
+}
+
 "
-[map clang_dispatch  [childrenof tree]]]] ""]]
+                      [id [map clang_dispatch  [childrenof tree]]]]] ""]]
 
 ;Autogenerated test file
 [define clang_test_filename "test.c"]
@@ -238,8 +290,8 @@ return list->cdr;
 
 [define [go_includes tree]
 
-   [map [lambda [x]  [format "import \"~a\"~n" x] ] [cdr [codeof tree]]]
-   ]
+  [map [lambda [x]  [format "import \"~a\"~n" x] ] [cdr [codeof tree]]]
+  ]
 
 [define [go_arguments tree]
   [list "("
@@ -260,9 +312,9 @@ return list->cdr;
 
 
 [define [go_subexpression node]
-  [displayln[format  "subexpr: ~s" node]][newline]
+  ;[displayln[format  "subexpr: ~s" node]][newline]
   [if [is-leaf? node]
-      [format "~s" [codeof node]]
+      [format "~a~s" [annotate "leaf"] [codeof node]]
       [go_expression node]]]
 
 ;output an expression.  Soon, recursive!
@@ -270,15 +322,18 @@ return list->cdr;
   ;[displayln[format  "expression: ~s" tree]][newline]
   [when [not [is-node? tree]] [error "Not a node!"]]
   [if [is-leaf? tree]
-      [begin [displayln "atom"]
-             [format "~s" [go_funcmap [codeof tree]]]]
-     [if [equal? 1 [length tree]]
-          ;a function with no args
-          [format "~a()" [codeof [first  tree]]]
-      [begin [displayln [format  "definite function ~s" [childrenof tree]]]
-             [string-join [list [format "~a(" [go_funcmap [codeof [car  [childrenof tree]]]]]
-                                [string-join [map [lambda [x] [format "~a" [go_subexpression x]  ]] [cdr  [childrenof tree]]] ", "]
-                                ")"] ""]]]]
+      [begin 
+        [format "~a~s" [annotate "atom"] [go_funcmap [codeof tree]]]]
+      [if [equal? 1 [length tree]]
+          [begin [string-concatenate [list [annotate ]
+                                           ;a function with no args
+                                           [format "~a~a()" [annotate "singular function"][codeof [first  tree]]]]]]
+          [begin 
+            [string-join [list
+                          [annotate [format  "definite function" ]]
+                          [format "~a(" [go_funcmap [codeof [car  [childrenof tree]]]]]
+                          [string-join [map [lambda [x] [format "~a" [go_subexpression x]  ]] [cdr  [childrenof tree]]] ", "]
+                          ")"] ""]]]]
   ]
 
 
@@ -294,9 +349,8 @@ return list->cdr;
                   [string-join [flatten[go_body [third [childrenof tree]]]]]
                   ]]
      ['set  [format "    ~a=~a"  [codeof [first [childrenof tree]]] [go_subexpression [second  [childrenof tree]]]]]
-     [else [list [format "    ~a(" [go_funcmap [car [codeof tree]]]]
-                 [string-join [map [lambda [x] [format "~s" x]] [cdr [codeof tree]]] ", "]
-                 ")"]]]
+     ['setAt  [format "    ~a[~a]=~a"  [codeof [first [childrenof tree]]] [codeof [second [childrenof tree]]] [go_subexpression [third  [childrenof tree]]]]]
+     [else [go_expression [first [childrenof tree]]]]]
    "\n"]]
 
 [define [go_declaration tree]
@@ -341,7 +395,7 @@ return list->cdr;
 
 [define [go_funcmap name]
   [case name
-    
+    ['nil 'nil]
     ['= 'equal]
     ['printf 'fmt.Printf]
     ['- 'sub]
@@ -360,12 +414,13 @@ return list->cdr;
 [define [go_dispatch tree]
   [case [nameof tree]
     [(functions)   [go_functions tree]]
-    [(includes)  [go_includes tree]]]]
+    [(includes)  [go_includes tree]]
+    [else  '[]]]]
 
 [define [go_program tree]
   [string-join [flatten
-                  [list
-   "package main\n\nimport \"fmt\"\n\n
+                [list
+                 "package main\n\nimport \"fmt\"\n\n
    func sub(a, b int) int{
 return a-b
 }
@@ -385,27 +440,38 @@ func equalString(a,b string) bool {
 type Pairs struct  {
  car interface{}
  cdr *Pairs
- };
- type  pair *Pairs
-
+};
+type  pair *Pairs
+type array []int
 
 func cons(data interface{}, list pair) pair {
     p:=&Pairs{data, list}
  return p
- }
+}
 
- func car( list pair) string {
+func car( list pair) string {
  return list.car.(string)
- }
+}
 
- func cdr( list pair) pair{
+func cdr( list pair) pair{
  return list.cdr
- }
+}
 
+func makeArray(length int) []int {
+    arr := make([]int, length)
+    return arr
+}
 
+func at(arr []int,  index int) int {
+  return arr[index]
+}
+
+func setAt( arr []int,  index int, value int) {
+    arr[index] = value
+}
 
 "
-   [map go_dispatch  [childrenof tree]]]] ""]]
+                 [map go_dispatch  [childrenof tree]]]] ""]]
 
 [define go_test_filename "test.go"]
 
@@ -445,6 +511,19 @@ function car {
 tempVar=$1
 returnValue=${tempVar[0]}
 }
+
+function makeArray {
+returnValue[0]=0
+}
+
+function setAt {
+$1[$2]=\"$3\"
+}
+
+function att {
+local array=$1
+returnValue=${array[$2]}
+}
 "
         [map [lambda [x]  [format "~n"] ] [cdr tree]]
         ]]
@@ -465,19 +544,19 @@ returnValue=${tempVar[0]}
   [when [not [is-node? tree]] [error "Not a node!"]]
   [if [is-leaf? tree]
       [begin ;[displayln "atom"]
-             [format "t_~a=~s" [idof tree] [bash_funcmap [bash_detect_variable [typesof tree] [codeof tree]]]]]
-     [if [equal? 1 [length tree]]
+        [format "t_~a=~s" [idof tree] [bash_funcmap [bash_detect_variable [typesof tree] [codeof tree]]]]]
+      [if [equal? 1 [length tree]]
           ;a function with no args
           [format "~a " [codeof [first  tree]]]
-      [begin ;[displayln [format  "definite function ~s" [childrenof tree]]]
-             [string-join
-              [list
+          [begin ;[displayln [format  "definite function ~s" [childrenof tree]]]
+            [string-join
+             [list
               [string-join [map [lambda [x] [format "~a\n" [bash_subexpression x]   ]] [cdr  [childrenof tree]]] "\n"]
               
-               [format "~a " [bash_funcmap [codeof [car  [childrenof tree]]]]]
-                                [string-join [map [lambda [x] [format "$t_~a" [idof x]  ]] [cdr  [childrenof tree]]] " "]
+              [format "~a " [bash_funcmap [codeof [car  [childrenof tree]]]]]
+              [string-join [map [lambda [x] [format "\"$t_~a\"" [idof x]  ]] [cdr  [childrenof tree]]] " "]
                                 
-             [format "\nt_~a=$returnValue\n" [sub1 [idof tree]]]] ""]]]]
+              [format "\nt_~a=$returnValue\n" [sub1 [idof tree]]]] ""]]]]
   ]
 
 
@@ -491,8 +570,8 @@ returnValue=${tempVar[0]}
   ]
 
 [define [bash_statement tree]
-  [displayln "bash_statement"]
-  [pretty-display tree]
+  ;[displayln "bash_statement"]
+  ;[pretty-display tree]
   [list
    [case [car [codeof tree]]
      ['if [format "    ~a~n    if (( $t_~a == 0 ));\n    then\n      ~a    else\n      ~a    fi"
@@ -502,10 +581,10 @@ returnValue=${tempVar[0]}
                   [string-join [flatten [bash_body [third [childrenof tree]]]]""]
                   ]]
      ['set [format "    ~a\n    ~a=$returnValue"  [bash_expression  [second [childrenof tree]]]  [codeof [first [childrenof tree]]  ]]]
+     ['setAt [format "    ~a\n    ~a[~a]=$t_~a"  [bash_expression  [third [childrenof tree]]]  [codeof [first [childrenof tree]]  ]  [codeof [second [childrenof tree]]] [idof [third [childrenof tree]]]]]
      ['return [format "~a\nreturnValue=$t_~a" [bash_expression  [second [childrenof [first [childrenof tree]]]]] [sub1 [idof [first [childrenof tree]]]]]]
      [else [list
-            [format "    ~a " [bash_funcmap [car [codeof tree]]]]
-            [map [lambda [x]  [format "~s " [bash_detect_variable [typesof tree] x]]] [cdr [codeof tree]]]
+            [bash_subexpression [first [childrenof tree]]]
             ]]]
    "\n"]]
 
@@ -557,6 +636,7 @@ returnValue=${tempVar[0]}
 [define [bash_funcmap name]
   ;[displayln [format "funcmap: ~a" name]]
   [case name
+    ['at 'att]
     ['= 'equal]
     ['printf 'printf]
     ['- 'sub]
@@ -575,7 +655,8 @@ returnValue=${tempVar[0]}
 [define [bash_dispatch tree]
   [case [nameof tree]
     [(functions)   [bash_functions tree]]
-    [(includes)  [bash_includes tree]]]]
+    [(includes)  [bash_includes tree]]
+    [else '[]]]]
 
 [define [bash_program tree]
   [string-join [flatten [map bash_dispatch  [childrenof tree]]] ""]]
@@ -682,21 +763,30 @@ returnValue=${tempVar[0]}
 
 ; An expression node is recursive, it can hold sub-expressions
 [define [type_expression scope tree]
-  [displayln [format "type_expr: ~s" tree]]
+  ;[displayln [format "type_expr: ~s" tree]]
   [if [list? tree]
-       [make-node scope tree 'expression [map [lambda [x] [type_expression scope x]] tree]]
-       [make-node scope tree 'leaf '[]]]]
+      [make-node scope tree 'expression [map [lambda [x] [type_expression scope x]] tree]]
+      [make-node scope tree 'leaf '[]]]]
 
 ; Statements are where we put the "special functions", like if, set, loop, etc
 ; default statements just hold an expression, but don't care about the result(side effects only)
 [define [type_statement scope tree]
-  [display [format "type statement: ~s~n" tree]]
+  ;[display [format "type statement: ~s~n" tree]]
   [case [car tree]
     ['if [letrec [[condition  [type_condition scope [second tree]]]
                   [truBranch [type_body scope  [third tree]]]
                   [falseBranch [type_body scope [fourth tree] ]]]
            [make-node scope '[if] 'statement [list condition truBranch falseBranch]]]]
-    ['set [make-node scope '[set] 'statement [list [default_node [second tree] [second tree]]   [type_expression scope [third tree]] ] ]]
+    ['set [make-node scope '[set] 'statement [list
+                                              [default_node [second tree] [second tree]]
+                                              [type_expression scope [third tree]]
+                                              ] ]]
+    ['setAt [make-node scope '[setAt] 'statement [list
+                                                
+                                                  [default_node [second tree] [second tree]]
+                                                  [default_node [third tree] [third tree]]
+                                                  [type_expression scope [fourth tree]]
+                                                  ] ]]
     [else
      [make-node scope tree "statement" [list [type_expression scope tree]]]]]]
 
@@ -746,9 +836,19 @@ returnValue=${tempVar[0]}
                   ]
                  ]]]]
 
+
+
 ; All the functions
 [define [type_functions tree]
   [map type_function [cdr tree]]]
+
+; Function.  Needs arguments, declarations, a body and a return type
+[define [type_type tree]
+  [default_node tree 'type-definition]]
+
+; All the types
+[define [type_types tree]
+  [map type_type [cdr tree]]]
 
 ; 
 [define [type_annotate tree]
@@ -759,11 +859,15 @@ returnValue=${tempVar[0]}
   [case [car tree]
     [(functions)   [make-node '[] "" 'functions [type_functions tree]]]
     [(includes)  [type_includes tree]]
+    [(types)  [type_types tree]]
+    [else [error "Unknown toplevel section"]]
     ]]
+
 
 ; Start parsing the program
 [define [type_program tree]
   [make-node '[] "" 'program [map type_dispatch tree]]]
+
 
 
 
@@ -775,7 +879,20 @@ returnValue=${tempVar[0]}
   '[
     ;[includes stdio.h stdlib.h]
     [includes]
+    [types
+     [Box
+      [struct
+        [string str]
+        [int i]
+        [array arr]
+        ]]]
     [functions
+     [void test0 [] [declare [Box box nil]]
+           [body
+            [set box [new Box]]
+            [set-struct box str "Hello structures"]
+            [printf [get-struct box str]]
+            ]]
 
      [void test1 [] [declare]
            [body [printf "1.  pass Function call and print work\n"]]]
@@ -847,20 +964,28 @@ returnValue=${tempVar[0]}
            [return count]]]
 
      [void test8 [] [declare] [body
-                        [if [equal [sub  [sub 2 1] [sub 3 1] ] -1]
-                            [body [printf "8.  pass Nested expressions work\n"]]
-                            [body [printf "8.  fail Nested expressions don't work\n"]]
-                        ]]]
-     [void test9 [] [declare] [body
-                               [printf "Counting down from 10\n"]
-                               [beers 9]]]
+                               [if [equal [sub  [sub 2 1] [sub 3 1] ] -1]
+                                   [body [printf "8.  pass Nested expressions work\n"]]
+                                   [body [printf "8.  fail Nested expressions don't work\n"]]
+                                   ]]]
+     [void test9 [] [declare [int answer -999999]] [body
+                                                    [set answer [sub  [sub 20 1] [sub 3 1] ]]
+                                                    [printf "(20-1)-(3-1)=%d" answer]
+                               
+                                                    [printf "Counting down from 10\n"]
+                                                    [beers 9]]]
      [void test10 [] [declare [string testString "This is a test string"]] [body
-                               [if [equalString testString [car [cons testString nil]]]
-                                   [body [printf "10. pass cons and car work\n"]]
-                                   [body [printf "10. fail cons and car fail\n"]]]
-                               ]]
+                                                                            [if [equalString testString [car [cons testString nil]]] 
+                                                                                [body [printf "10. pass cons and car work\n"]]
+                                                                                [body [printf "10. fail cons and car fail\n"]]]
+                                                                            ]]
 
-
+     [void test11 [] [declare [array testArray nil]] [body
+                                                      [set testArray [makeArray 100]]
+                                                      [setAt testArray 0 100]
+                                                      [setAt testArray 1 200]
+                                                      [printf "Element 1: %d" [at testArray 1]]
+                                                      ]]
      
      
      [int main [int argc  char** argv]
@@ -877,18 +1002,30 @@ returnValue=${tempVar[0]}
            [test8]
            [test9]
            [test10]
+           [test11]
            ;[echo a is a]
            ]]]]]
 
 
 
 
-[let [[nodes [type_program prog]]]
+[define [macros form]
+  [if [and [list? form] [> [length form] 1]]
+      ;Find at calls, and replace them with at1, at2, at3...
+      ;  [if [equal? 'at [first form]]
+      ;      [cons [string->symbol [format "at~a" [length [cddr form]]]] [cdr form]]
+      ;      form]
+      form
+      form]]
+
+
+;Generate output and cross-check
+[let [[nodes [type_program[walk  prog macros] ]]]
   [pretty-write nodes]
-  ;[display-to-file [go_program  nodes] go_test_filename #:exists 'replace]
-  ;[map system go_test_commands]
-  ;[display-to-file [clang_program nodes] clang_test_filename #:exists 'replace]
-  ;[map system clang_test_commands]
+  [display-to-file [go_program  nodes] go_test_filename #:exists 'replace]
+  [map system go_test_commands]
+  [display-to-file [clang_program nodes] clang_test_filename #:exists 'replace]
+  [map system clang_test_commands]
   [display-to-file [bash_program nodes] bash_test_filename #:exists 'replace]
   [map system bash_test_commands]
   ;[display [go_program nodes] ]
@@ -897,7 +1034,7 @@ returnValue=${tempVar[0]}
         [cout [file->string "results.c"]]
         [bout [file->string "results.bash"]]
         ]
-    [if [and [equal? cout gout]] ;[equal? gout bout]]
+    [if [and [equal? cout gout]];[equal? gout bout]]
         [displayln "Job's a good 'un, boss"]
         [displayln "Outputs differ!"]
         ]]
