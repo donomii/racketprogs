@@ -106,20 +106,32 @@
 ;char * car;
 ;struct Pairs * cdr;
 ;} Pair;
+
+[define [clang_struct_components tree]
+  [string-join [map [lambda [x] [format "    ~a ~a;\n" [clang_typemap [car x]] [cadr x]]] [cdr tree]]]
+  ]
 ;output type definition statements
 [define [clang_struct tree]
   [list
-   tree
+   [format "typedef struct {\n~a} ~a;\n" [clang_struct_components [cadr tree]]  [car tree]]
+   ]]
+
+;output type definition statements
+[define [clang_typedef tree]
+  [list
+   [format "typedef ~a ~a;\n"   [cadr tree] [car tree]]
    ]]
 
 ;output type definition statements
 [define [clang_types tree]
   [list "//Type definitions\n"
+        [map [lambda [x]
+               [displayln [format "a type: ~a~n" [second x]]]
         ;actually all types will be a list, need to check for 'stuct
-        [if [list? [cdr [codeof tree]]]
+        [if [list? [second x]]
             ;it is a struct
-            [clang_struct [cdr [codeof tree]]]
-            ""]
+            [clang_struct x]
+            [clang_typedef x]]] [cdr [codeof tree]]]
         "\n"]]
 
 [define [clang_arguments tree]
@@ -221,8 +233,8 @@
   [case [nameof tree]
     [(functions)   [list "//Function definitions\n" [map clang_function [childrenof tree]]]]
     [(includes)  [clang_includes tree]]
-    [(types)  [clang_types tree]]
-    [else '[]]]]
+    [(type-definitions)  [clang_types tree]]
+    [else [error [format "Unrecognised top level def ~a"  tree]]]]]
 
 ;The top level node
 [define [clang_program tree]
@@ -844,7 +856,7 @@ returnValue=${array[$2]}
 
 ; Function.  Needs arguments, declarations, a body and a return type
 [define [type_type tree]
-  [default_node tree 'type-definition]]
+  [default_node tree 'type-definitions]]
 
 ; All the types
 [define [type_types tree]
@@ -859,7 +871,7 @@ returnValue=${array[$2]}
   [case [car tree]
     [(functions)   [make-node '[] "" 'functions [type_functions tree]]]
     [(includes)  [type_includes tree]]
-    [(types)  [type_types tree]]
+    [(types)  [make-node '[] tree 'type-definitions [type_types tree] ]]
     [else [error "Unknown toplevel section"]]
     ]]
 
@@ -885,13 +897,14 @@ returnValue=${array[$2]}
         [string str]
         [int i]
         [array arr]
-        ]]]
+        ]]
+     [ box Box*]]
     [functions
-     [void test0 [] [declare [Box box nil]]
+     [void test12 [] [declare [box b nil]]
            [body
-            [set box [new Box]]
-            [set-struct box str "Hello structures"]
-            [printf [get-struct box str]]
+            [set b [new box]]
+            [set-struct b str "Hello structures"]
+            [printf [get-struct b str]]
             ]]
 
      [void test1 [] [declare]
