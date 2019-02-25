@@ -127,11 +127,11 @@
   [list "//Type definitions\n"
         [map [lambda [x]
                [displayln [format "a type: ~a~n" [second x]]]
-        ;actually all types will be a list, need to check for 'stuct
-        [if [list? [second x]]
-            ;it is a struct
-            [clang_struct x]
-            [clang_typedef x]]] [cdr [codeof tree]]]
+               ;actually all types will be a list, need to check for 'stuct
+               [if [list? [second x]]
+                   ;it is a struct
+                   [clang_struct x]
+                   [clang_typedef x]]] [cdr [codeof tree]]]
         "\n"]]
 
 [define [clang_arguments tree]
@@ -340,12 +340,17 @@ void setAt(int* array, int index, int value) {
           [begin [string-concatenate [list [annotate ]
                                            ;a function with no args
                                            [format "~a~a()" [annotate "singular function"][codeof [first  tree]]]]]]
-          [begin 
-            [string-join [list
-                          [annotate [format  "definite function" ]]
-                          [format "~a(" [go_funcmap [codeof [car  [childrenof tree]]]]]
-                          [string-join [map [lambda [x] [format "~a" [go_subexpression x]  ]] [cdr  [childrenof tree]]] ", "]
-                          ")"] ""]]]]
+          [begin
+            
+             [annotate [format  "definite function" ]]
+            [string-join 
+             [case [codeof [car  [childrenof tree]]]
+               ['get-struct  [list [format "~a.~a" [codeof [second  [childrenof tree]]] [codeof [third  [childrenof tree]]]]]]
+               [else
+                [list
+                 [format "~a(" [go_funcmap [codeof [car  [childrenof tree]]]]]
+                 [string-join [map [lambda [x] [format "~a" [go_subexpression x]  ]] [cdr  [childrenof tree]]] ", "]
+                 ")"]]] ""]]]]
   ]
 
 
@@ -362,6 +367,9 @@ void setAt(int* array, int index, int value) {
                   ]]
      ['set  [format "    ~a=~a"  [codeof [first [childrenof tree]]] [go_subexpression [second  [childrenof tree]]]]]
      ['setAt  [format "    ~a[~a]=~a"  [codeof [first [childrenof tree]]] [codeof [second [childrenof tree]]] [go_subexpression [third  [childrenof tree]]]]]
+     ['set-struct [let [[e [childrenof [first [childrenof tree]]]]]
+                    [format "    ~a.~a = ~s" [codeof [second e]] [codeof [third e]] [codeof [fourth e]]]
+                    ]]
      [else [go_expression [first [childrenof tree]]]]]
    "\n"]]
 
