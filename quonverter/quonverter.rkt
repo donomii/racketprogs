@@ -106,6 +106,7 @@
         "function greaterthan(a,b){return a>b}"
         "function makeArray(){return [];}"
         "function at(arr, index) {return arr[index];}"
+        "function printf() {process.stdout.write(util.format.apply(this, arguments));}"
         [map [lambda [x]  [format "#include <~s>~n"
                                   x] ] [cdr [codeof tree]]]
         "\n"]]
@@ -230,7 +231,7 @@
 ;Renames quonverter funcs into C funcs.
 [define [js_funcmap name]
   [case name
-    ['printf 'console.log]
+    ['printf 'printf]
     ['nil 'null]
     ['= 'equal]
     ['true '1]
