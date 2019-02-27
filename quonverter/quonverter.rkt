@@ -92,6 +92,186 @@
 
 
 
+
+
+; JS output functions
+
+;output include statements
+[define [js_includes tree]
+  [list "//Include libraries and headers\n"
+        "var util = require('util');\n"
+        "function equal(a,b) {return a===b}\n"
+        "function equalString(a,b) {return a===b}\n"
+        "function sub (a,b){return a-b}\n"
+        "function greaterthan(a,b){return a>b}"
+        "function makeArray(){return [];}"
+        "function at(arr, index) {return arr[index];}"
+        [map [lambda [x]  [format "#include <~s>~n"
+                                  x] ] [cdr [codeof tree]]]
+        "\n"]]
+
+[define [js_struct_components tree]
+  [string-join [map [lambda [x] [format "    //~a ~a;\n" [js_typemap [car x]] [cadr x]]] [cdr tree]]]
+  ]
+;output type definition statements
+[define [js_struct tree]
+  [list
+   [format "var ~a = {\n~a};\n"  [car tree] [js_struct_components [cadr tree]] ]
+   ]]
+
+;output type definition statements
+[define [js_typedef tree]
+  [list
+   [format "var ~a = ~a;\n"   [car tree] [js_typemap [cadr tree]]]
+   ]]
+
+;output type definition statements
+[define [js_types tree]
+  [list "//Type definitions\n"
+        [map [lambda [x]
+               ;[displayln [format "a type: ~a~n" [second x]]]
+               ;actually all types will be a list, need to check for 'stuct
+               [if [list? [second x]]
+                   ;it is a struct
+                   [js_struct x]
+                   [js_typedef x]]] [cdr [codeof tree]]]
+        "\n"]]
+
+[define [js_detect_variable types atom]
+  ;[display [format "Types: ~s    Atom: ~s~n" types atom]]
+  [if [assoc atom types]
+      [format "$~a"  atom ]
+      atom
+      ]
+  ]
+
+[define [js_subexpression node]
+  ;[displayln[format  "subexpr: ~s" node]][newline]
+  [if [is-leaf? node]
+      [format "~s" [js_funcmap[codeof node]]]
+      [js_expression node]]]
+
+;output an expression.  Soon, recursive!
+[define [js_expression tree]
+  ;[displayln[format  "expression: ~s" tree]][newline]
+  [when [not [is-node? tree]] [error "Not a node!"]]
+  [if [is-leaf? tree]
+      [begin ;[displayln "atom"]
+        [format "~s" [js_funcmap [codeof tree]]]]
+      [if [equal? 1 [length tree]]
+          ;a function with no args
+          [format "~a()" [codeof [first  tree]]]
+          [begin ;[displayln [format  "definite function ~s" [childrenof tree]]]
+            [string-join
+
+             [case [codeof [car  [childrenof tree]]]
+               ['get-struct  [list [format "~a.~a" [codeof [second  [childrenof tree]]] [codeof [third  [childrenof tree]]]]]]
+               ['new  [list [format "Object.assign({},~a)" [codeof [third  [childrenof tree]]] ]]]
+               [else
+                [list [format "~a(" [js_funcmap [codeof [car  [childrenof tree]]]]]
+                               [string-join [map [lambda [x] [format "~a" [js_subexpression x]  ]] [cdr  [childrenof tree]]] ", "]
+                               ")"]]]
+
+              ""]]]]
+  ]
+
+;output a statement.  This is where all the builtins go, like "if, set, for"
+[define [js_statement tree]
+  ;[displayln [format  "clang statement: ~s" [pretty-print tree]]][newline]
+  [list
+   [case [car [codeof  tree]]
+     ['if [format "    if ( ~a ) {\n      ~a    } else {\n      ~a    }"
+                  [js_expression   [first [childrenof tree]]]
+                  [string-join [flatten [js_body  [second [childrenof tree]]]]]
+                  [string-join [flatten[js_body [third [childrenof tree]]]]]
+                  ]]
+     ['set  [format "    ~a=~a;" [codeof [first [childrenof tree]]] [js_expression  [second [childrenof tree]]]]]
+     ['setAt  [format "    ~a[~a]=~a;"  [codeof [first [childrenof tree]]] [codeof [second [childrenof tree]]] [js_subexpression [third  [childrenof tree]]]]]
+     ['set-struct [format "    ~a.~a=~a;"  [codeof [second [childrenof [first [childrenof tree]]]]] [codeof [third [childrenof [first [childrenof tree]]]]] [js_subexpression [fourth  [childrenof [first [childrenof tree]]]]]]]
+     [else [list [js_subexpression [first [childrenof tree]]] ";"]]]
+   "\n"]]
+
+;All variables in a function must be declared at the start in one block.  Declarations cannot reference other declarations
+[define [js_declaration tree]
+  [match-let [[[list type name value] [codeof tree]]]
+    [format "    var ~a = ~s;\n"   name  [js_funcmap value]]]]  ;fixme don't use funcmap for this
+
+
+;Print the body of the function, all statements
+[define [js_body tree]
+  [map js_statement  tree]]
+
+
+[define [js_arguments tree]
+  [list "("
+        [string-join [map [lambda [x]  [format "~a"  [cadr x]]] [make-pairs [codeof tree]]] ", "]
+        ")"]]
+
+
+;Output the body of function
+[define [js_function tree]
+  [match-let [[[list type name args decs  bod] [childrenof tree]]]
+    [list
+     [format "function ~a" [codeof name]]
+     [js_arguments args]
+     [format " {~n" ]
+     [js_declarations decs]
+     [js_body bod]
+     "}\n\n"]]]
+
+
+;Turns quonverter types into C types
+[define [js_typemap type]
+  [case type
+    ['string "char*"]
+    ['Box* 'Box]
+    [else type]]]
+
+;Renames quonverter funcs into C funcs.
+[define [js_funcmap name]
+  [case name
+    ['printf 'console.log]
+    ['nil 'null]
+    ['= 'equal]
+    ['true '1]
+    ['- 'sub]
+    ['> 'greaterthan]
+    [else name]]]
+
+;Print all the declarations
+[define [js_declarations tree]
+  [map js_declaration  [childrenof tree]]]
+
+;All of the "top level" blocks are completely distinct
+[define [js_dispatch tree]
+  [case [nameof tree]
+    [(functions)   [list "//Function definitions\n" [map js_function [childrenof tree]]]]
+    [(includes)  [js_includes tree]]
+    [(type-definitions)  [js_types tree]]
+    [else [error [format "Unrecognised top level def ~a"  tree]]]]]
+
+;The top level node
+[define [js_program tree]
+  [string-join [flatten
+                [list "
+
+"
+                      [id [map js_dispatch  [childrenof tree]]]
+                      "main();\n"]] ""]]
+
+;Autogenerated test file
+[define js_test_filename "test.js"]
+
+;Compile and run the test program
+[define js_test_commands '["/usr/local/bin/node test.js" "./a.out > results.js"]]
+
+
+
+
+
+
+
+
 ; C output functions
 
 ;output include statements
@@ -108,12 +288,12 @@
 ;} Pair;
 
 [define [clang_struct_components tree]
-  [string-join [map [lambda [x] [format "    ~a ~a;\n" [clang_typemap [car x]] [cadr x]]] [cdr tree]]]
+  [string-join [map [lambda [x] [format "    ~a ~a ~a;\n" [if [> [length x] 2] [third x] "" ]  [clang_typemap [car x]] [cadr x]]] [cdr tree]]]
   ]
 ;output type definition statements
 [define [clang_struct tree]
   [list
-   [format "typedef struct {\n~a} ~a;\n" [clang_struct_components [cadr tree]]  [car tree]]
+   [format "typedef struct ~a {\n~a} ~a;\n" [car tree] [clang_struct_components [cadr tree]]  [car tree]]
    ]]
 
 ;output type definition statements
@@ -126,7 +306,7 @@
 [define [clang_types tree]
   [list "//Type definitions\n"
         [map [lambda [x]
-               [displayln [format "a type: ~a~n" [second x]]]
+               ;[displayln [format "a type: ~a~n" [second x]]]
                ;actually all types will be a list, need to check for 'stuct
                [if [list? [second x]]
                    ;it is a struct
@@ -164,9 +344,17 @@
           ;a function with no args
           [format "~a()" [codeof [first  tree]]]
           [begin ;[displayln [format  "definite function ~s" [childrenof tree]]]
-            [string-join [list [format "~a(" [clang_funcmap [codeof [car  [childrenof tree]]]]]
+            [string-join
+
+             [case [codeof [car  [childrenof tree]]]
+               ['get-struct  [list [format "~a->~a" [codeof [second  [childrenof tree]]] [codeof [third  [childrenof tree]]]]]]
+               ['new  [list [format "malloc(sizeof(~a))" [codeof [third  [childrenof tree]]] ]]]
+               [else
+                [list [format "~a(" [clang_funcmap [codeof [car  [childrenof tree]]]]]
                                [string-join [map [lambda [x] [format "~a" [clang_subexpression x]  ]] [cdr  [childrenof tree]]] ", "]
-                               ")"] ""]]]]
+                               ")"]]]
+
+              ""]]]]
   ]
 
 ;output a statement.  This is where all the builtins go, like "if, set, for"
@@ -258,22 +446,6 @@ void * gc_malloc( unsigned int size ) {
 return malloc( size);
 }
 
-
-pair cons(char* data, pair list) {
-   pair p= gc_malloc(sizeof(pair));
-p->car = data;
-p->cdr = list;
-return p;
-}
-
-char* car(pair list) {
-return list->car;
-}
-
-pair cdr(pair list) {
-return list->cdr;
-}
-
 int* makeArray(int length) {
     int * array = gc_malloc(length*sizeof(int));
     return array;
@@ -304,6 +476,34 @@ void setAt(int* array, int index, int value) {
 
   [map [lambda [x]  [format "import \"~a\"~n" x] ] [cdr [codeof tree]]]
   ]
+
+[define [go_struct_components tree]
+  [string-join [map [lambda [x] [format "    ~a ~a\n"  [cadr x] [go_typemap [car x]]]] [cdr tree]]]
+  ]
+
+;output type definition statements
+[define [go_struct tree]
+  [list
+   [format "type ~a struct {\n~a} \n" [car tree] [go_struct_components [cadr tree]]  ]
+   ]]
+
+;output type definition statements
+[define [go_typedef tree]
+  [list
+   [format "type ~a=~a\n"  [car tree] [go_typemap [cadr tree]]]
+   ]]
+
+;output type definition statements
+[define [go_types tree]
+  [list "//Type definitions\n"
+        [map [lambda [x]
+               [displayln [format "a type: ~a~n" [second x]]]
+               ;actually all types will be a list, need to check for 'stuct
+               [if [list? [second x]]
+                   ;it is a struct
+                   [go_struct x]
+                   [go_typedef x]]] [cdr [codeof tree]]]
+        "\n"]]
 
 [define [go_arguments tree]
   [list "("
@@ -346,6 +546,7 @@ void setAt(int* array, int index, int value) {
             [string-join 
              [case [codeof [car  [childrenof tree]]]
                ['get-struct  [list [format "~a.~a" [codeof [second  [childrenof tree]]] [codeof [third  [childrenof tree]]]]]]
+               ['new  [list [format "&~a{}" [codeof [third  [childrenof tree]]] ]]]
                [else
                 [list
                  [format "~a(" [go_funcmap [codeof [car  [childrenof tree]]]]]
@@ -356,8 +557,8 @@ void setAt(int* array, int index, int value) {
 
 
 [define [go_statement tree]
-  [write "go statement:"][writeln tree][newline]
-  [write "go childrenof statement:"][writeln [childrenof tree]][newline]
+  ;[write "go statement:"][writeln tree][newline]
+  ;[write "go childrenof statement:"][writeln [childrenof tree]][newline]
   [list
    [case [car [codeof  tree]]
      ['if [format "    if ~a {\n      ~a    } else {\n      ~a    }"
@@ -411,6 +612,7 @@ void setAt(int* array, int index, int value) {
 [define [go_typemap type]
   [case type
     ['void ""]
+    ['Box* '*Box]
     [else type]]]
 
 [define [go_funcmap name]
@@ -421,6 +623,7 @@ void setAt(int* array, int index, int value) {
     ['- 'sub]
     ['> 'greaterthan]
     ['true 'true]
+    ['new '*new]
     [else name]]]
 
 
@@ -435,6 +638,7 @@ void setAt(int* array, int index, int value) {
   [case [nameof tree]
     [(functions)   [go_functions tree]]
     [(includes)  [go_includes tree]]
+    [(type-definitions)  [go_types tree]]
     [else  '[]]]]
 
 [define [go_program tree]
@@ -454,27 +658,6 @@ return a==b
 
 func equalString(a,b string) bool {
  return a==b
-}
-
-
-type Pairs struct  {
- car interface{}
- cdr *Pairs
-};
-type  pair *Pairs
-type array []int
-
-func cons(data interface{}, list pair) pair {
-    p:=&Pairs{data, list}
- return p
-}
-
-func car( list pair) string {
- return list.car.(string)
-}
-
-func cdr( list pair) pair{
- return list.cdr
 }
 
 func makeArray(length int) []int {
@@ -812,6 +995,7 @@ returnValue=${array[$2]}
 
 ; Type declarations always go at the start of the function
 [define [type_declaration tree]
+  ;rewrite this so we can print "invalide type declaration on failure
   [match-let [[[list type name value] tree]]
     [list
      [cons 'types [list [cons name type]]]
@@ -904,16 +1088,37 @@ returnValue=${array[$2]}
       [struct
         [string str]
         [int i]
-        [array arr]
+        ;[array arr]
+        [Box* next struct] ;ewww
         ]]
-     [ box Box*]]
+     [ box Box*]
+     [list Box*]
+     ]
+    
     [functions
-     [void test12 [] [declare [box b nil]]
+
+     
+     [list cons [box data list l] [declare]
            [body
-            [set b [new box]]
-            [set-struct b str "Hello structures"]
-            [printf [get-struct b str]]
-            ]]
+            (set-struct data next l)
+            (return data)]]
+     
+     [box car [list l] [declare]
+           [body [return l]]]
+
+     [list cdr [list l] [declare]
+           [body [return  (get-struct l next)]]]
+     
+     [box boxString [string s] [declare [box b nil]]
+          [body  [set b [new box Box]]
+                 [set-struct b str s]
+                 [return b]]]
+
+     [string unBoxString [box b] [declare]
+             [body
+              [return [get-struct b str]]]]
+     
+
 
      [void test1 [] [declare]
            [body [printf "1.  pass Function call and print work\n"]]]
@@ -996,17 +1201,24 @@ returnValue=${array[$2]}
                                                     [printf "Counting down from 10\n"]
                                                     [beers 9]]]
      [void test10 [] [declare [string testString "This is a test string"]] [body
-                                                                            [if [equalString testString [car [cons testString nil]]] 
+                                                                            [if [equalString testString [unBoxString [car [cons [boxString testString] nil]]]] 
                                                                                 [body [printf "10. pass cons and car work\n"]]
                                                                                 [body [printf "10. fail cons and car fail\n"]]]
                                                                             ]]
 
-     [void test11 [] [declare [array testArray nil]] [body
-                                                      [set testArray [makeArray 100]]
-                                                      [setAt testArray 0 100]
-                                                      [setAt testArray 1 200]
-                                                      [printf "Element 1: %d" [at testArray 1]]
-                                                      ]]
+;     [void test11 [] [declare [array testArray nil]] [body
+;                                                      [set testArray [makeArray 100]]
+;                                                      [setAt testArray 0 100]
+;                                                      [setAt testArray 1 200]
+;                                                      [printf "Element 1: %d" [at testArray 1]]
+;                                                      ]]
+
+          [void test12 [] [declare [box b nil]]
+           [body
+            [set b [new box Box]]
+            [set-struct b str "12. pass structure accessors\n"]
+            [printf "%s" [get-struct b str]]
+            ]]
      
      
      [int main [int argc  char** argv]
@@ -1023,7 +1235,8 @@ returnValue=${array[$2]}
            [test8]
            [test9]
            [test10]
-           [test11]
+           ;[test11]
+           [test12]
            ;[echo a is a]
            ]]]]]
 
@@ -1047,13 +1260,13 @@ returnValue=${array[$2]}
   [map system go_test_commands]
   [display-to-file [clang_program nodes] clang_test_filename #:exists 'replace]
   [map system clang_test_commands]
-  [display-to-file [bash_program nodes] bash_test_filename #:exists 'replace]
-  [map system bash_test_commands]
+  [display-to-file [js_program nodes] js_test_filename #:exists 'replace]
+  [map system js_test_commands]
   ;[display [go_program nodes] ]
 
   [let [[gout [file->string "results.go"]]
         [cout [file->string "results.c"]]
-        [bout [file->string "results.bash"]]
+        [bout [file->string "results.js"]]
         ]
     [if [and [equal? cout gout]];[equal? gout bout]]
         [displayln "Job's a good 'un, boss"]
