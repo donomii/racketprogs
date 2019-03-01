@@ -87,8 +87,8 @@
 [define [make-pairs lst]
   [if [empty? lst]
       lst
-      [cons [take lst 2] [make-pairs [drop lst 2]]]]
-  ]
+      [cons [take lst 2] [make-pairs [drop lst 2]]]]]
+  
 
 
 
@@ -100,13 +100,19 @@
 [define [js_includes tree]
   [list "//Include libraries and headers\n"
         "var util = require('util');\n"
+        "var fs = require('fs');\n"
         "function equal(a,b) {return a===b}\n"
-        "function equalString(a,b) {return a===b}\n"
+        "function equalString(a,b) {return a.toString()===b.toString() }\n"
         "function sub (a,b){return a-b}\n"
         "function greaterthan(a,b){return a>b}"
         "function makeArray(){return [];}"
         "function at(arr, index) {return arr[index];}"
         "function printf() {process.stdout.write(util.format.apply(this, arguments));}"
+        "function read_file(filename) {return fs.readFileSync(filename);}"
+        "function write_file(filename, data) {fs.writeFileSync(filename, data);}"
+        "function string_length(str){str=''+str;return str.length;}"
+        "function sub_string(str, start, len) {str = ''+str;return str.substring(start, start+len)};"
+        
         [map [lambda [x]  [format "#include <~s>~n"
                                   x] ] [cdr [codeof tree]]]
         "\n"]]
@@ -170,10 +176,10 @@
                ['new  [list [format "Object.assign({},~a)" [codeof [third  [childrenof tree]]] ]]]
                [else
                 [list [format "~a(" [js_funcmap [codeof [car  [childrenof tree]]]]]
-                               [string-join [map [lambda [x] [format "~a" [js_subexpression x]  ]] [cdr  [childrenof tree]]] ", "]
-                               ")"]]]
+                      [string-join [map [lambda [x] [format "~a" [js_subexpression x]  ]] [cdr  [childrenof tree]]] ", "]
+                      ")"]]]
 
-              ""]]]]
+             ""]]]]
   ]
 
 ;output a statement.  This is where all the builtins go, like "if, set, for"
@@ -231,6 +237,10 @@
 ;Renames quonverter funcs into C funcs.
 [define [js_funcmap name]
   [case name
+    ['string-length 'string_length]
+    ['sub-string 'sub_string]
+    ['write-file 'write_file]
+    ['read-file 'read_file]
     ['printf 'printf]
     ['nil 'null]
     ['= 'equal]
@@ -352,10 +362,10 @@
                ['new  [list [format "malloc(sizeof(~a))" [codeof [third  [childrenof tree]]] ]]]
                [else
                 [list [format "~a(" [clang_funcmap [codeof [car  [childrenof tree]]]]]
-                               [string-join [map [lambda [x] [format "~a" [clang_subexpression x]  ]] [cdr  [childrenof tree]]] ", "]
-                               ")"]]]
+                      [string-join [map [lambda [x] [format "~a" [clang_subexpression x]  ]] [cdr  [childrenof tree]]] ", "]
+                      ")"]]]
 
-              ""]]]]
+             ""]]]]
   ]
 
 ;output a statement.  This is where all the builtins go, like "if, set, for"
@@ -406,6 +416,10 @@
 ;Renames quonverter funcs into C funcs.
 [define [clang_funcmap name]
   [case name
+    ['sub-string 'sub_string ]
+    ['string-length 'string_length]
+    ['write-file 'write_file]
+    ['read-file 'read_file]
     ['nil 'NULL]
     ['= 'equal]
     ['true '1]
@@ -429,12 +443,20 @@
 [define [clang_program tree]
   [string-join [flatten
                 [list "
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 int sub(int a, int b) { return a - b; }
 int greaterthan(int a, int b) { return a > b; }
 int equal(int a, int b) { return a == b; }
 int equalString(char* a, char* b) { return !strcmp(a,b); }
+int string_length(char* s) { return strlen(s);}
+char* sub_string(char* s, int start, int length) {
+char* substr = calloc(length+1, 1);
+strncpy(substr, s+start, length);
+return substr;
+}
+
 
 typedef struct Pairs {
 char * car;
@@ -460,6 +482,38 @@ void setAt(int* array, int index, int value) {
     array[index] = value;
 }
 
+char * read_file(char * filename) {
+char * buffer = 0;
+long length;
+FILE * f = fopen (filename, \"rb\");
+
+if (f)
+{
+  fseek (f, 0, SEEK_END);
+  length = ftell (f);
+  fseek (f, 0, SEEK_SET);
+  buffer = malloc (length);
+  if (buffer)
+  {
+    fread (buffer, 1, length, f);
+  }
+  fclose (f);
+}
+return buffer;
+}
+
+void write_file (char * filename, char * data) {
+FILE *f = fopen(filename, \"w\");
+if (f == NULL)
+{
+    printf(\"Error opening file!\");
+    exit(1);
+}
+
+fprintf(f, \"%s\", data);
+
+fclose(f);
+}
 "
                       [id [map clang_dispatch  [childrenof tree]]]]] ""]]
 
@@ -474,8 +528,50 @@ void setAt(int* array, int index, int value) {
 ; Golang output functions
 
 [define [go_includes tree]
+  [list
+   [map [lambda [x]  [format "import \"~a\"~n" x] ] [cons "io/ioutil" [cdr [codeof tree]]]]
+   "
+   func sub(a, b int) int{
+return a-b
+}
 
-  [map [lambda [x]  [format "import \"~a\"~n" x] ] [cdr [codeof tree]]]
+func greaterthan(a, b int) bool {
+return a>b
+}
+func equal(a,b int) bool {
+return a==b
+}
+
+func equalString(a,b string) bool {
+ return a==b
+}
+
+func string_length(s string) int {return len(s)}
+func sub_string(s string, start, length int) string {return s[start:start+length]}
+
+func makeArray(length int) []int {
+    arr := make([]int, length)
+    return arr
+}
+
+func at(arr []int,  index int) int {
+  return arr[index]
+}
+
+func setAt( arr []int,  index int, value int) {
+    arr[index] = value
+}
+
+func read_file(filename string) string {
+b, _ := ioutil.ReadFile(filename)
+return string(b)
+}
+
+func write_file(filename string, data string) {
+ioutil.WriteFile(filename, []byte(data), 0777)
+}
+
+"]
   ]
 
 [define [go_struct_components tree]
@@ -498,7 +594,7 @@ void setAt(int* array, int index, int value) {
 [define [go_types tree]
   [list "//Type definitions\n"
         [map [lambda [x]
-               [displayln [format "a type: ~a~n" [second x]]]
+               ;[displayln [format "a type: ~a~n" [second x]]]
                ;actually all types will be a list, need to check for 'stuct
                [if [list? [second x]]
                    ;it is a struct
@@ -543,7 +639,7 @@ void setAt(int* array, int index, int value) {
                                            [format "~a~a()" [annotate "singular function"][codeof [first  tree]]]]]]
           [begin
             
-             [annotate [format  "definite function" ]]
+            [annotate [format  "definite function" ]]
             [string-join 
              [case [codeof [car  [childrenof tree]]]
                ['get-struct  [list [format "~a.~a" [codeof [second  [childrenof tree]]] [codeof [third  [childrenof tree]]]]]]
@@ -570,7 +666,7 @@ void setAt(int* array, int index, int value) {
      ['set  [format "    ~a=~a"  [codeof [first [childrenof tree]]] [go_subexpression [second  [childrenof tree]]]]]
      ['setAt  [format "    ~a[~a]=~a"  [codeof [first [childrenof tree]]] [codeof [second [childrenof tree]]] [go_subexpression [third  [childrenof tree]]]]]
      ['set-struct [let [[e [childrenof [first [childrenof tree]]]]]
-                    [format "    ~a.~a = ~s" [codeof [second e]] [codeof [third e]] [codeof [fourth e]]]
+                    [format "    ~a.~a = ~a" [codeof [second e]] [codeof [third e]] [go_subexpression [fourth e]]]
                     ]]
      [else [go_expression [first [childrenof tree]]]]]
    "\n"]]
@@ -618,6 +714,10 @@ void setAt(int* array, int index, int value) {
 
 [define [go_funcmap name]
   [case name
+    ['sub-string 'sub_string]
+    ['string-length 'string_length]
+    ['write-file 'write_file]
+    ['read-file 'read_file]
     ['nil 'nil]
     ['= 'equal]
     ['printf 'fmt.Printf]
@@ -645,36 +745,7 @@ void setAt(int* array, int index, int value) {
 [define [go_program tree]
   [string-join [flatten
                 [list
-                 "package main\n\nimport \"fmt\"\n\n
-   func sub(a, b int) int{
-return a-b
-}
-
-func greaterthan(a, b int) bool {
-return a>b
-}
-func equal(a,b int) bool {
-return a==b
-}
-
-func equalString(a,b string) bool {
- return a==b
-}
-
-func makeArray(length int) []int {
-    arr := make([]int, length)
-    return arr
-}
-
-func at(arr []int,  index int) int {
-  return arr[index]
-}
-
-func setAt( arr []int,  index int, value int) {
-    arr[index] = value
-}
-
-"
+                 "package main\n\nimport \"fmt\"\n\n"
                  [map go_dispatch  [childrenof tree]]]] ""]]
 
 [define go_test_filename "test.go"]
@@ -1090,6 +1161,7 @@ returnValue=${array[$2]}
         [string str]
         [int i]
         ;[array arr]
+        [int length]
         [Box* next struct] ;ewww
         ]]
      [ box Box*]
@@ -1097,7 +1169,15 @@ returnValue=${array[$2]}
      ]
     
     [functions
+     
+     [int add [int a int b] [declare]
+          [body [return [sub a [sub 0 b]]]]]
 
+     [int sub1 [int a] [declare]
+          [body [return [sub a 1]]]]
+
+     [int add1 [int a] [declare]
+          [body [return [add a 1]]]]
      
      [list cons [box data list l] [declare]
            [body
@@ -1105,7 +1185,7 @@ returnValue=${array[$2]}
             (return data)]]
      
      [box car [list l] [declare]
-           [body [return l]]]
+          [body [return l]]]
 
      [list cdr [list l] [declare]
            [body [return  (get-struct l next)]]]
@@ -1113,11 +1193,13 @@ returnValue=${array[$2]}
      [box boxString [string s] [declare [box b nil]]
           [body  [set b [new box Box]]
                  [set-struct b str s]
+                 [set-struct b length [string-length s]]
                  [return b]]]
 
      [string unBoxString [box b] [declare]
              [body
               [return [get-struct b str]]]]
+
      
 
 
@@ -1207,20 +1289,64 @@ returnValue=${array[$2]}
                                                                                 [body [printf "10. fail cons and car fail\n"]]]
                                                                             ]]
 
-;     [void test11 [] [declare [array testArray nil]] [body
-;                                                      [set testArray [makeArray 100]]
-;                                                      [setAt testArray 0 100]
-;                                                      [setAt testArray 1 200]
-;                                                      [printf "Element 1: %d" [at testArray 1]]
-;                                                      ]]
+     ;     [void test11 [] [declare [array testArray nil]] [body
+     ;                                                      [set testArray [makeArray 100]]
+     ;                                                      [setAt testArray 0 100]
+     ;                                                      [setAt testArray 1 200]
+     ;                                                      [printf "Element 1: %d" [at testArray 1]]
+     ;                                                      ]]
 
-          [void test12 [] [declare [box b nil]]
+     [void test12 [] [declare [box b nil]]
            [body
             [set b [new box Box]]
             [set-struct b str "12. pass structure accessors\n"]
             [printf "%s" [get-struct b str]]
             ]]
-     
+
+     [void test13 []
+           [declare
+            [string testString "Hello from the filesystem!"]
+            [string contents ""]]
+           [body
+            [write-file "test.txt" testString]
+            [set contents [read-file "test.txt"]]
+            [printf "%s\n" contents]
+            [if [equalString testString contents]
+                [body [printf "13. pass Read and write files\n"]]
+                [body [printf "13. fail Read and write files\n"]]
+                ]]]
+
+     [string finish_token [string prog int start int len] [declare]
+             [body
+              ;[printf "ft: %s start: %d, end %d\n" prog start len]
+              [printf "Finish token %s\n" [sub-string prog start   len]]
+              [return [sub-string prog start  len]]
+              ]]
+
+     [void scan [string prog int start int len] [declare [string token ""]]
+           [body
+            [if [> [string-length prog] [sub start [sub 0 len]]]
+                [body
+                 [set token [sub-string prog [sub1 [add start len]] 1]]
+                 [printf "Start: %d, end %d, Token: %s\n" start [add start len] token ]
+                 [if [equalString "(" token]
+                     [body [printf "Start array\n"][finish_token prog start  [sub1 len]][scan prog [add1 start] 1]]
+                     [body [if [equalString ")" token]
+                               [body [printf "Finish array\n"][finish_token prog start  [sub1 len]][scan prog [add start  len] 1]]
+                               [body [if [equalString " " token]
+                                         [body [printf "skip space: %s\n" [finish_token prog start  [sub1 len]]] [scan prog  [add start  len] 1]]
+                                         [body [printf "Symbol\n"] [scan prog start [sub len -1]]]]]]]]]
+                [body [printf "done\n"]]]]]
+     [void test14 []
+           [declare
+            [string programStr ""]
+            ]
+           [body
+            
+            [set programStr [read-file "test.sexpr"]]
+            [printf "Read program: %s\n" programStr]
+            [scan programStr 0 1]
+            ]]
      
      [int main [int argc  char** argv]
           [declare ;[int a 10]
@@ -1238,6 +1364,8 @@ returnValue=${array[$2]}
            [test10]
            ;[test11]
            [test12]
+           [test13]
+           [test14]
            ;[echo a is a]
            ]]]]]
 
@@ -1256,7 +1384,7 @@ returnValue=${array[$2]}
 
 ;Generate output and cross-check
 [let [[nodes [type_program[walk  prog macros] ]]]
-  [pretty-write nodes]
+  ;[pretty-write nodes]
   [display-to-file [go_program  nodes] go_test_filename #:exists 'replace]
   [map system go_test_commands]
   [display-to-file [clang_program nodes] clang_test_filename #:exists 'replace]
