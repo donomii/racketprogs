@@ -1328,23 +1328,30 @@ returnValue=${array[$2]}
      
      [void test7 [] [declare ]
            [body
-            
-            [printf "Counting down from 10\n"]
             [if [= 0 [test7_do 10]]
                 [body [printf "7.  pass count works\n"]]
                 [body [printf "7.  fail count fails\n"]]]]]
 
      [void beer [] [declare] [body
                               [printf "%d bottle of beer on the wall, %d bottle of beer.  Take one down, pass it round, no bottles of beer on the wall\n" 1 1]]]
+
+     [string plural [int num] [declare]
+             [body
+              [if [equal num 1]
+                  [body [return ""]]
+                  [body [return "s"]]]]]
+
+     
      
      [int beers [int count] [declare [int newcount 0]]
           [body
            [set newcount [sub count 1]]
-           [printf "%d bottles of beer on the wall, %d bottles of beer.  Take one down, pass it round, %d bottles of beer on the wall\n" count count newcount]
-           [if [> count 2]
+           [printf "%d bottle%s of beer on the wall, %d bottle%s of beer.  Take one down, pass it round, %d bottle%s of beer on the wall\n" count [plural count] count [plural count] newcount [plural newcount]]
+           [if [> count 1]
                [body [set count [beers newcount]]]
-               [body [beer]]]
-           [return count]]]
+               [body [return count]]]
+           [return 0]
+           ]]
 
      [void test8 [] [declare] [body
                                [if [equal [sub  [sub 2 1] [sub 3 1] ] -1]
@@ -1353,10 +1360,12 @@ returnValue=${array[$2]}
                                    ]]]
      [void test9 [] [declare [int answer -999999]] [body
                                                     [set answer [sub  [sub 20 1] [sub 3 1] ]]
-                                                    [printf "(20-1)-(3-1)=%d" answer]
-                               
-                                                    [printf "Counting down from 10\n"]
-                                                    [beers 9]]]
+                                                    ;[printf "(20-1)-(3-1)=%d" answer]
+                                                    [if [equal answer 17]
+                                                        [body [printf "9.  pass arithmetic works\n"]]
+                                                        [body [printf "9.  fail arithmetic\n"]]]
+                                                    ]]
+     
      [void test10 [] [declare [string testString "This is a test string"]] [body
                                                                             [if [equalString testString [unBoxString [car [cons [boxString testString] nil]]]] 
                                                                                 [body [printf "10. pass cons and car work\n"]]
@@ -1384,7 +1393,7 @@ returnValue=${array[$2]}
            [body
             [write-file "test.txt" testString]
             [set contents [read-file "test.txt"]]
-            [printf "%s\n" contents]
+            ;[printf "%s\n" contents]
             [if [equalString testString contents]
                 [body [printf "13. pass Read and write files\n"]]
                 [body [printf "13. fail Read and write files\n"]]
@@ -1406,16 +1415,28 @@ returnValue=${array[$2]}
                  [set val [car l]]
                  [if [isList val]
                      [body
-                      [printf "("]
+                      [printf "["]
                       [displayList [unBoxList [car l]]]
-                      [printf ")"]
+                      [printf "]"]
                       [displayList [cdr l]]
                       ]
                      [body
-                      [printf "%s " [unBoxString val]]
+                      [printf "%s:%s " [get-struct val typ] [unBoxString val]]
                       [displayList [cdr l]]]
                           
                      ]]]]]
+
+     [string readString [string prog int start int len] [declare [string token ""]]
+             [body
+              [printf "Start: %d, len: %d\n" start len]
+              [set token [sub-string prog [sub1 [add start len]] 1]]
+              [printf "Token: %s\n" token]
+              [if [equalString "\"" token]
+                  [body [return [sub-string prog start [sub1 len]]]]
+                  [body [return [readString prog start [add1 len]]]]
+                  ]
+              ]
+             ]
             
      [list scan [string prog int start int len] [declare [string token ""]]
            [body
@@ -1425,23 +1446,25 @@ returnValue=${array[$2]}
                  ;[printf "Start: %d, end %d, Token: %s\n" start [add start len] token ]
                  [if [equalString "(" token]
                      [body ;[printf "Start array\n"]
-                           [return [cons
-                                    [boxString [finish_token prog start  [sub1 len]]]
-                                    [cons [boxString "(" ]
-                                          [scan prog [add1 start] 1]]]]]
+                      [return [cons
+                               [boxString [finish_token prog start  [sub1 len]]]
+                               [cons [boxString "(" ]
+                                     [scan prog [add1 start] 1]]]]]
                      [body [if [equalString ")" token]
                                [body ;[printf "Finish array\n"]
-                                     [return [cons [boxString [finish_token prog start  [sub1 len]]]
-                                                   [cons [boxString ")"]
-                                                         [scan prog [add start  len] 1]]]]]
+                                [return [cons [boxString [finish_token prog start  [sub1 len]]]
+                                              [cons [boxString ")"]
+                                                    [scan prog [add start  len] 1]]]]]
                                [body [if [equalString " " token]
                                          [body [return [cons
                                                         [boxString [finish_token prog start  [sub1 len]]]
                                                         [scan prog  [add start  len] 1]]]]
-                                         [body ;[printf "Symbol %s\n" token]
-                                               [return [scan prog start [sub len -1]]]]]]]]]]
-                [body [printf "done\n"]
-                      [return [emptyList]]]]
+                                         [body [if [equalString "\"" token]
+                                             [body [return [cons [boxString [readString prog [add1 start] len]] [scan prog  [add start  [add1 [add1 [string-length [readString prog [add1 start] len]]]]] 1]]]]
+                                             [body ;[printf "Symbol %s\n" token]
+                                              [return [scan prog start [sub len -1]]]]]]]]]]]]
+                [body ;[printf "scan complete\n"]
+                 [return [emptyList]]]]
             [return [emptyList]]
             ]]
 
@@ -1454,12 +1477,12 @@ returnValue=${array[$2]}
                  ;[printf "Processing list with ast: %s\n" [unBoxString b] ]
                  [if [equalString "(" [unBoxString b]]
                      [body ;[printf "Start sublist ast\n"]
-                           [return [cons
-                                    [boxList [ast [cdr l]]]
-                                    [ast [skipList [cdr l]]]]]]
+                      [return [cons
+                               [boxList [ast [cdr l]]]
+                               [ast [skipList [cdr l]]]]]]
                      [body [if [equalString ")" [unBoxString b]]
                                [body ;[printf "Finish sublist ast\n"]
-                                     [return [emptyList]]]
+                                [return [emptyList]]]
                                [body
                                 ;[printf "Add token %s\nRemaining tokens: " [unBoxString b]]
                                 ;[displayList [cdr l]]
@@ -1477,10 +1500,10 @@ returnValue=${array[$2]}
                  ;[printf "Processing list with skiplist: %s\n" [unBoxString b] ]
                  [if [equalString "(" [unBoxString b]]
                      [body ;[printf "Start sublist in skiplist\n"]
-                           [return [skipList [skipList [cdr l]]]]]
+                      [return [skipList [skipList [cdr l]]]]]
                      [body [if [equalString ")" [unBoxString b]]
                                [body ;[printf "Finish sublist in skiplist\n"]
-                                     [return  [cdr l]]]
+                                [return  [cdr l]]]
                                [body
                                 ;[printf "skipping token %s\nRemaining tokens: " [unBoxString b]]
                                 ;[displayList [cdr l]]
@@ -1498,12 +1521,12 @@ returnValue=${array[$2]}
             
             
             [set tokens [scan aStr 0 1]]
-            [printf "Displaying tokens:\n"]
-            [displayList tokens]
-            [printf "Building AST\n"]
+            ;[printf "Displaying tokens:\n"]
+            ;[displayList tokens]
+            ;[printf "Building AST\n"]
             [set as [ast tokens]]
-            [printf "Displaying AST\n"]
-            [displayList as]
+            ;[printf "Displaying AST\n"]
+            ;[displayList as]
             [return as]
             ]]
 
@@ -1512,10 +1535,10 @@ returnValue=${array[$2]}
             [string programStr ""]
             ]
            [body
-           [set programStr [read-file "test.sexpr"]]
-           [printf "Read program: %s\n" programStr]
-           [readSexpr programStr]
-           ]]
+            [set programStr [read-file "test.sexpr"]]
+            ;[printf "Read program: %s\n" programStr]
+            [displayList [readSexpr programStr]]
+            ]]
      
      [int main [int argc  char** argv]
           [declare ;[int a 10]
@@ -1535,6 +1558,8 @@ returnValue=${array[$2]}
            [test12]
            [test13]
            [test14]
+           [printf "After all that hard work, I need a beer...\n"]
+           [beers 9]
            ;[echo a is a]
            ]]]]]
 

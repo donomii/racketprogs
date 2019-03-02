@@ -1,2 +1,2 @@
-(int add (int a int b) (declare)
+(int add (int a int b) (declare (string greetings "hellow    world"))
           (body (return (sub a (sub 0 b)))))
