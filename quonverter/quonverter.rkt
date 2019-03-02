@@ -1408,18 +1408,29 @@ returnValue=${array[$2]}
                 [body [printf "13. fail Read and write files\n"]]
                 ]]]
 
-     [box finish_token [string prog int start int len] [declare]
-             [body
-              ;[printf "ft: %s start: %d, end %d\n" prog start len]
-              ;[printf "Finish token %s\n" [sub-string prog start   len]]
+     [list filterVoid [list l] [declare [box token nil]]
+           [body
+            [if [isEmpty l]
+                [body [return [emptyList]]]
+                [body
 
-[if [> len 1]
-                                              [body [return [boxString [sub-string prog start  len]]]]
-                                              [body [return
-                                                     [newVoid]
-                                                     ]]]
-              [return [boxString [sub-string prog start  len]]]
-              ]]
+                 [set token [car l]]
+                 [if [equalString "void" [get-struct token typ]]
+                          [body [return [filterVoid [cdr l]]]]
+                          [body [return [cons token [filterVoid [cdr l]]]]]]]]]]
+            
+     [box finish_token [string prog int start int len] [declare]
+          [body
+           ;[printf "ft: %s start: %d, end %d\n" prog start len]
+           ;[printf "Finish token %s\n" [sub-string prog start   len]]
+
+           [if [> len 0]
+               [body [return [boxString [sub-string prog start  len]]]]
+               [body [return
+                      [newVoid]
+                      ]]]
+           [return [boxString [sub-string prog start  len]]]
+           ]]
 
      [void displayList [list l] [declare [box val nil]]
            [body
@@ -1436,7 +1447,7 @@ returnValue=${array[$2]}
                       [displayList [cdr l]]
                       ]
                      [body
-                      [printf "(%s:%s)" [get-struct val typ] [unBoxString val]]
+                      [printf "'%s' "  [unBoxString val]]
                       [displayList [cdr l]]]
                           
                      ]]]]]
@@ -1464,20 +1475,20 @@ returnValue=${array[$2]}
                  [if [equalString "(" token]
                      [body ;[printf "Start array\n"]
                       [return [cons
-                                [finish_token prog start  [sub1 len]]
+                               [finish_token prog start  [sub1 len]]
                                [cons [boxString "(" ]
                                      [scan prog [add1 start] 1]]]]]
                      [body [if [equalString ")" token]
                                [body ;[printf "Finish array\n"]
                                 [return [cons  [finish_token prog start  [sub1 len]]
-                                              [cons [boxString ")"]
-                                                    [scan prog [add start  len] 1]]]]]
+                                               [cons [boxString ")"]
+                                                     [scan prog [add start  len] 1]]]]]
                                [body [if [equalString " " token]
                                          [body
-                                           [return [cons
-                                                              [finish_token prog start  [sub1 len]]
-                                                             [scan prog  [add start  len] 1]]]
-                                              ]
+                                          [return [cons
+                                                   [finish_token prog start  [sub1 len]]
+                                                   [scan prog  [add start  len] 1]]]
+                                          ]
                                          [body [if [equalString "\"" token]
                                                    [body [return [cons [boxString [readString prog [add1 start] len]] [scan prog  [add start  [add1 [add1 [string-length [readString prog [add1 start] len]]]]] 1]]]]
                                                    [body ;[printf "Symbol %s\n" token]
@@ -1539,7 +1550,7 @@ returnValue=${array[$2]}
             [set tokens [emptyList]]
             
             
-            [set tokens [scan aStr 0 1]]
+            [set tokens [filterVoid [scan aStr 0 1]]]
             ;[printf "Displaying tokens:\n"]
             ;[displayList tokens]
             ;[printf "Building AST\n"]
