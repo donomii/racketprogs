@@ -1393,7 +1393,7 @@ returnValue=${array[$2]}
      [string finish_token [string prog int start int len] [declare]
              [body
               ;[printf "ft: %s start: %d, end %d\n" prog start len]
-              [printf "Finish token %s\n" [sub-string prog start   len]]
+              ;[printf "Finish token %s\n" [sub-string prog start   len]]
               [return [sub-string prog start  len]]
               ]]
 
@@ -1401,7 +1401,7 @@ returnValue=${array[$2]}
            [body
             [if [isEmpty l]
                 [body ;[printf "Empty!\n"]
-                      [return]]
+                 [return]]
                 [body
                  [set val [car l]]
                  [if [isList val]
@@ -1422,15 +1422,15 @@ returnValue=${array[$2]}
             [if [> [string-length prog] [sub start [sub 0 len]]]
                 [body
                  [set token [sub-string prog [sub1 [add start len]] 1]]
-                 [printf "Start: %d, end %d, Token: %s\n" start [add start len] token ]
+                 ;[printf "Start: %d, end %d, Token: %s\n" start [add start len] token ]
                  [if [equalString "(" token]
-                     [body [printf "Start array\n"]
+                     [body ;[printf "Start array\n"]
                            [return [cons
                                     [boxString [finish_token prog start  [sub1 len]]]
                                     [cons [boxString "(" ]
                                           [scan prog [add1 start] 1]]]]]
                      [body [if [equalString ")" token]
-                               [body [printf "Finish array\n"]
+                               [body ;[printf "Finish array\n"]
                                      [return [cons [boxString [finish_token prog start  [sub1 len]]]
                                                    [cons [boxString ")"]
                                                          [scan prog [add start  len] 1]]]]]
@@ -1438,7 +1438,8 @@ returnValue=${array[$2]}
                                          [body [return [cons
                                                         [boxString [finish_token prog start  [sub1 len]]]
                                                         [scan prog  [add start  len] 1]]]]
-                                         [body [printf "Symbol\n"] [return [scan prog start [sub len -1]]]]]]]]]]
+                                         [body ;[printf "Symbol %s\n" token]
+                                               [return [scan prog start [sub len -1]]]]]]]]]]
                 [body [printf "done\n"]
                       [return [emptyList]]]]
             [return [emptyList]]
@@ -1450,18 +1451,18 @@ returnValue=${array[$2]}
                 [body [return [emptyList]]]
                 [body
                  [set b [car l]]
-                 [printf "ast: %s\n" [unBoxString b] ]
+                 ;[printf "Processing list with ast: %s\n" [unBoxString b] ]
                  [if [equalString "(" [unBoxString b]]
-                     [body [printf "Start list ast\n"]
+                     [body ;[printf "Start sublist ast\n"]
                            [return [cons
                                     [boxList [ast [cdr l]]]
                                     [ast [skipList [cdr l]]]]]]
                      [body [if [equalString ")" [unBoxString b]]
-                               [body [printf "Finish array ast\n"]
+                               [body ;[printf "Finish sublist ast\n"]
                                      [return [emptyList]]]
                                [body
-                                [printf "Add token %s\nRemaining tokens: " [unBoxString b]]
-                                [displayList [cdr l]]
+                                ;[printf "Add token %s\nRemaining tokens: " [unBoxString b]]
+                                ;[displayList [cdr l]]
                                 [return [cons b [ast [cdr l]]]]]]]]]
                 ]
             [printf "AAAAAA code should never reach here!\n"]
@@ -1473,39 +1474,48 @@ returnValue=${array[$2]}
                 [body [return [emptyList]]]
                 [body
                  [set b [car l]]
-                 [printf "skipl %s\n" [unBoxString b] ]
+                 ;[printf "Processing list with skiplist: %s\n" [unBoxString b] ]
                  [if [equalString "(" [unBoxString b]]
-                     [body [printf "Start list skiplist\n"]
+                     [body ;[printf "Start sublist in skiplist\n"]
                            [return [skipList [skipList [cdr l]]]]]
                      [body [if [equalString ")" [unBoxString b]]
-                               [body [printf "Finish array skipl\n"]
+                               [body ;[printf "Finish sublist in skiplist\n"]
                                      [return  [cdr l]]]
                                [body
-                                [printf "skipping token %s\nRemaining tokens: " [unBoxString b]]
-                                [displayList [cdr l]]
+                                ;[printf "skipping token %s\nRemaining tokens: " [unBoxString b]]
+                                ;[displayList [cdr l]]
                                 [return  [skipList [cdr l]]]]]]]]]
             [printf "AAAAAA code should never reach here!\n"]
             [return [emptyList]]
             ]]
-     [void test14 []
+     [list readSexpr [string aStr]
            [declare
             [list tokens nil]
             [list as nil]
-            [string programStr ""]
             ]
            [body
             [set tokens [emptyList]]
-            [set programStr [read-file "test.sexpr"]]
-            [printf "Read program: %s\n" programStr]
             
-            [set tokens [scan programStr 0 1]]
+            
+            [set tokens [scan aStr 0 1]]
             [printf "Displaying tokens:\n"]
             [displayList tokens]
             [printf "Building AST\n"]
             [set as [ast tokens]]
             [printf "Displaying AST\n"]
             [displayList as]
+            [return as]
             ]]
+
+     [void test14 []
+           [declare
+            [string programStr ""]
+            ]
+           [body
+           [set programStr [read-file "test.sexpr"]]
+           [printf "Read program: %s\n" programStr]
+           [readSexpr programStr]
+           ]]
      
      [int main [int argc  char** argv]
           [declare ;[int a 10]
