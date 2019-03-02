@@ -1194,6 +1194,7 @@ returnValue=${array[$2]}
         [string str]
         [int i]
         [string typ]
+        [bool voi]
         ;[array arr]
         [int length]
         ]]
@@ -1228,6 +1229,14 @@ returnValue=${array[$2]}
            [set-struct newb length [get-struct b length]]
            [return newb]
            ]]
+     [box newVoid [] [declare [box newb nil]]
+          [body
+           [set newb [new newb Box]]
+           [set-struct newb voi true]
+           [set-struct newb typ "void"]
+           [return newb]
+           ]]
+           
      
      [list cons [box data list l] [declare [pair p nil]]
            [body
@@ -1399,11 +1408,17 @@ returnValue=${array[$2]}
                 [body [printf "13. fail Read and write files\n"]]
                 ]]]
 
-     [string finish_token [string prog int start int len] [declare]
+     [box finish_token [string prog int start int len] [declare]
              [body
               ;[printf "ft: %s start: %d, end %d\n" prog start len]
               ;[printf "Finish token %s\n" [sub-string prog start   len]]
-              [return [sub-string prog start  len]]
+
+[if [> len 1]
+                                              [body [return [boxString [sub-string prog start  len]]]]
+                                              [body [return
+                                                     [newVoid]
+                                                     ]]]
+              [return [boxString [sub-string prog start  len]]]
               ]]
 
      [void displayList [list l] [declare [box val nil]]
@@ -1421,7 +1436,7 @@ returnValue=${array[$2]}
                       [displayList [cdr l]]
                       ]
                      [body
-                      [printf "%s:%s " [get-struct val typ] [unBoxString val]]
+                      [printf "(%s:%s)" [get-struct val typ] [unBoxString val]]
                       [displayList [cdr l]]]
                           
                      ]]]]]
@@ -1431,12 +1446,14 @@ returnValue=${array[$2]}
               [printf "Start: %d, len: %d\n" start len]
               [set token [sub-string prog [sub1 [add start len]] 1]]
               [printf "Token: %s\n" token]
+              
               [if [equalString "\"" token]
                   [body [return [sub-string prog start [sub1 len]]]]
                   [body [return [readString prog start [add1 len]]]]
-                  ]
-              ]
-             ]
+                  ]]]
+                                              
+              
+             
             
      [list scan [string prog int start int len] [declare [string token ""]]
            [body
@@ -1447,22 +1464,24 @@ returnValue=${array[$2]}
                  [if [equalString "(" token]
                      [body ;[printf "Start array\n"]
                       [return [cons
-                               [boxString [finish_token prog start  [sub1 len]]]
+                                [finish_token prog start  [sub1 len]]
                                [cons [boxString "(" ]
                                      [scan prog [add1 start] 1]]]]]
                      [body [if [equalString ")" token]
                                [body ;[printf "Finish array\n"]
-                                [return [cons [boxString [finish_token prog start  [sub1 len]]]
+                                [return [cons  [finish_token prog start  [sub1 len]]
                                               [cons [boxString ")"]
                                                     [scan prog [add start  len] 1]]]]]
                                [body [if [equalString " " token]
-                                         [body [return [cons
-                                                        [boxString [finish_token prog start  [sub1 len]]]
-                                                        [scan prog  [add start  len] 1]]]]
+                                         [body
+                                           [return [cons
+                                                              [finish_token prog start  [sub1 len]]
+                                                             [scan prog  [add start  len] 1]]]
+                                              ]
                                          [body [if [equalString "\"" token]
-                                             [body [return [cons [boxString [readString prog [add1 start] len]] [scan prog  [add start  [add1 [add1 [string-length [readString prog [add1 start] len]]]]] 1]]]]
-                                             [body ;[printf "Symbol %s\n" token]
-                                              [return [scan prog start [sub len -1]]]]]]]]]]]]
+                                                   [body [return [cons [boxString [readString prog [add1 start] len]] [scan prog  [add start  [add1 [add1 [string-length [readString prog [add1 start] len]]]]] 1]]]]
+                                                   [body ;[printf "Symbol %s\n" token]
+                                                    [return [scan prog start [sub len -1]]]]]]]]]]]]
                 [body ;[printf "scan complete\n"]
                  [return [emptyList]]]]
             [return [emptyList]]
