@@ -112,7 +112,8 @@
         "function write_file(filename, data) {fs.writeFileSync(filename, data);}"
         "function string_length(str){str=''+str;return str.length;}"
         "function sub_string(str, start, len) {str = ''+str;return str.substring(start, start+len)};"
-        "function isEmpty(box) {return box.next==null}"
+        "function isEmpty(pair) {return pair.cdr==null}"
+        
         
         [map [lambda [x]  [format "#include <~s>~n"
                                   x] ] [cdr [codeof tree]]]
@@ -234,6 +235,7 @@
   [case type
     ['string "char*"]
     ['Box* 'Box]
+    ['Pair* 'Pair]
     [else type]]]
 
 ;Renames quonverter funcs into C funcs.
@@ -295,10 +297,6 @@
         "\n"]]
 
 
-;typedef struct Pairs {
-;char * car;
-;struct Pairs * cdr;
-;} Pair;
 
 [define [clang_struct_components tree]
   [string-join [map [lambda [x] [format "    ~a ~a ~a;\n" [if [> [length x] 2] [third x] "" ]  [clang_typemap [car x]] [cadr x]]] [cdr tree]]]
@@ -307,6 +305,11 @@
 [define [clang_struct tree]
   [list
    [format "typedef struct ~a {\n~a} ~a;\n" [car tree] [clang_struct_components [cadr tree]]  [car tree]]
+   ]]
+[define [clang_forward_struct tree]
+  [list
+   [format "struct ~a; //Forward declaration\n" [car tree] ]  ;Forward declarations
+   
    ]]
 
 ;output type definition statements
@@ -319,14 +322,17 @@
 [define [clang_types tree]
   [list "//Type definitions\n"
         [map [lambda [x]
+               [if [list? [second x]] [clang_forward_struct x] ""]]
+             [cdr [codeof tree]]]
+        [map [lambda [x]
                ;[displayln [format "a type: ~a~n" [second x]]]
                ;actually all types will be a list, need to check for 'stuct
                [if [list? [second x]]
                    ;it is a struct
                    [clang_struct x]
                    [clang_typedef x]]] [cdr [codeof tree]]]
-        "\nbool isEmpty(struct Box * b) {
-    return b->next == NULL;
+        "\nbool isEmpty(struct Pair * p) {
+    return p->cdr == NULL;
 }" ]]
 
 [define [clang_arguments tree]
@@ -400,6 +406,14 @@
   [map clang_statement  tree]]
 
 
+;Output forward function
+[define [clang_forward_function tree]
+  [match-let [[[list type name args decs  bod] [childrenof tree]]]
+    [list
+     [format "~a ~a" [clang_typemap [codeof type]] [codeof name]]
+     [clang_arguments args]
+     ";\n\n"]]]
+
 ;Output the body of function
 [define [clang_function tree]
   [match-let [[[list type name args decs  bod] [childrenof tree]]]
@@ -439,7 +453,7 @@
 ;All of the "top level" blocks are completely distinct
 [define [clang_dispatch tree]
   [case [nameof tree]
-    [(functions)   [list "//Function definitions\n" [map clang_function [childrenof tree]]]]
+    [(functions)   [list "//Function definitions\n" [map clang_forward_function [childrenof tree]] [map clang_function [childrenof tree]]]]
     [(includes)  [clang_includes tree]]
     [(type-definitions)  [clang_types tree]]
     [else [error [format "Unrecognised top level def ~a"  tree]]]]]
@@ -461,14 +475,6 @@ char* substr = calloc(length+1, 1);
 strncpy(substr, s+start, length);
 return substr;
 }
-
-
-typedef struct Pairs {
-char * car;
-struct Pairs * cdr;
-} Pair;
-typedef Pair* pair;
-
 
 typedef int*  array;
 typedef int bool;
@@ -586,8 +592,8 @@ func write_file(filename string, data string) {
 ioutil.WriteFile(filename, []byte(data), 0777)
 }
 
-func isEmpty(b *Box) bool {
-return b.next==nil
+func isEmpty(p *Pair) bool {
+return p.cdr==nil
 }
 
 "]
@@ -647,7 +653,7 @@ return b.next==nil
 
 ;output an expression.  Soon, recursive!
 [define [go_expression tree]
-  [displayln[format  "expression: ~s" tree]][newline]
+  ;[displayln[format  "expression: ~s" tree]][newline]
   [when [not [is-node? tree]] [error "Not a node!"]]
   [if [is-leaf? tree]
       [begin 
@@ -730,6 +736,7 @@ return b.next==nil
   [case type
     ['void ""]
     ['Box* '*Box]
+    ['Pair* '*Pair]
     [else type]]]
 
 [define [go_funcmap name]
@@ -1183,14 +1190,21 @@ returnValue=${array[$2]}
     [types
      [Box
       [struct
+        [Pair* l struct]
         [string str]
         [int i]
+        [string typ]
         ;[array arr]
         [int length]
-        [Box* next struct] ;ewww
         ]]
-     [ box Box*]
-     [list Box*]
+     [box Box*]
+     [Pair
+      [struct
+        [Box* car struct] ;ewww
+        [Pair* cdr struct] ;ewww
+        ]]
+     [pair Pair*]
+     [list Pair*]
      ]
     
     [functions
@@ -1203,29 +1217,53 @@ returnValue=${array[$2]}
 
      [int add1 [int a] [declare]
           [body [return [add a 1]]]]
+
+     [box clone [box b] [declare [box newb nil]]
+          [body
+           [set newb [new newb Box]]
+           [set-struct newb typ [get-struct b typ]]
+           [set-struct newb l [get-struct b l]]
+           [set-struct newb str [get-struct b str]]
+           [set-struct newb i [get-struct b i]]
+           [set-struct newb length [get-struct b length]]
+           [return newb]
+           ]]
      
-     [list cons [box data list l] [declare]
+     [list cons [box data list l] [declare [pair p nil]]
            [body
-            (set-struct data next l)
-            (return data)]]
+            [set p [new pair Pair]]
+            (set-struct p cdr l)
+            (set-struct p car data)
+            (return p)]]
      
      [box car [list l] [declare]
-          [body [return l]]]
+          [body [return (get-struct l car)]]]
 
      [list cdr [list l] [declare]
-           [body [return  (get-struct l next)]]]
+           [body [return  (get-struct l cdr)]]]
+
+     [bool isList [box b] [declare]
+           [body [return [equalString "list" [get-struct b typ]]]]]
      
      [box boxString [string s] [declare [box b nil]]
           [body  [set b [new box Box]]
                  [set-struct b str s]
                  [set-struct b length [string-length s]]
+                 [set-struct b typ "string"]
                  [return b]]]
 
-     [box emptyList [] [declare [box b nil]]
+     [box boxList [list l] [declare [box b nil]]
           [body  [set b [new box Box]]
-                 [set-struct b str nil]
-                 [set-struct b next nil]
+                 [set-struct b l l]
+                 [set-struct b typ "list"]
                  [return b]]]
+
+     [list emptyList [] [declare [list b nil]]
+           [body  [set b [new pair Pair]]
+                  ;[set-struct b str nil]
+                  [set-struct b cdr nil]
+                  [set-struct b car nil]
+                  [return b]]]
 
                 
 
@@ -1233,6 +1271,9 @@ returnValue=${array[$2]}
              [body
               [return [get-struct b str]]]]
 
+     [list unBoxList [box b] [declare]
+           [body
+            [return [get-struct b l]]]]
      
 
 
@@ -1356,13 +1397,26 @@ returnValue=${array[$2]}
               [return [sub-string prog start  len]]
               ]]
 
-     [void displayList [list l] [declare]
+     [void displayList [list l] [declare [box val nil]]
            [body
             [if [isEmpty l]
-                [body [printf "Empty!\n"][return]]
-                [body [printf "%s " [unBoxString l]]
-                      [displayList [cdr l]]]]
-            ]]
+                [body ;[printf "Empty!\n"]
+                      [return]]
+                [body
+                 [set val [car l]]
+                 [if [isList val]
+                     [body
+                      [printf "("]
+                      [displayList [unBoxList [car l]]]
+                      [printf ")"]
+                      [displayList [cdr l]]
+                      ]
+                     [body
+                      [printf "%s " [unBoxString val]]
+                      [displayList [cdr l]]]
+                          
+                     ]]]]]
+            
      [list scan [string prog int start int len] [declare [string token ""]]
            [body
             [if [> [string-length prog] [sub start [sub 0 len]]]
@@ -1371,29 +1425,86 @@ returnValue=${array[$2]}
                  [printf "Start: %d, end %d, Token: %s\n" start [add start len] token ]
                  [if [equalString "(" token]
                      [body [printf "Start array\n"]
-                           [cons [boxString [finish_token prog start  [sub1 len]]] [scan prog [add1 start] 1]]]
+                           [return [cons
+                                    [boxString [finish_token prog start  [sub1 len]]]
+                                    [cons [boxString "(" ]
+                                          [scan prog [add1 start] 1]]]]]
                      [body [if [equalString ")" token]
-                               [body [printf "Finish array\n"][cons [boxString [finish_token prog start  [sub1 len]]] [scan prog [add start  len] 1]]]
+                               [body [printf "Finish array\n"]
+                                     [return [cons [boxString [finish_token prog start  [sub1 len]]]
+                                                   [cons [boxString ")"]
+                                                         [scan prog [add start  len] 1]]]]]
                                [body [if [equalString " " token]
-                                         [body [cons [boxString [finish_token prog start  [sub1 len]]] [scan prog  [add start  len] 1]]]
-                                         [body [printf "Symbol\n"] [scan prog start [sub len -1]]]]]]]]]
+                                         [body [return [cons
+                                                        [boxString [finish_token prog start  [sub1 len]]]
+                                                        [scan prog  [add start  len] 1]]]]
+                                         [body [printf "Symbol\n"] [return [scan prog start [sub len -1]]]]]]]]]]
                 [body [printf "done\n"]
                       [return [emptyList]]]]
             [return [emptyList]]
             ]]
+
+     [list ast [list l] [declare [box b nil]]
+           [body
+            [if [isEmpty l]
+                [body [return [emptyList]]]
+                [body
+                 [set b [car l]]
+                 [printf "ast: %s\n" [unBoxString b] ]
+                 [if [equalString "(" [unBoxString b]]
+                     [body [printf "Start list ast\n"]
+                           [return [cons
+                                    [boxList [ast [cdr l]]]
+                                    [ast [skipList [cdr l]]]]]]
+                     [body [if [equalString ")" [unBoxString b]]
+                               [body [printf "Finish array ast\n"]
+                                     [return [emptyList]]]
+                               [body
+                                [printf "Add token %s\nRemaining tokens: " [unBoxString b]]
+                                [displayList [cdr l]]
+                                [return [cons b [ast [cdr l]]]]]]]]]
+                ]
+            [printf "AAAAAA code should never reach here!\n"]
+            [return [emptyList]]
+            ]]
+     [list skipList [list l] [declare [box b nil]]
+           [body
+            [if [isEmpty l]
+                [body [return [emptyList]]]
+                [body
+                 [set b [car l]]
+                 [printf "skipl %s\n" [unBoxString b] ]
+                 [if [equalString "(" [unBoxString b]]
+                     [body [printf "Start list skiplist\n"]
+                           [return [skipList [skipList [cdr l]]]]]
+                     [body [if [equalString ")" [unBoxString b]]
+                               [body [printf "Finish array skipl\n"]
+                                     [return  [cdr l]]]
+                               [body
+                                [printf "skipping token %s\nRemaining tokens: " [unBoxString b]]
+                                [displayList [cdr l]]
+                                [return  [skipList [cdr l]]]]]]]]]
+            [printf "AAAAAA code should never reach here!\n"]
+            [return [emptyList]]
+            ]]
      [void test14 []
            [declare
-            [list tokens [emptyList]]
+            [list tokens nil]
+            [list as nil]
             [string programStr ""]
             ]
            [body
-            
+            [set tokens [emptyList]]
             [set programStr [read-file "test.sexpr"]]
             [printf "Read program: %s\n" programStr]
             
             [set tokens [scan programStr 0 1]]
             [printf "Displaying tokens:\n"]
             [displayList tokens]
+            [printf "Building AST\n"]
+            [set as [ast tokens]]
+            [printf "Displaying AST\n"]
+            [displayList as]
             ]]
      
      [int main [int argc  char** argv]
