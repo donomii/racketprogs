@@ -104,15 +104,17 @@
         "function equal(a,b) {return a===b}\n"
         "function equalString(a,b) {return a.toString()===b.toString() }\n"
         "function sub (a,b){return a-b}\n"
-        "function greaterthan(a,b){return a>b}"
-        "function makeArray(){return [];}"
-        "function at(arr, index) {return arr[index];}"
-        "function printf() {process.stdout.write(util.format.apply(this, arguments));}"
-        "function read_file(filename) {return fs.readFileSync(filename);}"
-        "function write_file(filename, data) {fs.writeFileSync(filename, data);}"
-        "function string_length(str){str=''+str;return str.length;}"
-        "function sub_string(str, start, len) {str = ''+str;return str.substring(start, start+len)};"
-        "function isEmpty(pair) {return pair.cdr==null}"
+        "function greaterthan(a,b){return a>b}\n"
+        "function makeArray(){return [];}\n"
+        "function at(arr, index) {return arr[index];}\n"
+        "function printf() {process.stdout.write(util.format.apply(this, arguments));}\n"
+        "function read_file(filename) {return fs.readFileSync(filename);}\n"
+        "function write_file(filename, data) {fs.writeFileSync(filename, data);}\n"
+        "function string_length(str){str=''+str;return str.length;}\n"
+        "function sub_string(str, start, len) {str = ''+str;return str.substring(start, start+len)};\n"
+        "function isNil(b) {return b==null}\n"
+        "function stringConcatenate(a,b){return a.toString()+b.toString()}\n"
+        "function andBool(a,b){return a==b}\n"
         
         
         [map [lambda [x]  [format "#include <~s>~n"
@@ -331,8 +333,8 @@
                    ;it is a struct
                    [clang_struct x]
                    [clang_typedef x]]] [cdr [codeof tree]]]
-        "\nbool isEmpty(struct Pair * p) {
-    return p->cdr == NULL;
+        "\nbool isNil(list p) {
+    return p == NULL;
 }" ]]
 
 [define [clang_arguments tree]
@@ -469,11 +471,20 @@ int sub(int a, int b) { return a - b; }
 int greaterthan(int a, int b) { return a > b; }
 int equal(int a, int b) { return a == b; }
 int equalString(char* a, char* b) { return !strcmp(a,b); }
+int andBool(int a, int b) { return a == b;}
 int string_length(char* s) { return strlen(s);}
 char* sub_string(char* s, int start, int length) {
 char* substr = calloc(length+1, 1);
 strncpy(substr, s+start, length);
 return substr;
+}
+
+char* stringConcatenate(char* a, char* b) {
+int len = strlen(a) + strlen(b);
+char* target = calloc(len,1);
+strncat(target, a, len);
+strncat(target, b, len);
+return target;
 }
 
 typedef int*  array;
@@ -567,8 +578,13 @@ func equalString(a,b string) bool {
  return a==b
 }
 
+func andBool(a,b bool) bool{
+return a==b
+}
+
 func string_length(s string) int {return len(s)}
 func sub_string(s string, start, length int) string {return s[start:start+length]}
+func stringConcatenate(a, b string)string{return a+b}
 
 func makeArray(length int) []int {
     arr := make([]int, length)
@@ -592,8 +608,8 @@ func write_file(filename string, data string) {
 ioutil.WriteFile(filename, []byte(data), 0777)
 }
 
-func isEmpty(p *Pair) bool {
-return p.cdr==nil
+func isNil(p *Pair) bool {
+return p==nil
 }
 
 "]
@@ -1190,26 +1206,33 @@ returnValue=${array[$2]}
     [types
      [Box
       [struct
-        [Pair* l struct]
+        [Box* l struct]
         [string str]
         [int i]
         [string typ]
         [bool voi]
+        [bool boo]
         ;[array arr]
         [int length]
+        [Box* car struct] ;ewww
+        [Box* cdr struct] ;ewww
         ]]
      [box Box*]
-     [Pair
-      [struct
-        [Box* car struct] ;ewww
-        [Pair* cdr struct] ;ewww
-        ]]
-     [pair Pair*]
-     [list Pair*]
+     [Pair Box]
+     [pair Box*]
+     [list Box*]
      ]
     
     [functions
-     
+
+     [bool isEmpty [box b] [declare]
+           [body
+            [if [isNil b]
+                [body [return true]]
+                [body 
+                 [if [isList b]
+                     [body [return false]]
+                     [body [printf "Type error in isEmpty:  not a list: %s\n" [boxType b]][return false]]]]]]]
      [int add [int a int b] [declare]
           [body [return [sub a [sub 0 b]]]]]
 
@@ -1243,16 +1266,26 @@ returnValue=${array[$2]}
             [set p [new pair Pair]]
             (set-struct p cdr l)
             (set-struct p car data)
+            (set-struct p typ "list")
             (return p)]]
      
      [box car [list l] [declare]
-          [body [return (get-struct l car)]]]
+          [body [if [isNil [get-struct l car]]
+                    [body [printf "Attempt to car a nil value\n"][return nil]]
+                    [body [return (get-struct l car)]]]]]
 
      [list cdr [list l] [declare]
-           [body [return  (get-struct l cdr)]]]
+           
+           [body
+            [if [isEmpty l]
+                [body [printf "Attempt to cdr an empty list!!!!\n"][return nil]]
+                [body [return  (get-struct l cdr)]]]]]
 
      [bool isList [box b] [declare]
-           [body [return [equalString "list" [get-struct b typ]]]]]
+           [body
+            [if [isNil b]
+                [body [return true]]
+                [body [return [equalString "list" [get-struct b typ]]]]]]]
      
      [box boxString [string s] [declare [box b nil]]
           [body  [set b [new box Box]]
@@ -1271,23 +1304,91 @@ returnValue=${array[$2]}
                  [set-struct b l l]
                  [set-struct b typ "list"]
                  [return b]]]
+     [box boxBool[bool boo] [declare [box b nil]]
+          [body  [set b [new box Box]]
+                 [set-struct b boo boo]
+                 [set-struct b typ "bool"]
+                 [return b]]]
 
      [list emptyList [] [declare [list b nil]]
-           [body  [set b [new pair Pair]]
-                  ;[set-struct b str nil]
-                  [set-struct b cdr nil]
-                  [set-struct b car nil]
-                  [return b]]]
+           [body
+            [return nil]
+            [set b [new pair Pair]]
+            ;[set-struct b str nil]
+            [set-struct b cdr nil]
+            [set-struct b car nil]
+            [return b]]]
 
                 
 
      [string unBoxString [box b] [declare]
              [body
               [return [get-struct b str]]]]
+     [string unBoxSymbol [box b] [declare]
+             [body
+              [return [get-struct b str]]]]
 
      [list unBoxList [box b] [declare]
            [body
             [return [get-struct b l]]]]
+
+     [bool unBoxBool [box b] [declare]
+           [body
+            [return [get-struct b boo]]]]
+
+     [string stringify [box b] [declare]
+             [body
+             
+              [if [equalString "string" [boxType b]]
+                  [body [return  [unBoxString b]]]
+                  [body [if [equalString "bool" [boxType b]]
+                            [body
+                             [if [unBoxBool b]
+                                 [body [return "true"]]
+                                 [body [return "false"]]]]
+                             
+                            [body [if [equalString "symbol" [boxType b]]
+                                      [body [return  [unBoxSymbol b]]]
+                                      [body [return  [boxType b]]]]]]]]]]
+                       
+             
+     [void displayList [list l] [declare [box val nil]]
+           [body
+            [if [isList l]
+                 
+                [body
+                 ;[printf "List found\n"]
+                 [if [isEmpty l]
+                     [body ;[printf "Empty!\n"]
+                           [return]]
+                     [body
+                      [set val [car l]]
+                 
+                      [if [isList val]
+                          [body
+                           ;[printf "Found list in car\n"]
+                           [printf "["]
+                           [displayList [car l]]
+                           [printf "]"]
+                           [displayList [cdr l]]
+                           ]
+                          [body
+                           [if [equalString "string" [get-struct val typ] ]
+                               [body
+                                [printf "\"%s\" " [unBoxString val]]
+                                ]
+                               [body
+                                [printf "%s "  [stringify val]]]]
+                           
+                           [displayList [cdr l]]]]]]]
+                [body
+                 [if [equalString "string" [get-struct l typ] ]
+                     [body
+                      [printf "\"%s\" " [unBoxString l]]
+                      ]
+                     [body
+                      [printf "%s "  [stringify l]]]]
+                 ]]]]
      
 
 
@@ -1413,16 +1514,18 @@ returnValue=${array[$2]}
                 [body [printf "13. fail Read and write files\n"]]
                 ]]]
 
+     ;; Sexpression reader
      [list filterVoid [list l] [declare [box token nil]]
            [body
+            ;[displayList l]
             [if [isEmpty l]
                 [body [return [emptyList]]]
                 [body
 
                  [set token [car l]]
                  [if [equalString "void" [get-struct token typ]]
-                          [body [return [filterVoid [cdr l]]]]
-                          [body [return [cons token [filterVoid [cdr l]]]]]]]]]]
+                     [body [return [filterVoid [cdr l]]]]
+                     [body [return [cons token [filterVoid [cdr l]]]]]]]]]]
             
      [box finish_token [string prog int start int len] [declare]
           [body
@@ -1437,28 +1540,7 @@ returnValue=${array[$2]}
            [return [boxSymbol [sub-string prog start  len]]]
            ]]
 
-     [void displayList [list l] [declare [box val nil]]
-           [body
-            [if [isEmpty l]
-                [body ;[printf "Empty!\n"]
-                 [return]]
-                [body
-                 [set val [car l]]
-                 [if [isList val]
-                     [body
-                      [printf "["]
-                      [displayList [unBoxList [car l]]]
-                      [printf "]"]
-                      [displayList [cdr l]]
-                      ]
-                     [body
-                      [if [equalString "symbol" [get-struct val typ] ]
-                          [body
-                           [printf "%s "  [unBoxString val]]]
-                          [body
-                           [printf "\"%s\" " [unBoxString val]]]]
-                           
-                      [displayList [cdr l]]]]]]]]
+     
 
      [string readString [string prog int start int len] [declare [string token ""]]
              [body
@@ -1506,25 +1588,25 @@ returnValue=${array[$2]}
             [return [emptyList]]
             ]]
 
-     [list ast [list l] [declare [box b nil]]
+     [list sexprTree [list l] [declare [box b nil]]
            [body
             [if [isEmpty l]
                 [body [return [emptyList]]]
                 [body
                  [set b [car l]]
-                 ;[printf "Processing list with ast: %s\n" [unBoxString b] ]
+                 ;[printf "Processing list with sexprTree: %s\n" [unBoxString b] ]
                  [if [equalString "(" [unBoxString b]]
-                     [body ;[printf "Start sublist ast\n"]
+                     [body ;[printf "Start sublist sexprTree\n"]
                       [return [cons
-                               [boxList [ast [cdr l]]]
-                               [ast [skipList [cdr l]]]]]]
+                               [boxList [sexprTree [cdr l]]]
+                               [sexprTree [skipList [cdr l]]]]]]
                      [body [if [equalString ")" [unBoxString b]]
-                               [body ;[printf "Finish sublist ast\n"]
+                               [body ;[printf "Finish sublist sexprTree\n"]
                                 [return [emptyList]]]
                                [body
                                 ;[printf "Add token %s\nRemaining tokens: " [unBoxString b]]
                                 ;[displayList [cdr l]]
-                                [return [cons b [ast [cdr l]]]]]]]]]
+                                [return [cons b [sexprTree [cdr l]]]]]]]]]
                 ]
             [printf "AAAAAA code should never reach here!\n"]
             [return [emptyList]]
@@ -1561,9 +1643,9 @@ returnValue=${array[$2]}
             [set tokens [filterVoid [scan aStr 0 1]]]
             ;[printf "Displaying tokens:\n"]
             ;[displayList tokens]
-            ;[printf "Building AST\n"]
-            [set as [ast tokens]]
-            ;[printf "Displaying AST\n"]
+            ;[printf "Building sexprTree\n"]
+            [set as [sexprTree tokens]]
+            ;[printf "Displaying sexprTree\n"]
             ;[displayList as]
             [return as]
             ]]
@@ -1576,6 +1658,73 @@ returnValue=${array[$2]}
             [set programStr [read-file "test.sexpr"]]
             ;[printf "Read program: %s\n" programStr]
             [displayList [readSexpr programStr]]
+            [printf "\n"]
+            ]]
+
+     [void test15 []
+           [declare
+            [string a "hello"]
+            [string b " world"]
+            [string c ""]
+            ]
+           [body
+            [set c [stringConcatenate a b]]
+            [if [equalString c "hello world"]
+                [body [printf "15. pass String concatenate\n"]]
+                [body [printf "15. fail String concatenate\n"]]
+                ]
+            ]]
+
+     [list assoc [string searchTerm list l] [declare [list elem nil]]
+           [body
+            [if [isEmpty l]
+                [body [return [boxBool false]]]
+                [body [set elem [car l]]
+                      [if [equalString searchTerm [unBoxString [car elem]]]
+                          [body [return elem]]
+                          [body [return [assoc searchTerm [cdr l]]]]]]]]]
+
+     [string boxType [box b] [declare]
+             [body [return [get-struct b typ]]]]
+
+     [bool equalBox [box a box b] [declare]
+           [body
+            [if [equalString [boxType a] [boxType b]]
+                [body [if [equalString "string" [boxType a]]
+                          [body [return [equalString [unBoxString a] [unBoxString b]]]]
+                          [body [if [equalString "bool" [boxType a]]
+                                    [body [return [andBool  [unBoxBool a]  [unBoxBool b]]]]
+                                    [body [if [equalString "symbol" [boxType a]]
+                                              [body [return [equalString [unBoxSymbol a] [unBoxSymbol b]]]]
+                                              [body [return false]]]]]]]]
+                       
+                [body [printf "Types do not match: %s and %s" [boxType a] [boxType b]] [return false]]]
+            ]]
+     
+     [void test16 []
+           [declare
+            [list assocCell1 nil]
+            [list assList nil]
+            [list assocCell2 nil]
+            [list assocCell3 nil]
+            
+            ]
+           [body
+            [set assocCell1 [cons [boxString "Hello"] [boxString "world"]]]
+            [set assocCell2 [cons [boxString "goodnight"] [boxString "moon"]]]
+            [set assocCell3 [cons [boxSymbol "ohio"] [boxString "gozaimasu"]]]
+            [set assList [cons assocCell2 [emptyList]]]
+            [set assList [cons assocCell1 assList]]
+            [set assList [cons assocCell3 assList]]
+            [if [andBool
+                 [andBool
+                  [equalBox  [cdr [assoc "Hello" assList]]  [boxString "world"]]
+                  [equalBox  [cdr [assoc "goodnight" assList]]  [boxString "moon"]]]
+                 [equalBox  [cdr [assoc "ohio" assList]]  [boxString "gozaimasu"]]
+                 ]
+                [body [printf "16. pass assoc list\n"]]
+                [body [printf "16. fail assoc list\n"]]
+                ]
             ]]
      
      [int main [int argc  char** argv]
@@ -1596,6 +1745,8 @@ returnValue=${array[$2]}
            [test12]
            [test13]
            [test14]
+           [test15]
+           [test16]
            [printf "\n\nAfter all that hard work, I need a beer...\n"]
            [beers 9]
            ;[echo a is a]
