@@ -1261,6 +1261,11 @@ returnValue=${array[$2]}
                  [set-struct b typ "string"]
                  [return b]]]
 
+     [box boxSymbol [string s] [declare [box b nil]]
+          [body  [set b [boxString s]]
+                 [set-struct b typ "symbol"]
+                 [return b]]]
+
      [box boxList [list l] [declare [box b nil]]
           [body  [set b [new box Box]]
                  [set-struct b l l]
@@ -1425,11 +1430,11 @@ returnValue=${array[$2]}
            ;[printf "Finish token %s\n" [sub-string prog start   len]]
 
            [if [> len 0]
-               [body [return [boxString [sub-string prog start  len]]]]
+               [body [return [boxSymbol [sub-string prog start  len]]]]
                [body [return
                       [newVoid]
                       ]]]
-           [return [boxString [sub-string prog start  len]]]
+           [return [boxSymbol [sub-string prog start  len]]]
            ]]
 
      [void displayList [list l] [declare [box val nil]]
@@ -1447,16 +1452,19 @@ returnValue=${array[$2]}
                       [displayList [cdr l]]
                       ]
                      [body
-                      [printf "'%s' "  [unBoxString val]]
-                      [displayList [cdr l]]]
-                          
-                     ]]]]]
+                      [if [equalString "symbol" [get-struct val typ] ]
+                          [body
+                           [printf "%s "  [unBoxString val]]]
+                          [body
+                           [printf "\"%s\" " [unBoxString val]]]]
+                           
+                      [displayList [cdr l]]]]]]]]
 
      [string readString [string prog int start int len] [declare [string token ""]]
              [body
-              [printf "Start: %d, len: %d\n" start len]
+              ;[printf "Start: %d, len: %d\n" start len]
               [set token [sub-string prog [sub1 [add start len]] 1]]
-              [printf "Token: %s\n" token]
+              ;[printf "Token: %s\n" token]
               
               [if [equalString "\"" token]
                   [body [return [sub-string prog start [sub1 len]]]]
@@ -1588,7 +1596,7 @@ returnValue=${array[$2]}
            [test12]
            [test13]
            [test14]
-           [printf "After all that hard work, I need a beer...\n"]
+           [printf "\n\nAfter all that hard work, I need a beer...\n"]
            [beers 9]
            ;[echo a is a]
            ]]]]]
