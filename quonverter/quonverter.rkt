@@ -1342,11 +1342,11 @@ returnValue=${array[$2]}
                  [set-struct b typ "symbol"]
                  [return b]]]
 
-     [box boxList [list l] [declare [box b nil]]
-          [body  [set b [new box Box]]
-                 [set-struct b l l]
-                 [set-struct b typ "list"]
-                 [return b]]]
+     ;     [box boxList [list l] [declare [box b nil]]
+     ;          [body  [set b [new box Box]]
+     ;                 [set-struct b l l]
+     ;                 [set-struct b typ "list"]
+     ;                 [return b]]]
      [box boxBool[bool boo] [declare [box b nil]]
           [body  [set b [new box Box]]
                  [set-struct b boo boo]
@@ -1369,9 +1369,9 @@ returnValue=${array[$2]}
              [body
               [return [get-struct b str]]]]
 
-     [list unBoxList [box b] [declare]
-           [body
-            [return [get-struct b l]]]]
+     ;     [list unBoxList [box b] [declare]
+     ;           [body
+     ;            [return [get-struct b l]]]]
 
      [bool unBoxBool [box b] [declare]
            [body
@@ -1478,7 +1478,12 @@ returnValue=${array[$2]}
                   [body [return [readString prog start [add1 len]]]]
                   ]]]
                                               
-              
+     [bool isWhiteSpace [string s] [declare]
+           [body [if [equalString " " s]
+                     [body [return true]]
+                     [body [if [equalString "\n" s]
+                               [body [return true]]
+                               [body [return false]]]]]]]
      [list scan [string prog int start int len] [declare [string token ""]]
            [body
             [if [> [string-length prog] [sub start [sub 0 len]]]
@@ -1496,7 +1501,7 @@ returnValue=${array[$2]}
                                 [return [cons  [finish_token prog start  [sub1 len]]
                                                [cons [boxString ")"]
                                                      [scan prog [add start  len] 1]]]]]
-                               [body [if [equalString " " token]
+                               [body [if [isWhiteSpace token]
                                          [body
                                           [return [cons
                                                    [finish_token prog start  [sub1 len]]
@@ -1521,7 +1526,7 @@ returnValue=${array[$2]}
                  [if [equalString "(" [unBoxString b]]
                      [body ;[printf "Start sublist sexprTree\n"]
                       [return [cons
-                               [boxList [sexprTree [cdr l]]]
+                               [sexprTree [cdr l]]
                                [sexprTree [skipList [cdr l]]]]]]
                      [body [if [equalString ")" [unBoxString b]]
                                [body ;[printf "Finish sublist sexprTree\n"]
@@ -1572,7 +1577,7 @@ returnValue=${array[$2]}
             [set as [sexprTree tokens]]
             ;[printf "Displaying sexprTree\n"]
             ;[displayList as]
-            [return as]
+            [return [car as]]
             ]]
 
      ;;;;;;;;;;;;;
@@ -1700,11 +1705,31 @@ returnValue=${array[$2]}
                 [body [printf "13. fail Read and write files\n"]]
                 ]]]
 
+     [box caar [list l] [declare] [body [return [car [car l]]]]]
+     [box cadr [list l] [declare] [body [return [car [cdr l]]]]]
+     [box caddr [list l] [declare] [body [return [car [cdr [cdr l]]]]]]
+     [box cadddr [list l] [declare] [body [return [car [cdr [cdr [cdr l]]]]]]]
+     [box caddddr [list l] [declare] [body [return [car [cdr [cdr [cdr [cdr l]]]]]]]]
+
+     [box first [list l] [declare] [body [return  [car l]]]]
+     [box second [list l] [declare] [body [return  [cadr l]]]]
+     [box third [list l] [declare] [body [return  [caddr l]]]]
+     [box fourth [list l] [declare] [body [return  [cadddr l]]]]
+     [box fifth [list l] [declare] [body [return  [caddddr l]]]]
+
      [list ast [list tree] [declare]
            [body
-            [printf "Processing:"][displayList tree]
-                 [return nil]]
-           ]
+            [printf "Processing:"][displayList tree][printf "\n\n"]
+            [return
+             
+             [cons [cons [boxSymbol "name"] [second tree]]
+                   [cons [cons [boxSymbol "declarations"] [cdr [fourth tree]]]
+                         [cons [cons [boxSymbol "intype"] [third tree]]
+                               [cons  [cons [boxSymbol "outtype"] [car tree]]
+                                      [cons [cons [boxSymbol "children"] [fifth tree]]
+                                            [emptyList]]]]]]
+             ]]]
+           
      [void test14 []
            [declare
             [string programStr ""]
@@ -1712,9 +1737,10 @@ returnValue=${array[$2]}
             ]
            [body
             [set programStr [read-file "test.sexpr"]]
-            [printf "Read program: %s\n" programStr]
+            ;[printf "Read program: %s\n" programStr]
             [set tree [readSexpr programStr]]
-            [displayList [ast tree]]
+            [displayList  tree]
+            [displayList [ast  tree]]
             [printf "\n"]
             ]]
 
