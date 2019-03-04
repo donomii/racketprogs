@@ -1264,9 +1264,13 @@ returnValue=${array[$2]}
             (return p)]]
      
      [box car [list l] [declare]
-          [body [if [isNil [get-struct l car]]
+          [body
+[if [isNil l]
+    [body [printf "Cannot call car on empty list!\n"][return nil]]
+    [body 
+           [if [isNil [get-struct l car]]
                     [body [printf "Attempt to car a nil value\n"][return nil]]
-                    [body [return (get-struct l car)]]]]]
+                    [body [return (get-struct l car)]]]]]]]
 
      [list cdr [list l] [declare]
            
@@ -1717,6 +1721,25 @@ returnValue=${array[$2]}
      [box fourth [list l] [declare] [body [return  [cadddr l]]]]
      [box fifth [list l] [declare] [body [return  [caddddr l]]]]
 
+[list makeNode [string name list code] [declare]
+[body
+[return [cons [cons [boxSymbol "name"] [boxString name]]
+                   [cons [cons [boxSymbol "code"]  code]
+                         
+                                            [emptyList]]]]
+ ]]
+      
+     [list astStatement [list tree] [declare]
+           [body
+            [return [makeNode "statement" tree]]
+            ]]
+     [list astBody [list tree] [declare]
+           [body
+            [if [isEmpty tree]
+                [body [return [emptyList]]]
+                [body [return [cons [astStatement [car tree]] [astBody [cdr tree]]]]]]
+            ]]
+     
      [list ast [list tree] [declare]
            [body
             [printf "Processing:"][displayList tree][printf "\n\n"]
@@ -1726,7 +1749,7 @@ returnValue=${array[$2]}
                    [cons [cons [boxSymbol "declarations"] [cdr [fourth tree]]]
                          [cons [cons [boxSymbol "intype"] [third tree]]
                                [cons  [cons [boxSymbol "outtype"] [car tree]]
-                                      [cons [cons [boxSymbol "children"] [fifth tree]]
+                                      [cons [cons [boxSymbol "children"] [astBody [cdr [fifth tree]]]]
                                             [emptyList]]]]]]
              ]]]
            
