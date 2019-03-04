@@ -1225,14 +1225,7 @@ returnValue=${array[$2]}
     
     [functions
 
-     [bool isEmpty [box b] [declare]
-           [body
-            [if [isNil b]
-                [body [return true]]
-                [body 
-                 [if [isList b]
-                     [body [return false]]
-                     [body [printf "Type error in isEmpty:  not a list: %s\n" [boxType b]][return false]]]]]]]
+     
      [int add [int a int b] [declare]
           [body [return [sub a [sub 0 b]]]]]
 
@@ -1252,6 +1245,7 @@ returnValue=${array[$2]}
            [set-struct newb length [get-struct b length]]
            [return newb]
            ]]
+     
      [box newVoid [] [declare [box newb nil]]
           [body
            [set newb [new newb Box]]
@@ -1286,7 +1280,56 @@ returnValue=${array[$2]}
             [if [isNil b]
                 [body [return true]]
                 [body [return [equalString "list" [get-struct b typ]]]]]]]
+
+     [list emptyList [] [declare ]
+           [body
+            [return nil]]]
+
+     [bool isEmpty [box b] [declare]
+           [body
+            [if [isNil b]
+                [body [return true]]
+                [body 
+                 [if [isList b]
+                     [body [return false]]
+                     [body [printf "Type error in isEmpty:  not a list: %s\n" [boxType b]][return false]]]]]]]
+
+     [list assoc [string searchTerm list l] [declare [list elem nil]]
+           [body
+            [if [isEmpty l]
+                [body [return [boxBool false]]]
+                [body [set elem [car l]]
+                      [if [equalString searchTerm [unBoxString [car elem]]]
+                          [body [return elem]]
+                          [body [return [assoc searchTerm [cdr l]]]]]]]]]
+
+    
+
+     [bool equalBox [box a box b] [declare]
+           [body
+            [if [equalString [boxType a] [boxType b]]
+                [body [if [equalString "string" [boxType a]]
+                          [body [return [equalString [unBoxString a] [unBoxString b]]]]
+                          [body [if [equalString "bool" [boxType a]]
+                                    [body [return [andBool  [unBoxBool a]  [unBoxBool b]]]]
+                                    [body [if [equalString "symbol" [boxType a]]
+                                              [body [return [equalString [unBoxSymbol a] [unBoxSymbol b]]]]
+                                              [body [if [equalString "int" [boxType a]]
+                                                        [body [return [equal [unBoxInt a] [unBoxInt b]]]]
+                                                        [body [return false]]]]]]]]]]
+                       
+                [body [printf "Types do not match: %s and %s" [boxType a] [boxType b]] [return false]]]
+            ]]
+
      
+     ;;;;;;;;;;;;;;;;;;;;;;;;
+     ;;  Type conversions  ;;
+     ;;;;;;;;;;;;;;;;;;;;;;;;
+
+     [string boxType [box b] [declare]
+             [body [return [get-struct b typ]]]]
+
+
      [box boxString [string s] [declare [box b nil]]
           [body  [set b [new box Box]]
                  [set-struct b str s]
@@ -1315,14 +1358,7 @@ returnValue=${array[$2]}
                  [set-struct b typ "int"]
                  [return b]]]
 
-     [list emptyList [] [declare [list b nil]]
-           [body
-            [return nil]
-            [set b [new pair Pair]]
-            ;[set-struct b str nil]
-            [set-struct b cdr nil]
-            [set-struct b car nil]
-            [return b]]]
+     
 
                 
 
@@ -1341,9 +1377,9 @@ returnValue=${array[$2]}
            [body
             [return [get-struct b boo]]]]
 
-      [int unBoxInt [box b] [declare]
-           [body
-            [return [get-struct b i]]]]
+     [int unBoxInt [box b] [declare]
+          [body
+           [return [get-struct b i]]]]
 
      [string stringify [box b] [declare]
              [body
@@ -1369,7 +1405,7 @@ returnValue=${array[$2]}
                  ;[printf "List found\n"]
                  [if [isEmpty l]
                      [body ;[printf "Empty!\n"]
-                           [return]]
+                      [return]]
                      [body
                       [set val [car l]]
                  
@@ -1401,6 +1437,147 @@ returnValue=${array[$2]}
      
 
 
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;
+     ;;  Sexpression reader  ;;
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;
+     [list filterVoid [list l] [declare [box token nil]]
+           [body
+            ;[displayList l]
+            [if [isEmpty l]
+                [body [return [emptyList]]]
+                [body
+
+                 [set token [car l]]
+                 [if [equalString "void" [get-struct token typ]]
+                     [body [return [filterVoid [cdr l]]]]
+                     [body [return [cons token [filterVoid [cdr l]]]]]]]]]]
+            
+     [box finish_token [string prog int start int len] [declare]
+          [body
+           ;[printf "ft: %s start: %d, end %d\n" prog start len]
+           ;[printf "Finish token %s\n" [sub-string prog start   len]]
+
+           [if [> len 0]
+               [body [return [boxSymbol [sub-string prog start  len]]]]
+               [body [return
+                      [newVoid]
+                      ]]]
+           [return [boxSymbol [sub-string prog start  len]]]
+           ]]
+
+     
+
+     [string readString [string prog int start int len] [declare [string token ""]]
+             [body
+              ;[printf "Start: %d, len: %d\n" start len]
+              [set token [sub-string prog [sub1 [add start len]] 1]]
+              ;[printf "Token: %s\n" token]
+              
+              [if [equalString "\"" token]
+                  [body [return [sub-string prog start [sub1 len]]]]
+                  [body [return [readString prog start [add1 len]]]]
+                  ]]]
+                                              
+              
+     [list scan [string prog int start int len] [declare [string token ""]]
+           [body
+            [if [> [string-length prog] [sub start [sub 0 len]]]
+                [body
+                 [set token [sub-string prog [sub1 [add start len]] 1]]
+                 ;[printf "Start: %d, end %d, Token: %s\n" start [add start len] token ]
+                 [if [equalString "(" token]
+                     [body ;[printf "Start array\n"]
+                      [return [cons
+                               [finish_token prog start  [sub1 len]]
+                               [cons [boxString "(" ]
+                                     [scan prog [add1 start] 1]]]]]
+                     [body [if [equalString ")" token]
+                               [body ;[printf "Finish array\n"]
+                                [return [cons  [finish_token prog start  [sub1 len]]
+                                               [cons [boxString ")"]
+                                                     [scan prog [add start  len] 1]]]]]
+                               [body [if [equalString " " token]
+                                         [body
+                                          [return [cons
+                                                   [finish_token prog start  [sub1 len]]
+                                                   [scan prog  [add start  len] 1]]]
+                                          ]
+                                         [body [if [equalString "\"" token]
+                                                   [body [return [cons [boxString [readString prog [add1 start] len]] [scan prog  [add start  [add1 [add1 [string-length [readString prog [add1 start] len]]]]] 1]]]]
+                                                   [body ;[printf "Symbol %s\n" token]
+                                                    [return [scan prog start [sub len -1]]]]]]]]]]]]
+                [body ;[printf "scan complete\n"]
+                 [return [emptyList]]]]
+            [return [emptyList]]
+            ]]
+
+     [list sexprTree [list l] [declare [box b nil]]
+           [body
+            [if [isEmpty l]
+                [body [return [emptyList]]]
+                [body
+                 [set b [car l]]
+                 ;[printf "Processing list with sexprTree: %s\n" [unBoxString b] ]
+                 [if [equalString "(" [unBoxString b]]
+                     [body ;[printf "Start sublist sexprTree\n"]
+                      [return [cons
+                               [boxList [sexprTree [cdr l]]]
+                               [sexprTree [skipList [cdr l]]]]]]
+                     [body [if [equalString ")" [unBoxString b]]
+                               [body ;[printf "Finish sublist sexprTree\n"]
+                                [return [emptyList]]]
+                               [body
+                                ;[printf "Add token %s\nRemaining tokens: " [unBoxString b]]
+                                ;[displayList [cdr l]]
+                                [return [cons b [sexprTree [cdr l]]]]]]]]]
+                ]
+            [printf "AAAAAA code should never reach here!\n"]
+            [return [emptyList]]
+            ]]
+
+     [list skipList [list l] [declare [box b nil]]
+           [body
+            [if [isEmpty l]
+                [body [return [emptyList]]]
+                [body
+                 [set b [car l]]
+                 ;[printf "Processing list with skiplist: %s\n" [unBoxString b] ]
+                 [if [equalString "(" [unBoxString b]]
+                     [body ;[printf "Start sublist in skiplist\n"]
+                      [return [skipList [skipList [cdr l]]]]]
+                     [body [if [equalString ")" [unBoxString b]]
+                               [body ;[printf "Finish sublist in skiplist\n"]
+                                [return  [cdr l]]]
+                               [body
+                                ;[printf "skipping token %s\nRemaining tokens: " [unBoxString b]]
+                                ;[displayList [cdr l]]
+                                [return  [skipList [cdr l]]]]]]]]]
+            [printf "AAAAAA code should never reach here!\n"]
+            [return [emptyList]]
+            ]]
+
+     [list readSexpr [string aStr]
+           [declare
+            [list tokens nil]
+            [list as nil]
+            ]
+           [body
+            [set tokens [emptyList]]
+            
+            
+            [set tokens [filterVoid [scan aStr 0 1]]]
+            ;[printf "Displaying tokens:\n"]
+            ;[displayList tokens]
+            ;[printf "Building sexprTree\n"]
+            [set as [sexprTree tokens]]
+            ;[printf "Displaying sexprTree\n"]
+            ;[displayList as]
+            [return as]
+            ]]
+
+     ;;;;;;;;;;;;;
+     ;;  Tests  ;;
+     ;;;;;;;;;;;;;
      [void test1 [] [declare]
            [body [printf "1.  pass Function call and print work\n"]]]
 
@@ -1523,150 +1700,21 @@ returnValue=${array[$2]}
                 [body [printf "13. fail Read and write files\n"]]
                 ]]]
 
-     ;; Sexpression reader
-     [list filterVoid [list l] [declare [box token nil]]
+     [list ast [list tree] [declare]
            [body
-            ;[displayList l]
-            [if [isEmpty l]
-                [body [return [emptyList]]]
-                [body
-
-                 [set token [car l]]
-                 [if [equalString "void" [get-struct token typ]]
-                     [body [return [filterVoid [cdr l]]]]
-                     [body [return [cons token [filterVoid [cdr l]]]]]]]]]]
-            
-     [box finish_token [string prog int start int len] [declare]
-          [body
-           ;[printf "ft: %s start: %d, end %d\n" prog start len]
-           ;[printf "Finish token %s\n" [sub-string prog start   len]]
-
-           [if [> len 0]
-               [body [return [boxSymbol [sub-string prog start  len]]]]
-               [body [return
-                      [newVoid]
-                      ]]]
-           [return [boxSymbol [sub-string prog start  len]]]
-           ]]
-
-     
-
-     [string readString [string prog int start int len] [declare [string token ""]]
-             [body
-              ;[printf "Start: %d, len: %d\n" start len]
-              [set token [sub-string prog [sub1 [add start len]] 1]]
-              ;[printf "Token: %s\n" token]
-              
-              [if [equalString "\"" token]
-                  [body [return [sub-string prog start [sub1 len]]]]
-                  [body [return [readString prog start [add1 len]]]]
-                  ]]]
-                                              
-              
-             
-            
-     [list scan [string prog int start int len] [declare [string token ""]]
-           [body
-            [if [> [string-length prog] [sub start [sub 0 len]]]
-                [body
-                 [set token [sub-string prog [sub1 [add start len]] 1]]
-                 ;[printf "Start: %d, end %d, Token: %s\n" start [add start len] token ]
-                 [if [equalString "(" token]
-                     [body ;[printf "Start array\n"]
-                      [return [cons
-                               [finish_token prog start  [sub1 len]]
-                               [cons [boxString "(" ]
-                                     [scan prog [add1 start] 1]]]]]
-                     [body [if [equalString ")" token]
-                               [body ;[printf "Finish array\n"]
-                                [return [cons  [finish_token prog start  [sub1 len]]
-                                               [cons [boxString ")"]
-                                                     [scan prog [add start  len] 1]]]]]
-                               [body [if [equalString " " token]
-                                         [body
-                                          [return [cons
-                                                   [finish_token prog start  [sub1 len]]
-                                                   [scan prog  [add start  len] 1]]]
-                                          ]
-                                         [body [if [equalString "\"" token]
-                                                   [body [return [cons [boxString [readString prog [add1 start] len]] [scan prog  [add start  [add1 [add1 [string-length [readString prog [add1 start] len]]]]] 1]]]]
-                                                   [body ;[printf "Symbol %s\n" token]
-                                                    [return [scan prog start [sub len -1]]]]]]]]]]]]
-                [body ;[printf "scan complete\n"]
-                 [return [emptyList]]]]
-            [return [emptyList]]
-            ]]
-
-     [list sexprTree [list l] [declare [box b nil]]
-           [body
-            [if [isEmpty l]
-                [body [return [emptyList]]]
-                [body
-                 [set b [car l]]
-                 ;[printf "Processing list with sexprTree: %s\n" [unBoxString b] ]
-                 [if [equalString "(" [unBoxString b]]
-                     [body ;[printf "Start sublist sexprTree\n"]
-                      [return [cons
-                               [boxList [sexprTree [cdr l]]]
-                               [sexprTree [skipList [cdr l]]]]]]
-                     [body [if [equalString ")" [unBoxString b]]
-                               [body ;[printf "Finish sublist sexprTree\n"]
-                                [return [emptyList]]]
-                               [body
-                                ;[printf "Add token %s\nRemaining tokens: " [unBoxString b]]
-                                ;[displayList [cdr l]]
-                                [return [cons b [sexprTree [cdr l]]]]]]]]]
-                ]
-            [printf "AAAAAA code should never reach here!\n"]
-            [return [emptyList]]
-            ]]
-     [list skipList [list l] [declare [box b nil]]
-           [body
-            [if [isEmpty l]
-                [body [return [emptyList]]]
-                [body
-                 [set b [car l]]
-                 ;[printf "Processing list with skiplist: %s\n" [unBoxString b] ]
-                 [if [equalString "(" [unBoxString b]]
-                     [body ;[printf "Start sublist in skiplist\n"]
-                      [return [skipList [skipList [cdr l]]]]]
-                     [body [if [equalString ")" [unBoxString b]]
-                               [body ;[printf "Finish sublist in skiplist\n"]
-                                [return  [cdr l]]]
-                               [body
-                                ;[printf "skipping token %s\nRemaining tokens: " [unBoxString b]]
-                                ;[displayList [cdr l]]
-                                [return  [skipList [cdr l]]]]]]]]]
-            [printf "AAAAAA code should never reach here!\n"]
-            [return [emptyList]]
-            ]]
-     [list readSexpr [string aStr]
-           [declare
-            [list tokens nil]
-            [list as nil]
-            ]
-           [body
-            [set tokens [emptyList]]
-            
-            
-            [set tokens [filterVoid [scan aStr 0 1]]]
-            ;[printf "Displaying tokens:\n"]
-            ;[displayList tokens]
-            ;[printf "Building sexprTree\n"]
-            [set as [sexprTree tokens]]
-            ;[printf "Displaying sexprTree\n"]
-            ;[displayList as]
-            [return as]
-            ]]
-
+            [printf "Processing:"][displayList tree]
+                 [return nil]]
+           ]
      [void test14 []
            [declare
             [string programStr ""]
+            [list tree nil]
             ]
            [body
             [set programStr [read-file "test.sexpr"]]
-            ;[printf "Read program: %s\n" programStr]
-            [displayList [readSexpr programStr]]
+            [printf "Read program: %s\n" programStr]
+            [set tree [readSexpr programStr]]
+            [displayList [ast tree]]
             [printf "\n"]
             ]]
 
@@ -1684,34 +1732,7 @@ returnValue=${array[$2]}
                 ]
             ]]
 
-     [list assoc [string searchTerm list l] [declare [list elem nil]]
-           [body
-            [if [isEmpty l]
-                [body [return [boxBool false]]]
-                [body [set elem [car l]]
-                      [if [equalString searchTerm [unBoxString [car elem]]]
-                          [body [return elem]]
-                          [body [return [assoc searchTerm [cdr l]]]]]]]]]
-
-     [string boxType [box b] [declare]
-             [body [return [get-struct b typ]]]]
-
-     [bool equalBox [box a box b] [declare]
-           [body
-            [if [equalString [boxType a] [boxType b]]
-                [body [if [equalString "string" [boxType a]]
-                          [body [return [equalString [unBoxString a] [unBoxString b]]]]
-                          [body [if [equalString "bool" [boxType a]]
-                                    [body [return [andBool  [unBoxBool a]  [unBoxBool b]]]]
-                                    [body [if [equalString "symbol" [boxType a]]
-                                              [body [return [equalString [unBoxSymbol a] [unBoxSymbol b]]]]
-                                              [body [if [equalString "int" [boxType a]]
-[body [return [equal [unBoxInt a] [unBoxInt b]]]]
-                                                     [body [return false]]]]]]]]]]
-                       
-                [body [printf "Types do not match: %s and %s" [boxType a] [boxType b]] [return false]]]
-            ]]
-     
+    
      [void test16 []
            [declare
             [list assocCell1 nil]
