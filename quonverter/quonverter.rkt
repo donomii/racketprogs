@@ -1309,6 +1309,11 @@ returnValue=${array[$2]}
                  [set-struct b boo boo]
                  [set-struct b typ "bool"]
                  [return b]]]
+     [box boxInt[int val] [declare [box b nil]]
+          [body  [set b [new box Box]]
+                 [set-struct b i val]
+                 [set-struct b typ "int"]
+                 [return b]]]
 
      [list emptyList [] [declare [list b nil]]
            [body
@@ -1335,6 +1340,10 @@ returnValue=${array[$2]}
      [bool unBoxBool [box b] [declare]
            [body
             [return [get-struct b boo]]]]
+
+      [int unBoxInt [box b] [declare]
+           [body
+            [return [get-struct b i]]]]
 
      [string stringify [box b] [declare]
              [body
@@ -1696,7 +1705,9 @@ returnValue=${array[$2]}
                                     [body [return [andBool  [unBoxBool a]  [unBoxBool b]]]]
                                     [body [if [equalString "symbol" [boxType a]]
                                               [body [return [equalString [unBoxSymbol a] [unBoxSymbol b]]]]
-                                              [body [return false]]]]]]]]
+                                              [body [if [equalString "int" [boxType a]]
+[body [return [equal [unBoxInt a] [unBoxInt b]]]]
+                                                     [body [return false]]]]]]]]]]
                        
                 [body [printf "Types do not match: %s and %s" [boxType a] [boxType b]] [return false]]]
             ]]
