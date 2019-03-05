@@ -1,4 +1,10 @@
-(int main (int argc  char** argv)
+ (functions
+
+     
+     (int add (int a int b) (declare)
+          (body (return (sub a (sub 0 b)))))
+          
+          (int main (int argc  char** argv)
           (declare (int a 10)
            )
           (body
@@ -18,4 +24,5 @@
            (test15)
            (test16)
            (printf "\n\nAfter all that hard work, I need a beer...\n")
-           (beers 9) )))))
+           (beers 9) )))
+           
