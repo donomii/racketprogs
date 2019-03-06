@@ -1341,7 +1341,7 @@ returnValue=${array[$2]}
                            ;[printf "\nFound match\n"]
                            [return elem]]
                           [body
-;[printf "\nNo match, recursing\n"]
+                           ;[printf "\nNo match, recursing\n"]
                            [return [assoc searchTerm [cdr l]]]]]]
                      ]]]]]
 
@@ -1585,6 +1585,26 @@ returnValue=${array[$2]}
             [return [emptyList]]
             ]]
 
+     [bool isOpenBrace [box b] [declare]
+           [body
+            [if [equalBox [boxString "("]  b]
+                [body [return true]]
+                [body [if [equalBox [boxString "["]  b]
+                          [body [return true]]
+                          [body [return false]]]]]
+                      
+            ]]
+
+     [bool isCloseBrace [box b] [declare]
+           [body
+            [if [equalBox [boxString ")"]  b]
+                [body [return true]]
+                [body [if [equalBox [boxString "]"]  b]
+                          [body [return true]]
+                          [body [return false]]]]]
+                      
+            ]]
+     
      [list sexprTree [list l] [declare [box b nil]]
            [body
             [if [isEmpty l]
@@ -1592,7 +1612,7 @@ returnValue=${array[$2]}
                 [body
                  [set b [car l]]
                  ;[printf "Processing list with sexprTree: %s\n" [unBoxString b] ]
-                 [if [equalBox [boxString "("]  b]
+                 [if  [isOpenBrace b]
                      [body ;[printf "Start sublist sexprTree\n"]
                       [return [cons
                                [sexprTree [cdr l]]
@@ -1837,7 +1857,7 @@ returnValue=${array[$2]}
      
      [list astFunction [list tree] [declare]
            [body
-            [printf "Processing:"][display tree][printf "\n\n"]
+            ;[printf "Processing:"][display tree][printf "\n\n"]
             [return
              [cons [cons [boxSymbol "name"] [boxString "function"]]
                    [cons [cons [boxSymbol "subname"] [second tree]]
@@ -1860,6 +1880,39 @@ returnValue=${array[$2]}
             [return [makeNode "functions" "functions" tree [astFunctionList [cdr tree]]]]
             ]]
 
+     [list astInclude [list tree] [declare]
+           [body
+[return nil]
+            ]]
+     [list astIncludeList [list tree] [declare]
+           [body
+            [if [isEmpty tree]
+                [body [return [emptyList]]]
+                [body [return [cons [astInclude [car tree]] [astIncludeList [cdr tree]]]]]]
+            ]]
+
+     [list astIncludes [list tree] [declare]
+           [body
+            [return [makeNode "includes" "includes" tree [astIncludeList [cdr tree]]]]
+            ]]
+
+ [list astType [list tree] [declare]
+           [body
+[return nil]
+            ]]
+     [list astTypeList [list tree] [declare]
+           [body
+            [if [isEmpty tree]
+                [body [return [emptyList]]]
+                [body [return [cons [astType [car tree]] [astTypeList [cdr tree]]]]]]
+            ]]
+
+     [list astTypes [list tree] [declare]
+           [body
+            [return [makeNode "includes" "includes" tree [astTypeList [cdr tree]]]]
+            ]]
+
+     
      [void ansiFunctionArgs [list tree] [declare]
            [body
             [if [isEmpty tree]
@@ -1963,7 +2016,7 @@ returnValue=${array[$2]}
            
      [void ansiFunctions [list tree] [declare]
            [body
-            [printf "Printing functions\n"]
+            
             [if [isEmpty tree]
                 [body [return]]
                 [body
@@ -1981,8 +2034,12 @@ returnValue=${array[$2]}
             ;[printf "Read program: %s\n" programStr]
             [set tree [readSexpr programStr]]
             ;[displayList  tree]
-            [display [astFunctions  tree]]
-            [ansiFunctions [cdr [assoc "children" [astFunctions  tree]]]]
+            ;[display [astFunctions  tree]]
+            [printf "\n\n\nPrinting functions\n"]
+
+            [astIncludes  [third tree]]
+            [astTypes  [third tree]]
+            [ansiFunctions [cdr [assoc "children" [astFunctions  [third tree]]]]]
             [printf "\n"]
             ]]
 
