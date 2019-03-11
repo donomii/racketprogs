@@ -1363,15 +1363,15 @@ returnValue=${array[$2]}
             [if [isList b]
                 [body [return false]]
                 [body
-            [if [equalString "string" [boxType a]]
-                [body [return [equalString [unBoxString a] [stringify b]]]]
-                [body [if [equalString "bool" [boxType a]]
-                          [body [return [andBool  [unBoxBool a]  [unBoxBool b]]]]
-                          [body [if [equalString "symbol" [boxType a]]
-                                    [body [return [equalString [unBoxSymbol a] [unBoxSymbol b]]]]
-                                    [body [if [equalString "int" [boxType a]]
-                                              [body [return [equal [unBoxInt a] [unBoxInt b]]]]
-                                              [body [return false]]]]]]]]]]]]]
+                 [if [equalString "string" [boxType a]]
+                     [body [return [equalString [unBoxString a] [stringify b]]]]
+                     [body [if [equalString "bool" [boxType a]]
+                               [body [return [andBool  [unBoxBool a]  [unBoxBool b]]]]
+                               [body [if [equalString "symbol" [boxType a]]
+                                         [body [return [equalString [unBoxSymbol a] [unBoxSymbol b]]]]
+                                         [body [if [equalString "int" [boxType a]]
+                                                   [body [return [equal [unBoxInt a] [unBoxInt b]]]]
+                                                   [body [return false]]]]]]]]]]]]]
                        
                 
             
@@ -1863,20 +1863,43 @@ returnValue=${array[$2]}
      [list astIf [list tree] [declare]
            [body
             [return [makeNode "statement" "if" tree [cons [astExpression [first tree]]
-                                                         [cons [astBody [cdr [second tree]]]
-                                                               [cons [astBody [cdr [third tree]]]
-                                                                     nil]]]]]
+                                                          [cons [astBody [cdr [second tree]]]
+                                                                [cons [astBody [cdr [third tree]]]
+                                                                      nil]]]]]
             ]]
+
+     [list astReturnVoid [] [declare]
+           [body
+            [return [makeNode "statement" "returnvoid" nil nil]]
+            ]]
+
+     [int length [list l]  [declare]
+          [body
+           [if [isEmpty l]
+               [body [return 0]]
+               [body [return [add1 [length [cdr l]]]]]]
+           ]]
      
      [list astStatement [list tree] [declare]
            [body
-            [printf "AstStatement: "]
-            [display tree]
+            ;[printf "AstStatement: "]
+            ;[display tree]
             [if [equalBox [car tree] [boxString "if"]]
                 [body [return [astIf [cdr tree]]]]
-                [body 
-                 [return [makeNode "statement" "statement" tree [astExpression tree]]]]]
-            ]]
+                [body
+                 [if  [equal [length tree] 1]
+                      [body 
+                       [if [equalBox [car tree] [boxString "return"]]
+                           [body
+                            [printf "Choosing returnvoid\n"]
+                            [return [astReturnVoid]]]
+                           [body
+                            [return [makeNode "statement" "statement" tree [astExpression tree]]]]]]
+                      [body
+                       [return [makeNode "statement" "statement" tree [astExpression tree]]]
+                       ]
+                      ]
+                 ]]]]
 
      [list astBody [list tree] [declare]
            [body
@@ -2082,11 +2105,15 @@ returnValue=${array[$2]}
                       [printf "\n}\n"]
                       ]
                 [body
+                 [if [equalBox [boxString "returnvoid"] [subnameof node]]
+                     [body [printf "    return"]]
+                     [body
             
-                 ;[printf "\nGeneric expression statement\n" ]
-                 ;[display [childrenof node]]
-                 ;[printf "\n\n"]
-                 [ansiExpression [childrenof node] true  indent]
+                      ;[printf "\nGeneric expression statement\n" ]
+                      ;[display [childrenof node]]
+                      ;[printf "\n\n"]
+                      [ansiExpression [childrenof node] true  indent]
+                      ]]
                  ]]
             ;[printf "\n\n"]
             ]]
