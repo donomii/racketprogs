@@ -1,6 +1,23 @@
  (
  (includes)
- (types)
+ (types
+        (Box
+      (struct
+        (l struct Box* )
+        (str string )
+        (i int )
+        (typ string )
+        (voi bool )
+        (boo bool)
+        (length int )
+        (car struct Box* ) 
+        (cdr struct Box* ) 
+        ))
+        (box Box*)
+     (Pair Box)
+     (pair Box*)
+     (list Box*)
+     )
  (functions
 
 (void ansiFunction (list tree) (declare)
