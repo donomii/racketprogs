@@ -1875,6 +1875,8 @@ returnValue=${array[$2]}
 
      [int length [list l]  [declare]
           [body
+           ;[printf "Length of: "]
+           ;[display l]
            [if [isEmpty l]
                [body [return 0]]
                [body [return [add1 [length [cdr l]]]]]]
@@ -1891,7 +1893,7 @@ returnValue=${array[$2]}
                       [body 
                        [if [equalBox [car tree] [boxString "return"]]
                            [body
-                            [printf "Choosing returnvoid\n"]
+                            ;[printf "Choosing returnvoid\n"]
                             [return [astReturnVoid]]]
                            [body
                             [return [makeNode "statement" "statement" tree [astExpression tree]]]]]]
@@ -2158,6 +2160,29 @@ returnValue=${array[$2]}
                  
                  [printf "\n}\n"]
                  ]]]]
+     [void ansiForwardDeclaration [list node] [declare]
+           [body
+            ;[display tree]
+            [if [isNil node]
+                [body [return]]
+                [body
+                 ;[display [assoc "name" tree]]
+                 [printf "\n%s %s(" [stringify [cdr [assoc "outtype" [cdr node]]]] [stringify [subnameof node]]]
+                 [ansiFunctionArgs [cdr [assoc "intype" [cdr node]]]]
+                 [printf ");" ]
+                 ]]]]
+     
+     [void ansiForwardDeclarations [list tree] [declare]
+           [body
+            [if [isEmpty tree]
+                [body [return]]
+                [body
+                 
+                 [ansiForwardDeclaration [car tree]]
+                 [ansiForwardDeclarations [cdr tree]]
+                 
+                 
+                 ]]]]
            
      [void ansiFunctions [list tree] [declare]
            [body
@@ -2167,7 +2192,81 @@ returnValue=${array[$2]}
                  [ansiFunction [car tree]]
                  [ansiFunctions [cdr tree]]]]]]
                              
-     [void ansiIncludes [list nodes] [declare] [body [return] ]]
+     [void ansiIncludes [list nodes] [declare]
+           [body
+            [printf "
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+void panic(char* s){abort();}
+int sub(int a, int b) { return a - b; }
+int greaterthan(int a, int b) { return a > b; }
+int equal(int a, int b) { return a == b; }
+int equalString(char* a, char* b) { return !strcmp(a,b); }
+int andBool(int a, int b) { return a == b;}
+int string_length(char* s) { return strlen(s);}
+char* sub_string(char* s, int start, int length) {
+char* substr = calloc(length+1, 1);
+strncpy(substr, s+start, length);
+return substr;
+}
+
+char* stringConcatenate(char* a, char* b) {
+int len = strlen(a) + strlen(b);
+char* target = calloc(len,1);
+strncat(target, a, len);
+strncat(target, b, len);
+return target;
+}
+
+typedef int*  array;
+typedef int bool;
+#define true 1
+#define false 0
+
+
+
+void * gc_malloc( unsigned int size ) {
+return malloc( size);
+}
+
+int* makeArray(int length) {
+    int * array = gc_malloc(length*sizeof(int));
+    return array;
+}
+
+int at(int* arr, int index) {
+  return arr[index];
+}
+
+void setAt(int* array, int index, int value) {
+    array[index] = value;
+}
+
+char * read_file(char * filename) {
+char * buffer = 0;
+long length;
+FILE * f = fopen (filename, \"rb\");
+
+if (f)
+{
+  fseek (f, 0, SEEK_END);
+  length = ftell (f);
+  fseek (f, 0, SEEK_SET);
+  buffer = malloc (length);
+  if (buffer)
+  {
+    fread (buffer, 1, length, f);
+  }
+  fclose (f);
+}
+return buffer;
+}
+
+
+"]
+
+            [return] ]]
 
      [box last [list alist] [declare]
           [body
@@ -2175,6 +2274,19 @@ returnValue=${array[$2]}
                [body [return [car alist]]]
                [body [return [last [cdr alist]]]]]
            ]]
+
+     [void ansiTypeDecl [list l] [declare]
+           [body
+[if [> [length l] 2]
+                     [body
+                       [printIndent 1]
+                       [printf "%s %s %s;\n"   [stringify [second  l]]  [stringify [ansiTypeMap [last  l]]] [stringify [first  l]] ]]
+
+                      [body
+                       [printIndent 1]
+                       [printf "%s %s;\n"     [stringify [ansiTypeMap[last  l]]] [stringify [car l]]]]
+                    ]
+            ]]
      [void ansiStructComponents [list node] [declare]
            [body
             ;[printf "Printing component: "]
@@ -2182,8 +2294,8 @@ returnValue=${array[$2]}
             ;[display node]
             [if [isEmpty node]
                 [body [return]]
-                [body [printIndent 1][printf "%s %s\n"   [stringify [last [car node]]] [stringify [car [car node]]]]
-                    
+                [body
+                 [ansiTypeDecl [car node]]
                       [ansiStructComponents [cdr node]]]]
             ]]
      
@@ -2194,15 +2306,35 @@ returnValue=${array[$2]}
             [ansiStructComponents [cdr [car  node]]]
             
             [return] ]]
+
+     [bool truthy [box aVal] [declare]
+           [body [if [equalBox [boxBool false] aVal]
+                     [body [return false]]
+                     [body [return true]]]]]
+     
+     [box ansiTypeMap [box aSym] [declare [list symMap nil]]
+             [body
+              ;[printf "Typemap: '%s'\n" [stringify aSym]]
+              [set symMap [alistCons [boxSymbol "string"] [boxSymbol "char*"] nil]]
+                   [if [truthy [assoc [stringify aSym] symMap]]
+                       [body [return [cdr [assoc [stringify aSym] symMap]]]]
+                       [body [return aSym]]
+                                  
+                       ]
+              ]]
      
      [void ansiType [list node] [declare]
            [body
             
             [if [equalBox [subnameof node] [boxString "struct"]]
-                [body [printf "\nstruct %s {\n" [stringify [first [codeof node]]]]
+                [body [printf "\ntypedef struct %s {\n" [stringify [first [codeof node]]]]
                       [ansiStruct [cdr [codeof node]]]
-                      [printf "\n}\n"]]
-                [body  [printf "typedef %s %s;\n"  [stringify [cadr [codeof node]]] [stringify [car [codeof node]]]]]]
+                      [printf "\n} %s;\n" [stringify [first [codeof node]]]]]
+                [body
+
+                 [printf "typedef "  ]
+                 ;[display [codeof node]]
+                 [ansiTypeDecl [codeof node]]]]
             
             [return] ]]
 
@@ -2232,8 +2364,8 @@ returnValue=${array[$2]}
                                                [alistCons [boxString "functions"] [astFunctions  [third tree]] nil]]]]
                                     
             ;[display [astFunctions  tree]]
-            [printf "\n\n\nPrinting includes\n"]
-            [display [cdr [assoc "includes" program]]]
+            ;[printf "\n\n\nPrinting includes\n"]
+            ;[display [cdr [assoc "includes" program]]]
             [ansiIncludes  [cdr [assoc "includes" program]]]
             ;[printf "\n\n\nPrinting types\n"]
             ;[printf "!!!\n\n\n!!!"]
@@ -2242,6 +2374,11 @@ returnValue=${array[$2]}
             [ansiTypes  [childrenof [cdr [assoc "types" program]]]]
             ;[printf "\n\n\nPrinting functions\n"]
             ;[display [assoc "functions" program]]
+            
+            [printf "\n\n//Forward declarations\n"]
+                 
+            [ansiForwardDeclarations [cdr [assoc "children" [assoc "functions" program]]]]
+            [printf "\n\n//End forward declarations\n\n"]
             [ansiFunctions [cdr [assoc "children" [assoc "functions" program]]]]
             [printf "\n"]
             ]]
