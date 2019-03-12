@@ -1368,7 +1368,9 @@ returnValue=${array[$2]}
                      [body [if [equalString "bool" [boxType a]]
                                [body [return [andBool  [unBoxBool a]  [unBoxBool b]]]]
                                [body [if [equalString "symbol" [boxType a]]
-                                         [body [return [equalString [unBoxSymbol a] [unBoxSymbol b]]]]
+                                         [body [if [equalString "symbol" [boxType b]]
+                                                   [body [return [equalString [unBoxSymbol a] [unBoxSymbol b]]]]
+                                                   [body [return false]]]] ;Maybe panic?
                                          [body [if [equalString "int" [boxType a]]
                                                    [body [return [equal [unBoxInt a] [unBoxInt b]]]]
                                                    [body [return false]]]]]]]]]]]]]
@@ -1563,6 +1565,21 @@ returnValue=${array[$2]}
                   [body [return [sub-string prog start [sub1 len]]]]
                   [body [return [readString prog start [add1 len]]]]
                   ]]]
+
+     [string readComment [string prog int start int len] [declare [string token ""]]
+             [body
+              ;[printf "Start: %d, len: %d\n" start len]
+              [set token [sub-string prog [sub1 [add start len]] 1]]
+              ;[printf "Token: %s\n" token]
+              ;[printf "Partial comment:%s" [sub-string prog start [sub1 len]]]
+              
+              [if [equalString "\n" token]
+                  [body
+                   ;[printf "\nComplete comment is %s\n" [sub-string prog start [sub1 len]]]
+                 
+                   [return [sub-string prog start [sub1 len]]]]
+                  [body [return [readComment prog start [add1 len]]]]
+                  ]]]
                                               
      [bool isWhiteSpace [string s] [declare]
            [body [if [equalString " " s]
@@ -1570,6 +1587,7 @@ returnValue=${array[$2]}
                      [body [if [equalString "\n" s]
                                [body [return true]]
                                [body [return false]]]]]]]
+     
      [list scan [string prog int start int len] [declare [string token ""]]
            [body
             [if [> [string-length prog] [sub start [sub 0 len]]]
@@ -1580,12 +1598,12 @@ returnValue=${array[$2]}
                      [body ;[printf "Start array\n"]
                       [return [cons
                                [finish_token prog start  [sub1 len]]
-                               [cons [boxString "(" ]
+                               [cons [boxSymbol "(" ]
                                      [scan prog [add1 start] 1]]]]]
-                     [body [if [equalString ")" token]
+                     [body [if [equalString  ")" token]
                                [body ;[printf "Finish array\n"]
                                 [return [cons  [finish_token prog start  [sub1 len]]
-                                               [cons [boxString ")"]
+                                               [cons [boxSymbol ")"]
                                                      [scan prog [add start  len] 1]]]]]
                                [body [if [isWhiteSpace token]
                                          [body
@@ -1593,10 +1611,19 @@ returnValue=${array[$2]}
                                                    [finish_token prog start  [sub1 len]]
                                                    [scan prog  [add start  len] 1]]]
                                           ]
-                                         [body [if [equalString "\"" token]
-                                                   [body [return [cons [boxString [readString prog [add1 start] len]] [scan prog  [add start  [add1 [add1 [string-length [readString prog [add1 start] len]]]]] 1]]]]
-                                                   [body ;[printf "Symbol %s\n" token]
-                                                    [return [scan prog start [sub len -1]]]]]]]]]]]]
+                                         [body [if [equalString ";" token]
+                                                   [body
+                                                    ;[printf "\nComment:%s" [readComment prog [add1 start] len]]
+                                                           [return [scan prog  [add start  [add1 [add1 [string-length [readComment prog [add1 start] len]]]]] 1]
+                                                      ]]
+                                                   [body [if [equalString "\"" token]
+                                                             [body
+                                                              [return
+                                                               [cons
+                                                                [boxString [readString prog [add1 start] len]]
+                                                                [scan prog  [add start  [add1 [add1 [string-length [readString prog [add1 start] len]]]]] 1]]]]
+                                                             [body ;[printf "Symbol %s\n" token]
+                                                              [return [scan prog start [sub len -1]]]]]]]]]]]]]]
                 [body ;[printf "scan complete\n"]
                  [return [emptyList]]]]
             [return [emptyList]]
@@ -1913,6 +1940,7 @@ returnValue=${array[$2]}
      [list astFunction [list tree] [declare]
            [body
             ;[printf "Processing:"][display tree][printf "\n\n"]
+            [printf "Building function:"][display [second tree]][printf"\n"]
             [return
              [cons [cons [boxSymbol "name"] [boxString "function"]]
                    [cons [cons [boxSymbol "subname"] [second tree]]
@@ -1932,6 +1960,7 @@ returnValue=${array[$2]}
 
      [list astFunctions [list tree] [declare]
            [body
+            [printf "Building functions AST...\n"]
             [return [makeNode "functions" "functions" tree [astFunctionList [cdr tree]]]]
             ]]
 
@@ -1948,6 +1977,7 @@ returnValue=${array[$2]}
 
      [list astIncludes [list tree] [declare]
            [body
+            [printf "Building includes AST...\n"]
             [return [makeNode "includes" "includes" tree [astIncludeList [cdr tree]]]]
             ]]
 
@@ -1973,6 +2003,7 @@ returnValue=${array[$2]}
 
      [list astTypes [list tree] [declare]
            [body
+            [printf "Building types AST...\n"]
             [return [makeNode "types" "types" tree [astTypeList [cdr tree]]]]
             ]]
 
@@ -2153,7 +2184,7 @@ returnValue=${array[$2]}
                 [body [return]]
                 [body
                  ;[display [assoc "name" tree]]
-                 [printf "\n%s %s(" [stringify [cdr [assoc "outtype" [cdr node]]]] [stringify [subnameof node]]]
+                 [printf "\n%s %s(" [stringify [ansiTypeMap [cdr [assoc "outtype" [cdr node]]]]] [stringify [subnameof node]]]
                  [ansiFunctionArgs [cdr [assoc "intype" [cdr node]]]]
                  [printf ") {\n"]
                  [ansiBody [childrenof node] 1]
@@ -2277,15 +2308,15 @@ return buffer;
 
      [void ansiTypeDecl [list l] [declare]
            [body
-[if [> [length l] 2]
-                     [body
-                       [printIndent 1]
-                       [printf "%s %s %s;\n"   [stringify [second  l]]  [stringify [ansiTypeMap [last  l]]] [stringify [first  l]] ]]
+            [if [> [length l] 2]
+                [body
+                 [printIndent 1]
+                 [printf "%s %s %s;\n"   [stringify [second  l]]  [stringify [ansiTypeMap [last  l]]] [stringify [first  l]] ]]
 
-                      [body
-                       [printIndent 1]
-                       [printf "%s %s;\n"     [stringify [ansiTypeMap[last  l]]] [stringify [car l]]]]
-                    ]
+                [body
+                 [printIndent 1]
+                 [printf "%s %s;\n"     [stringify [ansiTypeMap[last  l]]] [stringify [car l]]]]
+                ]
             ]]
      [void ansiStructComponents [list node] [declare]
            [body
@@ -2296,7 +2327,7 @@ return buffer;
                 [body [return]]
                 [body
                  [ansiTypeDecl [car node]]
-                      [ansiStructComponents [cdr node]]]]
+                 [ansiStructComponents [cdr node]]]]
             ]]
      
      [void ansiStruct [list node] [declare]
@@ -2313,15 +2344,15 @@ return buffer;
                      [body [return true]]]]]
      
      [box ansiTypeMap [box aSym] [declare [list symMap nil]]
-             [body
-              ;[printf "Typemap: '%s'\n" [stringify aSym]]
-              [set symMap [alistCons [boxSymbol "string"] [boxSymbol "char*"] nil]]
-                   [if [truthy [assoc [stringify aSym] symMap]]
-                       [body [return [cdr [assoc [stringify aSym] symMap]]]]
-                       [body [return aSym]]
+          [body
+           ;[printf "Typemap: '%s'\n" [stringify aSym]]
+           [set symMap [alistCons [boxSymbol "string"] [boxSymbol "char*"] nil]]
+           [if [truthy [assoc [stringify aSym] symMap]]
+               [body [return [cdr [assoc [stringify aSym] symMap]]]]
+               [body [return aSym]]
                                   
-                       ]
-              ]]
+               ]
+           ]]
      
      [void ansiType [list node] [declare]
            [body
@@ -2354,15 +2385,18 @@ return buffer;
             [list program nil]
             ]
            [body
+            [printf "Reading in program...\n"]
             [set programStr [read-file "test.sexpr"]]
             ;[printf "Read program: %s\n" programStr]
+            [printf "Read program.  Parsing...\n" ]
             [set tree [readSexpr programStr]]
+            [printf "Parsed program.  Building AST...\n" ]
             ;[displayList  tree]
 
             [set program [alistCons [boxString "includes"] [astIncludes  [first tree]]
                                     [alistCons [boxString "types"] [astTypes  [second tree]]
                                                [alistCons [boxString "functions"] [astFunctions  [third tree]] nil]]]]
-                                    
+                 [printf "Built AST.  Generating ansi C output...\n" ]                   
             ;[display [astFunctions  tree]]
             ;[printf "\n\n\nPrinting includes\n"]
             ;[display [cdr [assoc "includes" program]]]
@@ -2456,7 +2490,7 @@ return buffer;
                 [beers 9]
                 ]
                [body [compile]]]
-           ;[echo a is a]
+           ;End of file!
            ]]]]]
 
 
