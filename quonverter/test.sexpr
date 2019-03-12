@@ -1,40 +1,1239 @@
- (
- (includes)
- (types
-        (Box
+    (
+    (includes (lalala lalala))
+    (types
+     (Box
       (struct
-        (l struct Box* )
+        (lis struct Box* )
         (str string )
         (i int )
         (typ string )
         (voi bool )
         (boo bool)
-        (length int )
+        (lengt int )
         (car struct Box* ) 
         (cdr struct Box* ) 
         ))
-        (box Box*)
+     (box Box*)
      (Pair Box)
      (pair Box*)
      (list Box*)
      )
- (functions
+    
+    (functions
 
-(void ansiFunction (list tree) (declare)
-           (body
-            (if (isNil tree)
-                (body (return))
-                (body
-                 (printf "\n%s %s(" (stringify (cdr (assoc "outtype" tree))) (stringify (cdr (assoc "subname" tree))))
-                 (ansiFunctionArgs (cdr (assoc "intype" tree)))
-                 (printf ") {\n")
-                 (ansiBody (cdr (assoc "children" tree)))
-
-                 (printf "}\n")
-                 ))))
      
      (int add (int a int b) (declare)
           (body (return (sub a (sub 0 b)))))
-          
-          )
+
+     (int sub1 (int a) (declare)
+          (body (return (sub a 1))))
+
+     (int add1 (int a) (declare)
+          (body (return (add a 1))))
+
+     (box clone (box b) (declare (box newb nil))
+          (body
+           (set newb (new newb Box))
+           (set-struct newb typ (get-struct b typ))
+           (set-struct newb lis (get-struct b lis))
+           (set-struct newb str (get-struct b str))
+           (set-struct newb i (get-struct b i))
+           (set-struct newb lengt (get-struct b lengt))
+           (return newb)
+           ))
+     
+     (box newVoid () (declare (box newb nil))
+          (body
+           (set newb (new newb Box))
+           (set-struct newb voi true)
+           (set-struct newb typ "void")
+           (return newb)
+           ))
            
+     
+     (list cons (box data list l) (declare (pair p nil))
+           (body
+            (set p (new pair Pair))
+            (set-struct p cdr l)
+            (set-struct p car data)
+            (set-struct p typ "list")
+            (return p)))
+     
+     (box car (list l) (declare)
+          (body
+           (if (isNil l)
+               (body
+                (printf "Cannot call car on empty list!\n")
+                (panic "Cannot call car on empty list!\n")
+                (return nil))
+               (body 
+                (if (isNil (get-struct l car))
+                    (body ;(printf "Attempt to car a nil value\n")
+                     (return nil))
+                    (body (return (get-struct l car))))))))
+
+     (list cdr (list l) (declare)
+           
+           (body
+            (assertType "list" l)
+            (if (isEmpty l)
+                (body (printf "Attempt to cdr an empty list!!!!\n")
+                      (panic "Attempt to cdr an empty list!!!!\n")
+                      (return nil))
+                (body (return  (get-struct l cdr))))))
+
+     (bool isList (box b) (declare)
+           (body
+            (if (isNil b)
+                (body (return true))
+                (body (return (equalString "list" (get-struct b typ)))))))
+
+     (list emptyList () (declare )
+           (body
+            (return nil)))
+
+     (bool isEmpty (box b) (declare)
+           (body
+            (if (isNil b)
+                (body (return true))
+                (body 
+                 (if (isList b)
+                     (body (return false))
+                     (body
+                      ;(printf "Type error in isEmpty:  not a list: %s\n" (boxType b))
+                      (return false)))))))
+
+     (list alistCons (box key box value list alist) (declare)
+           (body (return (cons (cons key value) alist))))
+     
+     (list assoc (string searchTerm list l) (declare (list elem nil))
+           (body
+            (if (isEmpty l)
+                (body
+                 ;(printf "Assoc on empty list!")
+                 ;(panic "Assoc on empty list!")
+                 (return (boxBool false)))
+                (body
+
+                 (set elem (car l))
+                 ;(printf "\nComparing '%s' and '%s'\n" (stringify (boxString searchTerm))  (stringify (car elem)))
+                 ;(display l)
+                 ;(display elem)
+                 ;(printf "searchTerm: ")
+                 ;(dump (stringify (boxString searchTerm)))
+                 ;(printf "key: ")
+                 ;(dump(stringify (car elem)))
+                 (if (isEmpty elem)
+                     (body (return (assoc searchTerm (cdr l))))
+                     (body
+                      (if (equalString (stringify (boxString searchTerm))  (stringify (car elem)))
+                          (body
+                           ;(printf "\nFound match: ")
+                           ;(display elem)
+                           ;(printf "\n")
+                           (return elem))
+                          (body
+                           ;(printf "\nNo match, recursing\n")
+                           (return (assoc searchTerm (cdr l))))))
+                     )))))
+
+    
+
+     (bool equalBox (box a box b) (declare)
+           (body
+            (if (isList b)
+                (body (return false))
+                (body
+                 (if (equalString "string" (boxType a))
+                     (body (return (equalString (unBoxString a) (stringify b))))
+                     (body (if (equalString "bool" (boxType a))
+                               (body (return (andBool  (unBoxBool a)  (unBoxBool b))))
+                               (body (if (equalString "symbol" (boxType a))
+                                         (body (return (equalString (unBoxSymbol a) (unBoxSymbol b))))
+                                         (body (if (equalString "int" (boxType a))
+                                                   (body (return (equal (unBoxInt a) (unBoxInt b))))
+                                                   (body (return false)))))))))))))
+                       
+                
+            
+
+     
+     ;;;;;;;;;;;;;;;;;;;;;;;;
+     ;;  Type conversions  ;;
+     ;;;;;;;;;;;;;;;;;;;;;;;;
+
+     (string boxType (box b) (declare)
+             (body (return (get-struct b typ))))
+
+
+     (box boxString (string s) (declare (box b nil))
+          (body  (set b (new box Box))
+                 (set-struct b str s)
+                 (set-struct b lengt (string-length s))
+                 (set-struct b typ "string")
+                 (return b)))
+
+     (box boxSymbol (string s) (declare (box b nil))
+          (body  (set b (boxString s))
+                 (set-struct b typ "symbol")
+                 (return b)))
+
+     ;     (box boxList (list l) (declare (box b nil))
+     ;          (body  (set b (new box Box))
+     ;                 (set-struct b l l)
+     ;                 (set-struct b typ "list")
+     ;                 (return b)))
+
+     (box boxBool (bool boo) (declare (box b nil))
+          (body  (set b (new box Box))
+                 (set-struct b boo boo)
+                 (set-struct b typ "bool")
+                 (return b)))
+
+     (box boxInt (int val) (declare (box b nil))
+          (body  (set b (new box Box))
+                 (set-struct b i val)
+                 (set-struct b typ "int")
+                 (return b)))
+
+     
+
+                
+     (void assertType (string atype box abox) (declare)
+           (body
+            (if  (isNil abox)
+                 (body (if (equalString atype "nil")
+                           (body (return ))
+                           (body (return ))))
+                 (body 
+                
+                  (if (equalString atype (boxType abox))
+                      (body (return))
+                      (body (printf "Assertion failure: provided value is not a '%s'!  It was actually:" atype)
+                            (display abox)
+                            (panic "Invalid type!")))))))
+
+     (string unBoxString (box b) (declare)
+             (body
+              (assertType "string" b)
+              (return (get-struct b str))))
+     (string unBoxSymbol (box b) (declare)
+             (body
+              (return (get-struct b str))))
+
+     ;     (list unBoxList (box b) (declare)
+     ;           (body
+     ;            (return (get-struct b l))))
+
+     (bool unBoxBool (box b) (declare)
+           (body
+            (return (get-struct b boo))))
+
+     (int unBoxInt (box b) (declare)
+          (body
+           (return (get-struct b i))))
+
+     (string stringify (box b) (declare)
+             (body
+              (if (isNil b)
+                  (body (return "nil"))
+                  (body 
+                   (if (equalString "string" (boxType b))
+                       (body (return  (unBoxString b)))
+                       (body (if (equalString "bool" (boxType b))
+                                 (body
+                                  (if (unBoxBool b)
+                                      (body (return "true"))
+                                      (body (return "false"))))
+                             
+                                 (body (if (equalString "symbol" (boxType b))
+                                           (body (return  (unBoxSymbol b)))
+                                           (body (return  (boxType b))))))))))))
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;
+     ;; display boxed values ;;
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;
+     (void displayList (list l int indent) (declare (box val nil))
+           (body
+            (if (isEmpty l)
+                (body ;(printf "Empty!\n")
+                 (return))
+                (body
+                 (if (isList l)
+                 
+                     (body
+                      ;(printf "List found\n")
+                      (if (isEmpty l)
+                          (body ;(printf "Empty!\n")
+                           (return))
+                          (body
+                           (set val (car l))
+                 
+                           (if (isList val)
+                               (body
+                                ;(printf "Found list in car\n")
+                                (newLine indent)
+                                (printf "(")
+                                (displayList (car l) (add1 indent))
+                                (printf ")")
+                                (displayList (cdr l) (add1 indent))
+                                )
+                               (body
+                                (if (equalString "string" (get-struct val typ) )
+                                    (body
+                                     (printf "!%s! " (unBoxString val))
+                                     )
+                                    (body
+                                     (printf "%s "  (stringify val))))
+                           
+                                (displayList (cdr l) indent))))))
+                     (body
+                      (if (equalString "string" (get-struct l typ) )
+                          (body
+                           (printf "!%s! " (unBoxString l))
+                           )
+                          (body
+                           (printf "%s "  (stringify l))))
+                      ))))))
+     (void display (list l) (declare)
+           (body
+            (if (isEmpty l)
+                (body (printf "nil ")(return))
+                (body
+                 (if (isList l)
+                     (body (printf "(")(displayList l 0)(printf ")"))
+                     (body (displayList l 0)))))
+            ))
+     
+
+
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;
+     ;;  Sexpression reader  ;;
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;
+     (list filterVoid (list l) (declare (box token nil))
+           (body
+            ;(displayList l)
+            (if (isEmpty l)
+                (body (return (emptyList)))
+                (body
+
+                 (set token (car l))
+                 (if (equalString "void" (get-struct token typ))
+                     (body (return (filterVoid (cdr l))))
+                     (body (return (cons token (filterVoid (cdr l))))))))))
+            
+     (box finish_token (string prog int start int len) (declare)
+          (body
+           ;(printf "ft: %s start: %d, end %d\n" prog start len)
+           ;(printf "Finish token %s\n" (sub-string prog start   len))
+
+           (if (> len 0)
+               (body (return (boxSymbol (sub-string prog start  len))))
+               (body (return
+                      (newVoid)
+                      )))
+           (return (boxSymbol (sub-string prog start  len)))
+           ))
+
+     
+
+     (string readString (string prog int start int len) (declare (string token ""))
+             (body
+              ;(printf "Start: %d, len: %d\n" start len)
+              (set token (sub-string prog (sub1 (add start len)) 1))
+              ;(printf "Token: %s\n" token)
+              
+              (if (equalString "!" token)
+                  (body (return (sub-string prog start (sub1 len))))
+                  (body (return (readString prog start (add1 len))))
+                  )))
+                                              
+     (bool isWhiteSpace (string s) (declare)
+           (body (if (equalString " " s)
+                     (body (return true))
+                     (body (if (equalString "\n" s)
+                               (body (return true))
+                               (body (return false)))))))
+     (list scan (string prog int start int len) (declare (string token ""))
+           (body
+            (if (> (string-length prog) (sub start (sub 0 len)))
+                (body
+                 (set token (sub-string prog (sub1 (add start len)) 1))
+                 (if (equalString "!" token)
+                     (body 
+                      (return (cons
+                               (finish_token prog start  (sub1 len))
+                               (cons (boxString "!" )
+                                     (scan prog (add1 start) 1)))))
+                     (body (if (equalString "!" token)
+                               (body 
+                                (return (cons  (finish_token prog start  (sub1 len))
+                                               (cons (boxString "!")
+                                                     (scan prog (add start  len) 1)))))
+                               (body (if (isWhiteSpace token)
+                                         (body
+                                          (return (cons
+                                                   (finish_token prog start  (sub1 len))
+                                                   (scan prog  (add start  len) 1)))
+                                          )
+                                         (body (if (equalString "!" token)
+                                                   (body (return (cons (boxString (readString prog (add1 start) len)) (scan prog  (add start  (add1 (add1 (string-length (readString prog (add1 start) len))))) 1))))
+                                                   (body 
+                                                    (return (scan prog start (sub len -1))))))))))))
+                (body 
+                 (return (emptyList))))
+            (return (emptyList))
+            ))
+
+     (bool isOpenBrace (box b) (declare)
+           (body
+            (if (equalBox (boxString "!")  b)
+                (body (return true))
+                (body (if (equalBox (boxString "!")  b)
+                          (body (return true))
+                          (body (return false)))))
+                      
+            ))
+
+     (bool isCloseBrace (box b) (declare)
+           (body
+            (if (equalBox (boxString "!")  b)
+                (body (return true))
+                (body (if (equalBox (boxString "!")  b)
+                          (body (return true))
+                          (body (return false)))))
+                      
+            ))
+     
+     (list sexprTree (list l) (declare (box b nil))
+           (body
+            (if (isEmpty l)
+                (body (return (emptyList)))
+                (body
+                 (set b (car l))
+                 (if  (isOpenBrace b)
+                      (body 
+                       (return (cons
+                                (sexprTree (cdr l))
+                                (sexprTree (skipList (cdr l))))))
+                      (body (if (equalBox (boxString "!") b)
+                                (body 
+                                 (return (emptyList)))
+                                (body
+                                 (return (cons b (sexprTree (cdr l)))))))))
+                )
+            (printf "AAAAAA code should never reach here!\n")
+            (return (emptyList))
+            ))
+
+     (list skipList (list l) (declare (box b nil))
+           (body
+            (if (isEmpty l)
+                (body (return (emptyList)))
+                (body
+                 (set b (car l))
+                 ;(printf "Processing list with skiplist: %s\n" (unBoxString b) )
+                 (if (equalBox (boxString "!") b)
+                     (body ;(printf "Start sublist in skiplist\n")
+                      (return (skipList (skipList (cdr l)))))
+                     (body (if (equalBox (boxString ")")  b)
+                               (body ;(printf "Finish sublist in skiplist\n")
+                                (return  (cdr l)))
+                               (body
+                                ;(printf "skipping token %s\nRemaining tokens: " (unBoxString b))
+                                ;(displayList (cdr l))
+                                (return  (skipList (cdr l)))))))))
+            (printf "AAAAAA code should never reach here!\n")
+            (return (emptyList))
+            ))
+
+     (list readSexpr (string aStr)
+           (declare
+            (list tokens nil)
+            (list as nil)
+            )
+           (body
+            (set tokens (emptyList))
+            
+            
+            (set tokens (filterVoid (scan aStr 0 1)))
+            ;(printf "Displaying tokens:\n")
+            ;(displayList tokens)
+            ;(printf "Building sexprTree\n")
+            (set as (sexprTree tokens))
+            ;(printf "Displaying sexprTree\n")
+            ;(displayList as)
+            (return (car as))
+            ))
+
+     ;;;;;;;;;;;;;
+     ;;  Tests  ;;
+     ;;;;;;;;;;;;;
+     (void test0 () (declare)
+           (body 
+            (if (equalString (stringify (boxString "hello"))  (stringify (boxString "hello")))
+                (body (printf "0.  pass string compare works\n"))
+                (body (printf "0.  pass string compare fails\n")))
+            (if (equalString (stringify (boxString "hello"))  (stringify (boxSymbol "hello")))
+                (body (printf "0.  pass string compare works\n"))
+                (body (printf "0.  pass string compare fails\n")))
+            ))
+     (void test1 () (declare)
+           (body (printf "1.  pass Function call and print work\n")))
+
+     (void test2_do (string message) (declare)
+           (body (printf "2.  pass Function call with arg works: %s\n" message)))
+           
+     (void test2 () (declare)
+           (body (test2_do "This is the argument")))
+
+     (void test3_do (int b string c)
+           (declare)
+           (body 
+            (printf "3.1 pass Two arg call, first arg: %d\n" b)
+            (printf "3.2 pass Two arg call, second arg: %s\n" c)))
+     
+     (void test3 () (declare)
+           (body (test3_do 42 "Fourty-two")))
+
+     (string test4_do () (declare)
+             (body (return "pass Return works")))
+
+     (string returnThis (string returnMessage) (declare)
+             (body (return returnMessage)))
+
+     (void test4 () (declare (string message "fail"))
+           (body
+            (set message (test4_do))
+            (printf "4.  %s\n" message)))
+
+     (void test5 () (declare (string message "fail"))
+           (body
+            (set message (returnThis "pass return passthrough string"))
+            (printf "5.  %s\n" message)))
+
+     (void test6 () (declare)
+           (body
+            (if true
+                (body (printf "6.  pass If statement works\n"))
+                (body (printf "6.  fail If statement works\n")))))
+
+     (int test7_do (int count) (declare)
+          (body
+           (set count (sub count 1))
+           ;(printf "Count: %d\n" count)
+           (if (> count 0)
+               (body (set count (test7_do count)))
+               (body (return count)))
+           (return count)))
+     
+     (void test7 () (declare )
+           (body
+            (if (= 0 (test7_do 10))
+                (body (printf "7.  pass count works\n"))
+                (body (printf "7.  fail count fails\n")))))
+
+     (void beer () (declare) (body
+                              (printf "%d bottle of beer on the wall, %d bottle of beer.  Take one down, pass it round, no bottles of beer on the wall\n" 1 1)))
+
+     (string plural (int num) (declare)
+             (body
+              (if (equal num 1)
+                  (body (return ""))
+                  (body (return "s")))))
+
+     
+     
+     (int beers (int count) (declare (int newcount 0))
+          (body
+           (set newcount (sub count 1))
+           (printf "%d bottle%s of beer on the wall, %d bottle%s of beer.  Take one down, pass it round, %d bottle%s of beer on the wall\n" count (plural count) count (plural count) newcount (plural newcount))
+           (if (> count 1)
+               (body (set count (beers newcount)))
+               (body (return count)))
+           (return 0)
+           ))
+
+     (void test8 () (declare) (body
+                               (if (equal (sub  (sub 2 1) (sub 3 1) ) -1)
+                                   (body (printf "8.  pass Nested expressions work\n"))
+                                   (body (printf "8.  fail Nested expressions don't work\n"))
+                                   )))
+     (void test9 () (declare (int answer -999999)) (body
+                                                    (set answer (sub  (sub 20 1) (sub 3 1) ))
+                                                    ;(printf "(20-1)-(3-1)=%d" answer)
+                                                    (if (equal answer 17)
+                                                        (body (printf "9.  pass arithmetic works\n"))
+                                                        (body (printf "9.  fail arithmetic\n")))
+                                                    ))
+     
+     (void test10 () (declare (string testString "This is a test string")) (body
+                                                                            (if (equalString testString (unBoxString (car (cons (boxString testString) nil)))) 
+                                                                                (body (printf "10. pass cons and car work\n"))
+                                                                                (body (printf "10. fail cons and car fail\n")))
+                                                                            ))
+
+     ;     (void test11 () (declare (array testArray nil)) (body
+     ;                                                      (set testArray (makeArray 100))
+     ;                                                      (setAt testArray 0 100)
+     ;                                                      (setAt testArray 1 200)
+     ;                                                      (printf "Element 1: %d" (at testArray 1))
+     ;                                                      ))
+
+     (void test12 () (declare (box b nil))
+           (body
+            (set b (new box Box))
+            (set-struct b str "12. pass structure accessors\n")
+            (printf "%s" (get-struct b str))
+            ))
+
+     (void test13 ()
+           (declare
+            (string testString "Hello from the filesystem!")
+            (string contents ""))
+           (body
+            (write-file "test.txt" testString)
+            (set contents (read-file "test.txt"))
+            ;(printf "%s\n" contents)
+            (if (equalString testString contents)
+                (body (printf "13. pass Read and write files\n"))
+                (body (printf "13. fail Read and write files\n"))
+                )))
+
+     (box caar (list l) (declare) (body (return (car (car l)))))
+     (box cadr (list l) (declare) (body (return (car (cdr l)))))
+     (box caddr (list l) (declare) (body (return (car (cdr (cdr l))))))
+     (box cadddr (list l) (declare) (body (return (car (cdr (cdr (cdr l)))))))
+     (box caddddr (list l) (declare) (body (return (car (cdr (cdr (cdr (cdr l))))))))
+
+     (box first (list l) (declare) (body (return  (car l))))
+     (box second (list l) (declare) (body (return  (cadr l))))
+     (box third (list l) (declare) (body (return  (caddr l))))
+     (box fourth (list l) (declare) (body (return  (cadddr l))))
+     (box fifth (list l) (declare) (body (return  (caddddr l))))
+
+     (list makeNode (string name string subname list code list children) (declare)
+           (body
+            (return
+             (cons  (boxSymbol "node") 
+                    (cons (cons (boxSymbol "name") (boxString name))
+                          (cons (cons (boxSymbol "subname") (boxString subname))
+                                (cons (cons (boxSymbol "code")  code)
+                                      (alistCons (boxSymbol "children")  children
+                                                 (emptyList)))))))))
+
+     (list astExpressionRecurse (list tree) (declare)
+           (body
+            (if (isEmpty tree)
+                (body (return (emptyList)))
+                (body (return (cons (astExpression (car tree)) (astExpressionRecurse (cdr tree))))))
+            ))
+     (list astExpression (list tree) (declare)
+           (body
+            (if (isEmpty tree)
+                (body (return (emptyList)))
+                (body
+                 (if (isList (car tree))
+                     (body (return (cons (makeNode "expression" "expression" tree             (astExpression (car tree)))
+                                         (astExpression (cdr tree)) )))
+                     (body (return (cons (makeNode "expression" "leaf"       (car tree) nil)  (astExpression (cdr tree))))))))
+                
+            ))
+
+     (list astIf (list tree) (declare)
+           (body
+            (return (makeNode "statement" "if" tree (cons (astExpression (first tree))
+                                                          (cons (astBody (cdr (second tree)))
+                                                                (cons (astBody (cdr (third tree)))
+                                                                      nil)))))
+            ))
+
+     (list astReturnVoid () (declare)
+           (body
+            (return (makeNode "statement" "returnvoid" nil nil))
+            ))
+
+     (int length (list l)  (declare)
+          (body
+           ;(printf "Length of: ")
+           ;(display l)
+           (if (isEmpty l)
+               (body (return 0))
+               (body (return (add1 (length (cdr l))))))
+           ))
+     
+     (list astStatement (list tree) (declare)
+           (body
+            ;(printf "AstStatement: ")
+            ;(display tree)
+            (if (equalBox (car tree) (boxString "if"))
+                (body (return (astIf (cdr tree))))
+                (body
+                 (if  (equal (length tree) 1)
+                      (body 
+                       (if (equalBox (car tree) (boxString "return"))
+                           (body
+                            ;(printf "Choosing returnvoid\n")
+                            (return (astReturnVoid)))
+                           (body
+                            (return (makeNode "statement" "statement" tree (astExpression tree))))))
+                      (body
+                       (return (makeNode "statement" "statement" tree (astExpression tree)))
+                       )
+                      )
+                 ))))
+
+     (list astBody (list tree) (declare)
+           (body
+            (if (isEmpty tree)
+                (body (return (emptyList)))
+                (body (return (cons (astStatement (car tree)) (astBody (cdr tree))))))
+            ))
+     
+     (list astFunction (list tree) (declare)
+           (body
+            ;(printf "Processing:")(display tree)(printf "\n\n")
+            (return
+             (cons (cons (boxSymbol "name") (boxString "function"))
+                   (cons (cons (boxSymbol "subname") (second tree))
+                         (cons (cons (boxSymbol "declarations") (cdr (fourth tree)))
+                               (cons (cons (boxSymbol "intype") (third tree))
+                                     (cons  (cons (boxSymbol "outtype") (car tree))
+                                            (cons (cons (boxSymbol "children") (astBody (cdr (fifth tree))))
+                                                  (emptyList)))))))
+             )))
+
+     (list astFunctionList (list tree) (declare)
+           (body
+            (if (isEmpty tree)
+                (body (return (emptyList)))
+                (body (return (cons (astFunction (car tree)) (astFunctionList (cdr tree))))))
+            ))
+
+     (list astFunctions (list tree) (declare)
+           (body
+            (return (makeNode "functions" "functions" tree (astFunctionList (cdr tree))))
+            ))
+
+     (list astInclude (list tree) (declare)
+           (body
+            (return nil)
+            ))
+     (list astIncludeList (list tree) (declare)
+           (body
+            (if (isEmpty tree)
+                (body (return (emptyList)))
+                (body (return (cons (astInclude (car tree)) (astIncludeList (cdr tree))))))
+            ))
+
+     (list astIncludes (list tree) (declare)
+           (body
+            (return (makeNode "includes" "includes" tree (astIncludeList (cdr tree))))
+            ))
+
+     (list astStruct (list tree) (declare)
+           (body
+            (return (makeNode "type" "struct" tree nil))
+            ))
+     (list astType (list tree) (declare)
+           (body
+            ;(printf "\n\nBuilding type from....")
+            ;(display (cadr tree))
+            (if (isList  (cadr tree))
+                (body (return (astStruct  tree)))
+                (body (return (makeNode "type" "type" tree nil))))
+            ))
+     
+     (list astTypeList (list tree) (declare)
+           (body
+            (if (isEmpty tree)
+                (body (return (emptyList)))
+                (body (return (cons (astType (car tree)) (astTypeList (cdr tree))))))
+            ))
+
+     (list astTypes (list tree) (declare)
+           (body
+            (return (makeNode "types" "types" tree (astTypeList (cdr tree))))
+            ))
+
+     
+     (void ansiFunctionArgs (list tree) (declare)
+           (body
+            (if (isEmpty tree)
+                (body (return))
+                (body (display (car tree)) (ansiFunctionArgs (cdr tree))))
+            ))
+     
+     (list codeof (list ass) (declare )
+           (body
+            ;(printf "\n\nCodeof: ")
+            ;(display ass)
+            (return
+             (cdr (assoc "code" (cdr ass))))))
+     
+     (list nodeof (list ass) (declare )
+           (body
+            ;(printf "\n\nnodeof: ")
+            ;(display ass)
+            (if (equalBox (boxBool false) (assoc "node" (cdr ass)))
+                (body (return (boxBool false)))
+                (body 
+                 (return
+                  (cdr (assoc "node" (cdr ass))))))))
+     
+     (list subnameof (list ass) (declare)
+           
+           (body
+            ;(printf "\n\nsubnameof: ")
+            ;(display ass)
+            (return (cdr (assoc "subname" (cdr ass))))))
+     
+     (list childrenof (list ass) (declare)
+           (body (return (cdr (assoc "children" (cdr ass))))))
+
+     
+     (bool isNode (list val) (declare)
+           (body
+            (if (isEmpty val)
+                (body (return false))
+                (body
+                 ;(printf "val: ")
+                 ;(display val)
+                 (if (equalBox (boxSymbol "node") (car val))
+                     (body (return true))
+                     (body (return false)))))))
+     
+     (void ansiExpression (list nodes bool openBrace int indent) (declare (list thisNode nil))
+           (body
+            
+            (if (isEmpty nodes)
+                
+                (body
+                 ;(printf "Expression is empty\n")
+                 (return))
+                (body
+                 ;(printf "\n\nExpression: \n\n")
+                 
+                 (set thisNode (car nodes))
+                 ;(display thisNode)
+                 ;(printf "\n")
+                 (if (isNode thisNode)
+                     
+                     (body
+                      (if (equalBox (boxString "leaf") (subnameof thisNode))
+                          (body
+                           ;(printf "Expression is a leaf, printing\n")
+                           (newLine indent)
+                           (display (codeof thisNode))
+                           (if openBrace (body
+                                          (printf "!")
+                                          ;(set indent (add1 indent))
+                                          (ansiExpression (cdr nodes) false (add1 indent))
+                                          (printf "!")
+                                          )
+                               (body (ansiExpression (cdr nodes) false (add1 indent))))
+                           
+                           ;(printf "Expression was a leaf, continuing list\n")
+                           
+                           ;(ansiExpression (cdr nodes) false indent)
+                           )
+                          (body
+                           ;(printf "Expression has multiple elements, recursing into children\n")
+                           ;(printf "( ")
+                           (newLine indent)
+                           (ansiExpression   (childrenof thisNode) true (add1 indent))
+                           ;(printf ") ")
+                           ;(printf "Expression was multi, continuing processing children\n")
+                           (ansiExpression  (cdr nodes) false indent)
+                           )))
+                     (body
+                      ;(printf "Expressions was not a node, recursing into list\n")
+                      (ansiExpression thisNode true (add1 indent)))
+                     )))
+            ))
+
+
+     ;output a statement.  This is where all the builtins go, like "if, set, for"
+     ;(define (clang_statement tree)
+     ;  ;(displayln (format  "clang statement: ~s" (pretty-print tree)))(newline)
+     ;  (list
+     ;   (case (car (codeof  tree))
+     ;     ('if (format "    if ( ~a ) {\n      ~a    } else {\n      ~a    }"
+     ;                  (clang_expression   (first (childrenof tree)))
+     ;                  (string-join (flatten (clang_body  (second (childrenof tree)))))
+     ;                  (string-join (flatten(clang_body (third (childrenof tree)))))
+     ;                  ))
+     ;     ('return-void  "return;" )
+     ;     ('set  (format "    ~a=~a;" (codeof (first (childrenof tree))) (clang_expression  (second (childrenof tree)))))
+     ;     ('setAt  (format "    ~a(~a)=~a;"  (codeof (first (childrenof tree))) (codeof (second (childrenof tree))) (clang_subexpression (third  (childrenof tree)))))
+     ;     ('set-struct (format "    ~a->~a=~a;"  (codeof (second (childrenof (first (childrenof tree))))) (codeof (third (childrenof (first (childrenof tree))))) (clang_subexpression (fourth  (childrenof (first (childrenof tree)))))))
+     ;     (else (list (clang_subexpression (first (childrenof tree))) ";")))
+     ;   "\n"))
+
+
+     (void ansiStatement (list node int indent) (declare )
+           (body
+            
+            ;(printf "\nAnsiStatement: ")
+            ;(display node)
+            (if (equalBox (boxString "if") (subnameof node))
+                (body (printf "    if (")
+                       
+                      (ansiExpression   (first (childrenof node)) true 0 )
+                      (printf "   ) {\n      ")
+                      (ansiBody  (second (childrenof node)) 1)
+                      (printf "  } else {\n   "   )  
+                      (ansiBody (third (childrenof node)) 1)
+                      (printf "\n}\n")
+                      )
+                (body
+                 (if (equalBox (boxString "returnvoid") (subnameof node))
+                     (body (printf "    return"))
+                     (body
+            
+                      ;(printf "\nGeneric expression statement\n" )
+                      ;(display (childrenof node))
+                      ;(printf "\n\n")
+                      (ansiExpression (childrenof node) true  indent)
+                      ))
+                 ))
+            ;(printf "\n\n")
+            ))
+     (void printIndent (int ii) (declare)
+           (body
+            (if (> ii 0)
+                (body
+                 (printf "  ")
+                 (printIndent (sub1 ii))
+                 )
+                (body (return)))))
+
+     (void newLine (int indent) (declare)
+           (body
+            (printf "\n")
+            (printIndent indent)
+            ;(printf "%d" indent)
+            ))
+     (void ansiBody (list tree int indent) (declare)
+           (body
+            ;(display tree)
+            (if (isEmpty tree)
+                (body (return))
+                (body
+                 (printIndent indent)
+                 (ansiStatement (car tree) indent)
+                 (printf ";\n")
+                 (ansiBody (cdr tree) indent)))
+            ))
+     
+     (void ansiFunction (list node) (declare)
+           (body
+            ;(display tree)
+            (if (isNil node)
+                (body (return))
+                (body
+                 ;(display (assoc "name" tree))
+                 (printf "\n%s %s(" (stringify (cdr (assoc "outtype" (cdr node)))) (stringify (subnameof node)))
+                 (ansiFunctionArgs (cdr (assoc "intype" (cdr node))))
+                 (printf ") {\n")
+                 (ansiBody (childrenof node) 1)
+                 
+                 (printf "\n}\n")
+                 ))))
+     (void ansiForwardDeclaration (list node) (declare)
+           (body
+            ;(display tree)
+            (if (isNil node)
+                (body (return))
+                (body
+                 ;(display (assoc "name" tree))
+                 (printf "\n%s %s(" (stringify (cdr (assoc "outtype" (cdr node)))) (stringify (subnameof node)))
+                 (ansiFunctionArgs (cdr (assoc "intype" (cdr node))))
+                 (printf ");" )
+                 ))))
+     
+     (void ansiForwardDeclarations (list tree) (declare)
+           (body
+            (if (isEmpty tree)
+                (body (return))
+                (body
+                 
+                 (ansiForwardDeclaration (car tree))
+                 (ansiForwardDeclarations (cdr tree))
+                 
+                 
+                 ))))
+           
+     (void ansiFunctions (list tree) (declare)
+           (body
+            (if (isEmpty tree)
+                (body (return))
+                (body
+                 (ansiFunction (car tree))
+                 (ansiFunctions (cdr tree))))))
+                             
+     (void ansiIncludes (list nodes) (declare)
+           (body
+            (printf "
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+void panic(char* s){abort();}
+int sub(int a, int b) { return a - b; }
+int greaterthan(int a, int b) { return a > b; }
+int equal(int a, int b) { return a == b; }
+int equalString(char* a, char* b) { return !strcmp(a,b); }
+int andBool(int a, int b) { return a == b;}
+int string_length(char* s) { return strlen(s);}
+char* sub_string(char* s, int start, int length) {
+char* substr = calloc(length+1, 1);
+strncpy(substr, s+start, length);
+return substr;
+}
+
+char* stringConcatenate(char* a, char* b) {
+int len = strlen(a) + strlen(b);
+char* target = calloc(len,1);
+strncat(target, a, len);
+strncat(target, b, len);
+return target;
+}
+
+typedef int*  array;
+typedef int bool;
+#define true 1
+#define false 0
+
+
+
+void * gc_malloc( unsigned int size ) {
+return malloc( size);
+}
+
+int* makeArray(int length) {
+    int * array = gc_malloc(length*sizeof(int));
+    return array;
+}
+
+int at(int* arr, int index) {
+  return arr(index);
+}
+
+void setAt(int* array, int index, int value) {
+    array(index) = value;
+}
+
+char * read_file(char * filename) {
+char * buffer = 0;
+long length;
+FILE * f = fopen (filename, !rb!);
+
+if (f)
+{
+  fseek (f, 0, SEEK_END);
+  length = ftell (f);
+  fseek (f, 0, SEEK_SET);
+  buffer = malloc (length);
+  if (buffer)
+  {
+    fread (buffer, 1, length, f);
+  }
+  fclose (f);
+}
+return buffer;
+}
+
+
+")
+
+            (return) ))
+
+     (box last (list alist) (declare)
+          (body
+           (if (isEmpty (cdr alist))
+               (body (return (car alist)))
+               (body (return (last (cdr alist)))))
+           ))
+
+     (void ansiTypeDecl (list l) (declare)
+           (body
+            (if (> (length l) 2)
+                (body
+                 (printIndent 1)
+                 (printf "%s %s %s;\n"   (stringify (second  l))  (stringify (ansiTypeMap (last  l))) (stringify (first  l)) ))
+
+                (body
+                 (printIndent 1)
+                 (printf "%s %s;\n"     (stringify (ansiTypeMap(last  l))) (stringify (car l))))
+                )
+            ))
+     (void ansiStructComponents (list node) (declare)
+           (body
+            ;(printf "Printing component: ")
+            ;(dump node)
+            ;(display node)
+            (if (isEmpty node)
+                (body (return))
+                (body
+                 (ansiTypeDecl (car node))
+                 (ansiStructComponents (cdr node))))
+            ))
+     
+     (void ansiStruct (list node) (declare)
+           (body
+            ;(display node)
+            ;(display  (cdr (car  node)))
+            (ansiStructComponents (cdr (car  node)))
+            
+            (return) ))
+
+     (bool truthy (box aVal) (declare)
+           (body (if (equalBox (boxBool false) aVal)
+                     (body (return false))
+                     (body (return true)))))
+     
+     (box ansiTypeMap (box aSym) (declare (list symMap nil))
+          (body
+           ;(printf "Typemap: '%s'\n" (stringify aSym))
+           (set symMap (alistCons (boxSymbol "string") (boxSymbol "char*") nil))
+           (if (truthy (assoc (stringify aSym) symMap))
+               (body (return (cdr (assoc (stringify aSym) symMap))))
+               (body (return aSym))
+                                  
+               )
+           ))
+     
+     (void ansiType (list node) (declare)
+           (body
+            
+            (if (equalBox (subnameof node) (boxString "struct"))
+                (body (printf "\ntypedef struct %s {\n" (stringify (first (codeof node))))
+                      (ansiStruct (cdr (codeof node)))
+                      (printf "\n} %s;\n" (stringify (first (codeof node)))))
+                (body
+
+                 (printf "typedef "  )
+                 ;(display (codeof node))
+                 (ansiTypeDecl (codeof node))))
+            
+            (return) ))
+
+     (void ansiTypes (list nodes) (declare)
+           (body
+            
+            (if (isEmpty nodes)
+                (body (return))
+                (body
+                 (ansiType (car nodes))
+                 (ansiTypes (cdr nodes))))))
+
+     (void compile ()
+           (declare
+            (string programStr "")
+            (list tree nil)
+            (list program nil)
+            )
+           (body
+            (set programStr (read-file "test.sexpr"))
+            ;(printf "Read program: %s\n" programStr)
+            (set tree (readSexpr programStr))
+            ;(displayList  tree)
+
+            (set program (alistCons (boxString "includes") (astIncludes  (first tree))
+                                    (alistCons (boxString "types") (astTypes  (second tree))
+                                               (alistCons (boxString "functions") (astFunctions  (third tree)) nil))))
+                                    
+            ;(display (astFunctions  tree))
+            ;(printf "\n\n\nPrinting includes\n")
+            ;(display (cdr (assoc "includes" program)))
+            (ansiIncludes  (cdr (assoc "includes" program)))
+            ;(printf "\n\n\nPrinting types\n")
+            ;(printf "!!!\n\n\n!!!")
+            ;(display (cdr (assoc "types" program)))
+            
+            (ansiTypes  (childrenof (cdr (assoc "types" program))))
+            ;(printf "\n\n\nPrinting functions\n")
+            ;(display (assoc "functions" program))
+            
+            (printf "\n\n//Forward declarations\n")
+                 
+            (ansiForwardDeclarations (cdr (assoc "children" (assoc "functions" program))))
+            (printf "\n\n//End forward declarations\n\n")
+            (ansiFunctions (cdr (assoc "children" (assoc "functions" program))))
+            (printf "\n")
+            ))
+
+     (void test15 ()
+           (declare
+            (string a "hello")
+            (string b " world")
+            (string c "")
+            )
+           (body
+            (set c (stringConcatenate a b))
+            (if (equalString c "hello world")
+                (body (printf "15. pass String concatenate\n"))
+                (body (printf "15. fail String concatenate\n"))
+                )
+            ))
+
+    
+     (void test16 ()
+           (declare
+            (list assocCell1 nil)
+            (list assList nil)
+            (list assocCell2 nil)
+            (list assocCell3 nil)
+            
+            )
+           (body
+            (set assocCell1 (cons (boxString "Hello") (boxString "world")))
+            (set assocCell2 (cons (boxString "goodnight") (boxString "moon")))
+            (set assocCell3 (cons (boxSymbol "ohio") (boxString "gozaimasu")))
+            (set assList (cons assocCell2 (emptyList)))
+            (set assList (cons assocCell1 assList))
+            (set assList (cons assocCell3 assList))
+            ;(printf "Assoc:\n")
+            ;(display (assoc "Hello" assList))
+            (if 
+             (equalBox  (cdr (assoc "Hello" assList))  (boxString "world"))
+             (body (printf "16.1 pass Basic assoc works\n"))
+             (body (printf "16.1 fail Basic assoc fails\n")))
+            (if (andBool
+                 (andBool
+                  (equalBox  (cdr (assoc "Hello" assList))  (boxString "world"))
+                  (equalBox  (cdr (assoc "goodnight" assList))  (boxString "moon")))
+                 (equalBox  (cdr (assoc "ohio" assList))  (boxString "gozaimasu"))
+                 )
+                (body (printf "16.2 pass assoc list\n"))
+                (body (printf "16.2 fail assoc list\n"))
+                )
+            ))
+     
+     (int main (int argc  char** argv)
+          (declare (bool runTests false)
+                   )
+          (body
+           (if runTests
+               (body
+                (test0)
+                (test1)
+                (test2)
+                (test3)
+                (test4)
+                (test5)
+                (test6)
+                (test7)
+                (test8)
+                (test9)
+                (test10)
+                ;(test11)
+                (test12)
+                (test13)
+                (test15)
+                (test16)
+                (printf "\n\nAfter all that hard work, I need a beer...\n")
+                (beers 9)
+                )
+               (body (compile)))
+           ;(echo a is a)
+           ))))
