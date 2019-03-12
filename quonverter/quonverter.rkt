@@ -1,6 +1,7 @@
 #lang racket
 [require srfi/1]
 [require srfi/13]
+(require racket/pretty)
 ; Support functions
 
 [define debug_expressions #f]
@@ -1216,7 +1217,7 @@ returnValue=${array[$2]}
 ; FIXME load from a file or a string
 
 [define prog
-  '[
+  [quote [
     ;[includes stdio.h stdlib.h]
     [includes]
     [types
@@ -1614,8 +1615,8 @@ returnValue=${array[$2]}
                                          [body [if [equalString ";" token]
                                                    [body
                                                     ;[printf "\nComment:%s" [readComment prog [add1 start] len]]
-                                                           [return [scan prog  [add start  [add1 [add1 [string-length [readComment prog [add1 start] len]]]]] 1]
-                                                      ]]
+                                                    [return [scan prog  [add start  [add1 [add1 [string-length [readComment prog [add1 start] len]]]]] 1]
+                                                            ]]
                                                    [body [if [equalString "\"" token]
                                                              [body
                                                               [return
@@ -1853,6 +1854,8 @@ returnValue=${array[$2]}
      [box cadddr [list l] [declare] [body [return [car [cdr [cdr [cdr l]]]]]]]
      [box caddddr [list l] [declare] [body [return [car [cdr [cdr [cdr [cdr l]]]]]]]]
 
+     [box cddr [list l] [declare] [body [return [cdr [cdr l]]]]]
+
      [box first [list l] [declare] [body [return  [car l]]]]
      [box second [list l] [declare] [body [return  [cadr l]]]]
      [box third [list l] [declare] [body [return  [caddr l]]]]
@@ -1940,7 +1943,7 @@ returnValue=${array[$2]}
      [list astFunction [list tree] [declare]
            [body
             ;[printf "Processing:"][display tree][printf "\n\n"]
-            [printf "Building function:"][display [second tree]][printf"\n"]
+            ;[printf "Building function:"][display [second tree]][printf"\n"]
             [return
              [cons [cons [boxSymbol "name"] [boxString "function"]]
                    [cons [cons [boxSymbol "subname"] [second tree]]
@@ -1960,7 +1963,7 @@ returnValue=${array[$2]}
 
      [list astFunctions [list tree] [declare]
            [body
-            [printf "Building functions AST...\n"]
+            ;[printf "Building functions AST...\n"]
             [return [makeNode "functions" "functions" tree [astFunctionList [cdr tree]]]]
             ]]
 
@@ -1977,7 +1980,7 @@ returnValue=${array[$2]}
 
      [list astIncludes [list tree] [declare]
            [body
-            [printf "Building includes AST...\n"]
+            ;[printf "Building includes AST...\n"]
             [return [makeNode "includes" "includes" tree [astIncludeList [cdr tree]]]]
             ]]
 
@@ -2003,16 +2006,25 @@ returnValue=${array[$2]}
 
      [list astTypes [list tree] [declare]
            [body
-            [printf "Building types AST...\n"]
+            ;[printf "Building types AST...\n"]
             [return [makeNode "types" "types" tree [astTypeList [cdr tree]]]]
             ]]
 
+    
      
      [void ansiFunctionArgs [list tree] [declare]
            [body
             [if [isEmpty tree]
                 [body [return]]
-                [body [display [car tree]] [ansiFunctionArgs [cdr tree]]]]
+                [body
+                 
+                     
+                 [display [ansiTypeMap [first tree]]]
+                 [display [second tree]]
+                 [if [isNil [cddr tree]]
+                     [body [printf ""]]
+                     [body [printf ","]]]
+                 [ansiFunctionArgs [cddr tree] ]]]
             ]]
      
      [list codeof [list ass] [declare ]
@@ -2074,15 +2086,25 @@ returnValue=${array[$2]}
                       [if [equalBox [boxString "leaf"] [subnameof thisNode]]
                           [body
                            ;[printf "Expression is a leaf, printing\n"]
-                           [newLine indent]
+                           
                            [display [codeof thisNode]]
-                           [if openBrace [body
-                                          [printf "("]
-                                          ;[set indent [add1 indent]]
-                                          [ansiExpression [cdr nodes] false [add1 indent]]
-                                          [printf ")"]
-                                          ]
-                               [body [ansiExpression [cdr nodes] false [add1 indent]]]]
+                           [if openBrace
+                               [body
+                                [printf "("]
+                                [if [> [length [cdr nodes]] 1]
+                                    [body
+                                [newLine indent]]
+                                    [body [printf ""]]]
+                                ;[set indent [add1 indent]]
+                                [ansiExpression [cdr nodes] false [add1 indent]]
+                                [printf ")"]
+                                ]
+                               [body
+                                [if [isNil [cdr nodes]]
+                                    [body [printf ""]]
+                                          [body
+                                [printf ","]]]
+                                [ansiExpression [cdr nodes] false [add1 indent]]]]
                            
                            ;[printf "Expression was a leaf, continuing list\n"]
                            
@@ -2091,7 +2113,7 @@ returnValue=${array[$2]}
                           [body
                            ;[printf "Expression has multiple elements, recursing into children\n"]
                            ;[printf "( "]
-                           [newLine indent]
+                           ;***[newLine indent]
                            [ansiExpression   [childrenof thisNode] true [add1 indent]]
                            ;[printf ") "]
                            ;[printf "Expression was multi, continuing processing children\n"]
@@ -2128,23 +2150,32 @@ returnValue=${array[$2]}
             ;[printf "\nAnsiStatement: "]
             ;[display node]
             [if [equalBox [boxString "if"] [subnameof node]]
-                [body [printf "    if ("]
+                [body
+                 [newLine indent]
+                 [printf "if ("]
                        
                       [ansiExpression   [first [childrenof node]] true 0 ]
-                      [printf "   ) {\n      "]
+                      [newLine indent]
+                      [printf ") {"]
+                      [newLine indent]
                       [ansiBody  [second [childrenof node]] 1]
-                      [printf "  } else {\n   "   ]  
+                      [newLine indent]
+                      [printf "} else {"   ]
+                      [newLine indent]
                       [ansiBody [third [childrenof node]] 1]
                       [printf "\n}\n"]
                       ]
                 [body
                  [if [equalBox [boxString "returnvoid"] [subnameof node]]
-                     [body [printf "    return"]]
+                     [body
+                      [newLine indent]
+                      [printf "return"]]
                      [body
             
                       ;[printf "\nGeneric expression statement\n" ]
                       ;[display [childrenof node]]
                       ;[printf "\n\n"]
+                      [newLine indent]
                       [ansiExpression [childrenof node] true  indent]
                       ]]
                  ]]
@@ -2185,7 +2216,7 @@ returnValue=${array[$2]}
                 [body
                  ;[display [assoc "name" tree]]
                  [printf "\n%s %s(" [stringify [ansiTypeMap [cdr [assoc "outtype" [cdr node]]]]] [stringify [subnameof node]]]
-                 [ansiFunctionArgs [cdr [assoc "intype" [cdr node]]]]
+                 [ansiFunctionArgs [cdr [assoc "intype" [cdr node]]] ]
                  [printf ") {\n"]
                  [ansiBody [childrenof node] 1]
                  
@@ -2198,8 +2229,8 @@ returnValue=${array[$2]}
                 [body [return]]
                 [body
                  ;[display [assoc "name" tree]]
-                 [printf "\n%s %s(" [stringify [cdr [assoc "outtype" [cdr node]]]] [stringify [subnameof node]]]
-                 [ansiFunctionArgs [cdr [assoc "intype" [cdr node]]]]
+                 [printf "\n%s %s(" [stringify [ansiTypeMap [cdr [assoc "outtype" [cdr node]]]]] [stringify [subnameof node]]]
+                 [ansiFunctionArgs [cdr [assoc "intype" [cdr node]]] ]
                  [printf ");" ]
                  ]]]]
      
@@ -2385,18 +2416,18 @@ return buffer;
             [list program nil]
             ]
            [body
-            [printf "Reading in program...\n"]
+            ;[printf "Reading in program...\n"]
             [set programStr [read-file "test.sexpr"]]
             ;[printf "Read program: %s\n" programStr]
-            [printf "Read program.  Parsing...\n" ]
+            ;[printf "Read program.  Parsing...\n" ]
             [set tree [readSexpr programStr]]
-            [printf "Parsed program.  Building AST...\n" ]
+            ;[printf "Parsed program.  Building AST...\n" ]
             ;[displayList  tree]
 
             [set program [alistCons [boxString "includes"] [astIncludes  [first tree]]
                                     [alistCons [boxString "types"] [astTypes  [second tree]]
                                                [alistCons [boxString "functions"] [astFunctions  [third tree]] nil]]]]
-                 [printf "Built AST.  Generating ansi C output...\n" ]                   
+            ;[printf "Built AST.  Generating ansi C output...\n" ]                   
             ;[display [astFunctions  tree]]
             ;[printf "\n\n\nPrinting includes\n"]
             ;[display [cdr [assoc "includes" program]]]
@@ -2491,7 +2522,9 @@ return buffer;
                 ]
                [body [compile]]]
            ;End of file!
-           ]]]]]
+           ]]]]]]
+;Print complete program so that the next compiler can access it.  Eventually we will incorporate this in the output program
+;[display-to-file [pretty-format prog #:mode 'write] "test.sexpr" #:exists 'truncate]
 
 
 
