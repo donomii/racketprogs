@@ -284,7 +284,11 @@
     (set token (sub-string prog (sub1 (add start len)) 1))
     (if (equalString "\"" token)
       (body (return (sub-string prog start (sub1 len))))
-      (body (return (readString prog start (add1 len)))))))
+      (body
+       (if (equalString "\\" token)
+         (body (return (readString prog start (add 2 len))))
+         (body (return (readString prog start (add1 len)))))
+       (return (readString prog start (add1 len)))))))
   (string
    readComment
    (string prog int start int len)
