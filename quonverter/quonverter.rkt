@@ -1553,9 +1553,9 @@ returnValue=${array[$2]}
                  [if [> len 0]
                      [body ;[printf "Finish token\n"]
 
-                           [return
+                      [return
 
-                            [boxSymbol [sub-string prog start  len]]]]
+                       [boxSymbol [sub-string prog start  len]]]]
                      [body [return
                             [newVoid]
                             ]]]
@@ -1902,10 +1902,10 @@ returnValue=${array[$2]}
                        ;[printf "!!!!!!!!! %s is a list? %s" [boxType tree] [stringify [boxBool [isList tree]]]][display tree]
                        [if [isList tree]
                            [body
-                       [if [isList [car tree]]
-                           [body [return [cons [makeNode "expression" "expression" tree             [astExpression [car tree]]]
-                                               [astExpression [cdr tree]] ]]]
-                           [body [return [cons [makeNode "expression" "leaf"       [car tree] nil]  [astExpression [cdr tree]]]]]]]
+                            [if [isList [car tree]]
+                                [body [return [cons [makeNode "expression" "expression" tree             [astExpression [car tree]]]
+                                                    [astExpression [cdr tree]] ]]]
+                                [body [return [cons [makeNode "expression" "leaf"       [car tree] nil]  [astExpression [cdr tree]]]]]]]
                            [body [return [cons [makeNode "expression" "leaf"        tree nil]  nil]]]]]]
                 
                   ]]
@@ -2472,7 +2472,7 @@ return buffer;
                   ;[display [assoc "functions" program]]
             
                   [printf "\n\n//Forward declarations\n"]
-                 ;[display program]
+                  ;[display program]
                   [ansiForwardDeclarations [cdr [assoc "children" [cdr [cdr [assoc "functions" program]]]]]]
                   [printf "\n\n//End forward declarations\n\n"]
                   [ansiFunctions [cdr [assoc "children" [cdr [cdr [assoc "functions" program]]]]]]
