@@ -673,6 +673,39 @@
         (astBody (cdr (second tree)))
         (cons (astBody (cdr (third tree))) nil)))))))
   (list
+   astSetStruct
+   (list tree)
+   (declare)
+   (body
+    (return
+     (makeNode
+      "statement"
+      "structSetter"
+      tree
+      (cons (astExpression (third tree)) nil)))))
+  (list
+   astSet
+   (list tree)
+   (declare)
+   (body
+    (return
+     (makeNode
+      "statement"
+      "setter"
+      tree
+      (cons (astExpression (second tree)) nil)))))
+  (list
+   astGetStruct
+   (list tree)
+   (declare)
+   (body
+    (return
+     (makeNode
+      "statement"
+      "structGetter"
+      tree
+      (cons (first tree) (cons (second tree) nil))))))
+  (list
    astReturnVoid
    ()
    (declare)
@@ -693,16 +726,30 @@
     (if (equalBox (boxString "if") (car tree))
       (body (return (astIf (cdr tree))))
       (body
-       (if (equal (length tree) 1)
+       (if (equalBox (boxString "set") (car tree))
+         (body (return (astSet (cdr tree))))
          (body
-          (if (equalBox (car tree) (boxString "return"))
-            (body (return (astReturnVoid)))
+          (if (equalBox (boxString "set-struct") (car tree))
+            (body (return (astSetStruct (cdr tree))))
             (body
-             (return
-              (makeNode "statement" "statement" tree (astExpression tree))))))
-         (body
-          (return
-           (makeNode "statement" "statement" tree (astExpression tree)))))))))
+             (if (equal (length tree) 1)
+               (body
+                (if (equalBox (car tree) (boxString "return"))
+                  (body (return (astReturnVoid)))
+                  (body
+                   (return
+                    (makeNode
+                     "statement"
+                     "statement"
+                     tree
+                     (astExpression tree))))))
+               (body
+                (return
+                 (makeNode
+                  "statement"
+                  "statement"
+                  tree
+                  (astExpression tree)))))))))))))
   (list
    astBody
    (list tree)
@@ -868,32 +915,63 @@
                 (ansiExpression (cdr nodes) false (add1 indent)))))
             (body
              (ansiExpression (childrenof thisNode) true (add1 indent))
+             (if (isNil (cdr nodes)) (body (printf "")) (body (printf ",")))
              (ansiExpression (cdr nodes) false indent))))
          (body (ansiExpression thisNode true (add1 indent))))))))
+  (void
+   ansiIf
+   (list node int indent)
+   (declare)
+   (body
+    (newLine indent)
+    (ansiExpression (first (childrenof node)) true 0)
+    (newLine indent)
+    (printf ") {")
+    (newLine indent)
+    (ansiBody (second (childrenof node)) 1)
+    (newLine indent)
+    (printf "} else {")
+    (newLine indent)
+    (ansiBody (third (childrenof node)) 1)
+    (printf "\n}\n")))
+  (void
+   ansiSetStruct
+   (list node int indent)
+   (declare)
+   (body
+    (newLine indent)
+    (printf
+     "%s->%s = "
+     (stringify (first (codeof node)))
+     (stringify (second (codeof node))))
+    (ansiExpression (first (childrenof node)) true indent)))
+  (void
+   ansiSet
+   (list node int indent)
+   (declare)
+   (body
+    (newLine indent)
+    (printf "%s = " (stringify (first (codeof node))))
+    (ansiExpression (first (childrenof node)) true indent)))
   (void
    ansiStatement
    (list node int indent)
    (declare)
    (body
-    (if (equalBox (boxString "if") (subnameof node))
+    (if (equalBox (boxString "setter") (subnameof node))
+      (body (ansiSet node indent))
       (body
-       (newLine indent)
-       (ansiExpression (first (childrenof node)) true 0)
-       (newLine indent)
-       (printf ") {")
-       (newLine indent)
-       (ansiBody (second (childrenof node)) 1)
-       (newLine indent)
-       (printf "} else {")
-       (newLine indent)
-       (ansiBody (third (childrenof node)) 1)
-       (printf "\n}\n"))
-      (body
-       (if (equalBox (boxString "returnvoid") (subnameof node))
-         (body (newLine indent) (printf "return"))
+       (if (equalBox (boxString "structSetter") (subnameof node))
+         (body (ansiSetStruct node indent))
          (body
-          (newLine indent)
-          (ansiExpression (childrenof node) true indent)))))))
+          (if (equalBox (boxString "if") (subnameof node))
+            (body (ansiIf node indent))
+            (body
+             (if (equalBox (boxString "returnvoid") (subnameof node))
+               (body (newLine indent) (printf "return"))
+               (body
+                (newLine indent)
+                (ansiExpression (childrenof node) true indent)))))))))))
   (void
    printIndent
    (int ii)

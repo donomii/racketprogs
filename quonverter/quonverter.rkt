@@ -1919,6 +1919,27 @@ returnValue=${array[$2]}
                                                                             nil]]]]]
                   ]]
 
+           [list astSetStruct [list tree] [declare]
+                 [body
+                  ;[printf "Building setstruct node from: "][display tree][printf "\n"]
+                  [return [makeNode "statement" "structSetter" tree [cons [astExpression [third tree]] nil]]]
+                  ]]
+
+           [list astSet [list tree] [declare]
+                 [body
+                  ;[printf "Building setstruct node from: "][display tree][printf "\n"]
+                  [return [makeNode "statement" "setter" tree [cons [astExpression [second tree]] nil]]]
+                  ]]
+
+           [list astGetStruct [list tree] [declare]
+                 [body
+                  ;[printf "Building if node from: "][display tree][printf "\n"]
+                  [return [makeNode "statement" "structGetter" tree [cons [first tree]
+                                                                          [cons [second  tree]
+                                                                      
+                                                                                nil]]]]
+                  ]]
+
            [list astReturnVoid [] [declare]
                  [body
                   [return [makeNode "statement" "returnvoid" nil nil]]
@@ -1936,26 +1957,38 @@ returnValue=${array[$2]}
            [list astStatement [list tree] [declare]
                  [body
                   ;[printf "AstStatement: "][display tree]
-                  [if [equalBox
-
-                       [boxString "if"] [car tree] ]
-                      [body
+                  [if [equalBox [boxString "if"] [car tree] ]
+                      [body ;if statement
                        ;[printf "Choosing if statement\n"]
                        [return [astIf [cdr tree]]]]
                       [body
-                       [if  [equal [length tree] 1]
-                            [body 
-                             [if [equalBox [car tree] [boxString "return"]]
-                                 [body
-                                  ;[printf "Choosing returnvoid\n"]
-                                  [return [astReturnVoid]]]
-                                 [body
-                                  [return [makeNode "statement" "statement" tree [astExpression tree]]]]]]
-                            [body
-                             [return [makeNode "statement" "statement" tree [astExpression tree]]]
-                             ]
-                            ]
-                       ]]]]
+                       [if [equalBox [boxString "set"] [car tree] ]
+                           [body ;struct setter statement
+                            ;[printf "Choosing if statement\n"]
+                            [return [astSet [cdr tree]]]]
+                                      
+                           [body
+                            [if [equalBox [boxString "set-struct"] [car tree] ]
+                                [body ;struct setter statement
+                                 ;[printf "Choosing if statement\n"]
+                                 [return [astSetStruct [cdr tree]]]]
+                                      
+                                [body
+                                 [if  [equal [length tree] 1]
+                                      [body
+                                       [if [equalBox [car tree] [boxString "return"]]
+                                           [body ;void return statement
+                                            ;[printf "Choosing returnvoid\n"]
+                                            [return [astReturnVoid]]]
+                                           [body 
+                                            ;generic statement
+                                            [return [makeNode "statement" "statement" tree [astExpression tree]]]]]
+                                       ]
+                                      [body ;generic statement
+                                       [return [makeNode "statement" "statement" tree [astExpression tree]]]]]
+                                 ]]
+                            ]]]
+                      ]]]
 
            [list astBody [list tree] [declare]
                  [body
@@ -2146,7 +2179,10 @@ returnValue=${array[$2]}
                                  ;[printf "( "]
                                  ;***[newLine indent]
                                  [ansiExpression   [childrenof thisNode] true [add1 indent]]
-                                 ;[printf ") "]
+                                 [if [isNil [cdr nodes]]
+                                          [body [printf ""]]
+                                          [body
+                                           [printf ","]]]
                                  ;[printf "Expression was multi, continuing processing children\n"]
                                  [ansiExpression  [cdr nodes] false indent]
                                  ]]]
@@ -2175,43 +2211,79 @@ returnValue=${array[$2]}
            ;   "\n"]]
 
 
+           [void ansiIf [list node int indent] [declare ]
+                 [body
+                  [newLine indent]
+                  ;[printf "ifstatement: if ( "]
+                       
+                  [ansiExpression   [first [childrenof node]] true 0 ]
+                  [newLine indent]
+                  [printf ") {"]
+                  [newLine indent]
+                  [ansiBody  [second [childrenof node]] 1]
+                  [newLine indent]
+                  [printf "} else {"   ]
+                  [newLine indent]
+                  [ansiBody [third [childrenof node]] 1]
+                  [printf "\n}\n"]
+                  ]]
+
+           [void ansiSetStruct [list node int indent] [declare ]
+                 [body
+                  [newLine indent]
+                  ;[printf "setstruct statement:  "][display node]
+                       
+                  [printf "%s->%s = " [stringify [first [codeof node]]] [stringify [second [codeof node]]]]
+                  [ansiExpression [first [childrenof node]] true indent]
+                             
+                  ]]
+
+           [void ansiSet [list node int indent] [declare ]
+                 [body
+                  [newLine indent]
+                  ;[printf "setstruct statement:  "][display node]
+                       
+                  [printf "%s = " [stringify [first [codeof node]]]]
+                  [ansiExpression [first [childrenof node]] true indent]
+                             
+                  ]]
+
+                  
            [void ansiStatement [list node int indent] [declare ]
                  [body
             
-                  ;[printf "\nAnsiStatement: "]
-                  ;[display node]
-                  [if [equalBox [boxString "if"] [subnameof node]]
+                  ;[printf "\nAnsiStatement: "][display node]
+                  [if [equalBox [boxString "setter"] [subnameof node]]
                       [body
-                       [newLine indent]
-                       ;[printf "ifstatement: if ( "]
-                       
-                       [ansiExpression   [first [childrenof node]] true 0 ]
-                       [newLine indent]
-                       [printf ") {"]
-                       [newLine indent]
-                       [ansiBody  [second [childrenof node]] 1]
-                       [newLine indent]
-                       [printf "} else {"   ]
-                       [newLine indent]
-                       [ansiBody [third [childrenof node]] 1]
-                       [printf "\n}\n"]
+                       [ansiSet node indent]
                        ]
-                      [body ;[printf "ExpressionStatement: (%s, %s)" [stringify [nameof node]] [stringify [subnameof node]]]
-                       [if [equalBox [boxString "returnvoid"] [subnameof node]]
+                      [body
+                       [if [equalBox [boxString "structSetter"] [subnameof node]]
                            [body
-                            [newLine indent]
-                            [printf "return"]]
+                            [ansiSetStruct node indent]
+                            ]
                            [body
+                            [if [equalBox [boxString "if"] [subnameof node]]
+                                [body
+                                 [ansiIf node indent]
+                                 ]
+                                [body ;[printf "ExpressionStatement: (%s, %s)" [stringify [nameof node]] [stringify [subnameof node]]]
+                                 [if [equalBox [boxString "returnvoid"] [subnameof node]]
+                                     [body
+                                      [newLine indent]
+                                      [printf "return"]]
+                                     [body
             
-                            ;[printf "\nGeneric expression statement\n" ]
-                            ;[display [childrenof node]]
-                            ;[printf "\n\n"]
-                            [newLine indent]
-                            [ansiExpression [childrenof node] true  indent]
+                                      ;[printf "\nGeneric expression statement\n" ]
+                                      ;[display [childrenof node]]
+                                      ;[printf "\n\n"]
+                                      [newLine indent]
+                                      [ansiExpression [childrenof node] true  indent]
+                                      ]]
+                                 ]]
                             ]]
-                       ]]
-                  ;[printf "\n\n"]
-                  ]]
+                       ;[printf "\n\n"]
+                       ]]]]
            [void printIndent [int ii] [declare]
                  [body
                   [if [> ii 0]
