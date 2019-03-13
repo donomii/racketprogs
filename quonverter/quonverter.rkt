@@ -1281,6 +1281,7 @@ returnValue=${array[$2]}
      
            [box car [list l] [declare]
                 [body
+                 (assertType "list" l)
                  [if [isNil l]
                      [body
                       [printf "Cannot call car on empty list!\n"]
@@ -1328,6 +1329,8 @@ returnValue=${array[$2]}
      
            [list assoc [string searchTerm list l] [declare [list elem nil]]
                  [body
+                  
+                  (assertType "list" l)
                   [if [isEmpty l]
                       [body
                        ;[printf "Assoc on empty list!"]
@@ -1364,6 +1367,7 @@ returnValue=${array[$2]}
                   [if [isList b]
                       [body [return false]]
                       [body
+                       ;[printf "Comparing: "][display a] [display b][newLine 0]
                        [if [equalString "string" [boxType a]]
                            [body [return [equalString [unBoxString a] [stringify b]]]]
                            [body [if [equalString "bool" [boxType a]]
@@ -1547,11 +1551,14 @@ returnValue=${array[$2]}
                  ;[printf "Finish token %s\n" [sub-string prog start   len]]
 
                  [if [> len 0]
-                     [body [return [boxSymbol [sub-string prog start  len]]]]
+                     [body ;[printf "Finish token\n"]
+
+                           [return
+
+                            [boxSymbol [sub-string prog start  len]]]]
                      [body [return
                             [newVoid]
                             ]]]
-                 [return [boxSymbol [sub-string prog start  len]]]
                  ]]
 
      
@@ -1594,37 +1601,38 @@ returnValue=${array[$2]}
                                      [body [return true]]
                                      [body [return false]]]]]]]
      
-           [list scan [string prog int start int len] [declare [string token ""]]
+           [list scan [string prog int start int len] [declare [box token nil]]
                  [body
                   [if [> [string-length prog] [sub start [sub 0 len]]]
                       [body
-                       [set token [sub-string prog [sub1 [add start len]] 1]]
+                       [set token [boxSymbol [sub-string prog [sub1 [add start len]] 1]]]
                        ;[printf "Start: %d, end %d, Token: %s\n" start [add start len] token ]
-                       [if [equalString "(" token]
+                       [if [isOpenBrace token]
                            [body ;[printf "Start array\n"]
                             [return [cons
                                      [finish_token prog start  [sub1 len]]
-                                     [cons [boxSymbol "(" ]
+                                     [cons [boxSymbol [openBrace] ]
                                            [scan prog [add1 start] 1]]]]]
-                           [body [if [equalString  ")" token]
+                           [body [if [isCloseBrace token]
                                      [body ;[printf "Finish array\n"]
                                       [return [cons  [finish_token prog start  [sub1 len]]
-                                                     [cons [boxSymbol ")"]
+                                                     [cons [boxSymbol [closeBrace]]
                                                            [scan prog [add start  len] 1]]]]]
-                                     [body [if [isWhiteSpace token]
+                                     [body [if [isWhiteSpace [stringify token]] ;FIXME this will skip strings like "   " when it shouldn't
                                                [body
                                                 [return [cons
                                                          [finish_token prog start  [sub1 len]]
                                                          [scan prog  [add start  len] 1]]]
                                                 ]
-                                               [body [if [equalString ";" token]
+                                               [body [if [equalBox [boxSymbol ";" ] token]
                                                          [body
-                                                          ;[printf "\nComment:%s" [readComment prog [add1 start] len]]
+                                                          [printf "\nComment:%s" [readComment prog [add1 start] len]]
                                                           [return [scan prog  [add start  [add1 [add1 [string-length [readComment prog [add1 start] len]]]]] 1]
                                                                   ]]
-                                                         [body [if [equalString "\"" token]
-                                                                   [body
+                                                         [body [if [equalBox [boxSymbol "\""] token]
+                                                                   [body ;[printf "Found string: %s\n"  [readString prog [add1 start] len]]
                                                                     [return
+                                                                     
                                                                      [cons
                                                                       [boxString [readString prog [add1 start] len]]
                                                                       [scan prog  [add start  [add1 [add1 [string-length [readString prog [add1 start] len]]]]] 1]]]]
@@ -1637,23 +1645,26 @@ returnValue=${array[$2]}
 
            [bool isOpenBrace [box b] [declare]
                  [body
-                  [if [equalBox [boxString "("]  b]
+                  [if [equalBox [boxSymbol [openBrace]]  b]
                       [body [return true]]
-                      [body [if [equalBox [boxString "["]  b]
+                      [body [if [equalBox [boxSymbol "["]  b]
                                 [body [return true]]
                                 [body [return false]]]]]
                       
                   ]]
 
+           [string openBrace [] [declare] [body [return "("]]]
+
            [bool isCloseBrace [box b] [declare]
                  [body
-                  [if [equalBox [boxString ")"]  b]
+                  [if [equalBox [boxSymbol [closeBrace]]  b]
                       [body [return true]]
-                      [body [if [equalBox [boxString "]"]  b]
+                      [body [if [equalBox [boxSymbol "]"]  b]
                                 [body [return true]]
                                 [body [return false]]]]]
                       
                   ]]
+           [string closeBrace [] [declare] [body [return ")"]]]
      
            [list sexprTree [list l] [declare [box b nil]]
                  [body
@@ -1667,7 +1678,7 @@ returnValue=${array[$2]}
                              [return [cons
                                       [sexprTree [cdr l]]
                                       [sexprTree [skipList [cdr l]]]]]]
-                            [body [if [equalBox [boxString ")"] b]
+                            [body [if [isCloseBrace b]
                                       [body ;[printf "Finish sublist sexprTree\n"]
                                        [return [emptyList]]]
                                       [body
@@ -1686,10 +1697,10 @@ returnValue=${array[$2]}
                       [body
                        [set b [car l]]
                        ;[printf "Processing list with skiplist: %s\n" [unBoxString b] ]
-                       [if [equalBox [boxString "("] b]
+                       [if [isOpenBrace b]
                            [body ;[printf "Start sublist in skiplist\n"]
                             [return [skipList [skipList [cdr l]]]]]
-                           [body [if [equalBox [boxString ")"]  b]
+                           [body [if [isCloseBrace  b]
                                      [body ;[printf "Finish sublist in skiplist\n"]
                                       [return  [cdr l]]]
                                      [body
@@ -1888,15 +1899,20 @@ returnValue=${array[$2]}
                   [if [isEmpty tree]
                       [body [return [emptyList]]]
                       [body
+                       ;[printf "!!!!!!!!! %s is a list? %s" [boxType tree] [stringify [boxBool [isList tree]]]][display tree]
+                       [if [isList tree]
+                           [body
                        [if [isList [car tree]]
                            [body [return [cons [makeNode "expression" "expression" tree             [astExpression [car tree]]]
                                                [astExpression [cdr tree]] ]]]
-                           [body [return [cons [makeNode "expression" "leaf"       [car tree] nil]  [astExpression [cdr tree]]]]]]]]
+                           [body [return [cons [makeNode "expression" "leaf"       [car tree] nil]  [astExpression [cdr tree]]]]]]]
+                           [body [return [cons [makeNode "expression" "leaf"        tree nil]  nil]]]]]]
                 
                   ]]
 
            [list astIf [list tree] [declare]
                  [body
+                  ;[printf "Building if node from: "][display tree][printf "\n"]
                   [return [makeNode "statement" "if" tree [cons [astExpression [first tree]]
                                                                 [cons [astBody [cdr [second tree]]]
                                                                       [cons [astBody [cdr [third tree]]]
@@ -1919,10 +1935,13 @@ returnValue=${array[$2]}
      
            [list astStatement [list tree] [declare]
                  [body
-                  ;[printf "AstStatement: "]
-                  ;[display tree]
-                  [if [equalBox [car tree] [boxString "if"]]
-                      [body [return [astIf [cdr tree]]]]
+                  ;[printf "AstStatement: "][display tree]
+                  [if [equalBox
+
+                       [boxString "if"] [car tree] ]
+                      [body
+                       ;[printf "Choosing if statement\n"]
+                       [return [astIf [cdr tree]]]]
                       [body
                        [if  [equal [length tree] 1]
                             [body 
@@ -2055,6 +2074,13 @@ returnValue=${array[$2]}
                   ;[printf "\n\nsubnameof: "]
                   ;[display ass]
                   [return [cdr [assoc "subname" [cdr ass]]]]]]
+
+           [list nameof [list ass] [declare]
+           
+                 [body
+                  ;[printf "\n\nnameof: "]
+                  ;[display ass]
+                  [return [cdr [assoc "name" [cdr ass]]]]]]
      
            [list childrenof [list ass] [declare]
                  [body [return [cdr [assoc "children" [cdr ass]]]]]]
@@ -2071,7 +2097,7 @@ returnValue=${array[$2]}
                            [body [return true]]
                            [body [return false]]]]]]]
      
-           [void ansiExpression [list nodes bool openBrace int indent] [declare [list thisNode nil]]
+           [void ansiExpression [list nodes bool forceOpenBrace int indent] [declare [list thisNode nil]]
                  [body
             
                   [if [isEmpty nodes]
@@ -2093,16 +2119,16 @@ returnValue=${array[$2]}
                                  ;[printf "Expression is a leaf, printing\n"]
                            
                                  [display [codeof thisNode]]
-                                 [if openBrace
+                                 [if forceOpenBrace
                                      [body
-                                      [printf "("]
+                                      [printf "%s" [openBrace]]
                                       [if [> [length [cdr nodes]] 1]
                                           [body
                                            [newLine indent]]
                                           [body [printf ""]]]
                                       ;[set indent [add1 indent]]
                                       [ansiExpression [cdr nodes] false [add1 indent]]
-                                      [printf ")"]
+                                      [printf "%s" [closeBrace]]
                                       ]
                                      [body
                                       [if [isNil [cdr nodes]]
@@ -2157,7 +2183,7 @@ returnValue=${array[$2]}
                   [if [equalBox [boxString "if"] [subnameof node]]
                       [body
                        [newLine indent]
-                       [printf "if ("]
+                       ;[printf "ifstatement: if ( "]
                        
                        [ansiExpression   [first [childrenof node]] true 0 ]
                        [newLine indent]
@@ -2170,7 +2196,7 @@ returnValue=${array[$2]}
                        [ansiBody [third [childrenof node]] 1]
                        [printf "\n}\n"]
                        ]
-                      [body
+                      [body ;[printf "ExpressionStatement: (%s, %s)" [stringify [nameof node]] [stringify [subnameof node]]]
                        [if [equalBox [boxString "returnvoid"] [subnameof node]]
                            [body
                             [newLine indent]
@@ -2427,7 +2453,7 @@ return buffer;
                   ;[printf "Read program.  Parsing...\n" ]
                   [set tree [readSexpr programStr]]
                   ;[printf "Parsed program.  Building AST...\n" ]
-                  ;[displayList  tree]
+                  ;[display  tree]
 
                   [set program [alistCons [boxString "includes"] [astIncludes  [first tree]]
                                           [alistCons [boxString "types"] [astTypes  [second tree]]
@@ -2446,10 +2472,10 @@ return buffer;
                   ;[display [assoc "functions" program]]
             
                   [printf "\n\n//Forward declarations\n"]
-                 
-                  [ansiForwardDeclarations [cdr [assoc "children" [assoc "functions" program]]]]
+                 ;[display program]
+                  [ansiForwardDeclarations [cdr [assoc "children" [cdr [cdr [assoc "functions" program]]]]]]
                   [printf "\n\n//End forward declarations\n\n"]
-                  [ansiFunctions [cdr [assoc "children" [assoc "functions" program]]]]
+                  [ansiFunctions [cdr [assoc "children" [cdr [cdr [assoc "functions" program]]]]]]
                   [printf "\n"]
                   ]]
 

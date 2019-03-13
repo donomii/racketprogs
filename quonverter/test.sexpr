@@ -55,6 +55,7 @@
    (list l)
    (declare)
    (body
+    (assertType "list" l)
     (if (isNil l)
       (body
        (printf "Cannot call car on empty list!\n")
@@ -103,6 +104,7 @@
    (string searchTerm list l)
    (declare (list elem nil))
    (body
+    (assertType "list" l)
     (if (isEmpty l)
       (body (return (boxBool false)))
       (body
@@ -274,8 +276,7 @@
    (body
     (if (> len 0)
       (body (return (boxSymbol (sub-string prog start len))))
-      (body (return (newVoid))))
-    (return (boxSymbol (sub-string prog start len)))))
+      (body (return (newVoid))))))
   (string
    readString
    (string prog int start int len)
@@ -310,34 +311,35 @@
   (list
    scan
    (string prog int start int len)
-   (declare (string token ""))
+   (declare (box token nil))
    (body
     (if (> (string-length prog) (sub start (sub 0 len)))
       (body
-       (set token (sub-string prog (sub1 (add start len)) 1))
-       (if (equalString "(" token)
+       (set token (boxSymbol (sub-string prog (sub1 (add start len)) 1)))
+       (if (isOpenBrace token)
          (body
           (return
            (cons
             (finish_token prog start (sub1 len))
-            (cons (boxSymbol "(") (scan prog (add1 start) 1)))))
+            (cons (boxSymbol (openBrace)) (scan prog (add1 start) 1)))))
          (body
-          (if (equalString ")" token)
+          (if (isCloseBrace token)
             (body
              (return
               (cons
                (finish_token prog start (sub1 len))
-               (cons (boxSymbol ")") (scan prog (add start len) 1)))))
+               (cons (boxSymbol (closeBrace)) (scan prog (add start len) 1)))))
             (body
-             (if (isWhiteSpace token)
+             (if (isWhiteSpace (stringify token))
                (body
                 (return
                  (cons
                   (finish_token prog start (sub1 len))
                   (scan prog (add start len) 1))))
                (body
-                (if (equalString ";" token)
+                (if (equalBox (boxSymbol ";") token)
                   (body
+                   (printf "\nComment:%s" (readComment prog (add1 start) len))
                    (return
                     (scan
                      prog
@@ -348,7 +350,7 @@
                         (string-length (readComment prog (add1 start) len)))))
                      1)))
                   (body
-                   (if (equalString "\"" token)
+                   (if (equalBox (boxSymbol "\"") token)
                      (body
                       (return
                        (cons
@@ -370,23 +372,25 @@
    (box b)
    (declare)
    (body
-    (if (equalBox (boxString "(") b)
+    (if (equalBox (boxSymbol (openBrace)) b)
       (body (return true))
       (body
-       (if (equalBox (boxString "[") b)
+       (if (equalBox (boxSymbol "[") b)
          (body (return true))
          (body (return false)))))))
+  (string openBrace () (declare) (body (return "(")))
   (bool
    isCloseBrace
    (box b)
    (declare)
    (body
-    (if (equalBox (boxString ")") b)
+    (if (equalBox (boxSymbol (closeBrace)) b)
       (body (return true))
       (body
-       (if (equalBox (boxString "]") b)
+       (if (equalBox (boxSymbol "]") b)
          (body (return true))
          (body (return false)))))))
+  (string closeBrace () (declare) (body (return ")")))
   (list
    sexprTree
    (list l)
@@ -400,7 +404,7 @@
          (body
           (return (cons (sexprTree (cdr l)) (sexprTree (skipList (cdr l))))))
          (body
-          (if (equalBox (boxString ")") b)
+          (if (isCloseBrace b)
             (body (return (emptyList)))
             (body (return (cons b (sexprTree (cdr l))))))))))
     (printf "AAAAAA code should never reach here!\n")
@@ -414,10 +418,10 @@
       (body (return (emptyList)))
       (body
        (set b (car l))
-       (if (equalBox (boxString "(") b)
+       (if (isOpenBrace b)
          (body (return (skipList (skipList (cdr l)))))
          (body
-          (if (equalBox (boxString ")") b)
+          (if (isCloseBrace b)
             (body (return (cdr l)))
             (body (return (skipList (cdr l)))))))))
     (printf "AAAAAA code should never reach here!\n")
@@ -634,21 +638,25 @@
     (if (isEmpty tree)
       (body (return (emptyList)))
       (body
-       (if (isList (car tree))
+       (if (isList tree)
          (body
-          (return
-           (cons
-            (makeNode
-             "expression"
-             "expression"
-             tree
-             (astExpression (car tree)))
-            (astExpression (cdr tree)))))
+          (if (isList (car tree))
+            (body
+             (return
+              (cons
+               (makeNode
+                "expression"
+                "expression"
+                tree
+                (astExpression (car tree)))
+               (astExpression (cdr tree)))))
+            (body
+             (return
+              (cons
+               (makeNode "expression" "leaf" (car tree) nil)
+               (astExpression (cdr tree)))))))
          (body
-          (return
-           (cons
-            (makeNode "expression" "leaf" (car tree) nil)
-            (astExpression (cdr tree))))))))))
+          (return (cons (makeNode "expression" "leaf" tree nil) nil))))))))
   (list
    astIf
    (list tree)
@@ -682,7 +690,7 @@
    (list tree)
    (declare)
    (body
-    (if (equalBox (car tree) (boxString "if"))
+    (if (equalBox (boxString "if") (car tree))
       (body (return (astIf (cdr tree))))
       (body
        (if (equal (length tree) 1)
@@ -813,6 +821,11 @@
    (declare)
    (body (return (cdr (assoc "subname" (cdr ass))))))
   (list
+   nameof
+   (list ass)
+   (declare)
+   (body (return (cdr (assoc "name" (cdr ass))))))
+  (list
    childrenof
    (list ass)
    (declare)
@@ -830,7 +843,7 @@
          (body (return false)))))))
   (void
    ansiExpression
-   (list nodes bool openBrace int indent)
+   (list nodes bool forceOpenBrace int indent)
    (declare (list thisNode nil))
    (body
     (if (isEmpty nodes)
@@ -842,14 +855,14 @@
           (if (equalBox (boxString "leaf") (subnameof thisNode))
             (body
              (display (codeof thisNode))
-             (if openBrace
+             (if forceOpenBrace
                (body
-                (printf "(")
+                (printf "%s" (openBrace))
                 (if (> (length (cdr nodes)) 1)
                   (body (newLine indent))
                   (body (printf "")))
                 (ansiExpression (cdr nodes) false (add1 indent))
-                (printf ")"))
+                (printf "%s" (closeBrace)))
                (body
                 (if (isNil (cdr nodes)) (body (printf "")) (body (printf ",")))
                 (ansiExpression (cdr nodes) false (add1 indent)))))
@@ -865,7 +878,6 @@
     (if (equalBox (boxString "if") (subnameof node))
       (body
        (newLine indent)
-       (printf "if (")
        (ansiExpression (first (childrenof node)) true 0)
        (newLine indent)
        (printf ") {")
@@ -1060,9 +1072,10 @@
     (ansiTypes (childrenof (cdr (assoc "types" program))))
     (printf "\n\n//Forward declarations\n")
     (ansiForwardDeclarations
-     (cdr (assoc "children" (assoc "functions" program))))
+     (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
     (printf "\n\n//End forward declarations\n\n")
-    (ansiFunctions (cdr (assoc "children" (assoc "functions" program))))
+    (ansiFunctions
+     (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
     (printf "\n")))
   (void
    test15
