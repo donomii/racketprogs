@@ -1888,13 +1888,21 @@ returnValue=${array[$2]}
                                             [alistCons [boxSymbol "children"]  children
                                                        [emptyList]]]]]]]]]
 
-           [list astExpressionRecurse [list tree] [declare]
-                 [body
-                  [if [isEmpty tree]
-                      [body [return [emptyList]]]
-                      [body [return [cons [astExpression [car tree]] [astExpressionRecurse [cdr tree]]]]]]
-                  ]]
+
+;           [define [type_expression scope tree]
+;  ;[displayln [format "type_expr: ~s" tree]]
+;  [if [list? tree]
+;      [make-node scope tree 'expression [map [lambda [x] [type_expression scope x]] tree]]
+;      [make-node scope tree 'leaf '[]]]]
+;
+;           
+
            [list astExpression [list tree] [declare]
+                 [body
+                  [if [isList tree]
+                      [body [return [makeNode "expression" "expression" nil [astSubExpression tree]]]]
+                      [body [return [astSubExpression tree]]]]]]
+           [list astSubExpression [list tree] [declare]
                  [body
                   [if [isEmpty tree]
                       [body [return [emptyList]]]
@@ -1902,19 +1910,12 @@ returnValue=${array[$2]}
                        ;[printf "!!!!!!!!! %s is a list? %s" [boxType tree] [stringify [boxBool [isList tree]]]][display tree]
                        [if [isList tree]
                            [body
-                            [if [equalBox [boxSymbol "get-struct"] [car tree] ]
-                                [body ;struct getter statement
-                                 ;[printf "Choosing getter expression\n"][display tree]
-                                 [return  [astGetStruct [cdr tree]] ]]
-                                      
-                                [body
-                                 [if [isList [car tree]]
-                                     [body
+                                 
                                       ;[printf "Compound expression: "][display tree]
-                                      [return [cons [makeNode "expression" "expression" tree             [astExpression [car tree]]]
-                                                    [astExpression [cdr tree]] ]]]
-                                     [body ;[printf "simple expression: "][display tree]
-                                      [return [cons [makeNode "expression" "leaf"       [car tree] nil]  [astExpression [cdr tree]]]]]]]]]
+                                      [return [cons             [astExpression [car tree]]
+                                                    [astSubExpression [cdr tree]] ]]]
+                                     
+                                     
                            [body [return [makeNode "expression" "leaf"        tree  nil]]]]]]
                 
                   ]]
@@ -1932,13 +1933,13 @@ returnValue=${array[$2]}
                  [body
                   ;[printf "Building setstruct node from: "][display tree][printf "\n"]
                   [return [makeNode "statement" "structSetter" tree
-                                     [astExpression [third tree]]  ]]
+                                    [astExpression [third tree]]  ]]
                   ]]
 
            [list astSet [list tree] [declare]
                  [body
                   ;[printf "Building setstruct node from: "][display tree][printf "\n"]
-                  [return [makeNode "statement" "setter" tree [cons [astExpression [second tree]] nil]]]
+                  [return [makeNode "statement" "setter" tree [astExpression [second tree]]]]
                   ]]
 
            [list astGetStruct [list tree] [declare]
@@ -1995,10 +1996,10 @@ returnValue=${array[$2]}
                                                  [return [astReturnVoid]]]
                                                 [body 
                                                  ;generic statement
-                                                 [return [makeNode "statement" "statement" tree [astExpression tree]]]]]
+                                                 [return [makeNode "statement" "statement" tree [makeNode "expression" "expression" tree [astExpression tree]]]]]]
                                             ]
                                            [body ;generic statement
-                                            [return [makeNode "statement" "statement" tree [astExpression tree]]]]]
+                                            [return [makeNode "statement" "statement" tree [makeNode "expression" "expression" tree [astExpression tree]]]]]]
                                       ]]
                                  ]]
                             ]]]
@@ -2125,8 +2126,7 @@ returnValue=${array[$2]}
            [list subnameof [list ass] [declare]
            
                  [body
-                  ;[printf "\n\nsubnameof: "]
-                  ;[display ass]
+                  ;[printf "\n\nsubnameof: "][display [assoc "subname" [cdr ass]]]
                   [return [cdr [assoc "subname" [cdr ass]]]]]]
 
            [list nameof [list ass] [declare]
@@ -2187,72 +2187,147 @@ returnValue=${array[$2]}
                       [body [ansiLeaf thisNode indent ]]]
                   ]]
 
-           [void ansiExpression [list nodes  int indent] [declare [list thisNode nil]]
+           ;           [void ansiExpression [list nodes  int indent] [declare [list thisNode nil]]
+           ;                 [body
+           ;            
+           ;                  [if [isEmpty nodes]
+           ;                
+           ;                      [body
+           ;                       ;[printf "Expression is empty\n"]
+           ;                       [return]]
+           ;                      [body
+           ;                       ;[printf "\n\nExpression: \n\n"][display nodes]
+           ;                       [if [isNode nodes]
+           ;                           [body  [ansiStructGetterExpression nodes indent]]
+           ;                           [body
+           ;                            [set thisNode [car nodes]]
+           ;                       
+           ;                            [if [isNode thisNode]
+           ;                     
+           ;                                [body
+           ;                                 ;[ansiStructGetterExpression thisNode indent]
+           ;                                 ;[printf "this is a node:\n"][display thisNode][printf "\n"]
+           ;                                 
+           ;                                 [if [equalBox [boxString "expression"] [subnameof thisNode]]
+           ;                                     
+           ;                                     [body ;[printf "Expression has multiple elements, recursing into children\n"]
+           ;                                      ;[printf "( "]
+           ;                                      ;***[newLine indent]
+           ;                                                 
+           ;                                      [ansiExpression [car thisNode]  [add1 indent]]
+           ;                                 
+           ;                                      [printf "%s" [openBrace]]
+           ;                                      [ansiExpression [cdr thisNode]  [add1 indent]]
+           ;                                      [printf "%s" [closeBrace]]
+           ;                                           
+           ;                                                 
+           ;                                      ;[printf "Expression was multi, continuing processing children\n"]
+           ;                                                 
+           ;                                      ]
+           ;                                     [body ;[printf "Expression is a leaf, printing\n"]
+           ;                           
+           ;                                      [ansiStructGetterExpression thisNode indent]
+           ;                                      ;[printf "Expression was a leaf, continuing list\n"]
+           ;                                      ]]
+           ;                                            
+           ;                                 [if [isNil [cdr nodes]]
+           ;                                     [body [printf ""]]
+           ;                                     [body
+           ;                                      [printf ", "]]]
+           ;                                 [ansiExpression  [cdr nodes]  indent]
+           ;
+           ;
+           ;
+           ;                                 ]
+           ;                                [body
+           ;                                 ;[printf "Expressions was not a node, recursing into list\n"] [display thisNode][printf "\n"]
+           ;                                 ]
+           ;                                     
+           ;                                      
+           ;                                ]]]]
+           ;                      [body [ansiLeaf nodes indent ]]]
+           ;                  ]]
+
+
+           [void  ansiExpression [list node int indent] [declare]
+                  ;[displayln[format  "subexpr: ~s" node]][newline]
+                  
+                  [body ;[printf "\n\nExpression: \n\n"][display node]
+                        [if [isLeaf node]
+                            [body [display [ansiFuncMap[codeof node]]]]
+                            [body [ansiSubExpression node indent]]]]]
+
+           [void ansiRecurList [list expr int indent] [declare]
                  [body
-            
-                  [if [isEmpty nodes]
+                  [if [isEmpty expr]
                 
                       [body
                        ;[printf "Expression is empty\n"]
                        [return]]
                       [body
-                       [printf "\n\nExpression: \n\n"][display nodes]
-                       [if [isNode nodes]
-                           [body  [ansiStructGetterExpression nodes indent]]
+                       [ ansiExpression [car expr] indent]
+                       [if [isNil [cdr expr]]
+                           [body [printf ""]]
                            [body
-                            [set thisNode [car nodes]]
-                       
-                            [if [isNode thisNode]
-                     
-                                [body
-                                 ;[ansiStructGetterExpression thisNode indent]
-                                 ;[printf "this is a node:\n"][display thisNode][printf "\n"]
-                                 
-                                 [if [equalBox [boxString "expression"] [subnameof thisNode]]
-                                     
-                                     [body ;[printf "Expression has multiple elements, recursing into children\n"]
-                                      ;[printf "( "]
-                                      ;***[newLine indent]
-                                                 
-                                      [ansiExpression   [car [childrenof thisNode]]  [add1 indent]]
-                                      
-                                           [printf "%s" [openBrace]]
-                                           [ansiExpression   [cdr [childrenof thisNode]]  [add1 indent]]
-                                           [printf "%s" [closeBrace]]
-                                           
-                                                 
-                                      ;[printf "Expression was multi, continuing processing children\n"]
-                                                 
-                                      ]
-                                     [body ;[printf "Expression is a leaf, printing\n"]
-                           
-                                      [ansiStructGetterExpression thisNode indent]
-                                      ;[printf "Expression was a leaf, continuing list\n"]
-                                      ]]
-                                            
-                                 [if [isNil [cdr nodes]]
-                                     [body [printf ""]]
-                                     [body
-                                      [printf ", "]]]
-                                 [ansiExpression  [cdr nodes]  indent]
-
-
-
-                                 ]
-                                [body
-                                 ;[printf "Expressions was not a node, recursing into list\n"] [display thisNode][printf "\n"]
-                                 [ansiExpression [car thisNode]  [add1 indent]]
-                                 
-                                      [printf "%s" [openBrace]]
-                                      [ansiExpression [cdr thisNode]  [add1 indent]]
-                                      [printf "%s" [closeBrace]]]
-                                     
-                                      
-                                ]]]]
-                      [body [ansiLeaf nodes indent ]]]
+                            [printf ", "]
+                       [ansiRecurList [cdr expr] indent]]]
+                           ]]
+                  [return]
                   ]]
 
+           [bool isLeaf [list n] [declare]
+                 [body
+                  ;[printf "\n\nisLeaf: \n\n"][display n]
+                  [return [equalBox [boxString "leaf"] [subnameof n]]]]]
 
+           
+           ;output an expression.  Soon, recursive!
+           [void ansiSubExpression [list tree int indent] [declare [box thing nil]]
+                 [body
+                  ;[displayln[format  "expression: ~s" tree]][newline]
+                  [if [isEmpty tree]
+                
+                      [body
+                       ;[printf "Expression is empty\n"]
+                       [return]]
+                      [body
+                       ;[printf "\n\nSubExpression: \n\n"][display tree]
+                       [if [isNode [childrenof tree]]
+                           [body
+                            [ansiSubExpression [childrenof tree] indent]]
+                            [body
+                       [if [isLeaf tree]
+                           [body ;[printf "\natom\n"]
+                                 [display [ansiFuncMap [codeof tree]]]]
+                           [body 
+                            [if [equal 1 [length [childrenof tree]]]
+                                     
+                                [body ;[printf "\na function with no args: "][display [car [childrenof tree]]]
+[display [codeof [car [childrenof tree]]]]
+                                 [if [equalBox [boxString "return"] [codeof [car [childrenof tree]]]]
+                                     [body [printf ""]
+                                      ]
+                                          [body                                            
+                                      [printf "()"]; [stringify [codeof   [childrenof tree]]]]
+                                      ]]]
+                                [body ;[printf  "definite function "] [display [childrenof tree]]
+            
+                                      [set thing [codeof [car  [childrenof tree]]]]
+                                      [if [equalBox [boxSymbol "get-struct"] thing]
+                                          [body  [printf "%s->%s" [stringify [codeof [second  [childrenof tree]]]] [stringify [codeof [third  [childrenof tree]]]]]]
+                                          [body
+                                           [if [equalBox [boxSymbol "new"] thing]
+                                               [body  [printf "malloc(sizeof(%s))" [stringify [codeof [third  [childrenof tree]]] ]]]
+                                               [body
+               
+                                                [printf "%s(" [stringify [ansiFuncMap [codeof [car  [childrenof tree]]]]]]
+                                                [ansiRecurList  [cdr  [childrenof tree]] indent] 
+                                                [printf ")"]]]]
+
+                                          ]]]
+                            ]]]]
+                       ]]]]
+           
            ;output a statement.  This is where all the builtins go, like "if, set, for"
            ;[define [clang_statement tree]
            ;  ;[displayln [format  "clang statement: ~s" [pretty-print tree]]][newline]
@@ -2277,7 +2352,7 @@ returnValue=${array[$2]}
                   ;[newLine indent]
                   [printf "if ( "]
                        
-                  [ansiExpression   [first [childrenof node]]  0 ]
+                  [ansiExpression   [car [first [childrenof node]]]  0 ]
                         
                   [printf ") {"]
                   ;[newLine [add1 indent]]
@@ -2296,7 +2371,7 @@ returnValue=${array[$2]}
                   ;[printf "setstruct statement:  "][display node]
                        
                   [printf "%s->%s = " [stringify [first [codeof node]]] [stringify [second [codeof node]]]]
-                  [ansiExpression  [childrenof node]  indent]
+                  [ansiExpression   [childrenof node]  indent]
                              
                   ]]
 
@@ -2316,7 +2391,7 @@ returnValue=${array[$2]}
                   ;[printf "setstruct statement:  "][display node]
                        
                   [printf "%s = " [stringify [first [codeof node]]]]
-                  [ansiExpression  [childrenof node]  indent]
+                  [ansiExpression   [childrenof node]  indent]
                              
                   ]]
 
@@ -2351,14 +2426,14 @@ returnValue=${array[$2]}
                                       ;[display [childrenof node]]
                                       ;[printf "\n\n"]
                                       [newLine indent]
-                                      [ansiExpression [cons [childrenof node] nil]   indent]
+                                      [ansiExpression  [childrenof node]    indent]
                                       ]]
                                  ]]
                             ]]
                             
                        ;[printf "\n\n"]
                        ]]
-                  [printf ";"]]]
+                  [printf ";\n"]]]
 
            [void printIndent [int ii] [declare]
                  [body
@@ -2397,6 +2472,7 @@ returnValue=${array[$2]}
                        [printf "%s %s = " [stringify [ansiTypeMap [first decl]]] [stringify [second decl]] ]
                        [display [ansiFuncMap [third decl]]]
                        [printf ";\n"]
+                       [ansiDeclarations [cdr decls] indent]
                        ]]
                   ]]
      
@@ -2523,6 +2599,19 @@ return buffer;
 }
 
 
+void write_file (char * filename, char * data) {
+FILE *f = fopen(filename, \"w\");
+if (f == NULL)
+{
+    printf(\"Error opening file!\");
+    exit(1);
+}
+
+fprintf(f,  data);
+
+fclose(f);
+}
+
 "]
 
                   [return] ]]
@@ -2585,17 +2674,23 @@ return buffer;
            [box ansiFuncMap [box aSym] [declare [list symMap nil]]
                 [body
                  ;[printf "Typemap: '%s'\n" [stringify aSym]]
+                 [if [equalString "symbol" [boxType aSym]]
+                     [body
                  [set symMap
+                      [alistCons [boxSymbol "="] [boxSymbol "equal"]
+                      [alistCons [boxSymbol "sub-string"] [boxSymbol "sub_string"]
                       [alistCons [boxSymbol "read-file"] [boxSymbol "read_file"]
-                       [alistCons [boxSymbol "write-file"] [boxSymbol "write_file"]
-                      [alistCons [boxSymbol ">"] [boxSymbol "greaterthan"]
-                      [alistCons [boxSymbol "string-length"] [boxSymbol "string_length"]
-                                 [alistCons [boxSymbol "nil"] [boxSymbol "NULL"] nil]]]]]]
+                                 [alistCons [boxSymbol "write-file"] [boxSymbol "write_file"]
+                                            [alistCons [boxSymbol ">"] [boxSymbol "greaterthan"]
+                                                       [alistCons [boxSymbol "string-length"] [boxSymbol "string_length"]
+                                                                  [alistCons [boxSymbol "nil"] [boxSymbol "NULL"] nil]]]]]]]]
                  [if [truthy [assoc [stringify aSym] symMap]]
                      [body [return [cdr [assoc [stringify aSym] symMap]]]]
                      [body [return aSym]]
                                   
                      ]
+                 ]
+                     [body [return aSym]]]
                  ]]
      
            [void ansiType [list node] [declare]
