@@ -233,9 +233,9 @@
              (if (isList val)
                (body
                 (newLine indent)
-                (printf "[")
+                (printf "%s" (openBrace))
                 (displayList (car l) (add1 indent))
-                (printf "]")
+                (printf "%s" (closeBrace))
                 (displayList (cdr l) (add1 indent)))
                (body
                 (if (equalString "string" (get-struct val typ))
@@ -641,7 +641,7 @@
        (if (isList tree)
          (body
           (if (equalBox (boxSymbol "get-struct") (car tree))
-            (body (return (cons (astGetStruct (cdr tree)) nil)))
+            (body (return (astGetStruct (cdr tree))))
             (body
              (if (isList (car tree))
                (body
@@ -658,8 +658,7 @@
                  (cons
                   (makeNode "expression" "leaf" (car tree) nil)
                   (astExpression (cdr tree)))))))))
-         (body
-          (return (cons (makeNode "expression" "leaf" tree nil) nil))))))))
+         (body (return (makeNode "expression" "leaf" tree nil))))))))
   (list
    astIf
    (list tree)
@@ -671,7 +670,7 @@
       "if"
       tree
       (cons
-       (astExpression (first tree))
+       (cons (astExpression (first tree)) nil)
        (cons
         (astBody (cdr (second tree)))
         (cons (astBody (cdr (third tree))) nil)))))))
@@ -681,11 +680,7 @@
    (declare)
    (body
     (return
-     (makeNode
-      "statement"
-      "structSetter"
-      tree
-      (cons (astExpression (third tree)) nil)))))
+     (makeNode "statement" "structSetter" tree (astExpression (third tree))))))
   (list
    astSet
    (list tree)
@@ -701,13 +696,7 @@
    astGetStruct
    (list tree)
    (declare)
-   (body
-    (return
-     (makeNode
-      "expression"
-      "structGetter"
-      tree
-      (cons (astExpression (first tree)) nil)))))
+   (body (return (makeNode "expression" "structGetter" tree nil))))
   (list
    astReturnVoid
    ()
@@ -733,7 +722,9 @@
          (body (return (astSet (cdr tree))))
          (body
           (if (equalBox (boxString "get-struct") (car tree))
-            (body (return (astGetStruct (cdr tree))))
+            (body
+             (printf "Choosing get-struct statement\n")
+             (return (astGetStruct (cdr tree))))
             (body
              (if (equalBox (boxString "set-struct") (car tree))
                (body (return (astSetStruct (cdr tree))))
@@ -896,44 +887,56 @@
     (if (isEmpty val)
       (body (return false))
       (body
-       (if (equalBox (boxSymbol "node") (car val))
-         (body (return true))
+       (if (isList val)
+         (body
+          (if (equalBox (boxSymbol "node") (car val))
+            (body (return true))
+            (body (return false))))
          (body (return false)))))))
   (void
+   ansiLeaf
+   (list thisNode int indent)
+   (declare)
+   (body (display (ansiFuncMap (codeof thisNode)))))
+  (void
+   ansiStructGetterExpression
+   (list thisNode int indent)
+   (declare)
+   (body
+    (if (equalBox (boxString "structGetter") (subnameof thisNode))
+      (body (ansiGetStruct thisNode indent))
+      (body (ansiLeaf thisNode indent)))))
+  (void
    ansiExpression
-   (list nodes bool forceOpenBrace int indent)
+   (list nodes int indent)
    (declare (list thisNode nil))
    (body
     (if (isEmpty nodes)
       (body (return))
       (body
-       (set thisNode (car nodes))
-       (if (isNode thisNode)
+       (printf "\n\nExpression: \n\n")
+       (display nodes)
+       (if (isNode nodes)
+         (body (ansiStructGetterExpression nodes indent))
          (body
-          (if (equalBox (boxString "structGetter") (subnameof thisNode))
-            (body (ansiGetStruct thisNode indent))
+          (set thisNode (car nodes))
+          (if (isNode thisNode)
             (body
-             (if (equalBox (boxString "leaf") (subnameof thisNode))
+             (if (equalBox (boxString "expression") (subnameof thisNode))
                (body
-                (display (ansiFuncMap (codeof thisNode)))
-                (if forceOpenBrace
-                  (body
-                   (printf "%s" (openBrace))
-                   (if (> (length (cdr nodes)) 1)
-                     (body (newLine indent))
-                     (body (printf "")))
-                   (ansiExpression (cdr nodes) false (add1 indent))
-                   (printf "%s" (closeBrace)))
-                  (body
-                   (if (isNil (cdr nodes))
-                     (body (printf ""))
-                     (body (printf ",")))
-                   (ansiExpression (cdr nodes) false (add1 indent)))))
-               (body
-                (ansiExpression (childrenof thisNode) true (add1 indent))
-                (if (isNil (cdr nodes)) (body (printf "")) (body (printf ",")))
-                (ansiExpression (cdr nodes) false indent))))))
-         (body (ansiExpression thisNode true (add1 indent))))))))
+                (ansiExpression (car (childrenof thisNode)) (add1 indent))
+                (printf "%s" (openBrace))
+                (ansiExpression (cdr (childrenof thisNode)) (add1 indent))
+                (printf "%s" (closeBrace)))
+               (body (ansiStructGetterExpression thisNode indent)))
+             (if (isNil (cdr nodes)) (body (printf "")) (body (printf ", ")))
+             (ansiExpression (cdr nodes) indent))
+            (body
+             (ansiExpression (car thisNode) (add1 indent))
+             (printf "%s" (openBrace))
+             (ansiExpression (cdr thisNode) (add1 indent))
+             (printf "%s" (closeBrace)))))))
+      (body (ansiLeaf nodes indent)))))
   (void
    ansiIf
    (list node int indent)
@@ -941,16 +944,14 @@
    (body
     (newLine indent)
     (printf "if ( ")
-    (ansiExpression (first (childrenof node)) true 0)
-    (newLine indent)
+    (ansiExpression (first (childrenof node)) 0)
     (printf ") {")
-    (newLine indent)
-    (ansiBody (second (childrenof node)) 1)
+    (ansiBody (second (childrenof node)) (add1 indent))
     (newLine indent)
     (printf "} else {")
+    (ansiBody (third (childrenof node)) (add1 indent))
     (newLine indent)
-    (ansiBody (third (childrenof node)) 1)
-    (printf "\n}\n")))
+    (printf "}")))
   (void
    ansiSetStruct
    (list node int indent)
@@ -961,7 +962,7 @@
      "%s->%s = "
      (stringify (first (codeof node)))
      (stringify (second (codeof node))))
-    (ansiExpression (childrenof node) true indent)))
+    (ansiExpression (childrenof node) indent)))
   (void
    ansiGetStruct
    (list node int indent)
@@ -979,7 +980,7 @@
    (body
     (newLine indent)
     (printf "%s = " (stringify (first (codeof node))))
-    (ansiExpression (first (childrenof node)) true indent)))
+    (ansiExpression (childrenof node) indent)))
   (void
    ansiStatement
    (list node int indent)
@@ -988,20 +989,18 @@
     (if (equalBox (boxString "setter") (subnameof node))
       (body (ansiSet node indent))
       (body
-       (if (equalBox (boxString "structGetter") (subnameof node))
-         (body (ansiGetStruct node indent))
+       (if (equalBox (boxString "structSetter") (subnameof node))
+         (body (ansiSetStruct node indent))
          (body
-          (if (equalBox (boxString "structSetter") (subnameof node))
-            (body (ansiSetStruct node indent))
+          (if (equalBox (boxString "if") (subnameof node))
+            (body (ansiIf node indent))
             (body
-             (if (equalBox (boxString "if") (subnameof node))
-               (body (ansiIf node indent))
+             (if (equalBox (boxString "returnvoid") (subnameof node))
+               (body (newLine indent) (printf "return"))
                (body
-                (if (equalBox (boxString "returnvoid") (subnameof node))
-                  (body (newLine indent) (printf "return"))
-                  (body
-                   (newLine indent)
-                   (ansiExpression (childrenof node) true indent)))))))))))))
+                (newLine indent)
+                (ansiExpression (cons (childrenof node) nil) indent)))))))))
+    (printf ";")))
   (void
    printIndent
    (int ii)
@@ -1025,7 +1024,6 @@
       (body
        (printIndent indent)
        (ansiStatement (car tree) indent)
-       (printf ";\n")
        (ansiBody (cdr tree) indent)))))
   (void
    ansiDeclarations
@@ -1036,7 +1034,10 @@
       (body (return))
       (body
        (set decl (car decls))
-       (printf "%s %s = " (stringify (first decl)) (stringify (second decl)))
+       (printf
+        "%s %s = "
+        (stringify (ansiTypeMap (first decl)))
+        (stringify (second decl)))
        (display (ansiFuncMap (third decl)))
        (printf ";\n")))))
   (void
@@ -1047,12 +1048,14 @@
     (if (isNil node)
       (body (return))
       (body
+       (newLine 0)
        (printf
-        "\n%s %s("
+        "%s %s("
         (stringify (ansiTypeMap (cdr (assoc "outtype" (cdr node)))))
         (stringify (subnameof node)))
        (ansiFunctionArgs (cdr (assoc "intype" (cdr node))))
-       (printf ") {\n")
+       (printf ") {")
+       (newLine 1)
        (ansiDeclarations (declarationsof node) 1)
        (ansiBody (childrenof node) 1)
        (printf "\n}\n")))))
@@ -1158,7 +1161,21 @@
    (box aSym)
    (declare (list symMap nil))
    (body
-    (set symMap (alistCons (boxSymbol "nil") (boxSymbol "NULL") nil))
+    (set
+     symMap
+     (alistCons
+      (boxSymbol "read-file")
+      (boxSymbol "read_file")
+      (alistCons
+       (boxSymbol "write-file")
+       (boxSymbol "write_file")
+       (alistCons
+        (boxSymbol ">")
+        (boxSymbol "greaterthan")
+        (alistCons
+         (boxSymbol "string-length")
+         (boxSymbol "string_length")
+         (alistCons (boxSymbol "nil") (boxSymbol "NULL") nil))))))
     (if (truthy (assoc (stringify aSym) symMap))
       (body (return (cdr (assoc (stringify aSym) symMap))))
       (body (return aSym)))))
