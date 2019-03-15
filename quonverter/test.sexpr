@@ -1122,7 +1122,7 @@
    (declare)
    (body
     (printf
-     "\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nvoid panic(char* s){abort();}\nint sub(int a, int b) { return a - b; }\nint greaterthan(int a, int b) { return a > b; }\nint equal(int a, int b) { return a == b; }\nint equalString(char* a, char* b) { return !strcmp(a,b); }\nint andBool(int a, int b) { return a == b;}\nint string_length(char* s) { return strlen(s);}\nchar* sub_string(char* s, int start, int length) {\nchar* substr = calloc(length+1, 1);\nstrncpy(substr, s+start, length);\nreturn substr;\n}\n\n\n\nchar* stringConcatenate(char* a, char* b) {\nint len = strlen(a) + strlen(b);\nchar* target = calloc(len,1);\nstrncat(target, a, len);\nstrncat(target, b, len);\nreturn target;\n}\n\ntypedef int*  array;\ntypedef int bool;\n#define true 1\n#define false 0\n\n\n\nvoid * gc_malloc( unsigned int size ) {\nreturn malloc( size);\n}\n\nint* makeArray(int length) {\n    int * array = gc_malloc(length*sizeof(int));\n    return array;\n}\n\nint at(int* arr, int index) {\n  return arr[index];\n}\n\nvoid setAt(int* array, int index, int value) {\n    array[index] = value;\n}\n\nchar * read_file(char * filename) {\nchar * buffer = 0;\nlong length;\nFILE * f = fopen (filename, \"rb\");\n\nif (f)\n{\n  fseek (f, 0, SEEK_END);\n  length = ftell (f);\n  fseek (f, 0, SEEK_SET);\n  buffer = malloc (length);\n  if (buffer)\n  {\n    fread (buffer, 1, length, f);\n  }\n  fclose (f);\n}\nreturn buffer;\n}\n\n\nvoid write_file (char * filename, char * data) {\nFILE *f = fopen(filename, \"w\");\nif (f == NULL)\n{\n    printf(\"Error opening file!\");\n    exit(1);\n}\n\nfprintf(f,  data);\n\nfclose(f);\n}\n\n")
+     "\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nvoid panic(char* s){abort();}\nint sub(int a, int b) { return a - b; }\nint greaterthan(int a, int b) { return a > b; }\nint equal(int a, int b) { return a == b; }\nint equalString(char* a, char* b) { return !strcmp(a,b); }\nint andBool(int a, int b) { return a == b;}\nint string_length(char* s) { return strlen(s);}\nchar* sub_string(char* s, int start, int length) {\nchar* substr = calloc(length+1, 1);\nstrncpy(substr, s+start, length);\nreturn substr;\n}\n\n\n\nchar* stringConcatenate(char* a, char* b) {\nint len = strlen(a) + strlen(b);\nchar* target = calloc(len,1);\nstrncat(target, a, len);\nstrncat(target, b, len);\nreturn target;\n}\n\ntypedef int*  array;\ntypedef int bool;\n#define true 1\n#define false 0\n\n\n\nvoid * gc_malloc( unsigned int size ) {\nreturn malloc( size);\n}\n\nint* makeArray(int length) {\n    int * array = gc_malloc(length*sizeof(int));\n    return array;\n}\n\nint at(int* arr, int index) {\n  return arr[index];\n}\n\nvoid setAt(int* array, int index, int value) {\n    array[index] = value;\n}\n\nchar * read_file(char * filename) {\nchar * buffer = 0;\nlong length;\nFILE * f = fopen (filename, \"rb\");\n\nif (f)\n{\n  fseek (f, 0, SEEK_END);\n  length = ftell (f);\n  fseek (f, 0, SEEK_SET);\n  buffer = malloc (length);\n  if (buffer)\n  {\n    fread (buffer, 1, length, f);\n  }\n  fclose (f);\n}\nreturn buffer;\n}\n\n\nvoid write_file (char * filename, char * data) {\nFILE *f = fopen(filename, \"w\");\nif (f == NULL)\n{\n    printf(\"Error opening file!\");\n    exit(1);\n}\n\nfprintf(f,  data);\n\nfclose(f);\n}\n\nchar* getStringArray(int index, char** strs) {\nreturn strs[index];\n}\n\nint start();  //Forwards declare the user's main routine\nchar** globalArgs;\nint globalArgsCount;\n\nint main( int argc, char *argv[] )  {\n  globalArgs = argv;\n  globalArgsCount = argc;\n\n  return start();\n\n}\n\n")
     (return)))
   (box
    last
@@ -1177,7 +1177,12 @@
    (box aSym)
    (declare (list symMap nil))
    (body
-    (set symMap (alistCons (boxSymbol "string") (boxSymbol "char*") nil))
+    (set
+     symMap
+     (alistCons
+      (boxSymbol "stringArray")
+      (boxSymbol "char**")
+      (alistCons (boxSymbol "string") (boxSymbol "char*") nil)))
     (if (truthy (assoc (stringify aSym) symMap))
       (body (return (cdr (assoc (stringify aSym) symMap))))
       (body (return aSym)))))
@@ -1235,10 +1240,10 @@
       (body (ansiType (car nodes)) (ansiTypes (cdr nodes))))))
   (void
    compile
-   ()
+   (string filename)
    (declare (string programStr "") (list tree nil) (list program nil))
    (body
-    (set programStr (read-file "test.sexpr"))
+    (set programStr (read-file filename))
     (set tree (readSexpr programStr))
     (set
      program
@@ -1293,11 +1298,39 @@
          (equalBox (cdr (assoc "ohio" assList)) (boxString "gozaimasu")))
       (body (printf "16.2 pass assoc list\n"))
       (body (printf "16.2 fail assoc list\n")))))
-  (int
-   main
-   (int argc char** argv)
-   (declare (bool runTests true))
+  (list
+   argList
+   (int count int pos stringArray args)
+   (declare)
    (body
+    (if (> count pos)
+      (body
+       (return
+        (cons
+         (boxString (getStringArray pos args))
+         (argList count (add1 pos) args))))
+      (body (return nil)))))
+  (list
+   reverse
+   (list l)
+   (declare)
+   (body
+    (if (isEmpty l)
+      (body (return nil))
+      (body (return (cons (car l) (reverse (cdr l))))))))
+  (int
+   start
+   ()
+   (declare (bool runTests false) (list cmdLine nil) (box filename nil))
+   (body
+    (set cmdLine (reverse (argList globalArgsCount 0 globalArgs)))
+    (printf "//")
+    (display cmdLine)
+    (if (> (length cmdLine) 1)
+      (body (set filename (second cmdLine)))
+      (body (set filename (boxString "test.sexpr"))))
+    (display filename)
+    (set runTests (equalBox (boxString "--test") filename))
     (if runTests
       (body
        (test0)
@@ -1317,4 +1350,5 @@
        (test16)
        (printf "\n\nAfter all that hard work, I need a beer...\n")
        (beers 9))
-      (body (compile)))))))
+      (body (compile (unBoxString filename))))
+    (return 1)))))

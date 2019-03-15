@@ -12,3 +12,9 @@ But it is possible.  The trick is to choose a really simple source langauge, and
 ## Current status
 
 I have no idea what I'm doing but somehow it still works.
+
+## Notes
+
+If the C programs start segfaulting, try compiling with:
+
+    gcc -g -Wl,-stack_size -Wl,1000000

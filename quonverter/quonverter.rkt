@@ -125,6 +125,14 @@
         "function andBool(a,b){return a==b}\n"
         "function panic(s){console.trace(s);process.exit(1);}\n"
         "function dump(s){console.log(s)}"
+        "function getStringArray(index, arr) { return arr[index]; }"
+        "var globalArgs;\n"
+        "var globalArgsCount\n"
+        "function main() {
+globalArgs=process.argv;
+globalArgsCount = process.argv.length
+start();
+}"
         
         
         [map [lambda [x]  [format "#include <~s>~n"
@@ -442,6 +450,7 @@
 [define [clang_typemap type]
   [case type
     ['string 'char*]
+    ['stringArray 'char**]
     [else type]]]
 
 ;Renames quonverter funcs into C funcs.
@@ -554,6 +563,23 @@ fprintf(f, \"%s\", data);
 
 fclose(f);
 }
+
+char* getStringArray(int index, char** strs) {
+return strs[index];
+}
+
+int start();  //Forwards declare the user's main routine
+char** globalArgs;
+int globalArgsCount;
+
+int main( int argc, char *argv[] )  {
+  globalArgs = argv;
+  globalArgsCount = argc;
+
+  return start();
+
+
+}
 "
                       [id [map clang_dispatch  [childrenof tree]]]
 
@@ -564,7 +590,7 @@ fclose(f);
 [define clang_test_filename "test.c"]
 
 ;Compile and run the test program
-[define clang_test_commands '["gcc test.c" "./a.out > results.c"]]
+[define clang_test_commands '["gcc -g -Wl,-stack_size -Wl,1000000 test.c" "./a.out > results.c"]]
 
 
 
@@ -627,6 +653,21 @@ ioutil.WriteFile(filename, []byte(data), 0777)
 
 func isNil(p *Pair) bool {
 return p==nil
+}
+
+type stringArray = []string;
+var globalArgsCount int;
+var globalArgs []string;
+
+func getStringArray(index int, arr stringArray) string {
+return arr[index]
+}
+
+
+func main () {
+globalArgs = os.Args
+globalArgsCount=len(os.Args)
+  start()
 }
 
 "]
@@ -767,6 +808,7 @@ return p==nil
 
 [define [go_typemap type]
   [case type
+    ['stringArray [string->symbol "[]string"]]
     ['void ""]
     ['Box* '*Box]
     ['Pair* '*Pair]
@@ -1889,13 +1931,13 @@ returnValue=${array[$2]}
                                                        [emptyList]]]]]]]]]
 
 
-;           [define [type_expression scope tree]
-;  ;[displayln [format "type_expr: ~s" tree]]
-;  [if [list? tree]
-;      [make-node scope tree 'expression [map [lambda [x] [type_expression scope x]] tree]]
-;      [make-node scope tree 'leaf '[]]]]
-;
-;           
+           ;           [define [type_expression scope tree]
+           ;  ;[displayln [format "type_expr: ~s" tree]]
+           ;  [if [list? tree]
+           ;      [make-node scope tree 'expression [map [lambda [x] [type_expression scope x]] tree]]
+           ;      [make-node scope tree 'leaf '[]]]]
+           ;
+           ;           
 
            [list astExpression [list tree] [declare]
                  [body
@@ -1911,9 +1953,9 @@ returnValue=${array[$2]}
                        [if [isList tree]
                            [body
                                  
-                                      ;[printf "Compound expression: "][display tree]
-                                      [return [cons             [astExpression [car tree]]
-                                                    [astSubExpression [cdr tree]] ]]]
+                            ;[printf "Compound expression: "][display tree]
+                            [return [cons             [astExpression [car tree]]
+                                                      [astSubExpression [cdr tree]] ]]]
                                      
                                      
                            [body [return [makeNode "expression" "leaf"        tree  nil]]]]]]
@@ -2253,9 +2295,9 @@ returnValue=${array[$2]}
                   ;[displayln[format  "subexpr: ~s" node]][newline]
                   
                   [body ;[printf "\n\nExpression: \n\n"][display node]
-                        [if [isLeaf node]
-                            [body [display [ansiFuncMap[codeof node]]]]
-                            [body [ansiSubExpression node indent]]]]]
+                   [if [isLeaf node]
+                       [body [display [ansiFuncMap[codeof node]]]]
+                       [body [ansiSubExpression node indent]]]]]
 
            [void ansiRecurList [list expr int indent] [declare]
                  [body
@@ -2270,8 +2312,8 @@ returnValue=${array[$2]}
                            [body [printf ""]]
                            [body
                             [printf ", "]
-                       [ansiRecurList [cdr expr] indent]]]
-                           ]]
+                            [ansiRecurList [cdr expr] indent]]]
+                       ]]
                   [return]
                   ]]
 
@@ -2295,22 +2337,22 @@ returnValue=${array[$2]}
                        [if [isNode [childrenof tree]]
                            [body
                             [ansiSubExpression [childrenof tree] indent]]
-                            [body
-                       [if [isLeaf tree]
-                           [body ;[printf "\natom\n"]
+                           [body
+                            [if [isLeaf tree]
+                                [body ;[printf "\natom\n"]
                                  [display [ansiFuncMap [codeof tree]]]]
-                           [body 
-                            [if [equal 1 [length [childrenof tree]]]
+                                [body 
+                                 [if [equal 1 [length [childrenof tree]]]
                                      
-                                [body ;[printf "\na function with no args: "][display [car [childrenof tree]]]
-[display [codeof [car [childrenof tree]]]]
-                                 [if [equalBox [boxString "return"] [codeof [car [childrenof tree]]]]
-                                     [body [printf ""]
-                                      ]
+                                     [body ;[printf "\na function with no args: "][display [car [childrenof tree]]]
+                                      [display [codeof [car [childrenof tree]]]]
+                                      [if [equalBox [boxString "return"] [codeof [car [childrenof tree]]]]
+                                          [body [printf ""]
+                                                ]
                                           [body                                            
-                                      [printf "()"]; [stringify [codeof   [childrenof tree]]]]
-                                      ]]]
-                                [body ;[printf  "definite function "] [display [childrenof tree]]
+                                           [printf "()"]; [stringify [codeof   [childrenof tree]]]]
+                                           ]]]
+                                     [body ;[printf  "definite function "] [display [childrenof tree]]
             
                                       [set thing [codeof [car  [childrenof tree]]]]
                                       [if [equalBox [boxSymbol "get-struct"] thing]
@@ -2325,7 +2367,7 @@ returnValue=${array[$2]}
                                                 [printf ")"]]]]
 
                                           ]]]
-                            ]]]]
+                                 ]]]]
                        ]]]]
            
            ;output a statement.  This is where all the builtins go, like "if, set, for"
@@ -2612,6 +2654,22 @@ fprintf(f,  data);
 fclose(f);
 }
 
+char* getStringArray(int index, char** strs) {
+return strs[index];
+}
+
+int start();  //Forwards declare the user's main routine
+char** globalArgs;
+int globalArgsCount;
+
+int main( int argc, char *argv[] )  {
+  globalArgs = argv;
+  globalArgsCount = argc;
+
+  return start();
+
+}
+
 "]
 
                   [return] ]]
@@ -2663,7 +2721,9 @@ fclose(f);
            [box ansiTypeMap [box aSym] [declare [list symMap nil]]
                 [body
                  ;[printf "Typemap: '%s'\n" [stringify aSym]]
-                 [set symMap [alistCons [boxSymbol "string"] [boxSymbol "char*"] nil]]
+                 [set symMap
+                      [alistCons [boxSymbol "stringArray"] [boxSymbol "char**"] 
+                      [alistCons [boxSymbol "string"] [boxSymbol "char*"] nil]]]
                  [if [truthy [assoc [stringify aSym] symMap]]
                      [body [return [cdr [assoc [stringify aSym] symMap]]]]
                      [body [return aSym]]
@@ -2676,20 +2736,20 @@ fclose(f);
                  ;[printf "Typemap: '%s'\n" [stringify aSym]]
                  [if [equalString "symbol" [boxType aSym]]
                      [body
-                 [set symMap
-                      [alistCons [boxSymbol "="] [boxSymbol "equal"]
-                      [alistCons [boxSymbol "sub-string"] [boxSymbol "sub_string"]
-                      [alistCons [boxSymbol "read-file"] [boxSymbol "read_file"]
-                                 [alistCons [boxSymbol "write-file"] [boxSymbol "write_file"]
-                                            [alistCons [boxSymbol ">"] [boxSymbol "greaterthan"]
-                                                       [alistCons [boxSymbol "string-length"] [boxSymbol "string_length"]
-                                                                  [alistCons [boxSymbol "nil"] [boxSymbol "NULL"] nil]]]]]]]]
-                 [if [truthy [assoc [stringify aSym] symMap]]
-                     [body [return [cdr [assoc [stringify aSym] symMap]]]]
-                     [body [return aSym]]
+                      [set symMap
+                           [alistCons [boxSymbol "="] [boxSymbol "equal"]
+                                      [alistCons [boxSymbol "sub-string"] [boxSymbol "sub_string"]
+                                                 [alistCons [boxSymbol "read-file"] [boxSymbol "read_file"]
+                                                            [alistCons [boxSymbol "write-file"] [boxSymbol "write_file"]
+                                                                       [alistCons [boxSymbol ">"] [boxSymbol "greaterthan"]
+                                                                                  [alistCons [boxSymbol "string-length"] [boxSymbol "string_length"]
+                                                                                             [alistCons [boxSymbol "nil"] [boxSymbol "NULL"] nil]]]]]]]]
+                      [if [truthy [assoc [stringify aSym] symMap]]
+                          [body [return [cdr [assoc [stringify aSym] symMap]]]]
+                          [body [return aSym]]
                                   
-                     ]
-                 ]
+                          ]
+                      ]
                      [body [return aSym]]]
                  ]]
      
@@ -2717,7 +2777,7 @@ fclose(f);
                        [ansiType [car nodes]]
                        [ansiTypes [cdr nodes]]]]]]
 
-           [void compile []
+           [void compile [string filename]
                  [declare
                   [string programStr ""]
                   [list tree nil]
@@ -2725,7 +2785,7 @@ fclose(f);
                   ]
                  [body
                   ;[printf "Reading in program...\n"]
-                  [set programStr [read-file "test.sexpr"]]
+                  [set programStr [read-file filename]]
                   ;[printf "Read program: %s\n" programStr]
                   ;[printf "Read program.  Parsing...\n" ]
                   [set tree [readSexpr programStr]]
@@ -2806,10 +2866,37 @@ bool isNil(list p) {
                       [body [printf "16.2 fail assoc list\n"]]
                       ]
                   ]]
+           [list argList [int count int pos stringArray args] [declare ]
+                 [body
+                  [if [> count pos]
+                      [body
+                       [return [cons [boxString [getStringArray pos args]] [argList count [add1 pos] args]]]
+                       ]
+                      [body [return nil]]]
+                  ]]
+
+           [list reverse [list l] [declare ]
+                 [body
+                  [if [isEmpty l]
+                      [body
+                       [return nil]]
+                      [body 
+                       [return [cons [car l] [reverse [cdr l]]]]
+                       ]]
+                  ]]
      
-           [int main [int argc  char** argv]
-                [declare [bool runTests false]]
+           [int start []
+                [declare [bool runTests false][list cmdLine nil][box filename nil]]
                 [body
+                 [set cmdLine [reverse [argList globalArgsCount 0 globalArgs]]]
+                 [printf "//"]
+                 [display  cmdLine]
+                 
+                 [if [> [length cmdLine] 1]
+                     [body [set filename [second cmdLine]]]
+                     [body [set filename [boxString "test.sexpr"]]]]
+                [display  filename]
+                 [set runTests  [equalBox [boxString "--test"] filename ]]
                  [if runTests
                      [body
                       [test0]
@@ -2831,7 +2918,8 @@ bool isNil(list p) {
                       [printf "\n\nAfter all that hard work, I need a beer...\n"]
                       [beers 9]
                       ]
-                     [body [compile]]]
+                     [body [compile [unBoxString filename]]]]
+                 [return 0]
                  ;End of file!
                  ]]]]]]
 ;Print complete program so that the next compiler can access it.  Eventually we will incorporate this program data in the output program, so we can continue recompiling forever
