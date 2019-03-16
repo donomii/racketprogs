@@ -112,7 +112,11 @@
         "function equal(a,b) {return a===b}\n"
         "function equalString(a,b) {return a.toString()===b.toString() }\n"
         "function sub (a,b){return a-b}\n"
+        "function subf (a,b){return a-b}\n"
+        "function mult (a,b){return a*b}\n"
+        "function multf (a,b){return a*b}\n"
         "function greaterthan(a,b){return a>b}\n"
+        "function greaterthanf(a,b){return a>b}\n"
         "function makeArray(){return [];}\n"
         "function at(arr, index) {return arr[index];}\n"
         "function printf() {process.stdout.write(util.format.apply(this, arguments));}\n"
@@ -504,7 +508,7 @@ return substr;
 }
 
 char* stringConcatenate(char* a, char* b) {
-int len = strlen(a) + strlen(b);
+int len = strlen(a) + strlen(b)+1;
 char* target = calloc(len,1);
 strncat(target, a, len);
 strncat(target, b, len);
@@ -2600,7 +2604,11 @@ returnValue=${array[$2]}
 #include <string.h>
 void panic(char* s){abort();}
 int sub(int a, int b) { return a - b; }
+float mult(int a, int b) { return a * b; }
 int greaterthan(int a, int b) { return a > b; }
+float subf(float a, float b) { return a - b; }
+float multf(float a, float b) { return a * b; }
+int greaterthanf(float a, float b) { return a > b; }
 int equal(int a, int b) { return a == b; }
 int equalString(char* a, char* b) { return !strcmp(a,b); }
 int andBool(int a, int b) { return a == b;}
@@ -2614,7 +2622,7 @@ return substr;
 
 
 char* stringConcatenate(char* a, char* b) {
-int len = strlen(a) + strlen(b);
+int len = strlen(a) + strlen(b) + 1;
 char* target = calloc(len,1);
 strncat(target, a, len);
 strncat(target, b, len);
@@ -2926,7 +2934,7 @@ bool isNil(list p) {
                  [body
                   [if [greaterthanf end start]
                       [then
-                       [mandelRow -2.5 1 0.05 start]
+                       [mandelRow -2.5 1 0.02 start]
                        [newLine 0]
                        [mandelRows [addf start step] end step]]
                       [body
@@ -2937,7 +2945,7 @@ bool isNil(list p) {
 
            [void mandelPic [] [declare]
                  [body
-                  [mandelRows -1.0 1.0 0.1]
+                  [mandelRows -1.0 1.0 0.05]
                   ]]
            
    
@@ -2962,7 +2970,7 @@ bool isNil(list p) {
                   ]]
      
            [int start []
-                [declare [bool runTests false][list cmdLine nil][box filename nil]]
+                [declare [bool runTests false][bool runMandel false][list cmdLine nil][box filename nil]]
                 [body
                  [set cmdLine [reverse [argList globalArgsCount 0 globalArgs]]]
                  [printf "//"]
@@ -2973,8 +2981,13 @@ bool isNil(list p) {
                      [body [set filename [boxString "test.sexpr"]]]]
                  [display  filename]
                  [set runTests  [equalBox [boxString "--test"] filename ]]
+                 [set runMandel  [equalBox [boxString "--mandelbrot"] filename ]]
+                 [if runMandel
+                     [then [newLine 0][mandelPic]]
+                     [else [printf ""]]]
+                 
                  [if runTests
-                     [body
+                     [then
                       [test0]
                       [test1]
                       [test2]
@@ -2994,10 +3007,11 @@ bool isNil(list p) {
                       [printf "\n\nAfter all that hard work, I need a beer...\n"]
                       [beers 9]
                       ]
-                     [body
-                      ;[compile [unBoxString filename]]
+                     [else
+                      [compile [unBoxString filename]]
                       [printf "\n"]
-                      [mandelPic  ]]
+                      ;[mandelPic  ]
+                      ]
                      ]
                  [return 0]
                  ;End of file!
