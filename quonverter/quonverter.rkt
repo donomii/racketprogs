@@ -139,8 +139,7 @@ start();
 }"
         
         
-        [map [lambda [x]  [format "#include <~s>~n"
-                                  x] ] [cdr [codeof tree]]]
+        ;[map [lambda [x]  [format "#include <~s>~n" x] ] [cdr [codeof tree]]]
         "\n"]]
 
 [define [js_struct_components tree]
@@ -316,8 +315,7 @@ start();
 ;output include statements
 [define [clang_includes tree]
   [list "//Include libraries and headers\n"
-        [map [lambda [x]  [format "#include <~s>~n"
-                                  x] ] [cons 'stdio.h [cdr [codeof tree]]]]
+        ;[map [lambda [x]  [format "#include <~s>~n"  x] ] [cons 'stdio.h [cdr [codeof tree]]]]
         "\n"]]
 
 
@@ -606,7 +604,7 @@ int main( int argc, char *argv[] )  {
 
 [define [go_includes tree]
   [list
-   [map [lambda [x]  [format "import \"~a\"~n" x] ] [cons "os" [cons "runtime/debug" [cons "io/ioutil" [cdr [codeof tree]]]]]]
+   [map [lambda [x]  [format "import \"~a\"~n" x] ] [cons "os" [cons "runtime/debug" [cons "io/ioutil" '[]]]]]
    "
 func panic( s string) {
 fmt.Println(s)
@@ -1287,7 +1285,7 @@ returnValue=${array[$2]}
 [define prog
   [quote [
           ;[includes stdio.h stdlib.h]
-          [includes]
+          [includes mandelbrot.qon]
           [types
            [Box
             [struct

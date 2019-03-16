@@ -1,4 +1,4 @@
-((includes)
+((includes mandelbrot.qon)
  (types
   (Box
    (struct
