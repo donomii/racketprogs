@@ -298,7 +298,7 @@ start();
 [define js_test_filename "test.js"]
 
 ;Compile and run the test program
-[define js_test_commands '["/usr/local/bin/node test.js" "./a.out > results.js"]]
+[define js_test_commands '["/usr/local/bin/node --stack-size=99999999 test.js" "./a.out > results.js"]]
 
 
 
@@ -488,7 +488,11 @@ start();
 #include <string.h>
 void panic(char* s){abort();}
 int sub(int a, int b) { return a - b; }
+float subf(float a, float b) { return a - b; }
+int mult(int a, int b) { return a * b; }
+float multf(float a, float b) { return a * b; }
 int greaterthan(int a, int b) { return a > b; }
+int greaterthanf(float a, float b) { return a > b; }
 int equal(int a, int b) { return a == b; }
 int equalString(char* a, char* b) { return !strcmp(a,b); }
 int andBool(int a, int b) { return a == b;}
@@ -568,7 +572,7 @@ char* getStringArray(int index, char** strs) {
 return strs[index];
 }
 
-int start();  //Forwards declare the user's main routine
+int start();  /* Forwards declare the user's main routine */
 char** globalArgs;
 int globalArgsCount;
 
@@ -590,7 +594,7 @@ int main( int argc, char *argv[] )  {
 [define clang_test_filename "test.c"]
 
 ;Compile and run the test program
-[define clang_test_commands '["gcc -g -Wl,-stack_size -Wl,1000000 test.c" "./a.out > results.c"]]
+[define clang_test_commands '["gcc -g -Wl,-stack_size -Wl,1000000 -O3 -ansi test.c" "./a.out > results.c"]]
 
 
 
@@ -610,9 +614,27 @@ os.Exit(1)
 return a-b
 }
 
+   func mult(a, b int) int{
+return a*b
+}
+
 func greaterthan(a, b int) bool {
 return a>b
 }
+
+
+func subf(a, b float64) float64{
+return a-b
+}
+
+   func multf(a, b float64) float64{
+return a*b
+}
+
+func greaterthanf(a, b float64) bool {
+return a>b
+}
+
 func equal(a,b int) bool {
 return a==b
 }
@@ -703,7 +725,7 @@ globalArgsCount=len(os.Args)
 
 [define [go_arguments tree]
   [list "("
-        [string-join [map [lambda [x]  [format "~a ~a" [cadr x] [car x]]] [make-pairs [codeof tree]]] ", "]
+        [string-join [map [lambda [x]  [format "~a ~a" [cadr x] [go_typemap [car x]]]] [make-pairs [codeof tree]]] ", "]
         ")"
         ]]
 
@@ -747,8 +769,7 @@ globalArgsCount=len(os.Args)
                 [list
                  [format "~a(" [go_funcmap [codeof [car  [childrenof tree]]]]]
                  [string-join [map [lambda [x] [format "~a" [go_subexpression x]  ]] [cdr  [childrenof tree]]] ", "]
-                 ")"]]] ""]]]]
-  ]
+                 ")"]]] ""]]]]]
 
 
 
@@ -808,6 +829,7 @@ globalArgsCount=len(os.Args)
 
 [define [go_typemap type]
   [case type
+    ['float 'float64]
     ['stringArray [string->symbol "[]string"]]
     ['void ""]
     ['Box* '*Box]
@@ -1287,6 +1309,9 @@ returnValue=${array[$2]}
            [int add [int a int b] [declare]
                 [body [return [sub a [sub 0 b]]]]]
 
+           [float addf [float a float b] [declare]
+                  [body [return [subf a [subf 0 b]]]]]
+
            [int sub1 [int a] [declare]
                 [body [return [sub a 1]]]]
 
@@ -1668,7 +1693,7 @@ returnValue=${array[$2]}
                                                 ]
                                                [body [if [equalBox [boxSymbol ";" ] token]
                                                          [body
-                                                          [printf "\nComment:%s" [readComment prog [add1 start] len]]
+                                                          ;[printf "\nComment:%s" [readComment prog [add1 start] len]]
                                                           [return [scan prog  [add start  [add1 [add1 [string-length [readComment prog [add1 start] len]]]]] 1]
                                                                   ]]
                                                          [body [if [equalBox [boxSymbol "\""] token]
@@ -2723,7 +2748,7 @@ int main( int argc, char *argv[] )  {
                  ;[printf "Typemap: '%s'\n" [stringify aSym]]
                  [set symMap
                       [alistCons [boxSymbol "stringArray"] [boxSymbol "char**"] 
-                      [alistCons [boxSymbol "string"] [boxSymbol "char*"] nil]]]
+                                 [alistCons [boxSymbol "string"] [boxSymbol "char*"] nil]]]
                  [if [truthy [assoc [stringify aSym] symMap]]
                      [body [return [cdr [assoc [stringify aSym] symMap]]]]
                      [body [return aSym]]
@@ -2866,6 +2891,57 @@ bool isNil(list p) {
                       [body [printf "16.2 fail assoc list\n"]]
                       ]
                   ]]
+           ;16 tones
+           [string asciiShade [int val] [declare [string dithers " .:-;!/>)|&IH%*#"]]
+                   [body
+                    [if [> val 15]
+                        [then ;[printf "Requested value cannot be larger than 15, was %d!" val]
+                         [return [asciiShade 15]]]
+                        [else [return [sub-string dithers val 1]]]]
+                    [return ""]
+                    ]]
+           
+           [int escape [float x float y float c1 float c2 int iteration int max] [declare]
+                [body
+                 [if [greaterthanf 4 [addf (multf x x)  (multf y y)]]
+                     [then [if [>  max iteration]
+                               [then
+                                [return [escape [addf [subf (multf x x)  (multf y y)] c1]  [addf (multf 2 (multf x y))  c2] c1 c2 [add1 iteration] max]]]
+                               [else [return iteration]]]]
+                     [else [return iteration]]]
+                 ]]
+
+           [void mandelRow [float start float end float step float y] [declare]
+                 [body
+                  [if [greaterthanf end start]
+                      [then
+                       [printf "%s" [asciiShade [escape start y start y 0 16]]]
+                       [mandelRow [addf start step] end step y]]
+                      [body
+                       [return]]]
+                  [return]
+     
+                  ]]
+           [void mandelRows [float start float end float step] [declare]
+                 [body
+                  [if [greaterthanf end start]
+                      [then
+                       [mandelRow -2.5 1 0.05 start]
+                       [newLine 0]
+                       [mandelRows [addf start step] end step]]
+                      [body
+                       [return]]]
+                  [return]
+     
+                  ]]
+
+           [void mandelPic [] [declare]
+                 [body
+                  [mandelRows -1.0 1.0 0.1]
+                  ]]
+           
+   
+           
            [list argList [int count int pos stringArray args] [declare ]
                  [body
                   [if [> count pos]
@@ -2895,7 +2971,7 @@ bool isNil(list p) {
                  [if [> [length cmdLine] 1]
                      [body [set filename [second cmdLine]]]
                      [body [set filename [boxString "test.sexpr"]]]]
-                [display  filename]
+                 [display  filename]
                  [set runTests  [equalBox [boxString "--test"] filename ]]
                  [if runTests
                      [body
@@ -2918,7 +2994,11 @@ bool isNil(list p) {
                       [printf "\n\nAfter all that hard work, I need a beer...\n"]
                       [beers 9]
                       ]
-                     [body [compile [unBoxString filename]]]]
+                     [body
+                      ;[compile [unBoxString filename]]
+                      [printf "\n"]
+                      [mandelPic  ]]
+                     ]
                  [return 0]
                  ;End of file!
                  ]]]]]]

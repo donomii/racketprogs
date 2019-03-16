@@ -17,6 +17,7 @@
   (list Box*))
  (functions
   (int add (int a int b) (declare) (body (return (sub a (sub 0 b)))))
+  (float addf (float a float b) (declare) (body (return (subf a (subf 0 b)))))
   (int sub1 (int a) (declare) (body (return (sub a 1))))
   (int add1 (int a) (declare) (body (return (add a 1))))
   (box
@@ -339,7 +340,6 @@
                (body
                 (if (equalBox (boxSymbol ";") token)
                   (body
-                   (printf "\nComment:%s" (readComment prog (add1 start) len))
                    (return
                     (scan
                      prog
@@ -1298,6 +1298,58 @@
          (equalBox (cdr (assoc "ohio" assList)) (boxString "gozaimasu")))
       (body (printf "16.2 pass assoc list\n"))
       (body (printf "16.2 fail assoc list\n")))))
+  (string
+   asciiShade
+   (int val)
+   (declare (string dithers " .:-;!/>)|&IH%*#"))
+   (body
+    (if (> val 15)
+      (then (return (asciiShade 15)))
+      (else (return (sub-string dithers val 1))))
+    (return "")))
+  (int
+   escape
+   (float x float y float c1 float c2 int iteration int max)
+   (declare)
+   (body
+    (if (greaterthanf 4 (addf (multf x x) (multf y y)))
+      (then
+       (if (> max iteration)
+         (then
+          (return
+           (escape
+            (addf (subf (multf x x) (multf y y)) c1)
+            (addf (multf 2 (multf x y)) c2)
+            c1
+            c2
+            (add1 iteration)
+            max)))
+         (else (return iteration))))
+      (else (return iteration)))))
+  (void
+   mandelRow
+   (float start float end float step float y)
+   (declare)
+   (body
+    (if (greaterthanf end start)
+      (then
+       (printf "%s" (asciiShade (escape start y start y 0 16)))
+       (mandelRow (addf start step) end step y))
+      (body (return)))
+    (return)))
+  (void
+   mandelRows
+   (float start float end float step)
+   (declare)
+   (body
+    (if (greaterthanf end start)
+      (then
+       (mandelRow -2.5 1 0.05 start)
+       (newLine 0)
+       (mandelRows (addf start step) end step))
+      (body (return)))
+    (return)))
+  (void mandelPic () (declare) (body (mandelRows -1.0 1.0 0.1)))
   (list
    argList
    (int count int pos stringArray args)
@@ -1350,5 +1402,5 @@
        (test16)
        (printf "\n\nAfter all that hard work, I need a beer...\n")
        (beers 9))
-      (body (compile (unBoxString filename))))
-    (return 1)))))
+      (body (printf "\n") (mandelPic)))
+    (return 0)))))
