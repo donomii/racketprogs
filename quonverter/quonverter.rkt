@@ -2580,7 +2580,7 @@ returnValue=${array[$2]}
                        ]]]]
            [void ansiForwardDeclaration [list node] [declare]
                  [body
-                  ;[display tree]
+                  
                   [if [isNil node]
                       [body [return]]
                       [body
@@ -2592,6 +2592,7 @@ returnValue=${array[$2]}
      
            [void ansiForwardDeclarations [list tree] [declare]
                  [body
+                  ;[display tree]
                   [if [isEmpty tree]
                       [body [return]]
                       [body
@@ -2718,12 +2719,7 @@ int main( int argc, char *argv[] )  {
 }
 
 "]
-                  [printf "functions: "]
-                  [display  [car [childrenof [cdr nodes]]]]
-                  
-                  [ansiFunctions [cdr [assoc "children" [cdr [cdr [assoc "functions" [car [childrenof [cdr nodes]]]]]]]]]
-                  [printf "end functions: "]
-                  [return] ]]
+                   ]]
 
            [box last [list alist] [declare]
                 [body
@@ -2828,6 +2824,69 @@ int main( int argc, char *argv[] )  {
                        [ansiType [car nodes]]
                        [ansiTypes [cdr nodes]]]]]]
 
+           (list concatLists (list seq1 list seq2) [declare]
+                 (body
+  (if (isNil seq1)
+      [then [return 
+      seq2]]
+      (body (return (cons (car seq1) (concatLists (cdr seq1) seq2)))))))
+
+
+           [list alistKeys [list alist] [declare]
+                 [body
+[if [isNil alist]
+    [then [return nil]]
+    [else [return [cons [car [car alist]] [alistKeys [cdr alist]]]]]]
+                  ]]
+           [list mergeIncludes [list program] [declare
+                                               [list newProgram nil]
+                                               [list oldfunctionsnode nil]
+                                               [list oldfunctions nil]
+                                               [list newfunctions nil]
+                                               [list newFunctionNode nil]
+                                               [list functions nil]]
+                 [body
+
+                     
+                 [set functions  [childrenof [cdr [assoc "functions"  [car [childrenof [cdr [cdr [assoc  "includes" program]]]]]]]]]
+                 [set oldfunctionsnode  [cdr [assoc  "functions" program]]]
+                  [set oldfunctions [childrenof oldfunctionsnode]]
+                  [set newfunctions [concatLists functions oldfunctions]]
+
+                  [set newFunctionNode [cons [boxSymbol "node"] [alistCons [boxSymbol "children"] newfunctions [cdr oldfunctionsnode]]]]
+                  
+
+                  
+                  [set newProgram
+                       [alistCons [boxString "functions"]  newFunctionNode
+                       [alistCons [boxString "types"] [cdr [assoc  "types" program]]
+                       [alistCons [boxString "includes"] [cons [boxSymbol "includes"] nil] newProgram]]]]
+
+                  ;[printf "\noldfunctions: "]
+                  ;[display [alistKeys oldfunctions]]
+
+
+                  ;[printf "\nnewfunctions: "]
+                  ;[display [alistKeys newfunctions]]
+
+                  ;[printf "\noldfunctionnode: "]
+                  ;[display oldFunctionNode]
+                  ;[display [alistKeys [cdr oldfunctionsnode]]]
+                  
+                  
+                  ;[printf "\nnewfunctionnode: "]
+                  ;[display newFunctionNode]
+                  ;[display [alistKeys [cdr newFunctionNode]]]
+
+                  
+                  ;[printf "\nNewProgram: "]
+                  ;[display [alistKeys newProgram]]
+                  ;[os.Exit 1]
+                  [return newProgram]
+
+                  ]]
+
+                 
            [void compile [string filename]
                  [declare
                   [string programStr ""]
@@ -2846,6 +2905,7 @@ int main( int argc, char *argv[] )  {
                   [set program [alistCons [boxString "includes"] [astIncludes  [first tree]]
                                           [alistCons [boxString "types"] [astTypes  [second tree]]
                                                      [alistCons [boxString "functions"] [astFunctions  [third tree]] nil]]]]
+                  [set program [mergeIncludes program]]
                   ;[printf "Built AST.  Generating ansi C output...\n" ]                   
                   ;[display [astFunctions  tree]]
                   ;[printf "\n\n\nPrinting includes\n"]
@@ -2864,7 +2924,7 @@ bool isNil(list p) {
     return p == NULL;
 }
 \n\n//Forward declarations\n"]
-                  ;[display program]
+                  ;[display [cdr [assoc "functions" program]]]
                   [ansiForwardDeclarations [cdr [assoc "children" [cdr [cdr [assoc "functions" program]]]]]]
                   [printf "\n\n//End forward declarations\n\n"]
                   [ansiFunctions [cdr [assoc "children" [cdr [cdr [assoc "functions" program]]]]]]
@@ -2917,56 +2977,7 @@ bool isNil(list p) {
                       [body [printf "16.2 fail assoc list\n"]]
                       ]
                   ]]
-           ;16 tones
-           [string asciiShade [int val] [declare [string dithers " .:-;!/>)|&IH%*#"]]
-                   [body
-                    [if [> val 15]
-                        [then ;[printf "Requested value cannot be larger than 15, was %d!" val]
-                         [return [asciiShade 15]]]
-                        [else [return [sub-string dithers val 1]]]]
-                    [return ""]
-                    ]]
-           
-           [int escape [float x float y float c1 float c2 int iteration int max] [declare]
-                [body
-                 [if [greaterthanf 4 [addf (multf x x)  (multf y y)]]
-                     [then [if [>  max iteration]
-                               [then
-                                [return [escape [addf [subf (multf x x)  (multf y y)] c1]  [addf (multf 2 (multf x y))  c2] c1 c2 [add1 iteration] max]]]
-                               [else [return iteration]]]]
-                     [else [return iteration]]]
-                 ]]
-
-           [void mandelRow [float start float end float step float y] [declare]
-                 [body
-                  [if [greaterthanf end start]
-                      [then
-                       [printf "%s" [asciiShade [escape start y start y 0 16]]]
-                       [mandelRow [addf start step] end step y]]
-                      [body
-                       [return]]]
-                  [return]
-     
-                  ]]
-           [void mandelRows [float start float end float step] [declare]
-                 [body
-                  [if [greaterthanf end start]
-                      [then
-                       [mandelRow -2.5 1 0.02 start]
-                       [newLine 0]
-                       [mandelRows [addf start step] end step]]
-                      [body
-                       [return]]]
-                  [return]
-     
-                  ]]
-
-           [void mandelPic [] [declare]
-                 [body
-                  [mandelRows -1.0 1.0 0.05]
-                  ]]
-           
-   
+          
            
            [list argList [int count int pos stringArray args] [declare ]
                  [body
@@ -2988,7 +2999,9 @@ bool isNil(list p) {
                   ]]
      
            [int start []
-                [declare [bool runTests false][bool runMandel false][list cmdLine nil][box filename nil]]
+                [declare [bool runTests false]
+                         [bool runMandel false]
+                         [list cmdLine nil][box filename nil]]
                 [body
                  [set cmdLine [reverse [argList globalArgsCount 0 globalArgs]]]
                  [printf "//"]
@@ -3001,7 +3014,9 @@ bool isNil(list p) {
                  [set runTests  [equalBox [boxString "--test"] filename ]]
                  [set runMandel  [equalBox [boxString "--mandelbrot"] filename ]]
                  [if runMandel
-                     [then [newLine 0][mandelPic]]
+                     [then
+                      [printf "Displaying asciimandlbrot\n"]
+                      [newLine 0][mandelPic]]
                      [else [printf ""]]]
                  
                  [if runTests

@@ -1143,16 +1143,7 @@
    (declare)
    (body
     (printf
-     "\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nvoid panic(char* s){abort();}\nint sub(int a, int b) { return a - b; }\nfloat mult(int a, int b) { return a * b; }\nint greaterthan(int a, int b) { return a > b; }\nfloat subf(float a, float b) { return a - b; }\nfloat multf(float a, float b) { return a * b; }\nint greaterthanf(float a, float b) { return a > b; }\nint equal(int a, int b) { return a == b; }\nint equalString(char* a, char* b) { return !strcmp(a,b); }\nint andBool(int a, int b) { return a == b;}\nint string_length(char* s) { return strlen(s);}\nchar* sub_string(char* s, int start, int length) {\nchar* substr = calloc(length+1, 1);\nstrncpy(substr, s+start, length);\nreturn substr;\n}\n\n\n\nchar* stringConcatenate(char* a, char* b) {\nint len = strlen(a) + strlen(b) + 1;\nchar* target = calloc(len,1);\nstrncat(target, a, len);\nstrncat(target, b, len);\nreturn target;\n}\n\ntypedef int*  array;\ntypedef int bool;\n#define true 1\n#define false 0\n\n\n\nvoid * gc_malloc( unsigned int size ) {\nreturn malloc( size);\n}\n\nint* makeArray(int length) {\n    int * array = gc_malloc(length*sizeof(int));\n    return array;\n}\n\nint at(int* arr, int index) {\n  return arr[index];\n}\n\nvoid setAt(int* array, int index, int value) {\n    array[index] = value;\n}\n\nchar * read_file(char * filename) {\nchar * buffer = 0;\nlong length;\nFILE * f = fopen (filename, \"rb\");\n\nif (f)\n{\n  fseek (f, 0, SEEK_END);\n  length = ftell (f);\n  fseek (f, 0, SEEK_SET);\n  buffer = malloc (length);\n  if (buffer)\n  {\n    fread (buffer, 1, length, f);\n  }\n  fclose (f);\n}\nreturn buffer;\n}\n\n\nvoid write_file (char * filename, char * data) {\nFILE *f = fopen(filename, \"w\");\nif (f == NULL)\n{\n    printf(\"Error opening file!\");\n    exit(1);\n}\n\nfprintf(f,  data);\n\nfclose(f);\n}\n\nchar* getStringArray(int index, char** strs) {\nreturn strs[index];\n}\n\nint start();  //Forwards declare the user's main routine\nchar** globalArgs;\nint globalArgsCount;\n\nint main( int argc, char *argv[] )  {\n  globalArgs = argv;\n  globalArgsCount = argc;\n\n  return start();\n\n}\n\n")
-    (printf "functions: ")
-    (display (car (childrenof (cdr nodes))))
-    (ansiFunctions
-     (cdr
-      (assoc
-       "children"
-       (cdr (cdr (assoc "functions" (car (childrenof (cdr nodes)))))))))
-    (printf "end functions: ")
-    (return)))
+     "\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nvoid panic(char* s){abort();}\nint sub(int a, int b) { return a - b; }\nfloat mult(int a, int b) { return a * b; }\nint greaterthan(int a, int b) { return a > b; }\nfloat subf(float a, float b) { return a - b; }\nfloat multf(float a, float b) { return a * b; }\nint greaterthanf(float a, float b) { return a > b; }\nint equal(int a, int b) { return a == b; }\nint equalString(char* a, char* b) { return !strcmp(a,b); }\nint andBool(int a, int b) { return a == b;}\nint string_length(char* s) { return strlen(s);}\nchar* sub_string(char* s, int start, int length) {\nchar* substr = calloc(length+1, 1);\nstrncpy(substr, s+start, length);\nreturn substr;\n}\n\n\n\nchar* stringConcatenate(char* a, char* b) {\nint len = strlen(a) + strlen(b) + 1;\nchar* target = calloc(len,1);\nstrncat(target, a, len);\nstrncat(target, b, len);\nreturn target;\n}\n\ntypedef int*  array;\ntypedef int bool;\n#define true 1\n#define false 0\n\n\n\nvoid * gc_malloc( unsigned int size ) {\nreturn malloc( size);\n}\n\nint* makeArray(int length) {\n    int * array = gc_malloc(length*sizeof(int));\n    return array;\n}\n\nint at(int* arr, int index) {\n  return arr[index];\n}\n\nvoid setAt(int* array, int index, int value) {\n    array[index] = value;\n}\n\nchar * read_file(char * filename) {\nchar * buffer = 0;\nlong length;\nFILE * f = fopen (filename, \"rb\");\n\nif (f)\n{\n  fseek (f, 0, SEEK_END);\n  length = ftell (f);\n  fseek (f, 0, SEEK_SET);\n  buffer = malloc (length);\n  if (buffer)\n  {\n    fread (buffer, 1, length, f);\n  }\n  fclose (f);\n}\nreturn buffer;\n}\n\n\nvoid write_file (char * filename, char * data) {\nFILE *f = fopen(filename, \"w\");\nif (f == NULL)\n{\n    printf(\"Error opening file!\");\n    exit(1);\n}\n\nfprintf(f,  data);\n\nfclose(f);\n}\n\nchar* getStringArray(int index, char** strs) {\nreturn strs[index];\n}\n\nint start();  //Forwards declare the user's main routine\nchar** globalArgs;\nint globalArgsCount;\n\nint main( int argc, char *argv[] )  {\n  globalArgs = argv;\n  globalArgsCount = argc;\n\n  return start();\n\n}\n\n")))
   (box
    last
    (list alist)
@@ -1267,6 +1258,61 @@
     (if (isEmpty nodes)
       (body (return))
       (body (ansiType (car nodes)) (ansiTypes (cdr nodes))))))
+  (list
+   concatLists
+   (list seq1 list seq2)
+   (declare)
+   (body
+    (if (isNil seq1)
+      (then (return seq2))
+      (body (return (cons (car seq1) (concatLists (cdr seq1) seq2)))))))
+  (list
+   alistKeys
+   (list alist)
+   (declare)
+   (body
+    (if (isNil alist)
+      (then (return nil))
+      (else (return (cons (car (car alist)) (alistKeys (cdr alist))))))))
+  (list
+   mergeIncludes
+   (list program)
+   (declare
+    (list newProgram nil)
+    (list oldfunctionsnode nil)
+    (list oldfunctions nil)
+    (list newfunctions nil)
+    (list newFunctionNode nil)
+    (list functions nil))
+   (body
+    (set
+     functions
+     (childrenof
+      (cdr
+       (assoc
+        "functions"
+        (car (childrenof (cdr (cdr (assoc "includes" program)))))))))
+    (set oldfunctionsnode (cdr (assoc "functions" program)))
+    (set oldfunctions (childrenof oldfunctionsnode))
+    (set newfunctions (concatLists functions oldfunctions))
+    (set
+     newFunctionNode
+     (cons
+      (boxSymbol "node")
+      (alistCons (boxSymbol "children") newfunctions (cdr oldfunctionsnode))))
+    (set
+     newProgram
+     (alistCons
+      (boxString "functions")
+      newFunctionNode
+      (alistCons
+       (boxString "types")
+       (cdr (assoc "types" program))
+       (alistCons
+        (boxString "includes")
+        (cons (boxSymbol "includes") nil)
+        newProgram))))
+    (return newProgram)))
   (void
    compile
    (string filename)
@@ -1283,6 +1329,7 @@
        (boxString "types")
        (astTypes (second tree))
        (alistCons (boxString "functions") (astFunctions (third tree)) nil))))
+    (set program (mergeIncludes program))
     (ansiIncludes (cdr (assoc "includes" program)))
     (ansiTypes (childrenof (cdr (assoc "types" program))))
     (printf
@@ -1327,58 +1374,6 @@
          (equalBox (cdr (assoc "ohio" assList)) (boxString "gozaimasu")))
       (body (printf "16.2 pass assoc list\n"))
       (body (printf "16.2 fail assoc list\n")))))
-  (string
-   asciiShade
-   (int val)
-   (declare (string dithers " .:-;!/>)|&IH%*#"))
-   (body
-    (if (> val 15)
-      (then (return (asciiShade 15)))
-      (else (return (sub-string dithers val 1))))
-    (return "")))
-  (int
-   escape
-   (float x float y float c1 float c2 int iteration int max)
-   (declare)
-   (body
-    (if (greaterthanf 4 (addf (multf x x) (multf y y)))
-      (then
-       (if (> max iteration)
-         (then
-          (return
-           (escape
-            (addf (subf (multf x x) (multf y y)) c1)
-            (addf (multf 2 (multf x y)) c2)
-            c1
-            c2
-            (add1 iteration)
-            max)))
-         (else (return iteration))))
-      (else (return iteration)))))
-  (void
-   mandelRow
-   (float start float end float step float y)
-   (declare)
-   (body
-    (if (greaterthanf end start)
-      (then
-       (printf "%s" (asciiShade (escape start y start y 0 16)))
-       (mandelRow (addf start step) end step y))
-      (body (return)))
-    (return)))
-  (void
-   mandelRows
-   (float start float end float step)
-   (declare)
-   (body
-    (if (greaterthanf end start)
-      (then
-       (mandelRow -2.5 1 0.02 start)
-       (newLine 0)
-       (mandelRows (addf start step) end step))
-      (body (return)))
-    (return)))
-  (void mandelPic () (declare) (body (mandelRows -1.0 1.0 0.05)))
   (list
    argList
    (int count int pos stringArray args)
@@ -1417,7 +1412,9 @@
     (display filename)
     (set runTests (equalBox (boxString "--test") filename))
     (set runMandel (equalBox (boxString "--mandelbrot") filename))
-    (if runMandel (then (newLine 0) (mandelPic)) (else (printf "")))
+    (if runMandel
+      (then (printf "Displaying asciimandlbrot\n") (newLine 0) (mandelPic))
+      (else (printf "")))
     (if runTests
       (then
        (test0)
