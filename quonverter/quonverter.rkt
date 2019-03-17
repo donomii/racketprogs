@@ -2108,9 +2108,25 @@ returnValue=${array[$2]}
                   [return [makeNode "functions" "functions" tree [astFunctionList [cdr tree]]]]
                   ]]
 
+           [list loadLib [string path] [declare [string programStr ""] [list tree nil] [list library nil]]
+                 [body
+                  [set programStr [read-file path]]
+                  ;[printf "Read program: %s\n" programStr]
+                  ;[printf "Read program.  Parsing...\n" ]
+                  [set tree [readSexpr programStr]]
+                  ;[printf "Parsed program.  Building AST...\n" ]
+                  ;[display  tree]
+
+                  [set library [alistCons [boxString "includes"] [astIncludes  [first tree]]
+                                          [alistCons [boxString "types"] [astTypes  [second tree]]
+                                                     [alistCons [boxString "functions"] [astFunctions  [third tree]] nil]]]]
+                  
+                  ;[return [ansiFunctions [cdr [assoc "children" [cdr [cdr [assoc "functions" program]]]]]]]
+                  [return library]
+                  ]]
            [list astInclude [list tree] [declare]
                  [body
-                  [return nil]
+                  [return [loadLib [stringify tree]]]
                   ]]
            [list astIncludeList [list tree] [declare]
                  [body
@@ -2702,7 +2718,11 @@ int main( int argc, char *argv[] )  {
 }
 
 "]
-
+                  [printf "functions: "]
+                  [display  [car [childrenof [cdr nodes]]]]
+                  
+                  [ansiFunctions [cdr [assoc "children" [cdr [cdr [assoc "functions" [car [childrenof [cdr nodes]]]]]]]]]
+                  [printf "end functions: "]
                   [return] ]]
 
            [box last [list alist] [declare]
