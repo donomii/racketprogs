@@ -33,4 +33,14 @@ This is the motivation for my current project.  I want a programming language th
 
 I really have no idea if this project will result in anything useful to myself or other people, but I am annoyed enough at the current state of affairs that I am putting the work in to try and make something better.  Here's hoping for the best.
 
+## Sun 17th March, 2019
 
+Sunday seems to be a good day for reflection.  Funny how that works.
+
+In the last two weeks I manage to get the project self hosting.  It's a major milestone, and I thought I would be much happier about achieving it.  But instead I ended up frustrated when I discovered that I still couldn't write full programs.  It was self hosting, but that didn't mean it could compile anything else except itself.  It needed library loading abilities, and it took a surprisingly long time to add them.  I think some of the decisions I made while implementing library loading will cause problems in the future.  Still, it's better to have it than not have it, since now I can actually compile a complete program.
+
+The compiled programs work well.  The self-compiled compiler runs so fast that it finishes before I can lift my finger off the key, and the little demo programs I am writing finish equally quickly.  I don't feel the need to do speed tests, because the code runs at native speed, and the lisp code runs much slower, so if you care about speed you write using native functions and avoid the lisp part as much as possible.
+
+I didn't realise that I would miss map() and fold() as much as I do.  Because I don't have them, I have to write a new recursive function for every place where I would normally use map().  This turns out to be a lot of places, and really shows up that I have too much boilerplate in my function definitions.  On the up side, it is easy for me to take lisp and scheme functions and quickly adapt them to work here.  I should be able to reproduce a large part of srfi/1 in a short amount of time.
+
+And naturally, none of this would be a problem if I had closures, but that is not possible in general, and solutions like lambda lifting make the output code look awful, so I'm trapped for the moment.  I'm still thinking about the best way to get them in, but I have no ideas for now.  I want to add "tagging" to variables, so I might be able to hide a context in there.
