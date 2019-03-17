@@ -1285,7 +1285,7 @@ returnValue=${array[$2]}
 [define prog
   [quote [
           ;[includes stdio.h stdlib.h]
-          [includes mandelbrot.qon]
+          [includes]
           [types
            [Box
             [struct
@@ -2719,7 +2719,7 @@ int main( int argc, char *argv[] )  {
 }
 
 "]
-                   ]]
+                  ]]
 
            [box last [list alist] [declare]
                 [body
@@ -2826,17 +2826,17 @@ int main( int argc, char *argv[] )  {
 
            (list concatLists (list seq1 list seq2) [declare]
                  (body
-  (if (isNil seq1)
-      [then [return 
-      seq2]]
-      (body (return (cons (car seq1) (concatLists (cdr seq1) seq2)))))))
+                  (if (isNil seq1)
+                      [then [return 
+                             seq2]]
+                      (body (return (cons (car seq1) (concatLists (cdr seq1) seq2)))))))
 
 
            [list alistKeys [list alist] [declare]
                  [body
-[if [isNil alist]
-    [then [return nil]]
-    [else [return [cons [car [car alist]] [alistKeys [cdr alist]]]]]]
+                  [if [isNil alist]
+                      [then [return nil]]
+                      [else [return [cons [car [car alist]] [alistKeys [cdr alist]]]]]]
                   ]]
            [list mergeIncludes [list program] [declare
                                                [list newProgram nil]
@@ -2847,9 +2847,10 @@ int main( int argc, char *argv[] )  {
                                                [list functions nil]]
                  [body
 
-                     
-                 [set functions  [childrenof [cdr [assoc "functions"  [car [childrenof [cdr [cdr [assoc  "includes" program]]]]]]]]]
-                 [set oldfunctionsnode  [cdr [assoc  "functions" program]]]
+                     [if [> [length [childrenof [cdr [cdr [assoc  "includes" program]]]]] 0]
+                         [then 
+                  [set functions  [childrenof [cdr [assoc "functions"  [car [childrenof [cdr [cdr [assoc  "includes" program]]]]]]]]]
+                  [set oldfunctionsnode  [cdr [assoc  "functions" program]]]
                   [set oldfunctions [childrenof oldfunctionsnode]]
                   [set newfunctions [concatLists functions oldfunctions]]
 
@@ -2859,8 +2860,8 @@ int main( int argc, char *argv[] )  {
                   
                   [set newProgram
                        [alistCons [boxString "functions"]  newFunctionNode
-                       [alistCons [boxString "types"] [cdr [assoc  "types" program]]
-                       [alistCons [boxString "includes"] [cons [boxSymbol "includes"] nil] newProgram]]]]
+                                  [alistCons [boxString "types"] [cdr [assoc  "types" program]]
+                                             [alistCons [boxString "includes"] [cons [boxSymbol "includes"] nil] newProgram]]]]
 
                   ;[printf "\noldfunctions: "]
                   ;[display [alistKeys oldfunctions]]
@@ -2883,6 +2884,8 @@ int main( int argc, char *argv[] )  {
                   ;[display [alistKeys newProgram]]
                   ;[os.Exit 1]
                   [return newProgram]
+                  ]
+                         [else [return program]]]
 
                   ]]
 
@@ -3000,7 +3003,7 @@ bool isNil(list p) {
      
            [int start []
                 [declare [bool runTests false]
-                         [bool runMandel false]
+                         ;[bool runMandel false]
                          [list cmdLine nil][box filename nil]]
                 [body
                  [set cmdLine [reverse [argList globalArgsCount 0 globalArgs]]]
@@ -3012,12 +3015,12 @@ bool isNil(list p) {
                      [body [set filename [boxString "test.sexpr"]]]]
                  [display  filename]
                  [set runTests  [equalBox [boxString "--test"] filename ]]
-                 [set runMandel  [equalBox [boxString "--mandelbrot"] filename ]]
-                 [if runMandel
-                     [then
-                      [printf "Displaying asciimandlbrot\n"]
-                      [newLine 0][mandelPic]]
-                     [else [printf ""]]]
+                 ;[set runMandel  [equalBox [boxString "--mandelbrot"] filename ]]
+;                 [if runMandel
+;                     [then
+;                      [printf "Displaying asciimandlbrot\n"]
+;                      [newLine 0][mandelPic]]
+;                     [else [printf ""]]]
                  
                  [if runTests
                      [then

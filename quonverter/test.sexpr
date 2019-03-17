@@ -1,4 +1,4 @@
-((includes mandelbrot.qon)
+((includes)
  (types
   (Box
    (struct
@@ -1285,34 +1285,40 @@
     (list newFunctionNode nil)
     (list functions nil))
    (body
-    (set
-     functions
-     (childrenof
-      (cdr
-       (assoc
-        "functions"
-        (car (childrenof (cdr (cdr (assoc "includes" program)))))))))
-    (set oldfunctionsnode (cdr (assoc "functions" program)))
-    (set oldfunctions (childrenof oldfunctionsnode))
-    (set newfunctions (concatLists functions oldfunctions))
-    (set
-     newFunctionNode
-     (cons
-      (boxSymbol "node")
-      (alistCons (boxSymbol "children") newfunctions (cdr oldfunctionsnode))))
-    (set
-     newProgram
-     (alistCons
-      (boxString "functions")
-      newFunctionNode
-      (alistCons
-       (boxString "types")
-       (cdr (assoc "types" program))
-       (alistCons
-        (boxString "includes")
-        (cons (boxSymbol "includes") nil)
-        newProgram))))
-    (return newProgram)))
+    (if (> (length (childrenof (cdr (cdr (assoc "includes" program))))) 0)
+      (then
+       (set
+        functions
+        (childrenof
+         (cdr
+          (assoc
+           "functions"
+           (car (childrenof (cdr (cdr (assoc "includes" program)))))))))
+       (set oldfunctionsnode (cdr (assoc "functions" program)))
+       (set oldfunctions (childrenof oldfunctionsnode))
+       (set newfunctions (concatLists functions oldfunctions))
+       (set
+        newFunctionNode
+        (cons
+         (boxSymbol "node")
+         (alistCons
+          (boxSymbol "children")
+          newfunctions
+          (cdr oldfunctionsnode))))
+       (set
+        newProgram
+        (alistCons
+         (boxString "functions")
+         newFunctionNode
+         (alistCons
+          (boxString "types")
+          (cdr (assoc "types" program))
+          (alistCons
+           (boxString "includes")
+           (cons (boxSymbol "includes") nil)
+           newProgram))))
+       (return newProgram))
+      (else (return program)))))
   (void
    compile
    (string filename)
@@ -1397,11 +1403,7 @@
   (int
    start
    ()
-   (declare
-    (bool runTests false)
-    (bool runMandel false)
-    (list cmdLine nil)
-    (box filename nil))
+   (declare (bool runTests false) (list cmdLine nil) (box filename nil))
    (body
     (set cmdLine (reverse (argList globalArgsCount 0 globalArgs)))
     (printf "//")
@@ -1411,10 +1413,6 @@
       (body (set filename (boxString "test.sexpr"))))
     (display filename)
     (set runTests (equalBox (boxString "--test") filename))
-    (set runMandel (equalBox (boxString "--mandelbrot") filename))
-    (if runMandel
-      (then (printf "Displaying asciimandlbrot\n") (newLine 0) (mandelPic))
-      (else (printf "")))
     (if runTests
       (then
        (test0)
