@@ -44,3 +44,5 @@ The compiled programs work well.  The self-compiled compiler runs so fast that i
 I didn't realise that I would miss map() and fold() as much as I do.  Because I don't have them, I have to write a new recursive function for every place where I would normally use map().  This turns out to be a lot of places, and really shows up that I have too much boilerplate in my function definitions.  On the up side, it is easy for me to take lisp and scheme functions and quickly adapt them to work here.  I should be able to reproduce a large part of srfi/1 in a short amount of time.
 
 And naturally, none of this would be a problem if I had closures, but that is not possible in general, and solutions like lambda lifting make the output code look awful, so I'm trapped for the moment.  I'm still thinking about the best way to get them in, but I have no ideas for now.  I want to add "tagging" to variables, so I might be able to hide a context in there.
+
+PS And of course I declared victory too soon, library loading is still not quite working.  It's a curiously difficult problem, mainly because I didn't design it from the start, so now I have to work around the current design.
