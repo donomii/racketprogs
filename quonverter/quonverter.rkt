@@ -1157,6 +1157,8 @@ returnValue=${array[$2]}
 
 ; A node that holds the function arguments
 [define [type_arguments tree]
+  [when [odd? [length tree]]
+      [error [format "Require type-argument pairs, received ~a" tree]]]
   [make-node   [map [lambda [x]  [cons  [cadr x] [car x]]] [make-pairs tree]]
                tree
                'function_arguments
@@ -1226,6 +1228,7 @@ returnValue=${array[$2]}
 
 ; Function.  Needs arguments, declarations, a body and a return type
 [define [type_function tree]
+  ;[display tree]
   [match-let [[[list type name args decs  bod] tree]]
       
     [letrec [[typeArgs [typesof [type_arguments args]]]
@@ -1233,6 +1236,7 @@ returnValue=${array[$2]}
                                    [cons 'code '[]]
                                    "function_types"
                                    '[]]]]
+      
       [make-node '[] '[] 'function
                  [list
                   [make-node type type 'function_type '[]]
@@ -2110,6 +2114,7 @@ returnValue=${array[$2]}
 
            [list loadLib [string path] [declare [string programStr ""] [list tree nil] [list library nil]]
                  [body
+                  [printf "//Loading library %s\n" path]
                   [set programStr [read-file path]]
                   ;[printf "Read program: %s\n" programStr]
                   ;[printf "Read program.  Parsing...\n" ]
@@ -2137,7 +2142,7 @@ returnValue=${array[$2]}
 
            [list astIncludes [list tree] [declare]
                  [body
-                  ;[printf "Building includes AST...\n"]
+                  [printf "//Building includes AST...\n"]
                   [return [makeNode "includes" "includes" tree [astIncludeList [cdr tree]]]]
                   ]]
 
@@ -2838,98 +2843,114 @@ int main( int argc, char *argv[] )  {
                       [then [return nil]]
                       [else [return [cons [car [car alist]] [alistKeys [cdr alist]]]]]]
                   ]]
-           [list mergeIncludes [list program] [declare
-                                               [list newProgram nil]
-                                               [list oldfunctionsnode nil]
-                                               [list oldfunctions nil]
-                                               [list newfunctions nil]
-                                               [list newFunctionNode nil]
-                                               [list functions nil]
 
-                                               [list oldtypesnode nil]
-                                               [list oldtypes nil]
-                                               [list newtypes nil]
-                                               [list newTypeNode nil]
-                                               [list types nil]
-                                               ]
+           [list mergeIncludes [list program] [declare]
+                 [body
+                  [display [alistKeys [merge_recur [childrenof [cdr [cdr [assoc  "includes" program]]]] program]]]
+                  [return [merge_recur [childrenof [cdr [cdr [assoc  "includes" program]]]] program]]
+                  ]]
+
+           [list merge_recur [list incs list program] [declare]
                  [body
 
-                  [if [> [length [childrenof [cdr [cdr [assoc  "includes" program]]]]] 0]
-                      [then
-                       
-                       [set functions  [childrenof [cdr [assoc "functions"  [car [childrenof [cdr [cdr [assoc  "includes" program]]]]]]]]]
-                       [set oldfunctionsnode  [cdr [assoc  "functions" program]]]
-                       [set oldfunctions [childrenof oldfunctionsnode]]
-                       [set newfunctions [concatLists functions oldfunctions]]
-
-                       [set newFunctionNode [cons [boxSymbol "node"] [alistCons [boxSymbol "children"] newfunctions [cdr oldfunctionsnode]]]]
-
-
-                       ;[display [assoc     "types"  [car [childrenof [cdr [cdr [assoc  "includes" program]]]]]]]
-                       ;[panic "done"]
-                       [set types      [childrenof [cdr [assoc     "types"  [car [childrenof [cdr [cdr [assoc  "includes" program]]]]]]]]]
-                       [set oldtypesnode  [cdr [assoc  "types" program]]]
-                  
-                       [set oldtypes [childrenof oldtypesnode]]
-                       ;[display oldtypes]
-                       ;[panic "done"]
-                       [set newtypes [concatLists types oldtypes]]
-
-                       [set newTypeNode [cons [boxSymbol "node"] [alistCons [boxSymbol "children"] newtypes [cdr oldtypesnode]]]]
-                       ;[display newTypeNode]
-                       ;[panic "done"]
-                       [set newProgram
-                            [alistCons [boxString "functions"]  newFunctionNode
-                                       [alistCons [boxString "types"] newTypeNode
-                                                  [alistCons [boxString "includes"] [cons [boxSymbol "includes"] nil] newProgram]]]]
-
-                       ;[printf "\noldfunctions: "]
-                       ;[display [alistKeys oldfunctions]]
-
-
-                       ;[printf "\nnewfunctions: "]
-                       ;[display [alistKeys newfunctions]]
-
-                       ;[printf "\noldfunctionnode: "]
-                       ;[display oldFunctionNode]
-                       ;[display [alistKeys [cdr oldfunctionsnode]]]
-                  
-                  
-                       ;[printf "\nnewfunctionnode: "]
-                       ;[display newFunctionNode]
-                       ;[display [alistKeys [cdr newFunctionNode]]]
-
-                  
-                       ;[printf "\nNewProgram: "]
-                       ;[display [alistKeys newProgram]]
-
-
-
-
-
-                       ;[printf "\noldtypes: "]
-                       ;[display [alistKeys oldtypes]]
-
-
-                       ;[printf "\nnewtypes: "]
-                       ;[display [alistKeys newtypes]]
-
-                       ;[printf "\noldtypenode: "]
-                       ;[display oldTypeNode]
-                       ;[display [alistKeys [cdr oldtypesnode]]]
-                  
-                  
-                       ;[printf "\nnewtypenode: "]
-                       ;[display newTypeNode]
-                       ;[display [alistKeys [cdr newTypeNode]]]
-
-                  
-                       ;[printf "\nNewProgram: "]
-                       ;[display [alistKeys newProgram]]
-                       ;[os.Exit 1]
-                       [return newProgram]
-                       ]
+                  [printf "Merging includes: "][display incs]
+                  [if [> [length incs] 0]
+                      [then [return [mergeInclude [car incs] [merge_recur [cdr incs] program]]]]
                       [else [return program]]]
+                  ]]
+           [list mergeInclude [list inc list program] [declare
+                                                  [list newProgram nil]
+                                                  [list oldfunctionsnode nil]
+                                                  [list oldfunctions nil]
+                                                  [list newfunctions nil]
+                                                  [list newFunctionNode nil]
+                                                  [list functions nil]
+
+                                                  [list oldtypesnode nil]
+                                                  [list oldtypes nil]
+                                                  [list newtypes nil]
+                                                  [list newTypeNode nil]
+                                                  [list types nil]
+                                                  ]
+                 [body
+;[printf "Merging include: "][display [alistKeys inc]]
+                  [if [isNil inc]
+                      [then [return program]]
+                       [else
+                      [set functions  [childrenof [cdr [assoc "functions"  inc]]]]
+                      [set oldfunctionsnode  [cdr [assoc  "functions" program]]]
+                      [set oldfunctions [childrenof oldfunctionsnode]]
+                      [set newfunctions [concatLists functions oldfunctions]]
+                      
+
+                      [set newFunctionNode [cons [boxSymbol "node"] [alistCons [boxSymbol "children"] newfunctions [cdr oldfunctionsnode]]]]
+
+
+                      ;[display [assoc     "types"  [car [childrenof [cdr [cdr [assoc  "includes" program]]]]]]]
+                      ;[panic "done"]
+                      [set types      [childrenof [cdr [assoc     "types"  inc]]]]
+                      [set oldtypesnode  [cdr [assoc  "types" program]]]
+                  
+                      [set oldtypes [childrenof oldtypesnode]]
+                      ;[display oldtypes]
+                      ;[panic "done"]
+                      [set newtypes [concatLists types oldtypes]]
+
+                      [set newTypeNode [cons [boxSymbol "node"] [alistCons [boxSymbol "children"] newtypes [cdr oldtypesnode]]]]
+                      ;[display newTypeNode]
+                      ;[panic "done"]
+                      [set newProgram
+                           [alistCons [boxString "functions"]  newFunctionNode
+                                      [alistCons [boxString "types"] newTypeNode
+                                                 [alistCons [boxString "includes"] [cons [boxSymbol "includes"] nil] newProgram]]]]
+
+                      ;[printf "\noldfunctions: "]
+                      ;[display [alistKeys oldfunctions]]
+
+
+                      ;[printf "\nnewfunctions: "]
+                      ;[display [alistKeys newfunctions]]
+
+                      ;[printf "\noldfunctionnode: "]
+                      ;[display oldFunctionNode]
+                      ;[display [alistKeys [cdr oldfunctionsnode]]]
+                  
+                  
+                      ;[printf "\nnewfunctionnode: "]
+                      ;[display newFunctionNode]
+                      ;[display [alistKeys [cdr newFunctionNode]]]
+
+                  
+                      ;[printf "\nNewProgram: "]
+                      ;[display [alistKeys newProgram]]
+
+
+
+
+
+                      ;[printf "\noldtypes: "]
+                      ;[display [alistKeys oldtypes]]
+
+
+                      ;[printf "\nnewtypes: "]
+                      ;[display [alistKeys newtypes]]
+
+                      ;[printf "\noldtypenode: "]
+                      ;[display oldTypeNode]
+                      ;[display [alistKeys [cdr oldtypesnode]]]
+                  
+                  
+                      ;[printf "\nnewtypenode: "]
+                      ;[display newTypeNode]
+                      ;[display [alistKeys [cdr newTypeNode]]]
+
+                  
+                      ;[printf "\nNewProgram: "]
+                      ;[display [alistKeys newProgram]]
+                      ;[os.Exit 1]
+                      [return newProgram]]
+                       
+                      ]
 
                   ]]
 
@@ -2956,7 +2977,10 @@ int main( int argc, char *argv[] )  {
                   ;[printf "Built AST.  Generating ansi C output...\n" ]                   
                   ;[display [astFunctions  tree]]
                   ;[printf "\n\n\nPrinting includes\n"]
-                  ;[display [cdr [assoc "includes" program]]]
+                  ;[display [assoc "includes" program]]
+                  ;[display program]
+                  ;[printf "!!!!!!!!!!!!\n"]
+                  ;[alistKeys program]
                   [ansiIncludes  [cdr [assoc "includes" program]]]
                   ;[printf "\n\n\nPrinting types\n"]
                   ;[printf "!!!\n\n\n!!!"]

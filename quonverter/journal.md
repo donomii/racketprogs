@@ -46,3 +46,35 @@ I didn't realise that I would miss map() and fold() as much as I do.  Because I 
 And naturally, none of this would be a problem if I had closures, but that is not possible in general, and solutions like lambda lifting make the output code look awful, so I'm trapped for the moment.  I'm still thinking about the best way to get them in, but I have no ideas for now.  I want to add "tagging" to variables, so I might be able to hide a context in there.
 
 PS And of course I declared victory too soon, library loading is still not quite working.  It's a curiously difficult problem, mainly because I didn't design it from the start, so now I have to work around the current design.
+
+## Mon 18th March, 2019
+
+Library loading now working at a basic level, although it doesn't handle the same library being loaded twice.  I'm definitely regretting not designing this in from the start.  I think the solution still would hve looked similar, but been much less stressful.
+
+I spent some time thinking about tagging variables, and I'm pretty sure it's a good idea.  It will certainly solve many of the problems I currently have with the compiler, and make my code smaller, neater and more comprehensible.  The downsides appear to be possible security holes and confusion to programmers that aren't aware of the feature.  Also memory leaks and potential collisions when multiple programmers think that they are the only ones writing to the tag.
+
+Let's try some examples to see how it might work:
+
+    (set greeting (tag "Said by Bob" (boxString "Hello World")))
+
+    (display greeting)
+    >Hello World
+
+    (display (gettag greeting))
+    >Said by Bob
+
+However we can attach anything as a tag, so making it an assoc list is a natural thing to do:
+
+    (set greeting (atag "author" "Bob" (boxString "Hello World")))
+
+    (display greeting)
+    >Hello World
+
+    (display (agettag "author" greeting))
+    >Bob
+
+Tagging will use purely functional data structures, so the old tag will not be altered in place, (tag ) will copy the data structure, adding a new tag in the process.
+
+The driving need for tagging is to be able to add information to the parse tree, such as line numbers for error messages.  At the moment, we cannot print line numbers for error messages, which makes the compiler almost unusable.
+
+Addendum:  I reversed the "then" and "else" clauses in an if statement and spent 3 hours debugging it.  I desperately need better error messages and debugging tools.
