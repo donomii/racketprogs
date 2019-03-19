@@ -513,6 +513,13 @@ strncat(target, b, len);
 return target;
 }
 
+char* intToString(int a) {
+int len = 100;
+char* target = calloc(len,1);
+snprintf(target, 99, \"%d\", a);
+return target;
+}
+
 typedef int*  array;
 typedef int bool;
 #define true 1
@@ -652,6 +659,7 @@ return a==b
 func string_length(s string) int {return len(s)}
 func sub_string(s string, start, length int) string {return s[start:start+length]}
 func stringConcatenate(a, b string)string{return a+b}
+func intToString(a int) string { return fmt.Sprintf(\"%d\", a) }
 
 func makeArray(length int) []int {
     arr := make([]int, length)
@@ -1301,7 +1309,8 @@ returnValue=${array[$2]}
               [boo bool]
               [lengt int ]
               [car struct Box* ] 
-              [cdr struct Box* ] 
+              [cdr struct Box* ]
+              [tag struct Box* ]
               ]]
            [box Box*]
            [Pair Box]
@@ -1543,9 +1552,13 @@ returnValue=${array[$2]}
                                             [body [return "true"]]
                                             [body [return "false"]]]]
                              
-                                       [body [if [equalString "symbol" [boxType b]]
+                                       [body [if [equalString "int" [boxType b]]
+                                                 [then [return  [intToString [unBoxInt b]]]]
+
+                                                 [else [if [equalString "symbol" [boxType b]]
                                                  [body [return  [unBoxSymbol b]]]
-                                                 [body [return  [boxType b]]]]]]]]]]]]
+
+                                                 [body [return  [boxType b]]]]]]]]]]]]]]
            ;;;;;;;;;;;;;;;;;;;;;;;;;;
            ;; display boxed values ;;
            ;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1617,8 +1630,21 @@ returnValue=${array[$2]}
                        [if [equalString "void" [get-struct token typ]]
                            [body [return [filterVoid [cdr l]]]]
                            [body [return [cons token [filterVoid [cdr l]]]]]]]]]]
-            
-           [box finish_token [string prog int start int len] [declare]
+
+           [box getTag [box aBox box key] [declare]
+                [body
+[return [cdr [assoc [stringify key] [get-struct aBox tag]]]]
+                 ]]
+           
+           [box setTag [box aStruct box key list val] [declare]
+                [body
+[set-struct aStruct tag
+            [alistCons key val [get-struct aStruct tag]]]  ;FIXME immutable pls
+[return aStruct]
+                 ]]
+
+           
+           [box finish_token [string prog int start int len int line] [declare [box token nil]]
                 [body
                  ;[printf "ft: %s start: %d, end %d\n" prog start len]
                  ;[printf "Finish token %s\n" [sub-string prog start   len]]
@@ -1626,12 +1652,12 @@ returnValue=${array[$2]}
                  [if [> len 0]
                      [body ;[printf "Finish token\n"]
 
-                      [return
+                     
 
-                       [boxSymbol [sub-string prog start  len]]]]
-                     [body [return
-                            [newVoid]
-                            ]]]
+                       [set token [boxSymbol [sub-string prog start  len]]]
+                       [set-struct token tag [alistCons [boxString "line"] [boxInt line] [alistCons [boxString "totalCharPos"] [boxInt start] nil]]]
+                       [return token]]
+                     [body [return [newVoid]]]]
                  ]]
 
      
@@ -1678,39 +1704,46 @@ returnValue=${array[$2]}
 
            [bool isLineBreak [string s] [declare]
                  [body [if [equalString "\n" s]
+                           [then [return true]]
+                           [else [if [equalString "\r" s]
                                      [then [return true]]
-                                     [else [if [equalString "\r" s]
-                                               [then [return true]]
-                                               [else [return false]]]]]]]
-           
+                                     [else [return false]]]]]]]
+
+           [int incForNewLine [box token int val] [declare]
+                [body
+
+                 [if [equalString "\n" [stringify token]]
+                     [then [return [add1 val]]]
+                     [else [return val]]]]]
      
-           [list scan [string prog int start int len] [declare [box token nil]]
+           [list scan [string prog int start int len int linecount] [declare [box token nil]]
                  [body
                   [if [> [string-length prog] [sub start [sub 0 len]]]
                       [body
                        [set token [boxSymbol [sub-string prog [sub1 [add start len]] 1]]]
+                       [set-struct token tag [alistCons [boxString "totalCharPos"] [boxInt start] nil]]
                        ;[printf "Start: %d, end %d, Token: %s\n" start [add start len] token ]
                        [if [isOpenBrace token]
                            [body ;[printf "Start array\n"]
                             [return [cons
-                                     [finish_token prog start  [sub1 len]]
+                                     [finish_token prog start  [sub1 len] linecount]
                                      [cons [boxSymbol [openBrace] ]
-                                           [scan prog [add1 start] 1]]]]]
+                                           [scan prog [add1 start] 1 linecount]]]]]
                            [body [if [isCloseBrace token]
                                      [body ;[printf "Finish array\n"]
-                                      [return [cons  [finish_token prog start  [sub1 len]]
+                                      [return [cons  [finish_token prog start  [sub1 len] linecount]
                                                      [cons [boxSymbol [closeBrace]]
-                                                           [scan prog [add start  len] 1]]]]]
+                                                           [scan prog [add start  len] 1 linecount]]]]]
                                      [body [if [isWhiteSpace [stringify token]] ;FIXME this will skip strings like "   " when it shouldn't
                                                [body
                                                 [return [cons
-                                                         [finish_token prog start  [sub1 len]]
-                                                         [scan prog  [add start  len] 1]]]
+                                                         [finish_token prog start  [sub1 len] linecount]
+                                                         [scan prog  [add start  len] 1 [incForNewLine token linecount]]]]
                                                 ]
                                                [body [if [equalBox [boxSymbol ";" ] token]
                                                          [body
                                                           ;[printf "\nComment:%s" [readComment prog [add1 start] len]]
-                                                          [return [scan prog  [add start  [add1 [add1 [string-length [readComment prog [add1 start] len]]]]] 1]
+                                                          [return [scan prog  [add start  [add1 [add1 [string-length [readComment prog [add1 start] len]]]]] 1 linecount]
                                                                   ]]
                                                          [body [if [equalBox [boxSymbol "\""] token]
                                                                    [body ;[printf "Found string: %s\n"  [readString prog [add1 start] len]]
@@ -1718,9 +1751,9 @@ returnValue=${array[$2]}
                                                                      
                                                                      [cons
                                                                       [boxString [readString prog [add1 start] len]]
-                                                                      [scan prog  [add start  [add1 [add1 [string-length [readString prog [add1 start] len]]]]] 1]]]]
+                                                                      [scan prog  [add start  [add1 [add1 [string-length [readString prog [add1 start] len]]]]] 1 linecount ]]]]
                                                                    [body ;[printf "Symbol %s\n" token]
-                                                                    [return [scan prog start [sub len -1]]]]]]]]]]]]]]
+                                                                    [return [scan prog start [sub len -1] linecount]]]]]]]]]]]]]
                       [body ;[printf "scan complete\n"]
                        [return [emptyList]]]]
                   [return [emptyList]]
@@ -1803,7 +1836,7 @@ returnValue=${array[$2]}
                   [set tokens [emptyList]]
             
             
-                  [set tokens [filterVoid [scan aStr 0 1]]]
+                  [set tokens [filterVoid [scan aStr 0 1 0]]]
                   ;[printf "Displaying tokens:\n"]
                   ;[displayList tokens]
                   ;[printf "Building sexprTree\n"]
@@ -2576,9 +2609,13 @@ returnValue=${array[$2]}
                        ]]
                   ]]
      
-           [void ansiFunction [list node] [declare]
+           [void ansiFunction [list node] [declare [box name nil]]
                  [body
                   ;[display tree]
+                  [set name [subnameof node]]
+                  [printf "\n\n//Building function %s from line: %s"  [stringify name]  [stringify [getTag name [boxString "line"]]]]
+                  ;[display [get-struct name tag]]
+                  [newLine 0]
                   [if [isNil node]
                       [body [return]]
                       [body
@@ -2628,7 +2665,7 @@ returnValue=${array[$2]}
                              
            [void ansiIncludes [list nodes] [declare]
                  [body
-                  [printf "
+                  [printf "%s" "
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -2656,6 +2693,13 @@ int len = strlen(a) + strlen(b) + 1;
 char* target = calloc(len,1);
 strncat(target, a, len);
 strncat(target, b, len);
+return target;
+}
+
+char* intToString(int a) {
+int len = 100;
+char* target = calloc(len,1);
+snprintf(target, 99, \"%d\", a);
 return target;
 }
 
@@ -2712,7 +2756,7 @@ if (f == NULL)
     exit(1);
 }
 
-fprintf(f,  data);
+fprintf(f, \"%s\", data);
 
 fclose(f);
 }
