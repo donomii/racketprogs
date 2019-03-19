@@ -42,7 +42,7 @@
                  [body
                   [if [greaterthanf end start]
                       [then
-                       [mandelRow -2.1 1 0.015 start]
+                       [mandelRow -2.1 1 0.02 start]
                        [newLine 0]
                        [mandelRows [addf start step] end step]]
                       [body
