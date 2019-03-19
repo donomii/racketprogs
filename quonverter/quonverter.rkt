@@ -1158,7 +1158,7 @@ returnValue=${array[$2]}
 ; A node that holds the function arguments
 [define [type_arguments tree]
   [when [odd? [length tree]]
-      [error [format "Require type-argument pairs, received ~a" tree]]]
+    [error [format "Require type-argument pairs, received ~a" tree]]]
   [make-node   [map [lambda [x]  [cons  [cadr x] [car x]]] [make-pairs tree]]
                tree
                'function_arguments
@@ -1659,7 +1659,7 @@ returnValue=${array[$2]}
                     ;[printf "Token: %s\n" token]
                     ;[printf "Partial comment:%s" [sub-string prog start [sub1 len]]]
               
-                    [if [equalString "\n" token]
+                    [if [isLineBreak token]
                         [body
                          ;[printf "\nComplete comment is %s\n" [sub-string prog start [sub1 len]]]
                  
@@ -1669,10 +1669,20 @@ returnValue=${array[$2]}
                                               
            [bool isWhiteSpace [string s] [declare]
                  [body [if [equalString " " s]
-                           [body [return true]]
-                           [body [if [equalString "\n" s]
-                                     [body [return true]]
-                                     [body [return false]]]]]]]
+                           [then [return true]]
+                           [else [if [equalString "\n" s]
+                                     [then [return true]]
+                                     [else [if [equalString "\r" s]
+                                               [then [return true]]
+                                               [else [return false]]]]]]]]]
+
+           [bool isLineBreak [string s] [declare]
+                 [body [if [equalString "\n" s]
+                                     [then [return true]]
+                                     [else [if [equalString "\r" s]
+                                               [then [return true]]
+                                               [else [return false]]]]]]]
+           
      
            [list scan [string prog int start int len] [declare [box token nil]]
                  [body
@@ -2846,109 +2856,109 @@ int main( int argc, char *argv[] )  {
 
            [list mergeIncludes [list program] [declare]
                  [body
-                  [display [alistKeys [merge_recur [childrenof [cdr [cdr [assoc  "includes" program]]]] program]]]
+                  ;[display [alistKeys [merge_recur [childrenof [cdr [cdr [assoc  "includes" program]]]] program]]]
                   [return [merge_recur [childrenof [cdr [cdr [assoc  "includes" program]]]] program]]
                   ]]
 
            [list merge_recur [list incs list program] [declare]
                  [body
 
-                  [printf "Merging includes: "][display incs]
+                  ;[printf "Merging includes: "][display incs]
                   [if [> [length incs] 0]
                       [then [return [mergeInclude [car incs] [merge_recur [cdr incs] program]]]]
                       [else [return program]]]
                   ]]
            [list mergeInclude [list inc list program] [declare
-                                                  [list newProgram nil]
-                                                  [list oldfunctionsnode nil]
-                                                  [list oldfunctions nil]
-                                                  [list newfunctions nil]
-                                                  [list newFunctionNode nil]
-                                                  [list functions nil]
+                                                       [list newProgram nil]
+                                                       [list oldfunctionsnode nil]
+                                                       [list oldfunctions nil]
+                                                       [list newfunctions nil]
+                                                       [list newFunctionNode nil]
+                                                       [list functions nil]
 
-                                                  [list oldtypesnode nil]
-                                                  [list oldtypes nil]
-                                                  [list newtypes nil]
-                                                  [list newTypeNode nil]
-                                                  [list types nil]
-                                                  ]
+                                                       [list oldtypesnode nil]
+                                                       [list oldtypes nil]
+                                                       [list newtypes nil]
+                                                       [list newTypeNode nil]
+                                                       [list types nil]
+                                                       ]
                  [body
-;[printf "Merging include: "][display [alistKeys inc]]
+                  ;[printf "Merging include: "][display [alistKeys inc]]
                   [if [isNil inc]
                       [then [return program]]
-                       [else
-                      [set functions  [childrenof [cdr [assoc "functions"  inc]]]]
-                      [set oldfunctionsnode  [cdr [assoc  "functions" program]]]
-                      [set oldfunctions [childrenof oldfunctionsnode]]
-                      [set newfunctions [concatLists functions oldfunctions]]
+                      [else
+                       [set functions  [childrenof [cdr [assoc "functions"  inc]]]]
+                       [set oldfunctionsnode  [cdr [assoc  "functions" program]]]
+                       [set oldfunctions [childrenof oldfunctionsnode]]
+                       [set newfunctions [concatLists functions oldfunctions]]
                       
 
-                      [set newFunctionNode [cons [boxSymbol "node"] [alistCons [boxSymbol "children"] newfunctions [cdr oldfunctionsnode]]]]
+                       [set newFunctionNode [cons [boxSymbol "node"] [alistCons [boxSymbol "children"] newfunctions [cdr oldfunctionsnode]]]]
 
 
-                      ;[display [assoc     "types"  [car [childrenof [cdr [cdr [assoc  "includes" program]]]]]]]
-                      ;[panic "done"]
-                      [set types      [childrenof [cdr [assoc     "types"  inc]]]]
-                      [set oldtypesnode  [cdr [assoc  "types" program]]]
+                       ;[display [assoc     "types"  [car [childrenof [cdr [cdr [assoc  "includes" program]]]]]]]
+                       ;[panic "done"]
+                       [set types      [childrenof [cdr [assoc     "types"  inc]]]]
+                       [set oldtypesnode  [cdr [assoc  "types" program]]]
                   
-                      [set oldtypes [childrenof oldtypesnode]]
-                      ;[display oldtypes]
-                      ;[panic "done"]
-                      [set newtypes [concatLists types oldtypes]]
+                       [set oldtypes [childrenof oldtypesnode]]
+                       ;[display oldtypes]
+                       ;[panic "done"]
+                       [set newtypes [concatLists types oldtypes]]
 
-                      [set newTypeNode [cons [boxSymbol "node"] [alistCons [boxSymbol "children"] newtypes [cdr oldtypesnode]]]]
-                      ;[display newTypeNode]
-                      ;[panic "done"]
-                      [set newProgram
-                           [alistCons [boxString "functions"]  newFunctionNode
-                                      [alistCons [boxString "types"] newTypeNode
-                                                 [alistCons [boxString "includes"] [cons [boxSymbol "includes"] nil] newProgram]]]]
+                       [set newTypeNode [cons [boxSymbol "node"] [alistCons [boxSymbol "children"] newtypes [cdr oldtypesnode]]]]
+                       ;[display newTypeNode]
+                       ;[panic "done"]
+                       [set newProgram
+                            [alistCons [boxString "functions"]  newFunctionNode
+                                       [alistCons [boxString "types"] newTypeNode
+                                                  [alistCons [boxString "includes"] [cons [boxSymbol "includes"] nil] newProgram]]]]
 
-                      ;[printf "\noldfunctions: "]
-                      ;[display [alistKeys oldfunctions]]
-
-
-                      ;[printf "\nnewfunctions: "]
-                      ;[display [alistKeys newfunctions]]
-
-                      ;[printf "\noldfunctionnode: "]
-                      ;[display oldFunctionNode]
-                      ;[display [alistKeys [cdr oldfunctionsnode]]]
-                  
-                  
-                      ;[printf "\nnewfunctionnode: "]
-                      ;[display newFunctionNode]
-                      ;[display [alistKeys [cdr newFunctionNode]]]
-
-                  
-                      ;[printf "\nNewProgram: "]
-                      ;[display [alistKeys newProgram]]
+                       ;[printf "\noldfunctions: "]
+                       ;[display [alistKeys oldfunctions]]
 
 
+                       ;[printf "\nnewfunctions: "]
+                       ;[display [alistKeys newfunctions]]
 
-
-
-                      ;[printf "\noldtypes: "]
-                      ;[display [alistKeys oldtypes]]
-
-
-                      ;[printf "\nnewtypes: "]
-                      ;[display [alistKeys newtypes]]
-
-                      ;[printf "\noldtypenode: "]
-                      ;[display oldTypeNode]
-                      ;[display [alistKeys [cdr oldtypesnode]]]
+                       ;[printf "\noldfunctionnode: "]
+                       ;[display oldFunctionNode]
+                       ;[display [alistKeys [cdr oldfunctionsnode]]]
                   
                   
-                      ;[printf "\nnewtypenode: "]
-                      ;[display newTypeNode]
-                      ;[display [alistKeys [cdr newTypeNode]]]
+                       ;[printf "\nnewfunctionnode: "]
+                       ;[display newFunctionNode]
+                       ;[display [alistKeys [cdr newFunctionNode]]]
 
                   
-                      ;[printf "\nNewProgram: "]
-                      ;[display [alistKeys newProgram]]
-                      ;[os.Exit 1]
-                      [return newProgram]]
+                       ;[printf "\nNewProgram: "]
+                       ;[display [alistKeys newProgram]]
+
+
+
+
+
+                       ;[printf "\noldtypes: "]
+                       ;[display [alistKeys oldtypes]]
+
+
+                       ;[printf "\nnewtypes: "]
+                       ;[display [alistKeys newtypes]]
+
+                       ;[printf "\noldtypenode: "]
+                       ;[display oldTypeNode]
+                       ;[display [alistKeys [cdr oldtypesnode]]]
+                  
+                  
+                       ;[printf "\nnewtypenode: "]
+                       ;[display newTypeNode]
+                       ;[display [alistKeys [cdr newTypeNode]]]
+
+                  
+                       ;[printf "\nNewProgram: "]
+                       ;[display [alistKeys newProgram]]
+                       ;[os.Exit 1]
+                       [return newProgram]]
                        
                       ]
 
