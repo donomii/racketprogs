@@ -1,0 +1,26 @@
+[
+ [includes base.qon]
+ [types]
+    
+ [functions
+
+  [void say [string greeting int count] [declare]
+        [body
+         [printf "SAY at line %d, column %d\n"
+                 __LINE__
+                 __COLUMN__]
+         [if [> count 0]
+             [then 
+              [printf "%s" greeting]
+              [say greeting [sub1 count]]]
+             [else
+              [return]]]
+         ]]
+
+  [int start [] [declare]
+       [body
+        [printf "START at line %d, column %d\n" __LINE__ __COLUMN__]
+        [say "Hello world\n" 3]
+        [return 0]
+        ]]
+  ]]
