@@ -1648,25 +1648,25 @@ returnValue=${array[$2]}
                                     ;[printf "Found line marker, replacing!\n"]
                                     ;[display [get-struct token tag]]
                                     [return [cons [getTagFail token [boxString "line"] [boxInt -1]] [filterTokens [cdr l]]]]]
-                                  [else [if
-                                   [equalString "__COLUMN__" [stringify token]]
-                                   [then
-                                    ;[printf "Found line marker, replacing!\n"]
-                                    ;[display [get-struct token tag]]
-                                    [return [cons [getTagFail token [boxString "column"] [boxInt -1]] [filterTokens [cdr l]]]]]
-                                  [else
+                                   [else [if
+                                          [equalString "__COLUMN__" [stringify token]]
+                                          [then
+                                           ;[printf "Found line marker, replacing!\n"]
+                                           ;[display [get-struct token tag]]
+                                           [return [cons [getTagFail token [boxString "column"] [boxInt -1]] [filterTokens [cdr l]]]]]
+                                          [else
 
-                                   [return [cons token                             [filterTokens [cdr l]]]]]]]]]
+                                           [return [cons token                             [filterTokens [cdr l]]]]]]]]]
                             [else [return [cons token                             [filterTokens [cdr l]]]]]]]]]]
 
 
            [bool hasTag [box aBox box key] [declare]
-                [body
-                 [if [isNil aBox]
-                     [then [return false]]
-                     [else 
-                 [return  [truthy [assoc [stringify key] [get-struct aBox tag]]]]]]
-                 ]]
+                 [body
+                  [if [isNil aBox]
+                      [then [return false]]
+                      [else 
+                       [return  [truthy [assoc [stringify key] [get-struct aBox tag]]]]]]
+                  ]]
 
            
            [box getTag [box aBox box key] [declare]
@@ -1678,7 +1678,7 @@ returnValue=${array[$2]}
                 [body
                  [if [hasTag aBox key]
                      [then 
-                 [return [cdr [assoc [stringify key] [get-struct aBox tag]]]]]
+                      [return [cdr [assoc [stringify key] [get-struct aBox tag]]]]]
                      [else
                       [return onFail]]]
                  ]]
@@ -1691,7 +1691,7 @@ returnValue=${array[$2]}
                  ]]
 
            
-           [box finish_token [string prog int start int len int line int column] [declare [box token nil]]
+           [box finish_token [string prog int start int len int line int column string filename] [declare [box token nil]]
                 [body
                  ;[printf "ft: %s start: %d, end %d\n" prog start len]
                  ;[printf "Finish token %s\n" [sub-string prog start   len]]
@@ -1703,8 +1703,9 @@ returnValue=${array[$2]}
 
                       [set token [boxSymbol [sub-string prog start  len]]]
                       [set-struct token tag
-                                  [alistCons [boxString "column"] [boxInt column]
-                                             [alistCons [boxString "line"] [boxInt line] [alistCons [boxString "totalCharPos"] [boxInt start] nil]]]]
+                                  [alistCons [boxString "filename"] [boxString filename]
+                                             [alistCons [boxString "column"] [boxInt column]
+                                                        [alistCons [boxString "line"] [boxInt line] [alistCons [boxString "totalCharPos"] [boxInt start] nil]]]]]
                       [return token]]
                      [body [return [newVoid]]]]
                  ]]
@@ -1765,7 +1766,7 @@ returnValue=${array[$2]}
                      [then [return [add1 val]]]
                      [else [return val]]]]]
      
-           [list scan [string prog int start int len int linecount int column] [declare [box token nil]]
+           [list scan [string prog int start int len int linecount int column string filename] [declare [box token nil]]
                  [body
                   [if [> [string-length prog] [sub start [sub 0 len]]]
                       [body
@@ -1775,24 +1776,24 @@ returnValue=${array[$2]}
                        [if [isOpenBrace token]
                            [body ;[printf "Start array\n"]
                             [return [cons
-                                     [finish_token prog start  [sub1 len] linecount column]
+                                     [finish_token prog start  [sub1 len] linecount column filename]
                                      [cons [boxSymbol [openBrace] ]
-                                           [scan prog [add1 start] 1 linecount [add1 column]]]]]]
+                                           [scan prog [add1 start] 1 linecount [add1 column] filename]]]]]
                            [body [if [isCloseBrace token]
                                      [body ;[printf "Finish array\n"]
-                                      [return [cons  [finish_token prog start  [sub1 len] linecount  column]
+                                      [return [cons  [finish_token prog start  [sub1 len] linecount  column filename]
                                                      [cons [boxSymbol [closeBrace]]
-                                                           [scan prog [add start  len] 1 linecount [add1 column]]]]]]
+                                                           [scan prog [add start  len] 1 linecount [add1 column] filename]]]]]
                                      [body [if [isWhiteSpace [stringify token]] ;FIXME this will skip strings like "   " when it shouldn't
                                                [body
                                                 [return [cons
-                                                         [finish_token prog start  [sub1 len] linecount column]
-                                                         [scan prog  [add start  len] 1 [incForNewLine token linecount] 0]]]
+                                                         [finish_token prog start  [sub1 len] linecount column filename]
+                                                         [scan prog  [add start  len] 1 [incForNewLine token linecount] 0 filename]]]
                                                 ]
                                                [body [if [equalBox [boxSymbol ";" ] token]
                                                          [body
                                                           ;[printf "\nComment:%s" [readComment prog [add1 start] len]]
-                                                          [return [scan prog  [add start  [add1 [add1 [string-length [readComment prog [add1 start] len]]]]] 1 linecount [add1 column]]
+                                                          [return [scan prog  [add start  [add1 [add1 [string-length [readComment prog [add1 start] len]]]]] 1 linecount [add1 column] filename]
                                                                   ]]
                                                          [body [if [equalBox [boxSymbol "\""] token]
                                                                    [body ;[printf "Found string: %s\n"  [readString prog [add1 start] len]]
@@ -1800,9 +1801,9 @@ returnValue=${array[$2]}
                                                                      
                                                                      [cons
                                                                       [boxString [readString prog [add1 start] len]]
-                                                                      [scan prog  [add start  [add1 [add1 [string-length [readString prog [add1 start] len]]]]] 1 linecount [add1 column]]]]]
+                                                                      [scan prog  [add start  [add1 [add1 [string-length [readString prog [add1 start] len]]]]] 1 linecount [add1 column] filename]]]]
                                                                    [body ;[printf "Symbol %s\n" token]
-                                                                    [return [scan prog start [sub len -1] linecount [add1 column]]]]]]]]]]]]]]
+                                                                    [return [scan prog start [sub len -1] linecount [add1 column] filename]]]]]]]]]]]]]
                       [body ;[printf "scan complete\n"]
                        [return [emptyList]]]]
                   [return [emptyList]]
@@ -1879,7 +1880,7 @@ returnValue=${array[$2]}
                   [return [emptyList]]
                   ]]
 
-           [list readSexpr [string aStr]
+           [list readSexpr [string aStr string filename]
                  [declare
                   [list tokens nil]
                   [list as nil]
@@ -1888,7 +1889,7 @@ returnValue=${array[$2]}
                   [set tokens [emptyList]]
             
             
-                  [set tokens [filterTokens [filterVoid [scan aStr 0 1 0 0]]]]
+                  [set tokens [filterTokens [filterVoid [scan aStr 0 1 0 0 filename]]]]
                   ;[printf "Displaying tokens:\n"]
                   ;[displayList tokens]
                   ;[printf "Building sexprTree\n"]
@@ -2053,11 +2054,11 @@ returnValue=${array[$2]}
                    
                    [cons  [boxSymbol "node"]
                           [alistCons [boxSymbol "line"] [getTagFail code [boxString "line"] [boxInt -1]]
-                          [cons [cons [boxSymbol "name"] [boxString name]]
-                                [cons [cons [boxSymbol "subname"] [boxString subname]]
-                                      [cons [cons [boxSymbol "code"]  code]
-                                            [alistCons [boxSymbol "children"]  children
-                                                       [emptyList]]]]]]]]]]
+                                     [cons [cons [boxSymbol "name"] [boxString name]]
+                                           [cons [cons [boxSymbol "subname"] [boxString subname]]
+                                                 [cons [cons [boxSymbol "code"]  code]
+                                                       [alistCons [boxSymbol "children"]  children
+                                                                  [emptyList]]]]]]]]]]
 
 
            ;           [define [type_expression scope tree]
@@ -2191,13 +2192,13 @@ returnValue=${array[$2]}
                   ;[printf "Building function:"][display [second tree]][printf"\n"]
                   [return
                    [alistCons [boxSymbol "line"] [getTag fname [boxString "line"] ]
-                   [cons [cons [boxSymbol "name"] [boxString "function"]]
-                         [cons [cons [boxSymbol "subname"] [second tree]]
-                               [cons [cons [boxSymbol "declarations"] [cdr [fourth tree]]]
-                                     [cons [cons [boxSymbol "intype"] [third tree]]
-                                           [cons  [cons [boxSymbol "outtype"] [car tree]]
-                                                  [cons [cons [boxSymbol "children"] [astBody [cdr [fifth tree]]]]
-                                                        [emptyList]]]]]]]]
+                              [cons [cons [boxSymbol "name"] [boxString "function"]]
+                                    [cons [cons [boxSymbol "subname"] [second tree]]
+                                          [cons [cons [boxSymbol "declarations"] [cdr [fourth tree]]]
+                                                [cons [cons [boxSymbol "intype"] [third tree]]
+                                                      [cons  [cons [boxSymbol "outtype"] [car tree]]
+                                                             [cons [cons [boxSymbol "children"] [astBody [cdr [fifth tree]]]]
+                                                                   [emptyList]]]]]]]]
                    ]]]
 
            [list astFunctionList [list tree] [declare]
@@ -2219,7 +2220,7 @@ returnValue=${array[$2]}
                   [set programStr [read-file path]]
                   ;[printf "Read program: %s\n" programStr]
                   ;[printf "Read program.  Parsing...\n" ]
-                  [set tree [readSexpr programStr]]
+                  [set tree [readSexpr programStr path]]
                   ;[printf "Parsed program.  Building AST...\n" ]
                   ;[display  tree]
 
@@ -2696,7 +2697,7 @@ returnValue=${array[$2]}
                        [printf ") {"]
                        [newLine 1]
                        [ansiDeclarations [declarationsof node] 1]
-                       [printf "#ifdef TRACE\nprintf(\"%s at %s\\n\");\n#endif\n" [stringify [subnameof node]] [stringify [getTag name [boxString "line"]]]]
+                       [printf "#ifdef TRACE\nprintf(\"%s at %s:%s\\n\");\n#endif\n" [stringify [subnameof node]] [stringify [getTag name [boxString "filename"]]] [stringify [getTag name [boxString "line"]]]]
                        [ansiBody [childrenof node] 1]
                  
                        [printf "\n}\n"]
@@ -3091,7 +3092,7 @@ int main( int argc, char *argv[] )  {
                   [set programStr [read-file filename]]
                   ;[printf "Read program: %s\n" programStr]
                   ;[printf "Read program.  Parsing...\n" ]
-                  [set tree [readSexpr programStr]]
+                  [set tree [readSexpr programStr filename]]
                   ;[printf "Parsed program.  Building AST...\n" ]
                   ;[display  tree]
 
