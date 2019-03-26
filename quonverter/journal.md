@@ -78,3 +78,8 @@ Tagging will use purely functional data structures, so the old tag will not be a
 The driving need for tagging is to be able to add information to the parse tree, such as line numbers for error messages.  At the moment, we cannot print line numbers for error messages, which makes the compiler almost unusable.
 
 Addendum:  I reversed the "then" and "else" clauses in an if statement and spent 3 hours debugging it.  I desperately need better error messages and debugging tools.
+
+
+## Tuesday 26th March
+
+I implemented tagging, and it worked better than expected.  I have built three error handling mechanisms on top of it, and I look forwards to working with it more.  I wish I had attempted it earler, it would have made my code so much 
