@@ -10,7 +10,8 @@
     (boo bool)
     (lengt int)
     (car struct Box*)
-    (cdr struct Box*)))
+    (cdr struct Box*)
+    (tag struct Box*)))
   (box Box*)
   (Pair Box)
   (pair Box*)
@@ -51,6 +52,7 @@
     (set-struct p car data)
     (set-struct p typ "list")
     (return p)))
+  (void stackDump () (declare) (body (display globalStackTrace)))
   (box
    car
    (list l)
@@ -214,9 +216,12 @@
             (body
              (if (unBoxBool b) (body (return "true")) (body (return "false"))))
             (body
-             (if (equalString "symbol" (boxType b))
-               (body (return (unBoxSymbol b)))
-               (body (return (boxType b))))))))))))
+             (if (equalString "int" (boxType b))
+               (then (return (intToString (unBoxInt b))))
+               (else
+                (if (equalString "symbol" (boxType b))
+                  (body (return (unBoxSymbol b)))
+                  (body (return (boxType b))))))))))))))
   (void
    displayList
    (list l int indent)
@@ -270,13 +275,82 @@
        (if (equalString "void" (get-struct token typ))
          (body (return (filterVoid (cdr l))))
          (body (return (cons token (filterVoid (cdr l))))))))))
-  (box
-   finish_token
-   (string prog int start int len)
+  (list
+   filterTokens
+   (list l)
+   (declare (box token nil))
+   (body
+    (if (isEmpty l)
+      (body (return (emptyList)))
+      (body
+       (set token (car l))
+       (if (equalString (boxType token) "symbol")
+         (then
+          (if (equalString "__LINE__" (stringify token))
+            (then
+             (return
+              (cons
+               (getTagFail token (boxString "line") (boxInt -1))
+               (filterTokens (cdr l)))))
+            (else
+             (if (equalString "__COLUMN__" (stringify token))
+               (then
+                (return
+                 (cons
+                  (getTagFail token (boxString "column") (boxInt -1))
+                  (filterTokens (cdr l)))))
+               (else (return (cons token (filterTokens (cdr l)))))))))
+         (else (return (cons token (filterTokens (cdr l))))))))))
+  (bool
+   hasTag
+   (box aBox box key)
    (declare)
    (body
+    (if (isNil aBox)
+      (then (return false))
+      (else (return (truthy (assoc (stringify key) (get-struct aBox tag))))))))
+  (box
+   getTag
+   (box aBox box key)
+   (declare)
+   (body (return (cdr (assoc (stringify key) (get-struct aBox tag))))))
+  (box
+   getTagFail
+   (box aBox box key box onFail)
+   (declare)
+   (body
+    (if (hasTag aBox key)
+      (then (return (cdr (assoc (stringify key) (get-struct aBox tag)))))
+      (else (return onFail)))))
+  (box
+   setTag
+   (box aStruct box key list val)
+   (declare)
+   (body
+    (set-struct aStruct tag (alistCons key val (get-struct aStruct tag)))
+    (return aStruct)))
+  (box
+   finish_token
+   (string prog int start int len int line int column string filename)
+   (declare (box token nil))
+   (body
     (if (> len 0)
-      (body (return (boxSymbol (sub-string prog start len))))
+      (body
+       (set token (boxSymbol (sub-string prog start len)))
+       (set-struct
+        token
+        tag
+        (alistCons
+         (boxString "filename")
+         (boxString filename)
+         (alistCons
+          (boxString "column")
+          (boxInt column)
+          (alistCons
+           (boxString "line")
+           (boxInt line)
+           (alistCons (boxString "totalCharPos") (boxInt start) nil)))))
+       (return token))
       (body (return (newVoid))))))
   (string
    readString
@@ -297,7 +371,7 @@
    (declare (string token ""))
    (body
     (set token (sub-string prog (sub1 (add start len)) 1))
-    (if (equalString "\n" token)
+    (if (isLineBreak token)
       (body (return (sub-string prog start (sub1 len))))
       (body (return (readComment prog start (add1 len)))))))
   (bool
@@ -306,37 +380,85 @@
    (declare)
    (body
     (if (equalString " " s)
-      (body (return true))
-      (body
-       (if (equalString "\n" s) (body (return true)) (body (return false)))))))
+      (then (return true))
+      (else
+       (if (equalString "\n" s)
+         (then (return true))
+         (else
+          (if (equalString "\r" s)
+            (then (return true))
+            (else (return false)))))))))
+  (bool
+   isLineBreak
+   (string s)
+   (declare)
+   (body
+    (if (equalString "\n" s)
+      (then (return true))
+      (else
+       (if (equalString "\r" s) (then (return true)) (else (return false)))))))
+  (int
+   incForNewLine
+   (box token int val)
+   (declare)
+   (body
+    (if (equalString "\n" (stringify token))
+      (then (return (add1 val)))
+      (else (return val)))))
   (list
    scan
-   (string prog int start int len)
+   (string prog int start int len int linecount int column string filename)
    (declare (box token nil))
    (body
     (if (> (string-length prog) (sub start (sub 0 len)))
       (body
        (set token (boxSymbol (sub-string prog (sub1 (add start len)) 1)))
+       (set-struct
+        token
+        tag
+        (alistCons (boxString "totalCharPos") (boxInt start) nil))
        (if (isOpenBrace token)
          (body
           (return
            (cons
-            (finish_token prog start (sub1 len))
-            (cons (boxSymbol (openBrace)) (scan prog (add1 start) 1)))))
+            (finish_token prog start (sub1 len) linecount column filename)
+            (cons
+             (boxSymbol (openBrace))
+             (scan prog (add1 start) 1 linecount (add1 column) filename)))))
          (body
           (if (isCloseBrace token)
             (body
              (return
               (cons
-               (finish_token prog start (sub1 len))
-               (cons (boxSymbol (closeBrace)) (scan prog (add start len) 1)))))
+               (finish_token prog start (sub1 len) linecount column filename)
+               (cons
+                (boxSymbol (closeBrace))
+                (scan
+                 prog
+                 (add start len)
+                 1
+                 linecount
+                 (add1 column)
+                 filename)))))
             (body
              (if (isWhiteSpace (stringify token))
                (body
                 (return
                  (cons
-                  (finish_token prog start (sub1 len))
-                  (scan prog (add start len) 1))))
+                  (finish_token
+                   prog
+                   start
+                   (sub1 len)
+                   linecount
+                   column
+                   filename)
+                  (scan
+                   prog
+                   (add start len)
+                   1
+                   (incForNewLine token linecount)
+                   0
+                   filename))))
                (body
                 (if (equalBox (boxSymbol ";") token)
                   (body
@@ -348,7 +470,10 @@
                       (add1
                        (add1
                         (string-length (readComment prog (add1 start) len)))))
-                     1)))
+                     1
+                     linecount
+                     (add1 column)
+                     filename)))
                   (body
                    (if (equalBox (boxSymbol "\"") token)
                      (body
@@ -363,8 +488,19 @@
                            (add1
                             (string-length
                              (readString prog (add1 start) len)))))
-                         1))))
-                     (body (return (scan prog start (sub len -1))))))))))))))
+                         1
+                         linecount
+                         (add1 column)
+                         filename))))
+                     (body
+                      (return
+                       (scan
+                        prog
+                        start
+                        (sub len -1)
+                        linecount
+                        (add1 column)
+                        filename)))))))))))))
       (body (return (emptyList))))
     (return (emptyList))))
   (bool
@@ -401,12 +537,17 @@
       (body
        (set b (car l))
        (if (isOpenBrace b)
-         (body
+         (then
           (return (cons (sexprTree (cdr l)) (sexprTree (skipList (cdr l))))))
-         (body
+         (else
           (if (isCloseBrace b)
             (body (return (emptyList)))
-            (body (return (cons b (sexprTree (cdr l))))))))))
+            (body
+             (return
+              (setTag
+               (cons b (sexprTree (cdr l)))
+               (boxString "line")
+               (getTagFail b (boxString "line") (boxInt -1))))))))))
     (printf "AAAAAA code should never reach here!\n")
     (return (emptyList))))
   (list
@@ -428,11 +569,11 @@
     (return (emptyList))))
   (list
    readSexpr
-   (string aStr)
+   (string aStr string filename)
    (declare (list tokens nil) (list as nil))
    (body
     (set tokens (emptyList))
-    (set tokens (filterVoid (scan aStr 0 1)))
+    (set tokens (filterTokens (filterVoid (scan aStr 0 1 0 0 filename))))
     (set as (sexprTree tokens))
     (return (car as))))
   (void
@@ -450,7 +591,145 @@
          (stringify (boxSymbol "hello")))
       (body (printf "0.  pass string compare works\n"))
       (body (printf "0.  pass string compare fails\n")))))
- (box caar (list l) (declare) (body (return (car (car l)))))
+  (void
+   test1
+   ()
+   (declare)
+   (body (printf "1.  pass Function call and print work\n")))
+  (void
+   test2_do
+   (string message)
+   (declare)
+   (body (printf "2.  pass Function call with arg works: %s\n" message)))
+  (void test2 () (declare) (body (test2_do "This is the argument")))
+  (void
+   test3_do
+   (int b string c)
+   (declare)
+   (body
+    (printf "3.1 pass Two arg call, first arg: %d\n" b)
+    (printf "3.2 pass Two arg call, second arg: %s\n" c)))
+  (void test3 () (declare) (body (test3_do 42 "Fourty-two")))
+  (string test4_do () (declare) (body (return "pass Return works")))
+  (string
+   returnThis
+   (string returnMessage)
+   (declare)
+   (body (return returnMessage)))
+  (void
+   test4
+   ()
+   (declare (string message "fail"))
+   (body (set message (test4_do)) (printf "4.  %s\n" message)))
+  (void
+   test5
+   ()
+   (declare (string message "fail"))
+   (body
+    (set message (returnThis "pass return passthrough string"))
+    (printf "5.  %s\n" message)))
+  (void
+   test6
+   ()
+   (declare)
+   (body
+    (if true
+      (body (printf "6.  pass If statement works\n"))
+      (body (printf "6.  fail If statement works\n")))))
+  (int
+   test7_do
+   (int count)
+   (declare)
+   (body
+    (set count (sub count 1))
+    (if (> count 0) (body (set count (test7_do count))) (body (return count)))
+    (return count)))
+  (void
+   test7
+   ()
+   (declare)
+   (body
+    (if (= 0 (test7_do 10))
+      (body (printf "7.  pass count works\n"))
+      (body (printf "7.  fail count fails\n")))))
+  (void
+   beer
+   ()
+   (declare)
+   (body
+    (printf
+     "%d bottle of beer on the wall, %d bottle of beer.  Take one down, pass it round, no bottles of beer on the wall\n"
+     1
+     1)))
+  (string
+   plural
+   (int num)
+   (declare)
+   (body (if (equal num 1) (body (return "")) (body (return "s")))))
+  (int
+   beers
+   (int count)
+   (declare (int newcount 0))
+   (body
+    (set newcount (sub count 1))
+    (printf
+     "%d bottle%s of beer on the wall, %d bottle%s of beer.  Take one down, pass it round, %d bottle%s of beer on the wall\n"
+     count
+     (plural count)
+     count
+     (plural count)
+     newcount
+     (plural newcount))
+    (if (> count 1) (body (set count (beers newcount))) (body (return count)))
+    (return 0)))
+  (void
+   test8
+   ()
+   (declare)
+   (body
+    (if (equal (sub (sub 2 1) (sub 3 1)) -1)
+      (body (printf "8.  pass Nested expressions work\n"))
+      (body (printf "8.  fail Nested expressions don't work\n")))))
+  (void
+   test9
+   ()
+   (declare (int answer -999999))
+   (body
+    (set answer (sub (sub 20 1) (sub 3 1)))
+    (if (equal answer 17)
+      (body (printf "9.  pass arithmetic works\n"))
+      (body (printf "9.  fail arithmetic\n")))))
+  (void
+   test10
+   ()
+   (declare (string testString "This is a test string"))
+   (body
+    (if (equalString
+         testString
+         (unBoxString (car (cons (boxString testString) nil))))
+      (body (printf "10. pass cons and car work\n"))
+      (body (printf "10. fail cons and car fail\n")))))
+  (void
+   test12
+   ()
+   (declare (box b nil))
+   (body
+    (set b (new box Box))
+    (set-struct b str "12. pass structure accessors\n")
+    (printf "%s" (get-struct b str))))
+  (void
+   test13
+   ()
+   (declare
+    (string testString "Hello from the filesystem!")
+    (string contents ""))
+   (body
+    (write-file "test.txt" testString)
+    (set contents (read-file "test.txt"))
+    (if (equalString testString contents)
+      (body (printf "13. pass Read and write files\n"))
+      (body (printf "13. fail Read and write files\n")))))
+  (box caar (list l) (declare) (body (return (car (car l)))))
   (box cadr (list l) (declare) (body (return (car (cdr l)))))
   (box caddr (list l) (declare) (body (return (car (cdr (cdr l))))))
   (box cadddr (list l) (declare) (body (return (car (cdr (cdr (cdr l)))))))
@@ -473,13 +752,16 @@
     (return
      (cons
       (boxSymbol "node")
-      (cons
-       (cons (boxSymbol "name") (boxString name))
+      (alistCons
+       (boxSymbol "line")
+       (getTagFail code (boxString "line") (boxInt -1))
        (cons
-        (cons (boxSymbol "subname") (boxString subname))
+        (cons (boxSymbol "name") (boxString name))
         (cons
-         (cons (boxSymbol "code") code)
-         (alistCons (boxSymbol "children") children (emptyList)))))))))
+         (cons (boxSymbol "subname") (boxString subname))
+         (cons
+          (cons (boxSymbol "code") code)
+          (alistCons (boxSymbol "children") children (emptyList))))))))))
   (list
    astExpression
    (list tree)
@@ -606,22 +888,26 @@
   (list
    astFunction
    (list tree)
-   (declare)
+   (declare (box fname nil))
    (body
+    (set fname (second tree))
     (return
-     (cons
-      (cons (boxSymbol "name") (boxString "function"))
+     (alistCons
+      (boxSymbol "line")
+      (getTag fname (boxString "line"))
       (cons
-       (cons (boxSymbol "subname") (second tree))
+       (cons (boxSymbol "name") (boxString "function"))
        (cons
-        (cons (boxSymbol "declarations") (cdr (fourth tree)))
+        (cons (boxSymbol "subname") (second tree))
         (cons
-         (cons (boxSymbol "intype") (third tree))
+         (cons (boxSymbol "declarations") (cdr (fourth tree)))
          (cons
-          (cons (boxSymbol "outtype") (car tree))
+          (cons (boxSymbol "intype") (third tree))
           (cons
-           (cons (boxSymbol "children") (astBody (cdr (fifth tree))))
-           (emptyList))))))))))
+           (cons (boxSymbol "outtype") (car tree))
+           (cons
+            (cons (boxSymbol "children") (astBody (cdr (fifth tree))))
+            (emptyList)))))))))))
   (list
    astFunctionList
    (list tree)
@@ -644,8 +930,9 @@
    (string path)
    (declare (string programStr "") (list tree nil) (list library nil))
    (body
+    (printf "//Loading library %s\n" path)
     (set programStr (read-file path))
-    (set tree (readSexpr programStr))
+    (set tree (readSexpr programStr path))
     (set
      library
      (alistCons
@@ -675,6 +962,7 @@
    (list tree)
    (declare)
    (body
+    (printf "//Building includes AST...\n")
     (return
      (makeNode "includes" "includes" tree (astIncludeList (cdr tree))))))
   (list
@@ -733,6 +1021,14 @@
     (if (equalBox (boxBool false) (assoc "node" (cdr ass)))
       (body (return (boxBool false)))
       (body (return (cdr (assoc "node" (cdr ass))))))))
+  (list
+   lineof
+   (list ass)
+   (declare)
+   (body
+    (if (equalBox (boxBool false) (assoc "line" (cdr ass)))
+      (body (return (boxInt -1)))
+      (body (return (cdr (assoc "line" (cdr ass))))))))
   (list
    subnameof
    (list ass)
@@ -930,6 +1226,9 @@
       (body (return))
       (body
        (printIndent indent)
+       (printf
+        "%s"
+        "if (globalStepTrace) printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__);\n")
        (ansiStatement (car tree) indent)
        (ansiBody (cdr tree) indent)))))
   (void
@@ -951,8 +1250,31 @@
   (void
    ansiFunction
    (list node)
-   (declare)
+   (declare (box name nil) (list noStackTrace nil))
    (body
+    (set name (subnameof node))
+    (set
+     noStackTrace
+     (cons
+      (boxSymbol "car")
+      (cons
+       (boxSymbol "cdr")
+       (cons
+        (boxSymbol "cons")
+        (cons
+         (boxSymbol "stackTracePush")
+         (cons
+          (boxSymbol "stackTracePop")
+          (cons
+           (boxSymbol "assertType")
+           (cons
+            (boxSymbol "boxString")
+            (cons (boxSymbol "boxInt") nil)))))))))
+    (printf
+     "\n\n//Building function %s from line: %s"
+     (stringify name)
+     (stringify (getTag name (boxString "line"))))
+    (newLine 0)
     (if (isNil node)
       (body (return))
       (body
@@ -965,7 +1287,27 @@
        (printf ") {")
        (newLine 1)
        (ansiDeclarations (declarationsof node) 1)
+       (printf
+        "\nif (globalTrace)\n    printf(\"%s at %s:%s\\n\");\n"
+        (stringify (subnameof node))
+        (stringify (getTag name (boxString "filename")))
+        (stringify (getTag name (boxString "line"))))
+       (if (inList name noStackTrace)
+         (then (printf ""))
+         (else
+          (printf
+           "\n  stackTracePush(\"%s\", \"%s\", %s, %d );\n"
+           (stringify (getTag name (boxString "filename")))
+           (stringify (subnameof node))
+           (stringify (getTag name (boxString "line")))
+           0)))
        (ansiBody (childrenof node) 1)
+       (if (inList name noStackTrace)
+         (then (printf ""))
+         (else
+          (printf
+           "\n  stackTracePop();\nif (globalTrace)\n    printf(\"Leaving %s\\n\");\n"
+           (stringify (subnameof node)))))
        (printf "\n}\n")))))
   (void
    ansiForwardDeclaration
@@ -1005,7 +1347,8 @@
    (declare)
    (body
     (printf
-     "\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nvoid panic(char* s){abort();}\nint sub(int a, int b) { return a - b; }\nfloat mult(int a, int b) { return a * b; }\nint greaterthan(int a, int b) { return a > b; }\nfloat subf(float a, float b) { return a - b; }\nfloat multf(float a, float b) { return a * b; }\nint greaterthanf(float a, float b) { return a > b; }\nint equal(int a, int b) { return a == b; }\nint equalString(char* a, char* b) { return !strcmp(a,b); }\nint andBool(int a, int b) { return a == b;}\nint string_length(char* s) { return strlen(s);}\nchar* sub_string(char* s, int start, int length) {\nchar* substr = calloc(length+1, 1);\nstrncpy(substr, s+start, length);\nreturn substr;\n}\n\n\n\nchar* stringConcatenate(char* a, char* b) {\nint len = strlen(a) + strlen(b) + 1;\nchar* target = calloc(len,1);\nstrncat(target, a, len);\nstrncat(target, b, len);\nreturn target;\n}\n\ntypedef int*  array;\ntypedef int bool;\n#define true 1\n#define false 0\n\n\n\nvoid * gc_malloc( unsigned int size ) {\nreturn malloc( size);\n}\n\nint* makeArray(int length) {\n    int * array = gc_malloc(length*sizeof(int));\n    return array;\n}\n\nint at(int* arr, int index) {\n  return arr[index];\n}\n\nvoid setAt(int* array, int index, int value) {\n    array[index] = value;\n}\n\nchar * read_file(char * filename) {\nchar * buffer = 0;\nlong length;\nFILE * f = fopen (filename, \"rb\");\n\nif (f)\n{\n  fseek (f, 0, SEEK_END);\n  length = ftell (f);\n  fseek (f, 0, SEEK_SET);\n  buffer = malloc (length);\n  if (buffer)\n  {\n    fread (buffer, 1, length, f);\n  }\n  fclose (f);\n}\nreturn buffer;\n}\n\n\nvoid write_file (char * filename, char * data) {\nFILE *f = fopen(filename, \"w\");\nif (f == NULL)\n{\n    printf(\"Error opening file!\");\n    exit(1);\n}\n\nfprintf(f,  data);\n\nfclose(f);\n}\n\nchar* getStringArray(int index, char** strs) {\nreturn strs[index];\n}\n\nint start();  //Forwards declare the user's main routine\nchar** globalArgs;\nint globalArgsCount;\n\nint main( int argc, char *argv[] )  {\n  globalArgs = argv;\n  globalArgsCount = argc;\n\n  return start();\n\n}\n\n")))
+     "%s"
+     "\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nvoid panic(char* s){abort();}\nint sub(int a, int b) { return a - b; }\nfloat mult(int a, int b) { return a * b; }\nint greaterthan(int a, int b) { return a > b; }\nfloat subf(float a, float b) { return a - b; }\nfloat multf(float a, float b) { return a * b; }\nint greaterthanf(float a, float b) { return a > b; }\nint equal(int a, int b) { return a == b; }\nint equalString(char* a, char* b) { return !strcmp(a,b); }\nint andBool(int a, int b) { return a == b;}\nint string_length(char* s) { return strlen(s);}\nchar* sub_string(char* s, int start, int length) {\nchar* substr = calloc(length+1, 1);\nstrncpy(substr, s+start, length);\nreturn substr;\n}\n\n\n\nchar* stringConcatenate(char* a, char* b) {\nint len = strlen(a) + strlen(b) + 1;\nchar* target = calloc(len,1);\nstrncat(target, a, len);\nstrncat(target, b, len);\nreturn target;\n}\n\nchar* intToString(int a) {\nint len = 100;\nchar* target = calloc(len,1);\nsnprintf(target, 99, \"%d\", a);\nreturn target;\n}\n\ntypedef int*  array;\ntypedef int bool;\n#define true 1\n#define false 0\n\n\nvoid * gc_malloc( unsigned int size ) {\nreturn malloc( size);\n}\n\nint* makeArray(int length) {\n    int * array = gc_malloc(length*sizeof(int));\n    return array;\n}\n\nint at(int* arr, int index) {\n  return arr[index];\n}\n\nvoid setAt(int* array, int index, int value) {\n    array[index] = value;\n}\n\nchar * read_file(char * filename) {\nchar * buffer = 0;\nlong length;\nFILE * f = fopen (filename, \"rb\");\n\nif (f)\n{\n  fseek (f, 0, SEEK_END);\n  length = ftell (f);\n  fseek (f, 0, SEEK_SET);\n  buffer = malloc (length);\n  if (buffer == NULL) {\n  printf(\"Malloc failed!\\n\");\n  exit(1);\n}\n  if (buffer)\n  {\n    fread (buffer, 1, length, f);\n  }\n  fclose (f);\n}\nreturn buffer;\n}\n\n\nvoid write_file (char * filename, char * data) {\nFILE *f = fopen(filename, \"w\");\nif (f == NULL)\n{\n    printf(\"Error opening file!\");\n    exit(1);\n}\n\nfprintf(f, \"%s\", data);\n\nfclose(f);\n}\n\nchar* getStringArray(int index, char** strs) {\nreturn strs[index];\n}\n\nint start();  //Forwards declare the user's main routine\nchar** globalArgs;\nint globalArgsCount;\nbool globalTrace = false;\nbool globalStepTrace = false;\n\nint main( int argc, char *argv[] )  {\n  globalArgs = argv;\n  globalArgsCount = argc;\n\n  return start();\n\n}\n\n")))
   (box
    last
    (list alist)
@@ -1139,23 +1482,41 @@
   (list
    mergeIncludes
    (list program)
+   (declare)
+   (body
+    (return
+     (merge_recur
+      (childrenof (cdr (cdr (assoc "includes" program))))
+      program))))
+  (list
+   merge_recur
+   (list incs list program)
+   (declare)
+   (body
+    (if (> (length incs) 0)
+      (then
+       (return (mergeInclude (car incs) (merge_recur (cdr incs) program))))
+      (else (return program)))))
+  (list
+   mergeInclude
+   (list inc list program)
    (declare
     (list newProgram nil)
     (list oldfunctionsnode nil)
     (list oldfunctions nil)
     (list newfunctions nil)
     (list newFunctionNode nil)
-    (list functions nil))
+    (list functions nil)
+    (list oldtypesnode nil)
+    (list oldtypes nil)
+    (list newtypes nil)
+    (list newTypeNode nil)
+    (list types nil))
    (body
-    (if (> (length (childrenof (cdr (cdr (assoc "includes" program))))) 0)
-      (then
-       (set
-        functions
-        (childrenof
-         (cdr
-          (assoc
-           "functions"
-           (car (childrenof (cdr (cdr (assoc "includes" program)))))))))
+    (if (isNil inc)
+      (then (return program))
+      (else
+       (set functions (childrenof (cdr (assoc "functions" inc))))
        (set oldfunctionsnode (cdr (assoc "functions" program)))
        (set oldfunctions (childrenof oldfunctionsnode))
        (set newfunctions (concatLists functions oldfunctions))
@@ -1167,6 +1528,15 @@
           (boxSymbol "children")
           newfunctions
           (cdr oldfunctionsnode))))
+       (set types (childrenof (cdr (assoc "types" inc))))
+       (set oldtypesnode (cdr (assoc "types" program)))
+       (set oldtypes (childrenof oldtypesnode))
+       (set newtypes (concatLists types oldtypes))
+       (set
+        newTypeNode
+        (cons
+         (boxSymbol "node")
+         (alistCons (boxSymbol "children") newtypes (cdr oldtypesnode))))
        (set
         newProgram
         (alistCons
@@ -1174,20 +1544,19 @@
          newFunctionNode
          (alistCons
           (boxString "types")
-          (cdr (assoc "types" program))
+          newTypeNode
           (alistCons
            (boxString "includes")
            (cons (boxSymbol "includes") nil)
            newProgram))))
-       (return newProgram))
-      (else (return program)))))
+       (return newProgram)))))
   (void
    compile
    (string filename)
    (declare (string programStr "") (list tree nil) (list program nil))
    (body
     (set programStr (read-file filename))
-    (set tree (readSexpr programStr))
+    (set tree (readSexpr programStr filename))
     (set
      program
      (alistCons
@@ -1200,6 +1569,7 @@
     (set program (mergeIncludes program))
     (ansiIncludes (cdr (assoc "includes" program)))
     (ansiTypes (childrenof (cdr (assoc "types" program))))
+    (printf "Box* globalStackTrace = NULL;\n")
     (printf
      "\nbool isNil(list p) {\n    return p == NULL;\n}\n\n\n//Forward declarations\n")
     (ansiForwardDeclarations
@@ -1208,6 +1578,40 @@
     (ansiFunctions
      (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
     (printf "\n")))
+  (void
+   test15
+   ()
+   (declare (string a "hello") (string b " world") (string c ""))
+   (body
+    (set c (stringConcatenate a b))
+    (if (equalString c "hello world")
+      (body (printf "15. pass String concatenate\n"))
+      (body (printf "15. fail String concatenate\n")))))
+  (void
+   test16
+   ()
+   (declare
+    (list assocCell1 nil)
+    (list assList nil)
+    (list assocCell2 nil)
+    (list assocCell3 nil))
+   (body
+    (set assocCell1 (cons (boxString "Hello") (boxString "world")))
+    (set assocCell2 (cons (boxString "goodnight") (boxString "moon")))
+    (set assocCell3 (cons (boxSymbol "ohio") (boxString "gozaimasu")))
+    (set assList (cons assocCell2 (emptyList)))
+    (set assList (cons assocCell1 assList))
+    (set assList (cons assocCell3 assList))
+    (if (equalBox (cdr (assoc "Hello" assList)) (boxString "world"))
+      (body (printf "16.1 pass Basic assoc works\n"))
+      (body (printf "16.1 fail Basic assoc fails\n")))
+    (if (andBool
+         (andBool
+          (equalBox (cdr (assoc "Hello" assList)) (boxString "world"))
+          (equalBox (cdr (assoc "goodnight" assList)) (boxString "moon")))
+         (equalBox (cdr (assoc "ohio" assList)) (boxString "gozaimasu")))
+      (body (printf "16.2 pass assoc list\n"))
+      (body (printf "16.2 fail assoc list\n")))))
   (list
    argList
    (int count int pos stringArray args)
@@ -1228,4 +1632,37 @@
     (if (isEmpty l)
       (body (return nil))
       (body (return (cons (car l) (reverse (cdr l))))))))
+  (bool
+   inList
+   (box item list l)
+   (declare)
+   (body
+    (if (isNil l)
+      (then (return false))
+      (else
+       (if (equalBox (car l) item)
+         (then (return true))
+         (else (return (inList item (cdr l)))))))))
+  (void
+   stackTracePush
+   (string file string fname int line int column)
+   (declare)
+   (body
+    (set
+     globalStackTrace
+     (cons
+      (cons
+       (boxString file)
+       (cons
+        (boxString fname)
+        (cons (boxInt line) (cons (boxInt column) nil))))
+      globalStackTrace))))
+  (list
+   stackTracePop
+   ()
+   (declare (list top nil))
+   (body
+    (set top (car globalStackTrace))
+    (set globalStackTrace (cdr globalStackTrace))
+    (return top)))
   ))

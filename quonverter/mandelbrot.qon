@@ -56,8 +56,12 @@
                   [mandelRows -1.1 1.1 0.035]
                   ]]
 
- [int start [] [declare]
+ [int start [] [declare [list cmdLine nil]]
       [body
+      [set cmdLine [reverse [argList globalArgsCount 0 globalArgs]]]
+      [set globalTrace  [inList [boxString "--trace"] cmdLine ]]
+                 [set globalStepTrace  [inList [boxString "--steptrace"] cmdLine ]]
  [mandelPic]
+ [return 0]
         ]]
           ]]

@@ -355,7 +355,10 @@ start();
                    [clang_typedef x]]] [cdr [codeof tree]]]
         "\nbool isNil(list p) {
     return p == NULL;
-}" ]]
+}
+
+
+Box* globalStackTrace = NULL;" ]]
 
 [define [clang_arguments tree]
   [list "("
@@ -584,6 +587,8 @@ return strs[index];
 int start();  /* Forwards declare the user's main routine */
 char** globalArgs;
 int globalArgsCount;
+bool globalTrace = false;
+bool globalStepTrace = false;
 
 int main( int argc, char *argv[] )  {
   globalArgs = argv;
@@ -687,9 +692,12 @@ func isNil(p *Pair) bool {
 return p==nil
 }
 
-type stringArray = []string;
-var globalArgsCount int;
-var globalArgs []string;
+type stringArray = []string
+var globalArgsCount int
+var globalArgs []string
+var globalTrace bool
+var globalStepTrace bool
+var globalStackTrace list
 
 func getStringArray(index int, arr stringArray) string {
 return arr[index]
@@ -1360,13 +1368,18 @@ returnValue=${array[$2]}
                   (set-struct p car data)
                   (set-struct p typ "list")
                   (return p)]]
-     
+
+           [void stackDump [] [declare]
+                 [body
+                  [display globalStackTrace]
+                  ]]
            [box car [list l] [declare]
                 [body
                  (assertType "list" l)
                  [if [isNil l]
                      [body
                       [printf "Cannot call car on empty list!\n"]
+                      
                       [panic "Cannot call car on empty list!\n"]
                       [return nil]]
                      [body 
@@ -1768,11 +1781,16 @@ returnValue=${array[$2]}
      
            [list scan [string prog int start int len int linecount int column string filename] [declare [box token nil]]
                  [body
+                  ;[if [isNil prog]
+                  ;    [then [panic "Program to parse is nill!"]]
+                  ;    [else [printf ""]]]
+;[if true [then [printf ""]][else
+;                  [printf "\n//Start: %d, end %d, string-length %d, program: %p\n\n" start [add start len] [string-length prog] prog]]]
                   [if [> [string-length prog] [sub start [sub 0 len]]]
                       [body
                        [set token [boxSymbol [sub-string prog [sub1 [add start len]] 1]]]
                        [set-struct token tag [alistCons [boxString "totalCharPos"] [boxInt start] nil]]
-                       ;[printf "Start: %d, end %d, Token: %s\n" start [add start len] token ]
+                       ;[printf "\n//Start: %d, end %d, Token: %s\n\n" start [add start len] [stringify token] ]
                        [if [isOpenBrace token]
                            [body ;[printf "Start array\n"]
                             [return [cons
@@ -2661,7 +2679,9 @@ returnValue=${array[$2]}
                       [body [return]]
                       [body
                        [printIndent indent]
+                       [printf"%s"  "if (globalStepTrace) printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__);\n"]
                        [ansiStatement [car tree] indent]
+                       
                        ;[printf ";\n"]
                        [ansiBody [cdr tree] indent]]]
                   ]]
@@ -2680,10 +2700,11 @@ returnValue=${array[$2]}
                        ]]
                   ]]
      
-           [void ansiFunction [list node] [declare [box name nil]]
+           [void ansiFunction [list node] [declare [box name nil][list noStackTrace nil]]
                  [body
                   ;[display tree]
                   [set name [subnameof node]]
+                  [set noStackTrace [cons [boxSymbol "car"] [cons [boxSymbol "cdr"] [cons [boxSymbol "cons"] [cons [boxSymbol "stackTracePush"] [cons [boxSymbol "stackTracePop"] [cons [boxSymbol "assertType"] [cons [boxSymbol "boxString"]  [cons [boxSymbol "boxInt"]  nil]]]]]]]]]
                   [printf "\n\n//Building function %s from line: %s"  [stringify name]  [stringify [getTag name [boxString "line"]]]]
                   ;[display [get-struct name tag]]
                   [newLine 0]
@@ -2697,9 +2718,17 @@ returnValue=${array[$2]}
                        [printf ") {"]
                        [newLine 1]
                        [ansiDeclarations [declarationsof node] 1]
-                       [printf "#ifdef TRACE\nprintf(\"%s at %s:%s\\n\");\n#endif\n" [stringify [subnameof node]] [stringify [getTag name [boxString "filename"]]] [stringify [getTag name [boxString "line"]]]]
+                       [printf "\nif (globalTrace)\n    printf(\"%s at %s:%s\\n\");\n" [stringify [subnameof node]] [stringify [getTag name [boxString "filename"]]] [stringify [getTag name [boxString "line"]]]]
+                       [if [inList name noStackTrace]
+                           [then [printf ""]]
+                           [else 
+                            [printf "\n  stackTracePush(\"%s\", \"%s\", %s, %d );\n"  [stringify [getTag name [boxString "filename"]]] [stringify [subnameof node]] [stringify [getTag name [boxString "line"]]] 0]]]
                        [ansiBody [childrenof node] 1]
-                 
+                       
+                       [if [inList name noStackTrace]
+                           [then [printf ""]]
+                           [else 
+                            [printf "\n  stackTracePop();\nif (globalTrace)\n    printf(\"Leaving %s\\n\");\n"   [stringify [subnameof node]]]]]
                        [printf "\n}\n"]
                        ]]]]
            [void ansiForwardDeclaration [list node] [declare]
@@ -2781,7 +2810,6 @@ typedef int bool;
 #define false 0
 
 
-
 void * gc_malloc( unsigned int size ) {
 return malloc( size);
 }
@@ -2810,6 +2838,10 @@ if (f)
   length = ftell (f);
   fseek (f, 0, SEEK_SET);
   buffer = malloc (length);
+  if (buffer == NULL) {
+  printf(\"Malloc failed!\\n\");
+  exit(1);
+}
   if (buffer)
   {
     fread (buffer, 1, length, f);
@@ -2840,6 +2872,8 @@ return strs[index];
 int start();  //Forwards declare the user's main routine
 char** globalArgs;
 int globalArgsCount;
+bool globalTrace = false;
+bool globalStepTrace = false;
 
 int main( int argc, char *argv[] )  {
   globalArgs = argv;
@@ -2953,7 +2987,9 @@ int main( int argc, char *argv[] )  {
                       [body [return]]
                       [body
                        [ansiType [car nodes]]
-                       [ansiTypes [cdr nodes]]]]]]
+                       [ansiTypes [cdr nodes]]]]
+                  
+                  ]]
 
            (list concatLists (list seq1 list seq2) [declare]
                  (body
@@ -3113,6 +3149,7 @@ int main( int argc, char *argv[] )  {
                   ;[display [cdr [assoc "types" program]]]
             
                   [ansiTypes  [childrenof [cdr [assoc "types" program]]]]
+                  [printf "Box* globalStackTrace = NULL;\n"]
                   ;[printf "\n\n\nPrinting functions\n"]
                   ;[display [assoc "functions" program]]
                   ;FIXME
@@ -3194,7 +3231,30 @@ bool isNil(list p) {
                        [return [cons [car l] [reverse [cdr l]]]]
                        ]]
                   ]]
-     
+
+           [bool inList [box item list l] [declare]
+                 [body
+                  [if [isNil l]
+                      [then [return false]]
+                      [else [if [equalBox [car l] item]
+                                [then [return true]]
+                                [else [return [inList item [cdr l]]]]]]]
+                  ]]
+
+           
+           [void stackTracePush [string file string fname int line int column] [declare]
+                 [body
+       
+                  [set globalStackTrace [cons [cons [boxString file] [cons [boxString fname] [cons [boxInt line] [cons [boxInt column] nil]]]] globalStackTrace]]
+                  ]]
+
+           [list stackTracePop [] [declare [list top nil]]
+                 [body
+                  [set top [car globalStackTrace]]
+                  [set globalStackTrace [cdr globalStackTrace]]
+                  [return top]
+                  ]]
+           
            [int start []
                 [declare [bool runTests false]
                          ;[bool runMandel false]
@@ -3206,9 +3266,11 @@ bool isNil(list p) {
                  
                  [if [> [length cmdLine] 1]
                      [body [set filename [second cmdLine]]]
-                     [body [set filename [boxString "test.sexpr"]]]]
+                     [body [set filename [boxString "compiler.qon"]]]]
                  [display  filename]
-                 [set runTests  [equalBox [boxString "--test"] filename ]]
+                 [set runTests  [inList [boxString "--test"] cmdLine ]]
+                 [set globalTrace  [inList [boxString "--trace"] cmdLine ]]
+                 [set globalStepTrace  [inList [boxString "--steptrace"] cmdLine ]]
                  ;[set runMandel  [equalBox [boxString "--mandelbrot"] filename ]]
                  ;                 [if runMandel
                  ;                     [then
@@ -3234,6 +3296,7 @@ bool isNil(list p) {
                       [test13]
                       [test15]
                       [test16]
+                      [stackDump]
                       [printf "\n\nAfter all that hard work, I need a beer...\n"]
                       [beers 9]
                       ]
@@ -3247,7 +3310,7 @@ bool isNil(list p) {
                  ;End of file!
                  ]]]]]]
 ;Print complete program so that the next compiler can access it.  Eventually we will incorporate this program data in the output program, so we can continue recompiling forever
-[display-to-file [pretty-format prog #:mode 'write] "test.sexpr" #:exists 'truncate]
+[display-to-file [pretty-format prog #:mode 'write] "compiler.qon" #:exists 'truncate]
 
 
 
