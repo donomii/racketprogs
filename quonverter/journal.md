@@ -82,4 +82,24 @@ Addendum:  I reversed the "then" and "else" clauses in an if statement and spent
 
 ## Tuesday 26th March
 
-I implemented tagging, and it worked better than expected.  I have built three error handling mechanisms on top of it, and I look forwards to working with it more.  I wish I had attempted it earler, it would have made my code so much 
+I implemented tagging, and it worked better than expected.  I have built three error handling mechanisms on top of it, and I look forwards to working with it more.  I wish I had attempted it earler, it would have made my code so much shorter and more importantly, nice to read.
+
+Tagging still isn't fully implemented, but even in its current form, it's effective.  Tags are very obviously objects (but I don't have objects, so they are just structures) - structures with a "default" element.  So you use variables normally, and they work nomally.  But when you call the special "getTag" function on them, you get a different value.  Let's look at an example.
+
+	[printf "%s" [unBoxString function_name]]
+	>add
+
+No surprises here.
+
+	[printf "%s defined at line %d\n" [unBoxString function_name] [getTag "line" function_name]]
+	>382
+
+```function_name``` holds the name of the function.  But it is also tagged with other information like the line number and file name.  This allows me to print error messages with a location, while still keeping the parser code reasonably simple.
+
+Could I do all of this with objects?  Of course.  But there are several reasons not to.  First of all, I would have to implement objects, and I would have to implement them without the help of error messages.  I have worked like this before, and it was an utterly miserable experience that I never want to repeat.  I think good error messages are more important than almost any other part of the programming language.
+
+Addionally, objects don't really do what I want.  They can be forced to work, but you normally can't dynamically add and remove properties of an object, as you can with tags, and also people reasonably complain that by doing the obvious (adding a line property to the root class), they don't want to have a "line" property on every single object in the program, since many objects won't have a "line number".  Again, you could work around it by adding a "tag" property to the top of the class hierarchy, which holds a dictionary object, so every object now has a flexible tag system, but you've just done the same thing I did with stuctures, but it requries an object system with tens of thousands of lines of code.
+
+The other reason to avoid objects is that they tend to kill any chance of applying functional programming principles.  There have been attempts at immutable objects, but almost all OO design theory assumes that objects are mutable.  If you want immutable objects, you may as well use closures or monads or whatever.  Objects are univertsally regarded as ways to manage state(via mutation), so even if I managed to get a nicely working immutable object system, it would be regarded as an own goal by most programmers.
+
+The main drawback of tags at the moment is that I can only tag data structures by wrapping them in a "box" structure.  I have plans to tag unboxed structures by recording their pointers in a separate table, but that is far in the future.
