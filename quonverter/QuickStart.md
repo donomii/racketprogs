@@ -42,6 +42,12 @@ There are few things to note here:
 * Printf calls the native printf.  You can call any functions from your target language without having to declare them first.
 * This is not LISP or SCHEME.  It looks like it, due to the syntax, but is actually a simple compiled language much closer to C and Pascal than LISP or any plang.
 
+## The quonverter has two debugging modes:  trace and stepTrace
+
+```trace``` Prints a message every time the program enters or leaves a function.  This option is always compiled in, you activate it by calling ```[tron]```, and switch it off with ```troff```
+
+```stepTrace``` prints the message for every line in your program.  This creates an amazing amount of output, so you usually need to modify your program to run a quicker version of itself.  You activate it by calling ```[stron]``` in your code, and turn it off with ```[stroff]```.
+
 ## Learning more
 
 The examples directory contains simple programs that test the compiler

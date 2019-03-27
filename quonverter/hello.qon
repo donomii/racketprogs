@@ -6,9 +6,6 @@
 
   [void say [string greeting int count] [declare]
         [body
-         [printf "SAY at line %d, column %d\n"
-                 __LINE__
-                 __COLUMN__]
          [if [> count 0]
              [then 
               [printf "%s" greeting]
@@ -19,7 +16,7 @@
 
   [int start [] [declare]
        [body
-        [printf "START at line %d, column %d\n" __LINE__ __COLUMN__]
+       [stron]
         [say "Hello world\n" 3]
         [return 0]
         ]]

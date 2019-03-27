@@ -13,8 +13,12 @@ But it is possible.  The trick is to choose a really simple source langauge, and
 
 I have no idea what I'm doing but somehow it still works.
 
-## Notes
+## Quickstart
 
-If the C programs start segfaulting, try compiling with:
+    ./quon mandelbrot.qon > mandelbrot.c
+    gcc -O3 mandelbrot.c
+    ./a.out
 
-    gcc -g -Wl,-stack_size -Wl,1000000
+
+Check out the longer [QuickStart Guide](QuickStart.md)/
+

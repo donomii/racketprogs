@@ -1665,4 +1665,8 @@
     (set top (car globalStackTrace))
     (set globalStackTrace (cdr globalStackTrace))
     (return top)))
+  (void tron  () (declare) (body (set globalTrace true)))
+  (void troff () (declare) (body (set globalTrace false)))
+  (void stron  () (declare) (body (set globalStepTrace true)))
+  (void stroff () (declare) (body (set globalStepTrace false)))
   ))
