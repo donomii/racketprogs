@@ -3296,7 +3296,6 @@ bool isNil(list p) {
                       [test13]
                       [test15]
                       [test16]
-                      [stackDump]
                       [printf "\n\nAfter all that hard work, I need a beer...\n"]
                       [beers 9]
                       ]
