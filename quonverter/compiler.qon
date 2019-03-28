@@ -1,4 +1,4 @@
-((includes base.qon)
+((includes base.qon perl.qon)
  (types)
  (functions
   (int
@@ -7,12 +7,11 @@
    (declare (bool runTests false) (list cmdLine nil) (box filename nil))
    (body
     (set cmdLine (reverse (argList globalArgsCount 0 globalArgs)))
-    (printf "//")
-    (display cmdLine)
-    (if (> (length cmdLine) 1)
+    ;(printf "//") (display cmdLine)
+    (if (> (listLength cmdLine) 1)
       (body (set filename (second cmdLine)))
       (body (set filename (boxString "compiler.qon"))))
-    (display filename)
+    ;(display filename)
     (set runTests (inList (boxString "--test") cmdLine))
     (set globalTrace (inList (boxString "--trace") cmdLine))
     (set globalStepTrace (inList (boxString "--steptrace") cmdLine))
@@ -35,5 +34,5 @@
        (test16)
        (printf "\n\nAfter all that hard work, I need a beer...\n")
        (beers 9))
-      (else (compile (unBoxString filename)) (printf "\n")))
+      (else (perlCompile (unBoxString filename)) (printf "\n")))
     (return 0)))))
