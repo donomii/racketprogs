@@ -222,13 +222,13 @@
        (if (inList name (noStackTrace))
          (then (printf ""))
          (else
-          (printf "\n  stackTracePush(\"%s\", \"%s\", %s, %d );\n" (stringify (getTag name (boxString "filename"))) (stringify (subnameof node)) (stringify (getTag name (boxString "line"))) 0)
+          (printf "")
           ))
        (perlBody (childrenof node) 1)
        (if (inList name (noStackTrace))
          (then (printf ""))
          (else
-          (printf "\n  stackTracePop();\nif ($globalTrace) {printf(\"Leaving %s\\n\")}\n" (stringify (subnameof node)))
+          (printf "")
           ))
        (printf "\n}\n")))))
 

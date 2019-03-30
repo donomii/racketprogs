@@ -5110,7 +5110,7 @@ if (globalTrace)
 
     } else {      if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-      printf("\n  stackTracePush(\"%s\", \"%s\", %s, %d );\n" , stringify(getTag(name , boxString("filename" ))), stringify(subnameof(node )), stringify(getTag(name , boxString("line" ))), 0 );
+      printf("" );
 
     };
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -5124,7 +5124,7 @@ if (globalTrace)
 
     } else {      if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-      printf("\n  stackTracePop();\nif ($globalTrace) {printf(\"Leaving %s\\n\")}\n" , stringify(subnameof(node )));
+      printf("" );
 
     };
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -5666,7 +5666,7 @@ if (globalTrace)
 
   } else {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-    ansiCompile(unBoxString(filename ));
+    perlCompile(unBoxString(filename ));
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
     printf("\n" );
