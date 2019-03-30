@@ -160,20 +160,22 @@
                     (else 
                        (printf "\n#standard return: %s\n" (stringify functionName))
                        (newLine indent)
-                       (printf "stackTracePop();if ($globalTrace) {printf(\"Leaving \\n\")}\n" )
+                       (printf "if ($globalTrace) {printf(\"Leaving \\n\")}\n" )
+                       ))
                        (newLine indent) 
                        (perlExpression (childrenof node) indent)
-                       )))
+                       )
                    (else
                     (if (inList  functionName (noStackTrace))
                     (then (printf ""))
                     (else 
                         (printf "\n#standard expression\n" )
                         ;(display node)
+                        ))
                         (newLine indent)
                         (perlExpression (childrenof node) indent)
                         (newLine indent)
-                    ))))
+                    ))
                 ))))))))
     (printf ";\n")))
 
@@ -255,11 +257,12 @@
       (body (perlFunction (car tree)) (perlFunctions (cdr tree))))))
   (void perlIncludes (list nodes) (declare)
    (body
-    (printf "%s" " sub greaterthan { \$_[0] > \$_[1] } ; sub equalString { \$_[0] eq \$_[1] } ;sub read_file { my \$file = shift; open my \$fh, '<', \$file or die; local \$/ = undef; my \$cont = <\$fh>; close \$fh; return \$cont; }; ")
-    (printf "%s" "sub subtract { \$_[0] - \$_[1]}")
-    (printf "%s" "sub andBool { \$_[0] && \$_[1]}")
-    (printf "%s" "sub panic { warn @_;  stackDump(); exit(1)}")
-    (printf "%s" "sub intToString { return $_[0]}")
+    (printf "%s" " sub greaterthan { \$_[0] > \$_[1] } ; sub equalString { \$_[0] eq \$_[1] } ;sub read_file { my \$file = shift; \$file || die \"Empty file name!!!\"; open my \$fh, '<', \$file or die; local \$/ = undef; my \$cont = <\$fh>; close \$fh; return \$cont; }; ")
+    (printf "%s\n" "sub subtract { \$_[0] - \$_[1]}")
+    (printf "%s\n" "sub andBool { \$_[0] && \$_[1]}")
+    (printf "%s\n" "sub panic { warn @_;  stackDump(); exit(1)}")
+    (printf "%s\n" "sub intToString { return $_[0]}")
+    (printf "%s\n" "sub getStringArray { my \$index = shift; my \$arr = shift; return \$arr->[\$index]}")
     
     ))
 
@@ -383,6 +386,8 @@
     (perlFunctions
      (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
     (printf ";\n")
+    (printf "%s" "\$globalArgs = \@ARGV;")
+    (printf "%s" "\$globalArgsCount = scalar(\@ARGV);\n")
     (printf "start();")
     ))
 
