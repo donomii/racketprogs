@@ -1590,8 +1590,6 @@
 
   (list listReverse (list l) (declare)
    (body
-   (printf "Reversing list\n")
-   (display l)
     (if (isNil l)
       (body (return nil))
       (body (return (cons (car l) (listReverse (cdr l))))))))

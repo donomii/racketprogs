@@ -9,7 +9,7 @@
     (if (> (listLength cmdLine) 1)
       (then (set filename (second cmdLine)))
       (else (set filename (boxString "compiler.qon"))))
-    (printf "#Parsing file: ")(display filename)(newLine 0)
+    ;(printf "#Parsing file: ")(display filename)(newLine 0)
     (set runTests (inList (boxString "--test") cmdLine))
     (set globalTrace (inList (boxString "--trace") cmdLine))
     (set globalStepTrace (inList (boxString "--steptrace") cmdLine))

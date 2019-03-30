@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,7 +20,6 @@ return substr;
 }
 
 
-void stackTracePop(){}
 
 char* stringConcatenate(char* a, char* b) {
 int len = strlen(a) + strlen(b) + 1;
@@ -4426,12 +4426,6 @@ if (globalTrace)
     printf("listReverse at base.qon:1590\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-  printf("Reversing list\n" );
-  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
-
-  display(l );
-  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
-
   if ( isNil(l )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
     return(NULL );
@@ -4448,7 +4442,7 @@ if (globalTrace)
 }
 
 
-//Building function inList from line: 1598
+//Building function inList from line: 1596
 
 bool inList(box item ,list l ) {
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -4474,7 +4468,7 @@ bool inList(box item ,list l ) {
 }
 
 
-//Building function stackTracePush from line: 1608
+//Building function stackTracePush from line: 1606
 
 void stackTracePush(char* file ,char* fname ,int line ,int column ) {
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -4950,13 +4944,7 @@ if (globalTrace)
             newLine(indent );
             if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-            printf("return(" );
-            if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
-
             perlExpression(childrenof(node ), indent );
-            if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
-
-            printf(");" );
 
           } else {            if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
@@ -4998,12 +4986,12 @@ if (globalTrace)
 }
 
 
-//Building function perlBody from line: 183
+//Building function perlBody from line: 181
 
 void perlBody(list tree ,int indent ) {
   
 if (globalTrace)
-    printf("perlBody at perl.qon:183\n");
+    printf("perlBody at perl.qon:181\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   if ( isEmpty(tree )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -5031,13 +5019,13 @@ if (globalTrace)
 }
 
 
-//Building function perlDeclarations from line: 193
+//Building function perlDeclarations from line: 191
 
 void perlDeclarations(list decls ,int indent ) {
   box decl = NULL ;
 
 if (globalTrace)
-    printf("perlDeclarations at perl.qon:193\n");
+    printf("perlDeclarations at perl.qon:191\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   if ( isEmpty(decls )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -5068,13 +5056,13 @@ if (globalTrace)
 }
 
 
-//Building function perlFunction from line: 204
+//Building function perlFunction from line: 202
 
 void perlFunction(list node ) {
   box name = NULL ;
 
 if (globalTrace)
-    printf("perlFunction at perl.qon:204\n");
+    printf("perlFunction at perl.qon:202\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   name = subnameof(node );
@@ -5151,12 +5139,12 @@ if (globalTrace)
 }
 
 
-//Building function perlForwardDeclaration from line: 236
+//Building function perlForwardDeclaration from line: 234
 
 void perlForwardDeclaration(list node ) {
   
 if (globalTrace)
-    printf("perlForwardDeclaration at perl.qon:236\n");
+    printf("perlForwardDeclaration at perl.qon:234\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   if ( isNil(node )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -5178,12 +5166,12 @@ if (globalTrace)
 }
 
 
-//Building function perlForwardDeclarations from line: 246
+//Building function perlForwardDeclarations from line: 244
 
 void perlForwardDeclarations(list tree ) {
   
 if (globalTrace)
-    printf("perlForwardDeclarations at perl.qon:246\n");
+    printf("perlForwardDeclarations at perl.qon:244\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   if ( isEmpty(tree )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -5205,12 +5193,12 @@ if (globalTrace)
 }
 
 
-//Building function perlFunctions from line: 254
+//Building function perlFunctions from line: 252
 
 void perlFunctions(list tree ) {
   
 if (globalTrace)
-    printf("perlFunctions at perl.qon:254\n");
+    printf("perlFunctions at perl.qon:252\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   if ( isEmpty(tree )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -5232,12 +5220,12 @@ if (globalTrace)
 }
 
 
-//Building function perlIncludes from line: 259
+//Building function perlIncludes from line: 257
 
 void perlIncludes(list nodes ) {
   
 if (globalTrace)
-    printf("perlIncludes at perl.qon:259\n");
+    printf("perlIncludes at perl.qon:257\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   printf("%s" , " sub greaterthan { \$_[0] > \$_[1] } ; sub equalString { \$_[0] eq \$_[1] } ;sub read_file { my \$file = shift; \$file || die \"Empty file name!!!\"; open my \$fh, '<', \$file or die; local \$/ = undef; my \$cont = <\$fh>; close \$fh; return \$cont; }; " );
@@ -5263,12 +5251,12 @@ if (globalTrace)
 }
 
 
-//Building function perlTypeDecl from line: 270
+//Building function perlTypeDecl from line: 268
 
 void perlTypeDecl(list l ) {
   
 if (globalTrace)
-    printf("perlTypeDecl at perl.qon:270\n");
+    printf("perlTypeDecl at perl.qon:268\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   return;
@@ -5296,12 +5284,12 @@ if (globalTrace)
 }
 
 
-//Building function perlStructComponents from line: 288
+//Building function perlStructComponents from line: 286
 
 void perlStructComponents(list node ) {
   
 if (globalTrace)
-    printf("perlStructComponents at perl.qon:288\n");
+    printf("perlStructComponents at perl.qon:286\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   if ( isEmpty(node )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -5323,12 +5311,12 @@ if (globalTrace)
 }
 
 
-//Building function perlStruct from line: 296
+//Building function perlStruct from line: 294
 
 void perlStruct(list node ) {
   
 if (globalTrace)
-    printf("perlStruct at perl.qon:296\n");
+    printf("perlStruct at perl.qon:294\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   perlStructComponents(cdr(car(node )));
@@ -5342,13 +5330,13 @@ if (globalTrace)
 }
 
 
-//Building function perlTypeMap from line: 299
+//Building function perlTypeMap from line: 297
 
 box perlTypeMap(box aSym ) {
   list symMap = NULL ;
 
 if (globalTrace)
-    printf("perlTypeMap at perl.qon:299\n");
+    printf("perlTypeMap at perl.qon:297\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   symMap = alistCons(boxSymbol("stringArray" ), boxSymbol("char**" ), alistCons(boxSymbol("string" ), boxSymbol("char*" ), NULL ));
@@ -5370,13 +5358,13 @@ if (globalTrace)
 }
 
 
-//Building function perlFuncMap from line: 311
+//Building function perlFuncMap from line: 309
 
 box perlFuncMap(box aSym ) {
   list symMap = NULL ;
 
 if (globalTrace)
-    printf("perlFuncMap at perl.qon:311\n");
+    printf("perlFuncMap at perl.qon:309\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   if ( equalString("symbol" , boxType(aSym ))) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -5406,12 +5394,12 @@ if (globalTrace)
 }
 
 
-//Building function perlType from line: 330
+//Building function perlType from line: 328
 
 void perlType(list node ) {
   
 if (globalTrace)
-    printf("perlType at perl.qon:330\n");
+    printf("perlType at perl.qon:328\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   return;
@@ -5445,12 +5433,12 @@ if (globalTrace)
 }
 
 
-//Building function perlTypes from line: 340
+//Building function perlTypes from line: 338
 
 void perlTypes(list nodes ) {
   
 if (globalTrace)
-    printf("perlTypes at perl.qon:340\n");
+    printf("perlTypes at perl.qon:338\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   if ( isEmpty(nodes )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -5472,12 +5460,12 @@ if (globalTrace)
 }
 
 
-//Building function perlFunctionArgs from line: 346
+//Building function perlFunctionArgs from line: 344
 
 void perlFunctionArgs(list tree ) {
   
 if (globalTrace)
-    printf("perlFunctionArgs at perl.qon:346\n");
+    printf("perlFunctionArgs at perl.qon:344\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   if ( isEmpty(tree )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -5505,7 +5493,7 @@ if (globalTrace)
 }
 
 
-//Building function perlCompile from line: 356
+//Building function perlCompile from line: 354
 
 void perlCompile(char* filename ) {
   char* programStr = "" ;
@@ -5513,7 +5501,7 @@ list tree = NULL ;
 list program = NULL ;
 
 if (globalTrace)
-    printf("perlCompile at perl.qon:356\n");
+    printf("perlCompile at perl.qon:354\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   programStr = read_file(filename );
@@ -5615,15 +5603,6 @@ if (globalTrace)
   };
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-  printf("#Parsing file: " );
-  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
-
-  display(filename );
-  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
-
-  newLine(0 );
-  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
-
   runTests = inList(boxString("--test" ), cmdLine );
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
@@ -5687,7 +5666,7 @@ if (globalTrace)
 
   } else {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-    perlCompile(unBoxString(filename ));
+    ansiCompile(unBoxString(filename ));
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
     printf("\n" );
