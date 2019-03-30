@@ -42,16 +42,14 @@
     (set-struct newb voi true)
     (set-struct newb typ "void")
     (return newb)))
-  (list
-   cons
-   (box data list l)
-   (declare (pair p nil))
+  (list cons (box data list l) (declare (pair p nil))
    (body
     (set p (new pair Pair))
     (set-struct p cdr l)
     (set-struct p car data)
     (set-struct p typ "list")
     (return p)))
+
   (void stackDump () (declare) (body (display globalStackTrace)))
   (box
    car
@@ -102,28 +100,25 @@
    (box key box value list alist)
    (declare)
    (body (return (cons (cons key value) alist))))
-  (list
-   assoc
-   (string searchTerm list l)
-   (declare (list elem nil))
+
+  (list assoc (string searchTerm list l) (declare (list elem nil))
    (body
     (assertType "list" l)
     (if (isEmpty l)
       (body (return (boxBool false)))
       (body
        (set elem (car l))
+       (assertType "list" elem)
        (if (isEmpty elem)
          (body (return (assoc searchTerm (cdr l))))
          (body
           (if (equalString
-               (stringify (boxString searchTerm))
+               searchTerm
                (stringify (car elem)))
             (body (return elem))
             (body (return (assoc searchTerm (cdr l)))))))))))
-  (bool
-   equalBox
-   (box a box b)
-   (declare)
+
+  (bool equalBox (box a box b) (declare)
    (body
     (if (isList b)
       (body (return false))
@@ -244,10 +239,8 @@
   (string unBoxSymbol (box b) (declare) (body (return (get-struct b str))))
   (bool unBoxBool (box b) (declare) (body (return (get-struct b boo))))
   (int unBoxInt (box b) (declare) (body (return (get-struct b i))))
-  (string
-   stringify
-   (box b)
-   (declare)
+
+  (string stringify (box b) (declare)
    (body
     (if (isNil b)
       (body (return "nil"))
@@ -265,6 +258,10 @@
                 (if (equalString "symbol" (boxType b))
                   (body (return (unBoxSymbol b)))
                   (body (return (boxType b))))))))))))))
+  ;;;;;;;;;;;;;;;;;;
+  ;; Tag functions
+  ;;;;;;;;;;;;;;;;;;
+
   (bool
    hasTag
    (box aBox box key)
@@ -411,6 +408,7 @@
     (if (equalString "\n" (stringify token))
       (then (return (add1 val)))
       (else (return val)))))
+
   (list scan (string prog int start int len int linecount int column string filename) (declare (box token nil))
    (body
    ;(printf "Scanning: line %d:%d\n" start len)
@@ -419,25 +417,17 @@
        (set token (boxSymbol (sub-string prog (sub1 (add start len)) 1)))
        (set-struct token tag (alistCons (boxString "totalCharPos") (boxInt start) nil))
        (if (isOpenBrace token)
-         (body
+         (then
           (return (cons (finish_token prog start (sub1 len) linecount column filename) (cons (boxSymbol (openBrace))
              (scan prog (add1 start) 1 linecount (add1 column) filename)))))
-         (body
+         (else
           (if (isCloseBrace token)
-            (body
+            (then
              (return
-              (cons
-               (finish_token prog start (sub1 len) linecount column filename)
-               (cons
-                (boxSymbol (closeBrace))
-                (scan
-                 prog
-                 (add start len)
-                 1
-                 linecount
-                 (add1 column)
-                 filename)))))
-            (body
+              (cons (finish_token prog start (sub1 len) linecount column filename)
+               (cons (boxSymbol (closeBrace))
+                (scan prog (add start len) 1 linecount (add1 column) filename)))))
+            (else
              (if (isWhiteSpace (stringify token))
                (body
                 (return
@@ -458,18 +448,11 @@
                    filename))))
                (body
                 (if (equalBox (boxSymbol ";") token)
-                  (body
-                   (return
-                    (scan
-                     prog
-                     (add
-                      start
-                      (add1
-                       (add1
-                        (string-length (readComment prog (add1 start) len)))))
+                  (then
+                   (return (scan prog (add start (add1 (add1 (string-length (readComment prog (add1 start) len)))))
                      1
-                     linecount
-                     (add1 column)
+                     (add1 linecount)
+                     0
                      filename)))
                   (body
                    (if (equalBox (boxSymbol "\"") token)
@@ -490,16 +473,10 @@
                          (add1 column)
                          filename))))
                      (body
-                      (return
-                       (scan
-                        prog
-                        start
-                        (sub len -1)
-                        linecount
-                        (add1 column)
-                        filename)))))))))))))
+                      (return (scan prog start (sub len -1) linecount (add1 column) filename)))))))))))))
       (body (return (emptyList))))
     (return (emptyList))))
+
   (bool
    isOpenBrace
    (box b)
@@ -792,10 +769,7 @@
 ;; Parser functions ;;
 ;;;;;;;;;;;;;;;;;;;;;;
 
-  (list
-   makeNode
-   (string name string subname list code list children)
-   (declare)
+  (list makeNode (string name string subname list code list children) (declare)
    (body
     (return
      (cons
@@ -810,6 +784,17 @@
          (cons
           (cons (boxSymbol "code") code)
           (alistCons (boxSymbol "children") children (emptyList))))))))))
+
+(list addToNode (box key box val list node) (declare)
+(body
+(return (cons (boxSymbol "node") (alistCons key val (cdr node))))
+))
+
+  (list makeStatementNode (string name string subname list code list children box functionName) (declare)
+(body
+    (return (addToNode (boxSymbol "functionName") functionName (makeNode name subname code children)))
+))
+
   (list
    astExpression
    (list tree)
@@ -833,21 +818,17 @@
           (return
            (cons (astExpression (car tree)) (astSubExpression (cdr tree)))))
          (body (return (makeNode "expression" "leaf" tree nil))))))))
-  (list
-   astIf
-   (list tree)
-   (declare)
+
+  (list astIf (list tree box fname) (declare)
    (body
     (return
-     (makeNode
-      "statement"
-      "if"
-      tree
-      (cons
-       (cons (astExpression (first tree)) nil)
-       (cons
-        (astBody (cdr (second tree)))
-        (cons (astBody (cdr (third tree))) nil)))))))
+     (makeNode "statement" "if" tree 
+        (cons
+           (cons (astExpression (first tree)) nil)
+           (cons
+            (astBody (cdr (second tree)) fname)
+            (cons (astBody (cdr (third tree)) fname) nil)))))))
+
   (list
    astSetStruct
    (list tree)
@@ -868,9 +849,9 @@
    (declare)
    (body (return (makeNode "expression" "structGetter" tree nil))))
 
-  (list astReturnVoid ()
+  (list astReturnVoid (box fname)
    (declare)
-   (body (return (makeNode "statement" "returnvoid" nil nil))))
+   (body (return (makeStatementNode "statement" "returnvoid" nil nil fname))))
 
   (int listLength
    (list l)
@@ -880,56 +861,42 @@
       (body (return 0))
       (body (return (add1 (listLength (cdr l))))))))
 
-  (list astStatement (list tree) (declare)
+  (list astStatement (list tree box fname) (declare)
    (body
     (if (equalBox (boxString "if") (car tree))
-      (body (return (astIf (cdr tree))))
-      (body
+      (then (return (astIf (cdr tree) fname)))
+      (else
        (if (equalBox (boxString "set") (car tree))
-         (body (return (astSet (cdr tree))))
-         (body
+         (then (return (astSet (cdr tree))))
+         (else
           (if (equalBox (boxString "get-struct") (car tree))
-            (body
+            (then
              (printf "Choosing get-struct statement\n")
              (return (astGetStruct (cdr tree))))
-            (body
+            (else
              (if (equalBox (boxString "set-struct") (car tree))
-               (body (return (astSetStruct (cdr tree))))
-               (body
-                (if (equal (listLength tree) 1)
-                  (body
-                   (if (equalBox (car tree) (boxString "return"))
-                     (body (return (astReturnVoid)))
-                     (body
-                      (return
-                       (makeNode
-                        "statement"
-                        "statement"
-                        tree
-                        (makeNode
-                         "expression"
-                         "expression"
-                         tree
-                         (astExpression tree)))))))
-                  (body
-                   (return
-                    (makeNode
-                     "statement"
-                     "statement"
-                     tree
-                     (makeNode
-                      "expression"
-                      "expression"
-                      tree
-                      (astExpression tree))))))))))))))))
-  (list
-   astBody
-   (list tree)
-   (declare)
+               (then (return (astSetStruct (cdr tree))))
+               (else
+                   (if (equalBox  (boxString "return") (car tree))
+                   (then
+                        (if (equal (listLength tree) 1)
+                        (then (return (astReturnVoid fname)))
+                        (else
+                          (return
+                           (makeStatementNode "statement" "return" tree
+                            (makeNode "expression" "expression" tree (astExpression tree)) fname )))))
+                  (else
+                   (return 
+                    (makeStatementNode 
+                       "statement" "statement" tree
+                         (makeNode "expression" "expression" tree (astExpression tree) ) fname ))))))))))))))
+
+  (list astBody (list tree box fname) (declare)
    (body
     (if (isEmpty tree)
-      (body (return (emptyList)))
-      (body (return (cons (astStatement (car tree)) (astBody (cdr tree))))))))
+      (then (return (emptyList)))
+      (else (return (cons (astStatement (car tree) fname) (astBody (cdr tree) fname)))))))
+
   (list
    astFunction
    (list tree)
@@ -951,7 +918,7 @@
           (cons
            (cons (boxSymbol "outtype") (car tree))
            (cons
-            (cons (boxSymbol "children") (astBody (cdr (fifth tree))))
+            (cons (boxSymbol "children") (astBody (cdr (fifth tree)) fname))
             (emptyList)))))))))))
   (list
    astFunctionList
@@ -1052,11 +1019,13 @@
    (list ass)
    (declare)
    (body (return (cdr (assoc "declarations" (cdr ass))))))
-  (list
-   codeof
-   (list ass)
-   (declare)
+
+  (list codeof (list ass) (declare)
    (body (return (cdr (assoc "code" (cdr ass))))))
+
+  (list functionNameof (list ass) (declare)
+   (body (return (cdr (assoc "functionName" (cdr ass))))))
+
   (list
    nodeof
    (list ass)
@@ -1083,11 +1052,10 @@
    (list ass)
    (declare)
    (body (return (cdr (assoc "name" (cdr ass))))))
-  (list
-   childrenof
-   (list ass)
-   (declare)
+
+  (list childrenof (list ass) (declare)
    (body (return (cdr (assoc "children" (cdr ass))))))
+
   (bool
    isNode
    (list val)
@@ -1284,10 +1252,8 @@
         "if (globalStepTrace) printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__);\n")
        (ansiStatement (car tree) indent)
        (ansiBody (cdr tree) indent)))))
-  (void
-   ansiDeclarations
-   (list decls int indent)
-   (declare (box decl nil))
+
+  (void ansiDeclarations (list decls int indent) (declare (box decl nil))
    (body
     (if (isEmpty decls)
       (body (return))
@@ -1300,26 +1266,42 @@
        (display (ansiFuncMap (third decl)))
        (printf ";\n")
        (ansiDeclarations (cdr decls) indent)))))
-  (void
-   ansiFunction
-   (list node)
-   (declare (box name nil) (list noStackTrace nil))
+
+    (list noStackTrace () (declare)
+    (body
+    (return 
+     (cons (boxString "boxType")
+     (cons (boxString "stringify")
+     (cons (boxString "isEmpty")
+     (cons (boxString "unBoxString")
+     (cons (boxString "isList")
+     (cons (boxString "unBoxBool")
+     (cons (boxString "unBoxSymbol")
+     (cons (boxString "equalBox")
+     (cons (boxString "assoc")
+     (cons (boxString "inList")
+     (cons (boxString "unBoxInt")
+     (cons (boxString "listLength")
+     (cons (boxString "stroff")
+     (cons (boxString "troff")
+     (cons (boxString "tron")
+     (cons (boxString "stron")
+     (cons (boxString "car")
+      (cons (boxString "cdr")
+       (cons (boxString "cons")
+        (cons (boxString "stackTracePush")
+         (cons (boxString "stackTracePop")
+          (cons (boxString "assertType")
+           (cons (boxString "boxString")
+           (cons (boxString "boxSymbol")
+            (cons (boxString "boxInt") nil))))))))))))))))))))))))))))
+
+(box toStr (box thing) (declare) 
+    (body (return (boxString (stringify thing)))))
+
+  (void ansiFunction (list node) (declare (box name nil))
    (body
     (set name (subnameof node))
-    (set
-     noStackTrace
-     (cons (boxSymbol "stroff")
-     (cons (boxSymbol "troff")
-     (cons (boxSymbol "tron")
-     (cons (boxSymbol "stron")
-     (cons (boxSymbol "car")
-      (cons (boxSymbol "cdr")
-       (cons (boxSymbol "cons")
-        (cons (boxSymbol "stackTracePush")
-         (cons (boxSymbol "stackTracePop")
-          (cons (boxSymbol "assertType")
-           (cons (boxSymbol "boxString")
-            (cons (boxSymbol "boxInt") nil)))))))))))))
     (printf "\n\n//Building function %s from line: %s" (stringify name) (stringify (getTag name (boxString "line"))))
     (newLine 0)
     (if (isNil node)
@@ -1334,32 +1316,29 @@
        (printf ") {")
        (newLine 1)
        (ansiDeclarations (declarationsof node) 1)
-       (printf
-        "\nif (globalTrace)\n    printf(\"%s at %s:%s\\n\");\n"
-        (stringify (subnameof node))
-        (stringify (getTag name (boxString "filename")))
-        (stringify (getTag name (boxString "line"))))
-       (if (inList name noStackTrace)
+       (if (inList (toStr name) (noStackTrace))
+       (then (printf ""))
+       (else 
+           (printf "\nif (globalTrace)\n    printf(\"%s at %s:%s\\n\");\n" (stringify name) (stringify (getTag name (boxString "filename"))) (stringify (getTag name (boxString "line"))))))
+       (if (inList (toStr name) (noStackTrace))
          (then (printf ""))
          (else
           (printf
            "\n  stackTracePush(\"%s\", \"%s\", %s, %d );\n"
            (stringify (getTag name (boxString "filename")))
-           (stringify (subnameof node))
+           (stringify name)
            (stringify (getTag name (boxString "line")))
            0)))
        (ansiBody (childrenof node) 1)
-       (if (inList name noStackTrace)
+       (if (inList (toStr name) (noStackTrace))
          (then (printf ""))
          (else
           (printf
            "\n  stackTracePop();\nif (globalTrace)\n    printf(\"Leaving %s\\n\");\n"
-           (stringify (subnameof node)))))
+           (stringify name))))
        (printf "\n}\n")))))
-  (void
-   ansiForwardDeclaration
-   (list node)
-   (declare)
+
+  (void ansiForwardDeclaration (list node) (declare)
    (body
     (if (isNil node)
       (body (return))
@@ -1565,6 +1544,7 @@
       (then
        (return (mergeInclude (car incs) (merge_recur (cdr incs) program))))
       (else (return program)))))
+
   (list
    mergeInclude
    (list inc list program)
@@ -1631,47 +1611,36 @@
          (boxString (getStringArray pos args))
          (argList count (add1 pos) args))))
       (body (return nil)))))
-  (list
-   reverse
-   (list l)
-   (declare)
+
+  (list listReverse (list l) (declare)
    (body
     (if (isEmpty l)
       (body (return nil))
-      (body (return (cons (car l) (reverse (cdr l))))))))
-  (bool
-   inList
-   (box item list l)
-   (declare)
+      (body (return (cons (car l) (listReverse (cdr l))))))))
+
+  (bool inList (box item list l) (declare)
    (body
     (if (isNil l)
       (then (return false))
       (else
+       ;(printf "Comparing %s and %s\n" (stringify item) (stringify (car l)))
        (if (equalBox (car l) item)
          (then (return true))
          (else (return (inList item (cdr l)))))))))
-  (void
-   stackTracePush
-   (string file string fname int line int column)
-   (declare)
+
+  (void stackTracePush (string file string fname int line int column) (declare)
    (body
-    (set
-     globalStackTrace
-     (cons
-      (cons
-       (boxString file)
-       (cons
-        (boxString fname)
-        (cons (boxInt line) (cons (boxInt column) nil))))
+    (set globalStackTrace
+     (cons 
+     (cons (boxString file) (cons (boxString fname) (cons (boxInt line) (cons (boxInt column) nil))))
       globalStackTrace))))
-  (list
-   stackTracePop
-   ()
-   (declare (list top nil))
+
+  (list stackTracePop () (declare (list top nil))
    (body
     (set top (car globalStackTrace))
     (set globalStackTrace (cdr globalStackTrace))
     (return top)))
+
   (void tron  () (declare) (body (set globalTrace true)))
   (void troff () (declare) (body (set globalTrace false)))
   (void stron  () (declare) (body (set globalStepTrace true)))

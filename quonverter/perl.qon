@@ -39,8 +39,8 @@
   (void perlExpression (list node int indent) (declare)
    (body
     (if (isLeaf node)
-      (body (perlLeaf node indent))
-      (body (perlSubExpression node indent)))))
+      (then (perlLeaf node indent))
+      (else (perlSubExpression node indent)))))
 
   (void perlRecurList (list expr int indent) (declare)
    (body
@@ -122,8 +122,19 @@
     (printf "$%s = " (stringify (first (codeof node))))
     (perlExpression (childrenof node) indent)))
 
-  (void perlStatement (list node int indent) (declare)
+  (void assertNode (list node) (declare)
+  (body
+    (if (isNode node)
+    (then (return))
+    (else (panic "Not a node!")))
+  ))
+
+  (void perlStatement (list node int indent) (declare (box functionName nil))
    (body
+
+       ;(printf "expression node: ")
+       ;(display node)
+    (assertNode node)
     (if (equalBox (boxString "setter") (subnameof node))
       (body (perlSet node indent))
       (body
@@ -134,10 +145,36 @@
             (body (perlIf node indent))
             (body
              (if (equalBox (boxString "returnvoid") (subnameof node))
-               (body (newLine indent) (printf "return"))
-               (body
-                (newLine indent)
-                (perlExpression (childrenof node) indent)))))))))
+               (then
+                    (set functionName (functionNameof node))
+                   (printf "\n#Returnvoid\n")
+                    (newLine indent)
+                   ;(printf ";\n  stackTracePop();\nif ($globalTrace) {printf(\"Leaving %s\\n\")}\n" (stringify (subnameof node)))
+                   (newLine indent) (printf "return"))
+               (else 
+                   (if (equalBox (boxString "return") (subnameof node))
+                   (then
+                    (set functionName (functionNameof node))
+                    (if (inList functionName (noStackTrace))
+                    (then (printf ""))
+                    (else 
+                       (printf "\n#standard return: %s\n" (stringify functionName))
+                       (newLine indent)
+                       (printf "stackTracePop();if ($globalTrace) {printf(\"Leaving \\n\")}\n" )
+                       (newLine indent) 
+                       (perlExpression (childrenof node) indent)
+                       )))
+                   (else
+                    (if (inList  functionName (noStackTrace))
+                    (then (printf ""))
+                    (else 
+                        (printf "\n#standard expression\n" )
+                        ;(display node)
+                        (newLine indent)
+                        (perlExpression (childrenof node) indent)
+                        (newLine indent)
+                    ))))
+                ))))))))
     (printf ";\n")))
 
   (void perlBody (list tree int indent) (declare)
@@ -146,11 +183,10 @@
       (body (return))
       (body
        (printIndent indent)
-       (printf
-        "%s"
-        "if ($globalStepTrace) {printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__)}\n")
+       (printf "%s" "if ($globalStepTrace) {printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__)}\n")
        (perlStatement (car tree) indent)
        (perlBody (cdr tree) indent)))))
+
   (void perlDeclarations (list decls int indent) (declare (box decl nil))
    (body
     (if (isEmpty decls)
@@ -162,22 +198,9 @@
        (printf ";\n")
        (perlDeclarations (cdr decls) indent)))))
 
-  (void perlFunction (list node) (declare (box name nil) (list noStackTrace nil))
+  (void perlFunction (list node) (declare (box name nil))
    (body
     (set name (subnameof node))
-    (set noStackTrace
-     (cons (boxSymbol "troff")
-     (cons (boxSymbol "stroff")
-     (cons (boxSymbol "stron")
-     (cons (boxSymbol "tron")
-     (cons (boxSymbol "car")
-      (cons (boxSymbol "cdr")
-       (cons (boxSymbol "cons")
-        (cons (boxSymbol "stackTracePush")
-         (cons (boxSymbol "stackTracePop")
-          (cons (boxSymbol "assertType")
-           (cons (boxSymbol "boxString")
-            (cons (boxSymbol "boxInt") nil)))))))))))))
     (printf
      "\n\n#Building function %s from line: %s"
      (stringify name)
@@ -194,22 +217,17 @@
        (newLine 1)
        (perlDeclarations (declarationsof node) 1)
        (printf "\nif ($globalTrace) { printf(\"%s at %s:%s\\n\") }\n" (stringify (subnameof node)) (stringify (getTag name (boxString "filename"))) (stringify (getTag name (boxString "line"))))
-       (if (inList name noStackTrace)
+       (if (inList name (noStackTrace))
          (then (printf ""))
          (else
-          (printf
-           "\n  stackTracePush(\"%s\", \"%s\", %s, %d );\n"
-           (stringify (getTag name (boxString "filename")))
-           (stringify (subnameof node))
-           (stringify (getTag name (boxString "line")))
-           0)))
+          (printf "\n  stackTracePush(\"%s\", \"%s\", %s, %d );\n" (stringify (getTag name (boxString "filename"))) (stringify (subnameof node)) (stringify (getTag name (boxString "line"))) 0)
+          ))
        (perlBody (childrenof node) 1)
-       (if (inList name noStackTrace)
+       (if (inList name (noStackTrace))
          (then (printf ""))
          (else
-          (printf
-           "\n  stackTracePop();\nif ($globalTrace) {printf(\"Leaving %s\\n\")}\n"
-           (stringify (subnameof node)))))
+          (printf "\n  stackTracePop();\nif ($globalTrace) {printf(\"Leaving %s\\n\")}\n" (stringify (subnameof node)))
+          ))
        (printf "\n}\n")))))
 
   (void perlForwardDeclaration (list node) (declare)
@@ -238,7 +256,12 @@
   (void perlIncludes (list nodes) (declare)
    (body
     (printf "%s" " sub greaterthan { \$_[0] > \$_[1] } ; sub equalString { \$_[0] eq \$_[1] } ;sub read_file { my \$file = shift; open my \$fh, '<', \$file or die; local \$/ = undef; my \$cont = <\$fh>; close \$fh; return \$cont; }; ")
-    (printf "%s" "sub subtract { \$_[0] - \$_[1]}")))
+    (printf "%s" "sub subtract { \$_[0] - \$_[1]}")
+    (printf "%s" "sub andBool { \$_[0] && \$_[1]}")
+    (printf "%s" "sub panic { warn @_;  stackDump(); exit(1)}")
+    (printf "%s" "sub intToString { return $_[0]}")
+    
+    ))
 
   (void perlTypeDecl (list l) (declare)
    (body
@@ -353,7 +376,7 @@
     (printf "my \$false = 0;\n")
     (printf "my \$undef;\n")
     (printf
-     "\nsub isNil {\n    return defined($_[0]);\n}\n\n\n#Forward declarations\n")
+     "\nsub isNil {\n    return !defined($_[0]);\n}\n\n\n#Forward declarations\n")
     (perlForwardDeclarations
      (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
     (printf "\n\n#End forward declarations\n\n")

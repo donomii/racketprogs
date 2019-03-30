@@ -1,12 +1,10 @@
 ((includes base.qon perl.qon)
  (types)
  (functions
-  (int
-   start
-   ()
-   (declare (bool runTests false) (list cmdLine nil) (box filename nil))
+
+  (int start () (declare (bool runTests nil) (list cmdLine nil) (box filename nil))
    (body
-    (set cmdLine (reverse (argList globalArgsCount 0 globalArgs)))
+    (set cmdLine (listReverse (argList globalArgsCount 0 globalArgs)))
     ;(printf "//") (display cmdLine)
     (if (> (listLength cmdLine) 1)
       (body (set filename (second cmdLine)))
@@ -34,5 +32,7 @@
        (test16)
        (printf "\n\nAfter all that hard work, I need a beer...\n")
        (beers 9))
-      (else (perlCompile (unBoxString filename)) (printf "\n")))
+      (else 
+      (tron)
+      (perlCompile (unBoxString filename)) (printf "\n")))
     (return 0)))))
