@@ -257,10 +257,15 @@
       (body (perlFunction (car tree)) (perlFunctions (cdr tree))))))
   (void perlIncludes (list nodes) (declare)
    (body
-    (printf "%s" " sub greaterthan { \$_[0] > \$_[1] } ; sub equalString { \$_[0] eq \$_[1] } ;sub read_file { my \$file = shift; \$file || die \"Empty file name!!!\"; open my \$fh, '<', \$file or die; local \$/ = undef; my \$cont = <\$fh>; close \$fh; return \$cont; }; ")
+    (printf "%s\n" "use strict;")
+    (printf "%s\n" "use Carp;")
+    (printf "%s\n" "sub greaterthan { \$_[0] > \$_[1] };")
+    (printf "%s\n" " sub equalString { \$_[0] eq \$_[1] };")
+    (printf "%s\n" "sub read_file { my \$file = shift; \$file || die \"Empty file name!!!\"; open my \$fh, '<', \$file or die; local \$/ = undef; my \$cont = <\$fh>; close \$fh; return \$cont; }; ")
     (printf "%s\n" "sub subtract { \$_[0] - \$_[1]}")
     (printf "%s\n" "sub andBool { \$_[0] && \$_[1]}")
-    (printf "%s\n" "sub panic { warn @_;  stackDump(); exit(1)}")
+    (printf "%s\n" "sub equal { \$_[0] == \$_[1]}")
+    (printf "%s\n" "sub panic { carp @_; die \"@_\"}")
     (printf "%s\n" "sub intToString { return $_[0]}")
     (printf "%s\n" "sub getStringArray { my \$index = shift; my \$arr = shift; return \$arr->[\$index]}")
     
