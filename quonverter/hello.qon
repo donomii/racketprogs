@@ -16,7 +16,6 @@
 
   [int start [] [declare]
        [body
-       [stron]
         [say "Hello world\n" 3]
         [return 0]
         ]]

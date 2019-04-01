@@ -102,6 +102,7 @@
   (list assoc (string searchTerm list l) (declare (list elem nil))
    (body
     (assertType "list" l)
+    
     (if (isEmpty l)
       (body (return (boxBool false)))
       (body
@@ -110,6 +111,7 @@
        (if (isEmpty elem)
          (body (return (assoc searchTerm (cdr l))))
          (body
+         (if false (then (printf "Comparing %s and %s\n" searchTerm (stringify (car elem)))) (else (printf "")))
           (if (equalString
                searchTerm
                (stringify (car elem)))
@@ -260,34 +262,35 @@
   ;; Tag functions
   ;;;;;;;;;;;;;;;;;;
 
-  (bool
-   hasTag
-   (box aBox box key)
-   (declare)
+  (bool hasTag (box aBox box key) (declare)
    (body
     (if (isNil aBox)
       (then (return false))
-      (else (return (truthy (assoc (stringify key) (get-struct aBox tag))))))))
-  (box
-   getTag
-   (box aBox box key)
-   (declare)
-   (body (return (cdr (assoc (stringify key) (get-struct aBox tag))))))
-  (box
-   getTagFail
-   (box aBox box key box onFail)
-   (declare)
+      (else (return (isNotFalse (assoc (stringify key) (get-struct aBox tag))))))))
+
+  (box getTag (box aBox box key) (declare)
+   (body 
+   ;(if false 
+   ;(then 
+       ;(printf "Getting %s from: " (stringify key)) 
+       ;(display (alistKeys (get-struct aBox tag))))
+   ;(else 
+       ;(printf "")))
+
+   (return (cdr (assoc (stringify key) (get-struct aBox tag))))))
+
+  (box getTagFail (box aBox box key box onFail) (declare)
    (body
     (if (hasTag aBox key)
-      (then (return (cdr (assoc (stringify key) (get-struct aBox tag)))))
+      (then (return (getTag aBox key)))
       (else (return onFail)))))
-  (box
-   setTag
-   (box aStruct box key list val)
-   (declare)
+
+;arg order is different to aconslist!
+  (box setTag (box key list val box aStruct ) (declare)
    (body
     (set-struct aStruct tag (alistCons key val (get-struct aStruct tag)))
     (return aStruct)))
+
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Parser functions
   ;;;;;;;;;;;;;;;;;;;;;;;
@@ -330,10 +333,8 @@
                   (filterTokens (cdr l)))))
                (else (return (cons token (filterTokens (cdr l)))))))))
          (else (return (cons token (filterTokens (cdr l))))))))))
-  (box
-   finish_token
-   (string prog int start int len int line int column string filename)
-   (declare (box token nil))
+
+  (box finish_token (string prog int start int len int line int column string filename) (declare (box token nil))
    (body
     (if (> len 0)
       (body
@@ -341,22 +342,14 @@
        (set-struct
         token
         tag
-        (alistCons
-         (boxString "filename")
-         (boxString filename)
-         (alistCons
-          (boxString "column")
-          (boxInt column)
-          (alistCons
-           (boxString "line")
-           (boxInt line)
+        (alistCons (boxString "filename") (boxString filename)
+         (alistCons (boxString "column") (boxInt column)
+          (alistCons (boxString "line") (boxInt line)
            (alistCons (boxString "totalCharPos") (boxInt start) nil)))))
        (return token))
       (body (return (newVoid))))))
-  (string
-   readString
-   (string prog int start int len)
-   (declare (string token ""))
+
+  (string readString (string prog int start int len) (declare (string token ""))
    (body
     (set token (sub-string prog (sub1 (add start len)) 1))
     (if (equalString "\"" token)
@@ -366,15 +359,14 @@
          (body (return (readString prog start (add 2 len))))
          (body (return (readString prog start (add1 len)))))
        (return (readString prog start (add1 len)))))))
-  (string
-   readComment
-   (string prog int start int len)
-   (declare (string token ""))
+
+  (string readComment (string prog int start int len) (declare (string token ""))
    (body
     (set token (sub-string prog (sub1 (add start len)) 1))
     (if (isLineBreak token)
       (body (return (sub-string prog start (sub1 len))))
       (body (return (readComment prog start (add1 len)))))))
+
   (bool
    isWhiteSpace
    (string s)
@@ -389,10 +381,8 @@
           (if (equalString "\r" s)
             (then (return true))
             (else (return false)))))))))
-  (bool
-   isLineBreak
-   (string s)
-   (declare)
+
+  (bool isLineBreak (string s) (declare)
    (body
     (if (equalString "\n" s)
       (then (return true))
@@ -406,71 +396,54 @@
     (if (equalString "\n" (stringify token))
       (then (return (add1 val)))
       (else (return val)))))
+(box annotateReadPosition (string filename int linecount int column int start box newBox) (declare)
+(body
+(return (setTag (boxString "filename") 
+                             (boxString filename) 
+                             (setTag (boxString "column")  
+                                     (boxInt column )  
+                                     (setTag (boxString "line" ) 
+                                             (boxInt linecount ) 
+                                             (setTag (boxString "totalCharPos" ) 
+                                                     (boxInt start ) 
+                                                     newBox)))))))
 
-  (list scan (string prog int start int len int linecount int column string filename) (declare (box token nil))
+  (list scan (string prog int start int len int linecount int column string filename) (declare (box token nil) (string newString "") (box newBox nil))
    (body
-   ;(printf "Scanning: line %d:%d\n" start len)
+   (if false (then (printf "Scanning: line %d:%d\n" linecount column)) (else (printf "")))
     (if (> (string-length prog) (sub start (sub 0 len)))
-      (body
+      (then
        (set token (boxSymbol (sub-string prog (sub1 (add start len)) 1)))
        (set-struct token tag (alistCons (boxString "totalCharPos") (boxInt start) nil))
        (if (isOpenBrace token)
          (then
-          (return (cons (finish_token prog start (sub1 len) linecount column filename) (cons (boxSymbol (openBrace))
+          (return (cons 
+             (finish_token prog start (sub1 len) linecount column filename) (cons (boxSymbol (openBrace))
              (scan prog (add1 start) 1 linecount (add1 column) filename)))))
          (else
           (if (isCloseBrace token)
             (then
              (return
               (cons (finish_token prog start (sub1 len) linecount column filename)
-               (cons (boxSymbol (closeBrace))
+               (cons (annotateReadPosition filename linecount column start (boxSymbol (closeBrace)))
                 (scan prog (add start len) 1 linecount (add1 column) filename)))))
             (else
              (if (isWhiteSpace (stringify token))
                (body
-                (return
-                 (cons
-                  (finish_token
-                   prog
-                   start
-                   (sub1 len)
-                   linecount
-                   column
-                   filename)
-                  (scan
-                   prog
-                   (add start len)
-                   1
-                   (incForNewLine token linecount)
-                   0
-                   filename))))
+                (return (cons (finish_token prog start (sub1 len) linecount column filename)
+                  (scan prog (add start len) 1 (incForNewLine token linecount) 0 filename))))
                (body
                 (if (equalBox (boxSymbol ";") token)
                   (then
-                   (return (scan prog (add start (add1 (add1 (string-length (readComment prog (add1 start) len)))))
-                     1
-                     (add1 linecount)
-                     0
-                     filename)))
+                   (return (scan prog (add start (add1 (add1 (string-length (readComment prog (add1 start) len))))) 1 (add1 linecount) 0 filename)))
                   (body
                    (if (equalBox (boxSymbol "\"") token)
-                     (body
-                      (return
-                       (cons
-                        (boxString (readString prog (add1 start) len))
-                        (scan
-                         prog
-                         (add
-                          start
-                          (add1
-                           (add1
-                            (string-length
-                             (readString prog (add1 start) len)))))
-                         1
-                         linecount
-                         (add1 column)
-                         filename))))
-                     (body
+                     (then
+                     (set newString (readString prog (add1 start) len))
+                     (set newBox (annotateReadPosition filename linecount column start (boxString newString)))
+
+                      (return (cons newBox (scan prog (add start (add1 (add1 (string-length newString)))) 1 linecount (add1 column) filename))))
+                     (else
                       (return (scan prog start (sub len -1) linecount (add1 column) filename)))))))))))))
       (body (return (emptyList))))
     (return (emptyList))))
@@ -499,10 +472,8 @@
          (body (return true))
          (body (return false)))))))
   (string closeBrace () (declare) (body (return ")")))
-  (list
-   sexprTree
-   (list l)
-   (declare (box b nil))
+
+  (list sexprTree (list l) (declare (box b nil))
    (body
     (if (isEmpty l)
       (body (return (emptyList)))
@@ -516,17 +487,12 @@
             (body (return (emptyList)))
             (body
              (return
-              (setTag
-               (cons b (sexprTree (cdr l)))
-               (boxString "line")
-               (getTagFail b (boxString "line") (boxInt -1))))))))))
+              (setTag (boxString "line") (getTagFail b (boxString "line") (boxInt -1)) (cons b (sexprTree (cdr l))))
+              )))))))
     (printf "AAAAAA code should never reach here!\n")
     (return (emptyList))))
 
-  (list
-   skipList
-   (list l)
-   (declare (box b nil))
+  (list skipList (list l) (declare (box b nil))
    (body
     (if (isEmpty l)
       (body (return (emptyList)))
@@ -540,10 +506,8 @@
             (body (return (skipList (cdr l)))))))))
     (printf "AAAAAA code should never reach here!\n")
     (return (emptyList))))
-  (list
-   readSexpr
-   (string aStr string filename)
-   (declare (list tokens nil) (list as nil))
+
+  (list readSexpr (string aStr string filename) (declare (list tokens nil) (list as nil))
    (body
     (set tokens (emptyList))
     (set tokens (filterTokens (filterVoid (scan aStr 0 1 0 0 filename))))
@@ -1074,8 +1038,16 @@
     (if (equalBox (boxBool false) aVal)
       (body (return false))
       (body (return true)))))
+
+   (bool isNotFalse (box aVal) (declare)
+    (body
+     (if (equalString (boxType aVal) "bool")
+       (then (if (unBoxBool aVal) (then (return true))(else (return false))))
+       (body (return false)))))
+
   (void ansiLeaf (list thisNode int indent) (declare)
    (body (display (ansiFuncMap (codeof thisNode)))))
+
   (void ansiStructGetterExpression (list thisNode int indent) (declare)
    (body
     (if (equalBox (boxString "structGetter") (subnameof thisNode))
@@ -1405,10 +1377,7 @@
     (if (truthy (assoc (stringify aSym) symMap))
       (body (return (cdr (assoc (stringify aSym) symMap))))
       (body (return aSym)))))
-  (box
-   ansiFuncMap
-   (box aSym)
-   (declare (list symMap nil))
+  (box ansiFuncMap (box aSym) (declare (list symMap nil))
    (body
     (if (equalString "symbol" (boxType aSym))
       (body
@@ -1433,6 +1402,7 @@
               (boxSymbol "string-length")
               (boxSymbol "string_length")
               (alistCons (boxSymbol "nil") (boxSymbol "NULL") nil))))))))
+
        (if (truthy (assoc (stringify aSym) symMap))
          (body (return (cdr (assoc (stringify aSym) symMap))))
          (body (return aSym))))
@@ -1494,14 +1464,12 @@
     (if (isNil seq1)
       (then (return seq2))
       (body (return (cons (car seq1) (concatLists (cdr seq1) seq2)))))))
-  (list
-   alistKeys
-   (list alist)
-   (declare)
+  (list alistKeys (list alist) (declare)
    (body
     (if (isNil alist)
       (then (return nil))
       (else (return (cons (car (car alist)) (alistKeys (cdr alist))))))))
+
   (list
    mergeIncludes
    (list program)
