@@ -33,5 +33,5 @@
        (printf "\n\nAfter all that hard work, I need a beer...\n")
        (beers 9))
       (else 
-      (perlCompile (unBoxString filename)) (printf "\n")))
+      (ansiCompile (unBoxString filename)) (printf "\n")))
     (return 0)))))

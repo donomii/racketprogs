@@ -285,6 +285,21 @@
       (then (return (getTag aBox key)))
       (else (return onFail)))))
 
+  (bool assocExists ( string key box aBox ) (declare)
+   (body
+   ;(printf "//Checking exists: %s\n" key)
+    (if (isNil aBox)
+      (then (return false))
+      (else (return (isNotFalse (assoc key aBox)))))))
+
+
+  (box assocFail (string key box aBox box onFail) (declare)
+   (body
+    (if (assocExists key aBox)
+      (then (return (assoc key aBox)))
+      (else (return (cons (boxString key) onFail))))))
+
+
 ;arg order is different to aconslist!
   (box setTag (box key list val box aStruct ) (declare)
    (body
@@ -1043,7 +1058,7 @@
     (body
      (if (equalString (boxType aVal) "bool")
        (then (if (unBoxBool aVal) (then (return true))(else (return false))))
-       (body (return false)))))
+       (body (return true)))))
 
   (void ansiLeaf (list thisNode int indent) (declare)
    (body (display (ansiFuncMap (codeof thisNode)))))
