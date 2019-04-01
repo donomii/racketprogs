@@ -27,7 +27,7 @@
    (then (printf "%s" (dollar) ))
     (else (printf "" ))
    )
-(display (perlFuncMap (codeof thisNode)))
+    (display (perlFuncMap (codeof thisNode)))
    ))
 
   (void perlStructGetterExpression (list thisNode int indent) (declare)
@@ -77,7 +77,7 @@
                (body
                 (set thing (codeof (car (childrenof tree))))
                 (if (equalBox (boxSymbol "get-struct") thing)
-                  (body
+                  (then
                    (printf "%s%s->{%s}" (dollar) (stringify (codeof (second (childrenof tree)))) (stringify (codeof (third (childrenof tree))))))
                   (body
                    (if (equalBox (boxSymbol "new") thing)
@@ -131,7 +131,6 @@
 
   (void perlStatement (list node int indent) (declare (box functionName nil))
    (body
-
        ;(printf "expression node: ")
        ;(display node)
     (assertNode node)
@@ -160,7 +159,7 @@
                     (else 
                        (printf "\n#standard return: %s\n" (stringify functionName))
                        (newLine indent)
-                       (printf "if (\$globalTrace) {printf(\"Leaving \\n\")}\n" )
+                       (printf "%s%s%s" "if (" (dollar) "globalTrace) {printf(\"Leaving \\n\")}\n" )
                        ))
                        (newLine indent) 
                        (perlExpression (childrenof node) indent)
@@ -185,7 +184,7 @@
       (body (return))
       (body
        (printIndent indent)
-       (printf "%s" "if (\$globalStepTrace) {printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__)}\n")
+       (printf "%s%s%s" "if (" (dollar) "globalStepTrace) {printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__)}\n")
        (perlStatement (car tree) indent)
        (perlBody (cdr tree) indent)))))
 
@@ -195,7 +194,7 @@
       (body (return))
       (body
        (set decl (car decls))
-       (printf "my %s%s = " (dollar)(stringify (second decl)))
+       (printf "my %s%s = " (dollar) (stringify (second decl)))
        (display (perlFuncMap (third decl)))
        (printf ";\n")
        (perlDeclarations (cdr decls) indent)))))
@@ -218,7 +217,7 @@
        (perlFunctionArgs (cdr (assoc "intype" (cdr node))))
        (newLine 1)
        (perlDeclarations (declarationsof node) 1)
-       (printf "\nif (\$globalTrace) { printf(\"%s at %s:%s\\n\") }\n" (stringify (subnameof node)) (stringify (getTag name (boxString "filename"))) (stringify (getTag name (boxString "line"))))
+       (printf "\nif (%sglobalTrace) { printf(\"%s at %s:%s\\n\") }\n" (dollar) (stringify (subnameof node)) (stringify (getTag name (boxString "filename"))) (stringify (getTag name (boxString "line"))))
        (if (inList name (noStackTrace))
          (then (printf ""))
          (else
@@ -265,17 +264,28 @@
    (body
     (printf "%s\n" "use strict;")
     (printf "%s\n" "use Carp;")
+    (dollar)
     (printf "%s\n" "use Carp::Always;")
-    ;(printf "%s\n" "sub dollar { chr(36); }")
-    (printf "%s\n" "sub greaterthan { \$_[0] > \$_[1] };")
-    (printf "%s%s%s%s%s\n" " sub equalString { " (dollar) "_[0] eq " (dollar) "_[1] };")
+    (printf "%s%s%s%s%s\n" 
+    "sub greaterthan { "
+    (dollar) 
+    "_[0] > " 
+    (dollar) 
+    "_[1] };" )
+    (printf "%s%s%s%s%s\n" 
+    "sub equalString { " 
+    (dollar) 
+    "_[0] eq " 
+    (dollar) 
+    "_[1] };"
+    )
     (printf "%s\n" "sub read_file { my \$file = shift; \$file || die \"Empty file name!!!\"; open my \$fh, '<', \$file or die; local \$/ = undef; my \$cont = <\$fh>; close \$fh; return \$cont; }; ")
-    (printf "%s\n" "sub subtract { \$_[0] - \$_[1]}")
-    (printf "%s\n" "sub andBool { \$_[0] && \$_[1]}")
-    (printf "%s\n" "sub equal { \$_[0] == \$_[1]}")
+    (printf "%s%s%s%s%s\n" "sub subtract { "(dollar)"_[0] - "(dollar)"_[1]}")
+    (printf "%s%s%s%s%s\n" "sub andBool { "(dollar)"_[0] && "(dollar)"_[1]}")
+    (printf "%s%s%s%s%s\n" "sub equal { "(dollar)"_[0] == "(dollar)"_[1]}")
     (printf "%s\n" "sub panic { carp @_; die \"@_\"}")
     (printf "%s\n" "sub intToString { return $_[0]}")
-    (printf "%s\n" "sub getStringArray { my \$index = shift; my \$arr = shift; return \$arr->[\$index]}")
+    (printf "%s%s%s%s%s%s%s%s%s\n" "sub getStringArray { my "(dollar) "index = shift; my "(dollar)"arr = shift; return "(dollar)"arr->["(dollar)"index]}")
     
     ))
 
@@ -382,14 +392,14 @@
     (printf "use strict;\n")
     (printf "use Carp;\n")
     (printf "use Data::Dumper;\n")
-    (printf "my \$globalStackTrace = undef;\n")
-    (printf "my \$globalTrace = undef;\n")
+    (printf "%s%s%s" "my " (dollar) "globalStackTrace = undef;\n")
+    (printf "%s%s%s" "my "(dollar)"globalTrace = undef;\n")
     (printf "my \$globalStepTrace = undef;\n")
     (printf "my \$globalArgs = undef;\n")
     (printf "my \$globalArgsCount = undef;\n")
     (printf "%s%s%s\n" "my " (dollar) "true = 1;\n")
     (printf "%s%s%s" "my " (dollar) "false = 0;\n")
-    (printf "my \$undef;\n")
+    (printf "%s%s%s" "my " (dollar) "undef;\n")
     (printf
      "\nsub isNil {\n    return !defined($_[0]);\n}\n\n\n#Forward declarations\n")
     (perlForwardDeclarations
@@ -398,9 +408,9 @@
     (perlFunctions
      (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
     (printf ";\n")
-    (printf "%s" "\$globalArgs = [\@ARGV];")
-    (printf "%s" "\$globalArgsCount = scalar(\@ARGV);\n")
+    (printf "%s%s" (dollar) "globalArgs = [\@ARGV];")
+    (printf "%s%s" (dollar) "globalArgsCount = scalar(\@ARGV);\n")
     (printf "start();")
     ))
 
-  )
+  ))

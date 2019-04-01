@@ -1587,22 +1587,6 @@
          (then (return true))
          (else (return (inList item (cdr l)))))))))
 
-  (void stackTracePush (string file string fname int line int column) (declare)
-   (body
-   (printf "")
-    ;(set globalStackTrace
-     ;(cons 
-     ;(cons (boxString file) (cons (boxString fname) (cons (boxInt line) (cons (boxInt column) nil))))
-      ;globalStackTrace)
-     )))
-
-  (list stackTracePop () (declare (list top nil))
-   (body
-   (printf "")
-    ;(set top (car globalStackTrace))
-    ;(set globalStackTrace (cdr globalStackTrace))
-    ;(return top)
-    ))
 
   (void tron  () (declare) (body (set globalTrace true)))
   (void troff () (declare) (body (set globalTrace false)))
