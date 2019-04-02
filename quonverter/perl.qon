@@ -280,6 +280,8 @@
     "_[1] };"
     )
     (printf "%s\n" "sub read_file { my \$file = shift; \$file || die \"Empty file name!!!\"; open my \$fh, '<', \$file or die; local \$/ = undef; my \$cont = <\$fh>; close \$fh; return \$cont; }; ")
+    (printf "%s\n" "sub write_file {my \$file = shift; my \$data = shift; \$file || die \"Empty file name!!!\"; open my \$fh, '<', \$file or die; print \$fh \$data; close \$fh; } ")
+    (printf "%s%s%s%s%s\n" "sub stringConcatenate { "(dollar)"_[0] . "(dollar)"_[1]}")
     (printf "%s%s%s%s%s\n" "sub subtract { "(dollar)"_[0] - "(dollar)"_[1]}")
     (printf "%s%s%s%s%s\n" "sub andBool { "(dollar)"_[0] && "(dollar)"_[1]}")
     (printf "%s%s%s%s%s\n" "sub equal { "(dollar)"_[0] == "(dollar)"_[1]}")
@@ -394,14 +396,14 @@
     (printf "use Data::Dumper;\n")
     (printf "%s%s%s" "my " (dollar) "globalStackTrace = undef;\n")
     (printf "%s%s%s" "my "(dollar)"globalTrace = undef;\n")
-    (printf "my \$globalStepTrace = undef;\n")
-    (printf "my \$globalArgs = undef;\n")
-    (printf "my \$globalArgsCount = undef;\n")
+    (printf "%s%s%s" "my "(dollar) "globalStepTrace = undef;\n")
+    (printf "%s%s%s" "my "(dollar)"globalArgs = undef;\n")
+    (printf "%s%s%s" "my "(dollar)"globalArgsCount = undef;\n")
     (printf "%s%s%s\n" "my " (dollar) "true = 1;\n")
     (printf "%s%s%s" "my " (dollar) "false = 0;\n")
     (printf "%s%s%s" "my " (dollar) "undef;\n")
-    (printf
-     "\nsub isNil {\n    return !defined($_[0]);\n}\n\n\n#Forward declarations\n")
+    (printf "%s%s%s" 
+     "\nsub isNil {\n    return !defined("(dollar)"_[0]);\n}\n\n\n#Forward declarations\n")
     (perlForwardDeclarations
      (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
     (printf "\n\n#End forward declarations\n\n")
