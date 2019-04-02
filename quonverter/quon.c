@@ -5444,10 +5444,10 @@ if (globalTrace)
   printf("%s%s%s%s%s\n" , "sub equal { " , dollar (), "_[0] == " , dollar (), "_[1]}" );
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-  printf("%s\n" , "sub panic { carp @_; die \"@_\"}" );
+  printf("%s\n" , "sub panic { carp \@_; die \"\@_\"}" );
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-  printf("%s\n" , "sub intToString { return $_[0]}" );
+  printf("%s\n" , "sub intToString { return \$_[0]}" );
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   printf("%s%s%s%s%s%s%s%s%s\n" , "sub getStringArray { my " , dollar (), "index = shift; my " , dollar (), "arr = shift; return " , dollar (), "arr->[" , dollar (), "index]}" );

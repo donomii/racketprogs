@@ -285,8 +285,8 @@
     (printf "%s%s%s%s%s\n" "sub subtract { "(dollar)"_[0] - "(dollar)"_[1]}")
     (printf "%s%s%s%s%s\n" "sub andBool { "(dollar)"_[0] && "(dollar)"_[1]}")
     (printf "%s%s%s%s%s\n" "sub equal { "(dollar)"_[0] == "(dollar)"_[1]}")
-    (printf "%s\n" "sub panic { carp @_; die \"@_\"}")
-    (printf "%s\n" "sub intToString { return $_[0]}")
+    (printf "%s\n" "sub panic { carp \@_; die \"\@_\"}")
+    (printf "%s\n" "sub intToString { return \$_[0]}")
     (printf "%s%s%s%s%s%s%s%s%s\n" "sub getStringArray { my "(dollar) "index = shift; my "(dollar)"arr = shift; return "(dollar)"arr->["(dollar)"index]}")
     
     ))
