@@ -2,417 +2,434 @@
  (types)
  (functions
 
- (list numbers (int num) (declare)
- (body
-     (if (greaterthan 0 num)
-     (then (return (cons (boxString "-") nil)))
-     (else (return (cons (boxString (stringify (boxInt num))) (numbers (sub1 num))))))
- ))
+  (list numbers (int num) (declare)
+        (body
+         (if (greaterthan 0 num)
+             (then (return (cons (boxString "-") nil)))
+             (else (return (cons (boxString (stringify (boxInt num))) (numbers (sub1 num))))))
+         ))
 
-(string lexType (box abox) (declare)
-(body
-    ;(printf "Comparing %s and %s from %s\n" "\"" (sub-string (stringify abox) 0 1) (stringify abox))
-    (if (equalString "string" (boxType abox))
-    (then (return "string"))
-    (else 
-        (if (inList  (boxString (sub-string (stringify abox) 0 1)) (numbers 9))
-            (then (return "number"))
-            (else (return "symbol")))))
-    (return "symbol")
-))
+  (string lexType (box abox) (declare)
+          (body
+           ;(printf "Comparing %s and %s from %s\n" "\"" (sub-string (stringify abox) 0 1) (stringify abox))
+           (if (equalString "string" (boxType abox))
+               (then (return "string"))
+               (else 
+                (if (inList  (boxString (sub-string (stringify abox) 0 1)) (numbers 9))
+                    (then (return "number"))
+                    (else (return "symbol")))))
+           (return "symbol")
+           ))
 
   (void perlLeaf (list thisNode int indent) (declare)
-   (body 
-   (if (equalString "symbol" (lexType (codeof thisNode)))
-   (then (printf "%s" (dollar) ))
-    (else (printf "" ))
-   )
-    (display (perlFuncMap (codeof thisNode)))
-   ))
+        (body 
+         (if (equalString "symbol" (lexType (codeof thisNode)))
+             (then (printf "%s" (dollar) ))
+             (else (printf "" ))
+             )
+         (display (perlFuncMap (codeof thisNode)))
+         ))
 
   (void perlStructGetterExpression (list thisNode int indent) (declare)
-   (body
-    (if (equalBox (boxString "structGetter") (subnameof thisNode))
-      (body (perlGetStruct thisNode indent))
-      (body (perlLeaf thisNode indent)))))
+        (body
+         (if (equalBox (boxString "structGetter") (subnameof thisNode))
+             (body (perlGetStruct thisNode indent))
+             (body (perlLeaf thisNode indent)))))
 
   (void perlExpression (list node int indent) (declare)
-   (body
-    (if (isLeaf node)
-      (then (perlLeaf node indent))
-      (else (perlSubExpression node indent)))))
+        (body
+         (if (isLeaf node)
+             (then (perlLeaf node indent))
+             (else (perlSubExpression node indent)))))
 
   (void perlRecurList (list expr int indent) (declare)
-   (body
-    (if (isEmpty expr)
-      (body (return))
-      (body
-       (perlExpression (car expr) indent)
-       (if (isNil (cdr expr))
-         (body (printf ""))
-         (body (printf ", ") (perlRecurList (cdr expr) indent)))))
-    (return)))
+        (body
+         (if (isEmpty expr)
+             (body (return))
+             (body
+              (perlExpression (car expr) indent)
+              (if (isNil (cdr expr))
+                  (body (printf ""))
+                  (body (printf ", ") (perlRecurList (cdr expr) indent)))))
+         (return)))
 
   (void perlSubExpression (list tree int indent) (declare (box thing nil))
-   (body
-    (if (isEmpty tree)
-      (body (return))
-      (body
-       (if (isNode (childrenof tree))
-         (body (perlSubExpression (childrenof tree) indent))
-         (body
-          (if (isLeaf tree)
-            (body 
-            (printf "%s" (dollar))
-            (display (perlFuncMap (codeof tree))))
-            (body
-             (if (equal 1 (listLength (childrenof tree)))
-               (body
-                (display (codeof (car (childrenof tree))))
-                (if (equalBox
-                     (boxString "return")
-                     (codeof (car (childrenof tree))))
-                  (body (printf ""))
-                  (body (printf "()"))))
-               (body
-                (set thing (codeof (car (childrenof tree))))
-                (if (equalBox (boxSymbol "get-struct") thing)
-                  (then
-                   (printf "%s%s->{%s}" (dollar) (stringify (codeof (second (childrenof tree)))) (stringify (codeof (third (childrenof tree))))))
+        (body
+         (if (isEmpty tree)
+             (body (return))
+             (body
+              (if (isNode (childrenof tree))
+                  (body (perlSubExpression (childrenof tree) indent))
                   (body
-                   (if (equalBox (boxSymbol "new") thing)
-                     (then
-                      (printf "{}"))
-                     (else
-                      (printf
-                       "%s("
-                       (stringify
-                        (perlFuncMap (codeof (car (childrenof tree))))))
-                      (perlRecurList (cdr (childrenof tree)) indent)
-                      (printf ")")))))))))))))))
+                   (if (isLeaf tree)
+                       (body 
+                        (printf "%s" (dollar))
+                        (display (perlFuncMap (codeof tree))))
+                       (body
+                        (if (equal 1 (listLength (childrenof tree)))
+                            (body
+                             (display (codeof (car (childrenof tree))))
+                             (if (equalBox
+                                  (boxString "return")
+                                  (codeof (car (childrenof tree))))
+                                 (body (printf ""))
+                                 (body (printf "()"))))
+                            (body
+                             (set thing (codeof (car (childrenof tree))))
+                             (if (equalBox (boxSymbol "get-struct") thing)
+                                 (then
+                                  (printf "%s%s->{%s}" (dollar) (stringify (codeof (second (childrenof tree)))) (stringify (codeof (third (childrenof tree))))))
+                                 (body
+                                  (if (equalBox (boxSymbol "new") thing)
+                                      (then
+                                       (printf "{}"))
+                                      (else
+                                       (printf
+                                        "%s("
+                                        (stringify
+                                         (perlFuncMap (codeof (car (childrenof tree))))))
+                                       (perlRecurList (cdr (childrenof tree)) indent)
+                                       (printf ")")))))))))))))))
 
   (void perlIf (list node int indent) (declare)
-   (body
-    (newLine indent)
-    (printf "if ( ")
-    (perlExpression (car (first (childrenof node))) 0)
-    (printf ") {")
-    (perlBody (second (childrenof node)) (add1 indent))
-    (newLine indent)
-    (printf "} else {")
-    (perlBody (third (childrenof node)) (add1 indent))
-    (newLine indent)
-    (printf "}")))
+        (body
+         (newLine indent)
+         (printf "if ( ")
+         (perlExpression (car (first (childrenof node))) 0)
+         (printf ") {")
+         (perlBody (second (childrenof node)) (add1 indent))
+         (newLine indent)
+         (printf "} else {")
+         (perlBody (third (childrenof node)) (add1 indent))
+         (newLine indent)
+         (printf "}")))
 
   (void perlSetStruct (list node int indent)
-   (declare)
-   (body
-    (newLine indent)
-    (printf "%s%s->{%s} = " (dollar) (stringify (first (codeof node))) (stringify (second (codeof node))))
-    (perlExpression (childrenof node) indent)))
+        (declare)
+        (body
+         (newLine indent)
+         (printf "%s%s->{%s} = " (dollar) (stringify (first (codeof node))) (stringify (second (codeof node))))
+         (perlExpression (childrenof node) indent)))
 
   (void perlGetStruct (list node int indent) (declare)
-   (body
-    (newLine indent)
-    (printf "%s%s->{%s}" (dollar) (stringify (first (codeof node))) (stringify (second (codeof node))))))
+        (body
+         (newLine indent)
+         (printf "%s%s->{%s}" (dollar) (stringify (first (codeof node))) (stringify (second (codeof node))))))
 
   (void perlSet (list node int indent) (declare)
-   (body
-    (newLine indent)
-    (printf "%s%s = "(dollar) (stringify (first (codeof node))))
-    (perlExpression (childrenof node) indent)))
+        (body
+         (newLine indent)
+         (printf "%s%s = "(dollar) (stringify (first (codeof node))))
+         (perlExpression (childrenof node) indent)))
 
   (void assertNode (list node) (declare)
-  (body
-    (if (isNode node)
-    (then (return))
-    (else (panic "Not a node!")))
-  ))
+        (body
+         (if (isNode node)
+             (then (return))
+             (else (panic "Not a node!")))
+         ))
 
   (void perlStatement (list node int indent) (declare (box functionName nil))
-   (body
-       ;(printf "expression node: ")
-       ;(display node)
-    (assertNode node)
-    (if (equalBox (boxString "setter") (subnameof node))
-      (body (perlSet node indent))
-      (body
-       (if (equalBox (boxString "structSetter") (subnameof node))
-         (body (perlSetStruct node indent))
-         (body
-          (if (equalBox (boxString "if") (subnameof node))
-            (body (perlIf node indent))
-            (body
-             (if (equalBox (boxString "returnvoid") (subnameof node))
-               (then
-                    (set functionName (functionNameof node))
-                   (printf "\n#Returnvoid\n")
-                    (newLine indent)
-                   ;(printf ";\n  stackTracePop();\nif (\$globalTrace) {printf(\"Leaving %s\\n\")}\n" (stringify (subnameof node)))
-                   (newLine indent) (printf "return"))
-               (else 
-                   (if (equalBox (boxString "return") (subnameof node))
-                   (then
-                    (set functionName (functionNameof node))
-                    (if (inList functionName (noStackTrace))
-                    (then (printf ""))
-                    (else 
-                       (printf "\n#standard return: %s\n" (stringify functionName))
-                       (newLine indent)
-                       (printf "%s%s%s" "if (" (dollar) "globalTrace) {printf(\"Leaving \\n\")}\n" )
-                       ))
-                       (newLine indent) 
-                       (perlExpression (childrenof node) indent)
-                       )
-                   (else
-                    (if (inList  functionName (noStackTrace))
-                    (then (printf ""))
-                    (else 
-                        (printf "\n#standard expression\n" )
-                        ;(display node)
-                        ))
-                        (newLine indent)
-                        (perlExpression (childrenof node) indent)
-                        (newLine indent)
-                    ))
-                ))))))))
-    (printf ";\n")))
+        (body
+         ;(printf "expression node: ")
+         ;(display node)
+         (assertNode node)
+         (if (equalBox (boxString "setter") (subnameof node))
+             (body (perlSet node indent))
+             (body
+              (if (equalBox (boxString "structSetter") (subnameof node))
+                  (body (perlSetStruct node indent))
+                  (body
+                   (if (equalBox (boxString "if") (subnameof node))
+                       (body (perlIf node indent))
+                       (body
+                        (if (equalBox (boxString "returnvoid") (subnameof node))
+                            (then
+                             (set functionName (functionNameof node))
+                             (printf "\n#Returnvoid\n")
+                             (newLine indent)
+                             ;(printf ";\n  stackTracePop();\nif (\$globalTrace) {printf(\"Leaving %s\\n\")}\n" (stringify (subnameof node)))
+                             (newLine indent) (printf "return"))
+                            (else 
+                             (if (equalBox (boxString "return") (subnameof node))
+                                 (then
+                                  (set functionName (functionNameof node))
+                                  (if (inList functionName (noStackTrace))
+                                      (then (printf ""))
+                                      (else 
+                                       (printf "\n#standard return: %s\n" (stringify functionName))
+                                       (newLine indent)
+                                       (printf "%s%s%s" "if (" (dollar) "globalTrace) {printf(\"Leaving \\n\")}\n" )
+                                       ))
+                                  (newLine indent) 
+                                  (perlExpression (childrenof node) indent)
+                                  )
+                                 (else
+                                  (if (inList  functionName (noStackTrace))
+                                      (then (printf ""))
+                                      (else 
+                                       (printf "\n#standard expression\n" )
+                                       ;(display node)
+                                       ))
+                                  (newLine indent)
+                                  (perlExpression (childrenof node) indent)
+                                  (newLine indent)
+                                  ))
+                             ))))))))
+         (printf ";\n")))
 
   (void perlBody (list tree int indent) (declare)
-   (body
-    (if (isEmpty tree)
-      (body (return))
-      (body
-       (printIndent indent)
-       (printf "%s%s%s" "if (" (dollar) "globalStepTrace) {printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__)}\n")
-       (perlStatement (car tree) indent)
-       (perlBody (cdr tree) indent)))))
+        (body
+         (if (isEmpty tree)
+             (body (return))
+             (body
+              (printIndent indent)
+              (printf "%s%s%s" "if (" (dollar) "globalStepTrace) {printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__)}\n")
+              (perlStatement (car tree) indent)
+              (perlBody (cdr tree) indent)))))
 
   (void perlDeclarations (list decls int indent) (declare (box decl nil))
-   (body
-    (if (isEmpty decls)
-      (body (return))
-      (body
-       (set decl (car decls))
-       (printf "my %s%s = " (dollar) (stringify (second decl)))
-       (display (perlFuncMap (third decl)))
-       (printf ";\n")
-       (perlDeclarations (cdr decls) indent)))))
+        (body
+         (if (isEmpty decls)
+             (body (return))
+             (body
+              (set decl (car decls))
+              (printf "my %s%s = " (dollar) (stringify (second decl)))
+              (display (perlConstMap (third decl)))
+              (printf ";\n")
+              (perlDeclarations (cdr decls) indent)))))
 
   (void perlFunction (list node) (declare (box name nil))
-   (body
-    (set name (subnameof node))
-    (printf
-     "\n\n#Building function %s from line: %s"
-     (stringify name)
-     (stringify (getTag name (boxString "line"))))
-    (newLine 0)
-    (if (isNil node)
-      (body (return))
-      (body
-       (newLine 0)
-       (printf "sub %s" (stringify (subnameof node)))
-       (printf " {")
-       (newLine 1)
-       (perlFunctionArgs (cdr (assoc "intype" (cdr node))))
-       (newLine 1)
-       (perlDeclarations (declarationsof node) 1)
-       (printf "\nif (%sglobalTrace) { printf(\"%s at %s:%s\\n\") }\n" (dollar) (stringify (subnameof node)) (stringify (getTag name (boxString "filename"))) (stringify (getTag name (boxString "line"))))
-       (if (inList name (noStackTrace))
-         (then (printf ""))
-         (else
-          (printf "")
-          ))
-       (perlBody (childrenof node) 1)
-       (if (inList name (noStackTrace))
-         (then (printf ""))
-         (else
-          (printf "")
-          ))
-       (printf "\n}\n")))))
+        (body
+         (set name (subnameof node))
+         (printf
+          "\n\n#Building function %s from line: %s"
+          (stringify name)
+          (stringify (getTag name (boxString "line"))))
+         (newLine 0)
+         (if (isNil node)
+             (body (return))
+             (body
+              (newLine 0)
+              (printf "sub %s" (stringify (subnameof node)))
+              (printf " {")
+              (newLine 1)
+              (perlFunctionArgs (cdr (assoc "intype" (cdr node))))
+              (newLine 1)
+              (perlDeclarations (declarationsof node) 1)
+              (printf "\nif (%sglobalTrace) { printf(\"%s at %s:%s\\n\") }\n" (dollar) (stringify (subnameof node)) (stringify (getTag name (boxString "filename"))) (stringify (getTag name (boxString "line"))))
+              (if (inList name (noStackTrace))
+                  (then (printf ""))
+                  (else
+                   (printf "")
+                   ))
+              (perlBody (childrenof node) 1)
+              (if (inList name (noStackTrace))
+                  (then (printf ""))
+                  (else
+                   (printf "")
+                   ))
+              (printf "\n}\n")))))
 
   (void perlForwardDeclaration (list node) (declare)
-   (body
-    (if (isNil node)
-      (body (return))
-      (body
-       (printf
-        "\nsub %s"
-        (stringify (subnameof node)))
-       (printf ";")))))
+        (body
+         (if (isNil node)
+             (body (return))
+             (body
+              (printf
+               "\nsub %s"
+               (stringify (subnameof node)))
+              (printf ";")))))
 
   (void perlForwardDeclarations (list tree) (declare)
-   (body
-    (if (isEmpty tree)
-      (body (return))
-      (body
-       (perlForwardDeclaration (car tree))
-       (perlForwardDeclarations (cdr tree))))))
+        (body
+         (if (isEmpty tree)
+             (body (return))
+             (body
+              (perlForwardDeclaration (car tree))
+              (perlForwardDeclarations (cdr tree))))))
 
   (void perlFunctions (list tree) (declare)
-   (body
-    (if (isEmpty tree)
-      (body (return))
-      (body (perlFunction (car tree)) (perlFunctions (cdr tree))))))
+        (body
+         (if (isEmpty tree)
+             (body (return))
+             (body (perlFunction (car tree)) (perlFunctions (cdr tree))))))
 
-(string dollar () (declare)
-(body
-    (return "\$")
-))
+  
+  (string dollar () (declare)
+          (body (return (character 36))))
+
+  (string atSym () (declare)
+          (body (return (character 64))))
+
 
   (void perlIncludes (list nodes) (declare)
-   (body
-    (printf "%s\n" "use strict;")
-    (printf "%s\n" "use Carp;")
-    (dollar)
-    (printf "%s\n" "use Carp::Always;")
-    (printf "%s%s%s%s%s\n" 
-    "sub greaterthan { "
-    (dollar) 
-    "_[0] > " 
-    (dollar) 
-    "_[1] };" )
-    (printf "%s%s%s%s%s\n" 
-    "sub equalString { " 
-    (dollar) 
-    "_[0] eq " 
-    (dollar) 
-    "_[1] };"
-    )
-    (printf "%s\n" "sub read_file { my \$file = shift; \$file || die \"Empty file name!!!\"; open my \$fh, '<', \$file or die; local \$/ = undef; my \$cont = <\$fh>; close \$fh; return \$cont; }; ")
-    (printf "%s\n" "sub write_file {my \$file = shift; my \$data = shift; \$file || die \"Empty file name!!!\"; open my \$fh, '<', \$file or die; print \$fh \$data; close \$fh; } ")
-    (printf "%s%s%s%s%s\n" "sub stringConcatenate { "(dollar)"_[0] . "(dollar)"_[1]}")
-    (printf "%s%s%s%s%s\n" "sub subtract { "(dollar)"_[0] - "(dollar)"_[1]}")
-    (printf "%s%s%s%s%s\n" "sub andBool { "(dollar)"_[0] && "(dollar)"_[1]}")
-    (printf "%s%s%s%s%s\n" "sub equal { "(dollar)"_[0] == "(dollar)"_[1]}")
-    (printf "%s\n" "sub panic { carp \@_; die \"\@_\"}")
-    (printf "%s\n" "sub intToString { return \$_[0]}")
-    (printf "%s%s%s%s%s%s%s%s%s\n" "sub getStringArray { my "(dollar) "index = shift; my "(dollar)"arr = shift; return "(dollar)"arr->["(dollar)"index]}")
+        (body
+         (printf "%s\n" "use strict;")
+         (printf "%s\n" "use Carp;")
+         (dollar)
+         (printf "%s\n" "use Carp::Always;")
+         (printf "%s%s%s%s%s\n" 
+                 "sub greaterthan { "
+                 (dollar) 
+                 "_[0] > " 
+                 (dollar) 
+                 "_[1] };" )
+         (printf "%s%s%s%s%s\n" 
+                 "sub equalString { " 
+                 (dollar) 
+                 "_[0] eq " 
+                 (dollar) 
+                 "_[1] };"
+                 )
+         (printf "sub read_file { my %sfile = shift; %sfile || die \"Empty file name!!!\"; open my %sfh, '<', %sfile or die; local %s/ = undef; my %scont = <%sfh>; close %sfh; return %scont; }; \n"
+                 (dollar) (dollar) (dollar) (dollar) (dollar) (dollar) (dollar) (dollar) (dollar) )
+         (printf "sub write_file {my %sfile = shift; my %sdata = shift; %sfile || die \"Empty file name!!!\"; open my %sfh, '<', %sfile or die; print %sfh %sdata; close %sfh; } \n"
+                 (dollar) (dollar) (dollar) (dollar) (dollar) (dollar) (dollar) (dollar) )
+         (printf "%s%s%s%s%s\n" "sub stringConcatenate { "(dollar)"_[0] . "(dollar)"_[1]}")
+         (printf "%s%s%s%s%s\n" "sub subtract { "(dollar)"_[0] - "(dollar)"_[1]}")
+         (printf "%s%s%s%s%s\n" "sub andBool { "(dollar)"_[0] && "(dollar)"_[1]}")
+         (printf "%s%s%s%s%s\n" "sub equal { "(dollar)"_[0] == "(dollar)"_[1]}")
+         (printf "%s%s%s%s%s\n" "sub panic { carp "(atSym)"_; die \""(atSym)"_\"}")
+         (printf  "sub intToString { return %s_[0]}\n" (dollar))
+         (printf  "sub character { return chr(%s_[0])}\n" (dollar))
+         (printf  "sub false { return $_[0]} ;\n" )
+         (printf "%s%s%s%s%s%s%s%s%s\n" "sub getStringArray { my "(dollar) "index = shift; my "(dollar)"arr = shift; return "(dollar)"arr->["(dollar)"index]}")
     
-    ))
+         ))
 
   (void perlTypeDecl (list l) (declare)
-   (body
-   (return)
-    (if (> (listLength l) 2)
-      (body
-       (printIndent 1)
-       (printf
-        "%s %s %s;\n"
-        (stringify (second l))
-        (stringify (perlTypeMap (last l)))
-        (stringify (first l))))
-      (body
-       (printIndent 1)
-       (printf
-        "%s %s;\n"
-        (stringify (perlTypeMap (last l)))
-        (stringify (car l)))))))
+        (body
+         (return)
+         (if (> (listLength l) 2)
+             (body
+              (printIndent 1)
+              (printf
+               "%s %s %s;\n"
+               (stringify (second l))
+               (stringify (perlTypeMap (last l)))
+               (stringify (first l))))
+             (body
+              (printIndent 1)
+              (printf
+               "%s %s;\n"
+               (stringify (perlTypeMap (last l)))
+               (stringify (car l)))))))
 
   (void perlStructComponents (list node) (declare)
-   (body
-    (if (isEmpty node)
-      (body (return))
-      (body (perlTypeDecl (car node)) (perlStructComponents (cdr node))))))
+        (body
+         (if (isEmpty node)
+             (body (return))
+             (body (perlTypeDecl (car node)) (perlStructComponents (cdr node))))))
 
   (void perlStruct (list node) (declare)
-   (body (perlStructComponents (cdr (car node))) (return)))
+        (body (perlStructComponents (cdr (car node))) (return)))
 
   (box perlTypeMap (box aSym) (declare (list symMap nil))
-   (body
-    (set
-     symMap
-     (alistCons
-      (boxSymbol "stringArray")
-      (boxSymbol "char**")
-      (alistCons (boxSymbol "string") (boxSymbol "char*") nil)))
-    (if (truthy (assoc (stringify aSym) symMap))
-      (body (return (cdr (assoc (stringify aSym) symMap))))
-      (body (return aSym)))))
+       (body
+        (set
+         symMap
+         (alistCons
+          (boxSymbol "stringArray")
+          (boxSymbol "char**")
+          (alistCons (boxSymbol "string") (boxSymbol "char*") nil)))
+        (if (truthy (assoc (stringify aSym) symMap))
+            (body (return (cdr (assoc (stringify aSym) symMap))))
+            (body (return aSym)))))
+
+(box perlConstMap (box aSym) (declare (list symMap nil))
+       (body
+        (if (equalString "symbol" (boxType aSym))
+            (then
+             (set
+              symMap
+              (alistCons (boxSymbol "false") (boxSymbol "0") (alistCons (boxSymbol "nil") (boxSymbol "undef")  nil)))
+             (return (cdr (assocFail (stringify aSym) symMap aSym))))
+            (else (return aSym)))))
 
   (box perlFuncMap (box aSym) (declare (list symMap nil))
-   (body
-    (if (equalString "symbol" (boxType aSym))
-      (then
-       (set
-        symMap
-        (alistCons (boxSymbol "sub") (boxSymbol "subtract")
-        (alistCons (boxSymbol "=") (boxSymbol "equal")
-         (alistCons (boxSymbol "sub-string") (boxSymbol "substr")
-          (alistCons (boxSymbol "read-file") (boxSymbol "read_file")
-           (alistCons (boxSymbol "write-file") (boxSymbol "write_file")
-            (alistCons (boxSymbol ">") (boxSymbol "greaterthan")
-             (alistCons (boxSymbol "string-length") (boxSymbol "length")
-              (alistCons (boxSymbol "nil") (boxSymbol "undef") nil)))))))))
-       (return (cdr (assocFail (stringify aSym) symMap aSym))))
-      (else (return aSym)))))
+       (body
+        (if (equalString "symbol" (boxType aSym))
+            (then
+             (set
+              symMap
+              (alistCons (boxSymbol "sub") (boxSymbol "subtract")
+                         (alistCons (boxSymbol "=") (boxSymbol "equal")
+                                    (alistCons (boxSymbol "sub-string") (boxSymbol "substr")
+                                               (alistCons (boxSymbol "read-file") (boxSymbol "read_file")
+                                                          (alistCons (boxSymbol "write-file") (boxSymbol "write_file")
+                                                                     (alistCons (boxSymbol ">") (boxSymbol "greaterthan")
+                                                                                (alistCons (boxSymbol "string-length") (boxSymbol "length")
+                                                                                           (alistCons (boxSymbol "nil") (boxSymbol "undef") nil)))))))))
+             (return (cdr (assocFail (stringify aSym) symMap aSym))))
+            (else (return aSym)))))
 
   (void perlType (list node) (declare)
-   (body
-   (return)
-    (if (equalBox (subnameof node) (boxString "struct"))
-      (body
-       (printf "\ntypedef struct %s {\n" (stringify (first (codeof node))))
-       (perlStruct (cdr (codeof node)))
-       (printf "\n} %s;\n" (stringify (first (codeof node)))))
-      (body (printf "typedef ") (perlTypeDecl (codeof node))))
-    (return)))
+        (body
+         (return)
+         (if (equalBox (subnameof node) (boxString "struct"))
+             (body
+              (printf "\ntypedef struct %s {\n" (stringify (first (codeof node))))
+              (perlStruct (cdr (codeof node)))
+              (printf "\n} %s;\n" (stringify (first (codeof node)))))
+             (body (printf "typedef ") (perlTypeDecl (codeof node))))
+         (return)))
 
   (void perlTypes (list nodes) (declare)
-   (body
-    (if (isEmpty nodes)
-      (body (return))
-      (body (perlType (car nodes)) (perlTypes (cdr nodes))))))
+        (body
+         (if (isEmpty nodes)
+             (body (return))
+             (body (perlType (car nodes)) (perlTypes (cdr nodes))))))
 
-(void perlFunctionArgs (list tree) (declare)
-   (body
-    (if (isEmpty tree)
-      (body (return))
-      (body
-       (printf "%s%s" "my " (dollar))
-       (display (second tree))
-       (printf " = shift;\n")
-       (perlFunctionArgs (cddr tree))))))
+  (void perlFunctionArgs (list tree) (declare)
+        (body
+         (if (isEmpty tree)
+             (body (return))
+             (body
+              (printf "%s%s" "my " (dollar))
+              (display (second tree))
+              (printf " = shift;\n")
+              (perlFunctionArgs (cddr tree))))))
 
   (void perlCompile (string filename) (declare (string programStr "") (list tree nil) (list program nil))
-   (body
-    (set programStr (read-file filename))
-    (set tree (readSexpr programStr filename))
-    (set
-     program
-     (alistCons
-      (boxString "includes")
-      (astIncludes (first tree))
-      (alistCons
-       (boxString "types")
-       (astTypes (second tree))
-       (alistCons (boxString "functions") (astFunctions (third tree)) nil))))
-    (set program (mergeIncludes program))
-    (perlIncludes (cdr (assoc "includes" program)))
-    (perlTypes (childrenof (cdr (assoc "types" program))))
+        (body
+         (set programStr (read-file filename))
+         (set tree (readSexpr programStr filename))
+         (set
+          program
+          (alistCons
+           (boxString "includes")
+           (astIncludes (first tree))
+           (alistCons
+            (boxString "types")
+            (astTypes (second tree))
+            (alistCons (boxString "functions") (astFunctions (third tree)) nil))))
+         (set program (mergeIncludes program))
+         (perlIncludes (cdr (assoc "includes" program)))
+         (perlTypes (childrenof (cdr (assoc "types" program))))
 
-    (printf "use strict;\n")
-    (printf "use Carp;\n")
-    (printf "use Data::Dumper;\n")
-    (printf "%s%s%s" "my " (dollar) "globalStackTrace = undef;\n")
-    (printf "%s%s%s" "my "(dollar)"globalTrace = undef;\n")
-    (printf "%s%s%s" "my "(dollar) "globalStepTrace = undef;\n")
-    (printf "%s%s%s" "my "(dollar)"globalArgs = undef;\n")
-    (printf "%s%s%s" "my "(dollar)"globalArgsCount = undef;\n")
-    (printf "%s%s%s\n" "my " (dollar) "true = 1;\n")
-    (printf "%s%s%s" "my " (dollar) "false = 0;\n")
-    (printf "%s%s%s" "my " (dollar) "undef;\n")
-    (printf "%s%s%s" 
-     "\nsub isNil {\n    return !defined("(dollar)"_[0]);\n}\n\n\n#Forward declarations\n")
-    (perlForwardDeclarations
-     (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
-    (printf "\n\n#End forward declarations\n\n")
-    (perlFunctions
-     (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
-    (printf ";\n")
-    (printf "%s%s" (dollar) "globalArgs = [\@ARGV];")
-    (printf "%s%s" (dollar) "globalArgsCount = scalar(\@ARGV);\n")
-    (printf "start();")
-    ))
+         (printf "use strict;\n")
+         (printf "use Carp;\n")
+         (printf "use Data::Dumper;\n")
+         (printf "%s%s%s" "my " (dollar) "globalStackTrace = undef;\n")
+         (printf "%s%s%s" "my "(dollar)"globalTrace = undef;\n")
+         (printf "%s%s%s" "my "(dollar) "globalStepTrace = undef;\n")
+         (printf "%s%s%s" "my "(dollar)"globalArgs = undef;\n")
+         (printf "%s%s%s" "my "(dollar)"globalArgsCount = undef;\n")
+         (printf "%s%s%s\n" "my " (dollar) "true = 1;\n")
+         (printf "%s%s%s" "my " (dollar) "false = 0;\n")
+         (printf "%s%s%s" "my " (dollar) "undef;\n")
+         (printf "%s%s%s" 
+                 "\nsub isNil {\n    return !defined("(dollar)"_[0]);\n}\n\n\n#Forward declarations\n")
+         (perlForwardDeclarations
+          (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
+         (printf "\n\n#End forward declarations\n\n")
+         (perlFunctions
+          (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
+         (printf ";\n")
+         (printf "%s%s%s%s" (dollar) "globalArgs = [" (atSym) "ARGV];")
+         (printf "%s%s%s%s" (dollar) "globalArgsCount = scalar("(atSym)"ARGV);\n")
+         (printf "start();")
+         ))
 
   ))
