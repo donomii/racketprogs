@@ -6913,7 +6913,7 @@ if (globalTrace)
 
     } else {      if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-      nodeCompile(unBoxString(filename ));
+      ansiCompile(unBoxString(filename ));
       if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
       printf("\n" );
