@@ -54,10 +54,8 @@
  (printf "") 
   ;(display globalStackTrace)
   ))
-  (box
-   car
-   (list l)
-   (declare)
+
+  (box car (list l) (declare)
    (body
     (assertType "list" l)
     (if (isNil l)
@@ -69,10 +67,8 @@
        (if (isNil (get-struct l car))
          (body (return nil))
          (body (return (get-struct l car))))))))
-  (list
-   cdr
-   (list l)
-   (declare)
+
+  (list cdr (list l) (declare)
    (body
     (assertType "list" l)
     (if (isEmpty l)
@@ -217,10 +213,8 @@
     (set-struct b i val)
     (set-struct b typ "int")
     (return b)))
-  (void
-   assertType
-   (string atype box abox)
-   (declare)
+
+  (void assertType (string atype box abox) (declare)
    (body
     (if (isNil abox)
       (body (if (equalString atype "nil") (body (return)) (body (return))))
@@ -228,11 +222,10 @@
        (if (equalString atype (boxType abox))
          (body (return))
          (body
-          (printf
-           "Assertion failure: provided value is not a '%s'!  It was actually:"
-           atype)
+          (printf "Assertion failure: provided value is not a '%s'!  It was actually:" atype)
           (display abox)
           (panic "Invalid type!")))))))
+
   (string unBoxString (box b) (declare)
    (body (assertType "string" b) (return (get-struct b str))))
 
@@ -1035,9 +1028,7 @@
 
   (bool truthy (box aVal) (declare)
    (body
-    (if (equalBox (boxBool false) aVal)
-      (body (return false))
-      (body (return true)))))
+    (return (isNotFalse aVal))))
 
    (bool isNotFalse (box aVal) (declare)
     (body
@@ -1323,11 +1314,11 @@
     (printf "%s" "char * character(int num) { char *string = malloc(2); if (!string) return 0; string[0] = num; string[1] = 0; return string; }")
 ))
 
-  (box last (list alist) (declare)
+  (box listLast (list alist) (declare)
    (body
     (if (isEmpty (cdr alist))
       (body (return (car alist)))
-      (body (return (last (cdr alist)))))))
+      (body (return (listLast (cdr alist)))))))
 
   (void ansiTypeDecl (list l) (declare)
    (body
@@ -1337,13 +1328,13 @@
        (printf
         "%s %s %s;\n"
         (stringify (second l))
-        (stringify (ansiTypeMap (last l)))
+        (stringify (ansiTypeMap (listLast l)))
         (stringify (first l))))
       (body
        (printIndent 1)
        (printf
         "%s %s;\n"
-        (stringify (ansiTypeMap (last l)))
+        (stringify (ansiTypeMap (listLast l)))
         (stringify (car l)))))))
   (void
    ansiStructComponents

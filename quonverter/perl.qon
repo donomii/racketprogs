@@ -293,7 +293,6 @@
          (printf "%s%s%s%s%s\n" "sub panic { carp "(atSym)"_; die \""(atSym)"_\"}")
          (printf  "sub intToString { return %s_[0]}\n" (dollar))
          (printf  "sub character { return chr(%s_[0])}\n" (dollar))
-         (printf  "sub false { return $_[0]} ;\n" )
          (printf "%s%s%s%s%s%s%s%s%s\n" "sub getStringArray { my "(dollar) "index = shift; my "(dollar)"arr = shift; return "(dollar)"arr->["(dollar)"index]}")
     
          ))
@@ -307,13 +306,13 @@
               (printf
                "%s %s %s;\n"
                (stringify (second l))
-               (stringify (perlTypeMap (last l)))
+               (stringify (perlTypeMap (listLast l)))
                (stringify (first l))))
              (body
               (printIndent 1)
               (printf
                "%s %s;\n"
-               (stringify (perlTypeMap (last l)))
+               (stringify (perlTypeMap (listLast l)))
                (stringify (car l)))))))
 
   (void perlStructComponents (list node) (declare)
@@ -427,8 +426,8 @@
          (perlFunctions
           (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
          (printf ";\n")
-         (printf "%s%s%s%s" (dollar) "globalArgs = [" (atSym) "ARGV];")
-         (printf "%s%s%s%s" (dollar) "globalArgsCount = scalar("(atSym)"ARGV);\n")
+         (printf "%s%s%s%s" (dollar) "globalArgs = [ 1, " (atSym) "ARGV];")
+         (printf "%s%s%s%s" (dollar) "globalArgsCount = scalar("(atSym)"ARGV)+1;\n")
          (printf "start();")
          ))
 
