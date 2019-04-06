@@ -1,22 +1,22 @@
-[
- [includes base.qon]
- [types]
+(
+ (includes base.qon)
+ (types)
     
- [functions
+ (functions
 
-  [void say [string greeting int count] [declare]
-        [body
-         [if [> count 0]
-             [then 
-              [printf "%s" greeting]
-              [say greeting [sub1 count]]]
-             [else
-              [return]]]
-         ]]
+  (void say (string greeting int count) (declare)
+        (body
+         (if (> count 0)
+             (then 
+              (printf "%s" greeting)
+              (say greeting (sub1 count)))
+             (else
+              (return)))
+         ))
 
-  [int start [] [declare]
-       [body
-        [say "Hello world\n" 3]
-        [return 0]
-        ]]
-  ]]
+  (int start () (declare)
+       (body
+        (say "Hello world\n" 3)
+        (return 0)
+        ))
+  ))

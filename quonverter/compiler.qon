@@ -2,7 +2,15 @@
  (types)
  (functions
 
-  (int start () (declare (bool runTests false) (list cmdLine nil) (box filename nil)(bool runPerl false))
+  (int start ()
+  (declare
+  (bool runTests false)
+  (list cmdLine nil)
+  (box filename nil)
+  (bool runPerl false)
+  (bool runAst false)
+  (bool runNode false)
+  (bool runTree false))
    (body
     (set cmdLine (listReverse (argList globalArgsCount 0 globalArgs)))
     ;(printf "//") (display cmdLine)
@@ -12,6 +20,9 @@
     ;(printf "#Parsing file: ")(display filename)(newLine 0)
     (set runTests (inList (boxString "--test") cmdLine))
     (set runPerl (inList (boxString "--perl") cmdLine))
+    (set runAst (inList (boxString "--ast") cmdLine))
+    (set runTree (inList (boxString "--tree") cmdLine))
+    (set runNode (inList (boxString "--node") cmdLine))
     (set globalTrace (inList (boxString "--trace") cmdLine))
     (set globalStepTrace (inList (boxString "--steptrace") cmdLine))
     (if runTests
@@ -33,8 +44,17 @@
        (test16)
        (printf "\n\nAfter all that hard work, I need a beer...\n")
        (beers 9))
-      (else 
+      (else
+      (if runTree
+      (then (display (treeCompile (unBoxString filename))))
+      (else
+      (if runAst
+      (then (astCompile (unBoxString filename)))
+      (else (if runNode
+      (then (nodeCompile (unBoxString filename)) (printf "\n"))
+      (else
       (if runPerl
       (then (perlCompile (unBoxString filename)) (printf "\n"))
       (else (ansiCompile (unBoxString filename)) (printf "\n")))))
+      ))))))
     (return 0)))))
