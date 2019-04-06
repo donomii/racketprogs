@@ -5,8 +5,8 @@
 (void nodeFunctionArgs (list tree) (declare)
    (body
     (if (isEmpty tree)
-      (body (return))
-      (body
+      (then (return))
+      (esle
        (display (second tree))
        (if (isNil (cddr tree)) (body (printf "")) (body (printf ",")))
        (nodeFunctionArgs (cddr tree))))))

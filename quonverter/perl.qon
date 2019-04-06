@@ -60,7 +60,7 @@
              (else
               (if (isNode (childrenof tree))
                   (then (perlSubExpression (childrenof tree) indent))
-                  (body
+                  (else
                    (if (isLeaf tree)
                        (then
                         (printf "%s" (dollar))
