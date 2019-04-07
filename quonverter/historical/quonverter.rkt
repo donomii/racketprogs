@@ -355,7 +355,10 @@ start();
                    [clang_typedef x]]] [cdr [codeof tree]]]
         "\nbool isNil(list p) {
     return p == NULL;
-}" ]]
+}
+
+
+Box* globalStackTrace = NULL;" ]]
 
 [define [clang_arguments tree]
   [list "("
@@ -513,6 +516,13 @@ strncat(target, b, len);
 return target;
 }
 
+char* intToString(int a) {
+int len = 100;
+char* target = calloc(len,1);
+snprintf(target, 99, \"%d\", a);
+return target;
+}
+
 typedef int*  array;
 typedef int bool;
 #define true 1
@@ -577,6 +587,8 @@ return strs[index];
 int start();  /* Forwards declare the user's main routine */
 char** globalArgs;
 int globalArgsCount;
+bool globalTrace = false;
+bool globalStepTrace = false;
 
 int main( int argc, char *argv[] )  {
   globalArgs = argv;
@@ -652,6 +664,7 @@ return a==b
 func string_length(s string) int {return len(s)}
 func sub_string(s string, start, length int) string {return s[start:start+length]}
 func stringConcatenate(a, b string)string{return a+b}
+func intToString(a int) string { return fmt.Sprintf(\"%d\", a) }
 
 func makeArray(length int) []int {
     arr := make([]int, length)
@@ -679,9 +692,12 @@ func isNil(p *Pair) bool {
 return p==nil
 }
 
-type stringArray = []string;
-var globalArgsCount int;
-var globalArgs []string;
+type stringArray = []string
+var globalArgsCount int
+var globalArgs []string
+var globalTrace bool
+var globalStepTrace bool
+var globalStackTrace list
 
 func getStringArray(index int, arr stringArray) string {
 return arr[index]
@@ -1157,6 +1173,8 @@ returnValue=${array[$2]}
 
 ; A node that holds the function arguments
 [define [type_arguments tree]
+  [when [odd? [length tree]]
+    [error [format "Require type-argument pairs, received ~a" tree]]]
   [make-node   [map [lambda [x]  [cons  [cadr x] [car x]]] [make-pairs tree]]
                tree
                'function_arguments
@@ -1226,6 +1244,7 @@ returnValue=${array[$2]}
 
 ; Function.  Needs arguments, declarations, a body and a return type
 [define [type_function tree]
+  ;[display tree]
   [match-let [[[list type name args decs  bod] tree]]
       
     [letrec [[typeArgs [typesof [type_arguments args]]]
@@ -1233,6 +1252,7 @@ returnValue=${array[$2]}
                                    [cons 'code '[]]
                                    "function_types"
                                    '[]]]]
+      
       [make-node '[] '[] 'function
                  [list
                   [make-node type type 'function_type '[]]
@@ -1297,7 +1317,8 @@ returnValue=${array[$2]}
               [boo bool]
               [lengt int ]
               [car struct Box* ] 
-              [cdr struct Box* ] 
+              [cdr struct Box* ]
+              [tag struct Box* ]
               ]]
            [box Box*]
            [Pair Box]
@@ -1347,13 +1368,18 @@ returnValue=${array[$2]}
                   (set-struct p car data)
                   (set-struct p typ "list")
                   (return p)]]
-     
+
+           [void stackDump [] [declare]
+                 [body
+                  [display globalStackTrace]
+                  ]]
            [box car [list l] [declare]
                 [body
                  (assertType "list" l)
                  [if [isNil l]
                      [body
                       [printf "Cannot call car on empty list!\n"]
+                      
                       [panic "Cannot call car on empty list!\n"]
                       [return nil]]
                      [body 
@@ -1539,9 +1565,13 @@ returnValue=${array[$2]}
                                             [body [return "true"]]
                                             [body [return "false"]]]]
                              
-                                       [body [if [equalString "symbol" [boxType b]]
-                                                 [body [return  [unBoxSymbol b]]]
-                                                 [body [return  [boxType b]]]]]]]]]]]]
+                                       [body [if [equalString "int" [boxType b]]
+                                                 [then [return  [intToString [unBoxInt b]]]]
+
+                                                 [else [if [equalString "symbol" [boxType b]]
+                                                           [body [return  [unBoxSymbol b]]]
+
+                                                           [body [return  [boxType b]]]]]]]]]]]]]]
            ;;;;;;;;;;;;;;;;;;;;;;;;;;
            ;; display boxed values ;;
            ;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1613,8 +1643,68 @@ returnValue=${array[$2]}
                        [if [equalString "void" [get-struct token typ]]
                            [body [return [filterVoid [cdr l]]]]
                            [body [return [cons token [filterVoid [cdr l]]]]]]]]]]
-            
-           [box finish_token [string prog int start int len] [declare]
+
+           [list filterTokens [list l] [declare [box token nil]]
+                 [body
+                  ;[displayList l]
+                  [if [isEmpty l]
+                      [body [return [emptyList]]]
+                      [body
+
+                       [set token [car l]]
+                       ;[printf "Checking %s:%s\n" [boxType token] [stringify token]]
+                       ;[display token]
+                       [if  [equalString [boxType token] "symbol"]
+                            [then [if
+                                   [equalString "__LINE__" [stringify token]]
+                                   [then
+                                    ;[printf "Found line marker, replacing!\n"]
+                                    ;[display [get-struct token tag]]
+                                    [return [cons [getTagFail token [boxString "line"] [boxInt -1]] [filterTokens [cdr l]]]]]
+                                   [else [if
+                                          [equalString "__COLUMN__" [stringify token]]
+                                          [then
+                                           ;[printf "Found line marker, replacing!\n"]
+                                           ;[display [get-struct token tag]]
+                                           [return [cons [getTagFail token [boxString "column"] [boxInt -1]] [filterTokens [cdr l]]]]]
+                                          [else
+
+                                           [return [cons token                             [filterTokens [cdr l]]]]]]]]]
+                            [else [return [cons token                             [filterTokens [cdr l]]]]]]]]]]
+
+
+           [bool hasTag [box aBox box key] [declare]
+                 [body
+                  [if [isNil aBox]
+                      [then [return false]]
+                      [else 
+                       [return  [truthy [assoc [stringify key] [get-struct aBox tag]]]]]]
+                  ]]
+
+           
+           [box getTag [box aBox box key] [declare]
+                [body
+                 [return [cdr [assoc [stringify key] [get-struct aBox tag]]]]
+                 ]]
+
+           [box getTagFail [box aBox box key box onFail] [declare]
+                [body
+                 [if [hasTag aBox key]
+                     [then 
+                      [return [cdr [assoc [stringify key] [get-struct aBox tag]]]]]
+                     [else
+                      [return onFail]]]
+                 ]]
+           
+           [box setTag [box aStruct box key list val] [declare]
+                [body
+                 [set-struct aStruct tag
+                             [alistCons key val [get-struct aStruct tag]]]  ;FIXME immutable pls
+                 [return aStruct]
+                 ]]
+
+           
+           [box finish_token [string prog int start int len int line int column string filename] [declare [box token nil]]
                 [body
                  ;[printf "ft: %s start: %d, end %d\n" prog start len]
                  ;[printf "Finish token %s\n" [sub-string prog start   len]]
@@ -1622,12 +1712,15 @@ returnValue=${array[$2]}
                  [if [> len 0]
                      [body ;[printf "Finish token\n"]
 
-                      [return
+                     
 
-                       [boxSymbol [sub-string prog start  len]]]]
-                     [body [return
-                            [newVoid]
-                            ]]]
+                      [set token [boxSymbol [sub-string prog start  len]]]
+                      [set-struct token tag
+                                  [alistCons [boxString "filename"] [boxString filename]
+                                             [alistCons [boxString "column"] [boxInt column]
+                                                        [alistCons [boxString "line"] [boxInt line] [alistCons [boxString "totalCharPos"] [boxInt start] nil]]]]]
+                      [return token]]
+                     [body [return [newVoid]]]]
                  ]]
 
      
@@ -1655,7 +1748,7 @@ returnValue=${array[$2]}
                     ;[printf "Token: %s\n" token]
                     ;[printf "Partial comment:%s" [sub-string prog start [sub1 len]]]
               
-                    [if [equalString "\n" token]
+                    [if [isLineBreak token]
                         [body
                          ;[printf "\nComplete comment is %s\n" [sub-string prog start [sub1 len]]]
                  
@@ -1665,38 +1758,60 @@ returnValue=${array[$2]}
                                               
            [bool isWhiteSpace [string s] [declare]
                  [body [if [equalString " " s]
-                           [body [return true]]
-                           [body [if [equalString "\n" s]
-                                     [body [return true]]
-                                     [body [return false]]]]]]]
+                           [then [return true]]
+                           [else [if [equalString "\n" s]
+                                     [then [return true]]
+                                     [else [if [equalString "\r" s]
+                                               [then [return true]]
+                                               [else [return false]]]]]]]]]
+
+           [bool isLineBreak [string s] [declare]
+                 [body [if [equalString "\n" s]
+                           [then [return true]]
+                           [else [if [equalString "\r" s]
+                                     [then [return true]]
+                                     [else [return false]]]]]]]
+
+           [int incForNewLine [box token int val] [declare]
+                [body
+
+                 [if [equalString "\n" [stringify token]]
+                     [then [return [add1 val]]]
+                     [else [return val]]]]]
      
-           [list scan [string prog int start int len] [declare [box token nil]]
+           [list scan [string prog int start int len int linecount int column string filename] [declare [box token nil]]
                  [body
+                  ;[if [isNil prog]
+                  ;    [then [panic "Program to parse is nill!"]]
+                  ;    [else [printf ""]]]
+;[if true [then [printf ""]][else
+;                  [printf "\n//Start: %d, end %d, string-length %d, program: %p\n\n" start [add start len] [string-length prog] prog]]]
                   [if [> [string-length prog] [sub start [sub 0 len]]]
                       [body
                        [set token [boxSymbol [sub-string prog [sub1 [add start len]] 1]]]
-                       ;[printf "Start: %d, end %d, Token: %s\n" start [add start len] token ]
+                       [set-struct token tag [alistCons [boxString "totalCharPos"] [boxInt start] nil]]
+                       ;[printf "\n//Start: %d, end %d, Token: %s\n\n" start [add start len] [stringify token] ]
                        [if [isOpenBrace token]
                            [body ;[printf "Start array\n"]
                             [return [cons
-                                     [finish_token prog start  [sub1 len]]
+                                     [finish_token prog start  [sub1 len] linecount column filename]
                                      [cons [boxSymbol [openBrace] ]
-                                           [scan prog [add1 start] 1]]]]]
+                                           [scan prog [add1 start] 1 linecount [add1 column] filename]]]]]
                            [body [if [isCloseBrace token]
                                      [body ;[printf "Finish array\n"]
-                                      [return [cons  [finish_token prog start  [sub1 len]]
+                                      [return [cons  [finish_token prog start  [sub1 len] linecount  column filename]
                                                      [cons [boxSymbol [closeBrace]]
-                                                           [scan prog [add start  len] 1]]]]]
+                                                           [scan prog [add start  len] 1 linecount [add1 column] filename]]]]]
                                      [body [if [isWhiteSpace [stringify token]] ;FIXME this will skip strings like "   " when it shouldn't
                                                [body
                                                 [return [cons
-                                                         [finish_token prog start  [sub1 len]]
-                                                         [scan prog  [add start  len] 1]]]
+                                                         [finish_token prog start  [sub1 len] linecount column filename]
+                                                         [scan prog  [add start  len] 1 [incForNewLine token linecount] 0 filename]]]
                                                 ]
                                                [body [if [equalBox [boxSymbol ";" ] token]
                                                          [body
                                                           ;[printf "\nComment:%s" [readComment prog [add1 start] len]]
-                                                          [return [scan prog  [add start  [add1 [add1 [string-length [readComment prog [add1 start] len]]]]] 1]
+                                                          [return [scan prog  [add start  [add1 [add1 [string-length [readComment prog [add1 start] len]]]]] 1 linecount [add1 column] filename]
                                                                   ]]
                                                          [body [if [equalBox [boxSymbol "\""] token]
                                                                    [body ;[printf "Found string: %s\n"  [readString prog [add1 start] len]]
@@ -1704,9 +1819,9 @@ returnValue=${array[$2]}
                                                                      
                                                                      [cons
                                                                       [boxString [readString prog [add1 start] len]]
-                                                                      [scan prog  [add start  [add1 [add1 [string-length [readString prog [add1 start] len]]]]] 1]]]]
+                                                                      [scan prog  [add start  [add1 [add1 [string-length [readString prog [add1 start] len]]]]] 1 linecount [add1 column] filename]]]]
                                                                    [body ;[printf "Symbol %s\n" token]
-                                                                    [return [scan prog start [sub len -1]]]]]]]]]]]]]]
+                                                                    [return [scan prog start [sub len -1] linecount [add1 column] filename]]]]]]]]]]]]]
                       [body ;[printf "scan complete\n"]
                        [return [emptyList]]]]
                   [return [emptyList]]
@@ -1743,17 +1858,20 @@ returnValue=${array[$2]}
                        [set b [car l]]
                        ;[printf "Processing list with sexprTree: %s\n" [unBoxString b] ]
                        [if  [isOpenBrace b]
-                            [body ;[printf "Start sublist sexprTree\n"]
+                            [then ;[printf "Start sublist sexprTree\n"]
                              [return [cons
                                       [sexprTree [cdr l]]
                                       [sexprTree [skipList [cdr l]]]]]]
-                            [body [if [isCloseBrace b]
+                            [else [if [isCloseBrace b]
                                       [body ;[printf "Finish sublist sexprTree\n"]
                                        [return [emptyList]]]
                                       [body
-                                       ;[printf "Add token %s\nRemaining tokens: " [unBoxString b]]
-                                       ;[displayList [cdr l]]
-                                       [return [cons b [sexprTree [cdr l]]]]]]]]]
+                                       ;[printf "Add token %s\nRemaining tokens: " [stringify b]]
+                                       ;[display [cdr l]]
+                                       [return [setTag
+                                                [cons b [sexprTree [cdr l]]]
+                                                [boxString "line"]
+                                                [getTagFail b [boxString "line"] [boxInt -1]]]]]]]]]
                       ]
                   [printf "AAAAAA code should never reach here!\n"]
                   [return [emptyList]]
@@ -1780,7 +1898,7 @@ returnValue=${array[$2]}
                   [return [emptyList]]
                   ]]
 
-           [list readSexpr [string aStr]
+           [list readSexpr [string aStr string filename]
                  [declare
                   [list tokens nil]
                   [list as nil]
@@ -1789,7 +1907,7 @@ returnValue=${array[$2]}
                   [set tokens [emptyList]]
             
             
-                  [set tokens [filterVoid [scan aStr 0 1]]]
+                  [set tokens [filterTokens [filterVoid [scan aStr 0 1 0 0 filename]]]]
                   ;[printf "Displaying tokens:\n"]
                   ;[displayList tokens]
                   ;[printf "Building sexprTree\n"]
@@ -1949,13 +2067,16 @@ returnValue=${array[$2]}
 
            [list makeNode [string name string subname list code list children] [declare]
                  [body
+                  ;[display code]
                   [return
-                   [cons  [boxSymbol "node"] 
-                          [cons [cons [boxSymbol "name"] [boxString name]]
-                                [cons [cons [boxSymbol "subname"] [boxString subname]]
-                                      [cons [cons [boxSymbol "code"]  code]
-                                            [alistCons [boxSymbol "children"]  children
-                                                       [emptyList]]]]]]]]]
+                   
+                   [cons  [boxSymbol "node"]
+                          [alistCons [boxSymbol "line"] [getTagFail code [boxString "line"] [boxInt -1]]
+                                     [cons [cons [boxSymbol "name"] [boxString name]]
+                                           [cons [cons [boxSymbol "subname"] [boxString subname]]
+                                                 [cons [cons [boxSymbol "code"]  code]
+                                                       [alistCons [boxSymbol "children"]  children
+                                                                  [emptyList]]]]]]]]]]
 
 
            ;           [define [type_expression scope tree]
@@ -2081,18 +2202,21 @@ returnValue=${array[$2]}
                       [body [return [cons [astStatement [car tree]] [astBody [cdr tree]]]]]]
                   ]]
      
-           [list astFunction [list tree] [declare]
+           [list astFunction [list tree] [declare [box fname nil]]
                  [body
+                  [set fname [second tree]]
                   ;[printf "Processing:"][display tree][printf "\n\n"]
+                  ;[printf "Processing:"] [display [get-struct fname tag ]] [printf "\n\n"]
                   ;[printf "Building function:"][display [second tree]][printf"\n"]
                   [return
-                   [cons [cons [boxSymbol "name"] [boxString "function"]]
-                         [cons [cons [boxSymbol "subname"] [second tree]]
-                               [cons [cons [boxSymbol "declarations"] [cdr [fourth tree]]]
-                                     [cons [cons [boxSymbol "intype"] [third tree]]
-                                           [cons  [cons [boxSymbol "outtype"] [car tree]]
-                                                  [cons [cons [boxSymbol "children"] [astBody [cdr [fifth tree]]]]
-                                                        [emptyList]]]]]]]
+                   [alistCons [boxSymbol "line"] [getTag fname [boxString "line"] ]
+                              [cons [cons [boxSymbol "name"] [boxString "function"]]
+                                    [cons [cons [boxSymbol "subname"] [second tree]]
+                                          [cons [cons [boxSymbol "declarations"] [cdr [fourth tree]]]
+                                                [cons [cons [boxSymbol "intype"] [third tree]]
+                                                      [cons  [cons [boxSymbol "outtype"] [car tree]]
+                                                             [cons [cons [boxSymbol "children"] [astBody [cdr [fifth tree]]]]
+                                                                   [emptyList]]]]]]]]
                    ]]]
 
            [list astFunctionList [list tree] [declare]
@@ -2110,10 +2234,11 @@ returnValue=${array[$2]}
 
            [list loadLib [string path] [declare [string programStr ""] [list tree nil] [list library nil]]
                  [body
+                  [printf "//Loading library %s\n" path]
                   [set programStr [read-file path]]
                   ;[printf "Read program: %s\n" programStr]
                   ;[printf "Read program.  Parsing...\n" ]
-                  [set tree [readSexpr programStr]]
+                  [set tree [readSexpr programStr path]]
                   ;[printf "Parsed program.  Building AST...\n" ]
                   ;[display  tree]
 
@@ -2137,7 +2262,7 @@ returnValue=${array[$2]}
 
            [list astIncludes [list tree] [declare]
                  [body
-                  ;[printf "Building includes AST...\n"]
+                  [printf "//Building includes AST...\n"]
                   [return [makeNode "includes" "includes" tree [astIncludeList [cdr tree]]]]
                   ]]
 
@@ -2207,12 +2332,24 @@ returnValue=${array[$2]}
                       [body 
                        [return
                         [cdr [assoc "node" [cdr ass]]]]]]]]
+
+           [list lineof [list ass] [declare ]
+                 [body
+                  ;[printf "\n\nnodeof: "]
+                  ;[display ass]
+                  [if [equalBox [boxBool false] [assoc "line" [cdr ass]]]
+                      [body [return [boxInt -1]]]
+                      [body 
+                       [return
+                        [cdr [assoc "line" [cdr ass]]]]]]]]
      
            [list subnameof [list ass] [declare]
            
                  [body
                   ;[printf "\n\nsubnameof: "][display [assoc "subname" [cdr ass]]]
                   [return [cdr [assoc "subname" [cdr ass]]]]]]
+
+      
 
            [list nameof [list ass] [declare]
            
@@ -2542,7 +2679,9 @@ returnValue=${array[$2]}
                       [body [return]]
                       [body
                        [printIndent indent]
+                       [printf"%s"  "if (globalStepTrace) printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__);\n"]
                        [ansiStatement [car tree] indent]
+                       
                        ;[printf ";\n"]
                        [ansiBody [cdr tree] indent]]]
                   ]]
@@ -2561,21 +2700,35 @@ returnValue=${array[$2]}
                        ]]
                   ]]
      
-           [void ansiFunction [list node] [declare]
+           [void ansiFunction [list node] [declare [box name nil][list noStackTrace nil]]
                  [body
                   ;[display tree]
+                  [set name [subnameof node]]
+                  [set noStackTrace [cons [boxSymbol "car"] [cons [boxSymbol "cdr"] [cons [boxSymbol "cons"] [cons [boxSymbol "stackTracePush"] [cons [boxSymbol "stackTracePop"] [cons [boxSymbol "assertType"] [cons [boxSymbol "boxString"]  [cons [boxSymbol "boxInt"]  nil]]]]]]]]]
+                  [printf "\n\n//Building function %s from line: %s"  [stringify name]  [stringify [getTag name [boxString "line"]]]]
+                  ;[display [get-struct name tag]]
+                  [newLine 0]
                   [if [isNil node]
                       [body [return]]
                       [body
                        ;[display [assoc "name" tree]]
                        [newLine 0]
                        [printf "%s %s(" [stringify [ansiTypeMap [cdr [assoc "outtype" [cdr node]]]]] [stringify [subnameof node]]]
-                       [ansiFunctionArgs [cdr [assoc "intype" [cdr node]]] ]
+                       [ansiFunctionArgs [cdr [assoc "intype" [cdr node]]]]
                        [printf ") {"]
                        [newLine 1]
                        [ansiDeclarations [declarationsof node] 1]
+                       [printf "\nif (globalTrace)\n    printf(\"%s at %s:%s\\n\");\n" [stringify [subnameof node]] [stringify [getTag name [boxString "filename"]]] [stringify [getTag name [boxString "line"]]]]
+                       [if [inList name noStackTrace]
+                           [then [printf ""]]
+                           [else 
+                            [printf "\n  stackTracePush(\"%s\", \"%s\", %s, %d );\n"  [stringify [getTag name [boxString "filename"]]] [stringify [subnameof node]] [stringify [getTag name [boxString "line"]]] 0]]]
                        [ansiBody [childrenof node] 1]
-                 
+                       
+                       [if [inList name noStackTrace]
+                           [then [printf ""]]
+                           [else 
+                            [printf "\n  stackTracePop();\nif (globalTrace)\n    printf(\"Leaving %s\\n\");\n"   [stringify [subnameof node]]]]]
                        [printf "\n}\n"]
                        ]]]]
            [void ansiForwardDeclaration [list node] [declare]
@@ -2613,7 +2766,7 @@ returnValue=${array[$2]}
                              
            [void ansiIncludes [list nodes] [declare]
                  [body
-                  [printf "
+                  [printf "%s" "
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -2644,11 +2797,17 @@ strncat(target, b, len);
 return target;
 }
 
+char* intToString(int a) {
+int len = 100;
+char* target = calloc(len,1);
+snprintf(target, 99, \"%d\", a);
+return target;
+}
+
 typedef int*  array;
 typedef int bool;
 #define true 1
 #define false 0
-
 
 
 void * gc_malloc( unsigned int size ) {
@@ -2679,6 +2838,10 @@ if (f)
   length = ftell (f);
   fseek (f, 0, SEEK_SET);
   buffer = malloc (length);
+  if (buffer == NULL) {
+  printf(\"Malloc failed!\\n\");
+  exit(1);
+}
   if (buffer)
   {
     fread (buffer, 1, length, f);
@@ -2697,7 +2860,7 @@ if (f == NULL)
     exit(1);
 }
 
-fprintf(f,  data);
+fprintf(f, \"%s\", data);
 
 fclose(f);
 }
@@ -2709,6 +2872,8 @@ return strs[index];
 int start();  //Forwards declare the user's main routine
 char** globalArgs;
 int globalArgsCount;
+bool globalTrace = false;
+bool globalStepTrace = false;
 
 int main( int argc, char *argv[] )  {
   globalArgs = argv;
@@ -2822,7 +2987,9 @@ int main( int argc, char *argv[] )  {
                       [body [return]]
                       [body
                        [ansiType [car nodes]]
-                       [ansiTypes [cdr nodes]]]]]]
+                       [ansiTypes [cdr nodes]]]]
+                  
+                  ]]
 
            (list concatLists (list seq1 list seq2) [declare]
                  (body
@@ -2838,54 +3005,114 @@ int main( int argc, char *argv[] )  {
                       [then [return nil]]
                       [else [return [cons [car [car alist]] [alistKeys [cdr alist]]]]]]
                   ]]
-           [list mergeIncludes [list program] [declare
-                                               [list newProgram nil]
-                                               [list oldfunctionsnode nil]
-                                               [list oldfunctions nil]
-                                               [list newfunctions nil]
-                                               [list newFunctionNode nil]
-                                               [list functions nil]]
+
+           [list mergeIncludes [list program] [declare]
+                 [body
+                  ;[display [alistKeys [merge_recur [childrenof [cdr [cdr [assoc  "includes" program]]]] program]]]
+                  [return [merge_recur [childrenof [cdr [cdr [assoc  "includes" program]]]] program]]
+                  ]]
+
+           [list merge_recur [list incs list program] [declare]
                  [body
 
-                     [if [> [length [childrenof [cdr [cdr [assoc  "includes" program]]]]] 0]
-                         [then 
-                  [set functions  [childrenof [cdr [assoc "functions"  [car [childrenof [cdr [cdr [assoc  "includes" program]]]]]]]]]
-                  [set oldfunctionsnode  [cdr [assoc  "functions" program]]]
-                  [set oldfunctions [childrenof oldfunctionsnode]]
-                  [set newfunctions [concatLists functions oldfunctions]]
+                  ;[printf "Merging includes: "][display incs]
+                  [if [> [length incs] 0]
+                      [then [return [mergeInclude [car incs] [merge_recur [cdr incs] program]]]]
+                      [else [return program]]]
+                  ]]
+           [list mergeInclude [list inc list program] [declare
+                                                       [list newProgram nil]
+                                                       [list oldfunctionsnode nil]
+                                                       [list oldfunctions nil]
+                                                       [list newfunctions nil]
+                                                       [list newFunctionNode nil]
+                                                       [list functions nil]
 
-                  [set newFunctionNode [cons [boxSymbol "node"] [alistCons [boxSymbol "children"] newfunctions [cdr oldfunctionsnode]]]]
+                                                       [list oldtypesnode nil]
+                                                       [list oldtypes nil]
+                                                       [list newtypes nil]
+                                                       [list newTypeNode nil]
+                                                       [list types nil]
+                                                       ]
+                 [body
+                  ;[printf "Merging include: "][display [alistKeys inc]]
+                  [if [isNil inc]
+                      [then [return program]]
+                      [else
+                       [set functions  [childrenof [cdr [assoc "functions"  inc]]]]
+                       [set oldfunctionsnode  [cdr [assoc  "functions" program]]]
+                       [set oldfunctions [childrenof oldfunctionsnode]]
+                       [set newfunctions [concatLists functions oldfunctions]]
+                      
+
+                       [set newFunctionNode [cons [boxSymbol "node"] [alistCons [boxSymbol "children"] newfunctions [cdr oldfunctionsnode]]]]
+
+
+                       ;[display [assoc     "types"  [car [childrenof [cdr [cdr [assoc  "includes" program]]]]]]]
+                       ;[panic "done"]
+                       [set types      [childrenof [cdr [assoc     "types"  inc]]]]
+                       [set oldtypesnode  [cdr [assoc  "types" program]]]
                   
+                       [set oldtypes [childrenof oldtypesnode]]
+                       ;[display oldtypes]
+                       ;[panic "done"]
+                       [set newtypes [concatLists types oldtypes]]
+
+                       [set newTypeNode [cons [boxSymbol "node"] [alistCons [boxSymbol "children"] newtypes [cdr oldtypesnode]]]]
+                       ;[display newTypeNode]
+                       ;[panic "done"]
+                       [set newProgram
+                            [alistCons [boxString "functions"]  newFunctionNode
+                                       [alistCons [boxString "types"] newTypeNode
+                                                  [alistCons [boxString "includes"] [cons [boxSymbol "includes"] nil] newProgram]]]]
+
+                       ;[printf "\noldfunctions: "]
+                       ;[display [alistKeys oldfunctions]]
+
+
+                       ;[printf "\nnewfunctions: "]
+                       ;[display [alistKeys newfunctions]]
+
+                       ;[printf "\noldfunctionnode: "]
+                       ;[display oldFunctionNode]
+                       ;[display [alistKeys [cdr oldfunctionsnode]]]
+                  
+                  
+                       ;[printf "\nnewfunctionnode: "]
+                       ;[display newFunctionNode]
+                       ;[display [alistKeys [cdr newFunctionNode]]]
 
                   
-                  [set newProgram
-                       [alistCons [boxString "functions"]  newFunctionNode
-                                  [alistCons [boxString "types"] [cdr [assoc  "types" program]]
-                                             [alistCons [boxString "includes"] [cons [boxSymbol "includes"] nil] newProgram]]]]
-
-                  ;[printf "\noldfunctions: "]
-                  ;[display [alistKeys oldfunctions]]
+                       ;[printf "\nNewProgram: "]
+                       ;[display [alistKeys newProgram]]
 
 
-                  ;[printf "\nnewfunctions: "]
-                  ;[display [alistKeys newfunctions]]
 
-                  ;[printf "\noldfunctionnode: "]
-                  ;[display oldFunctionNode]
-                  ;[display [alistKeys [cdr oldfunctionsnode]]]
+
+
+                       ;[printf "\noldtypes: "]
+                       ;[display [alistKeys oldtypes]]
+
+
+                       ;[printf "\nnewtypes: "]
+                       ;[display [alistKeys newtypes]]
+
+                       ;[printf "\noldtypenode: "]
+                       ;[display oldTypeNode]
+                       ;[display [alistKeys [cdr oldtypesnode]]]
                   
                   
-                  ;[printf "\nnewfunctionnode: "]
-                  ;[display newFunctionNode]
-                  ;[display [alistKeys [cdr newFunctionNode]]]
+                       ;[printf "\nnewtypenode: "]
+                       ;[display newTypeNode]
+                       ;[display [alistKeys [cdr newTypeNode]]]
 
                   
-                  ;[printf "\nNewProgram: "]
-                  ;[display [alistKeys newProgram]]
-                  ;[os.Exit 1]
-                  [return newProgram]
-                  ]
-                         [else [return program]]]
+                       ;[printf "\nNewProgram: "]
+                       ;[display [alistKeys newProgram]]
+                       ;[os.Exit 1]
+                       [return newProgram]]
+                       
+                      ]
 
                   ]]
 
@@ -2901,7 +3128,7 @@ int main( int argc, char *argv[] )  {
                   [set programStr [read-file filename]]
                   ;[printf "Read program: %s\n" programStr]
                   ;[printf "Read program.  Parsing...\n" ]
-                  [set tree [readSexpr programStr]]
+                  [set tree [readSexpr programStr filename]]
                   ;[printf "Parsed program.  Building AST...\n" ]
                   ;[display  tree]
 
@@ -2912,13 +3139,17 @@ int main( int argc, char *argv[] )  {
                   ;[printf "Built AST.  Generating ansi C output...\n" ]                   
                   ;[display [astFunctions  tree]]
                   ;[printf "\n\n\nPrinting includes\n"]
-                  ;[display [cdr [assoc "includes" program]]]
+                  ;[display [assoc "includes" program]]
+                  ;[display program]
+                  ;[printf "!!!!!!!!!!!!\n"]
+                  ;[alistKeys program]
                   [ansiIncludes  [cdr [assoc "includes" program]]]
                   ;[printf "\n\n\nPrinting types\n"]
                   ;[printf "!!!\n\n\n!!!"]
                   ;[display [cdr [assoc "types" program]]]
             
                   [ansiTypes  [childrenof [cdr [assoc "types" program]]]]
+                  [printf "Box* globalStackTrace = NULL;\n"]
                   ;[printf "\n\n\nPrinting functions\n"]
                   ;[display [assoc "functions" program]]
                   ;FIXME
@@ -3000,7 +3231,30 @@ bool isNil(list p) {
                        [return [cons [car l] [reverse [cdr l]]]]
                        ]]
                   ]]
-     
+
+           [bool inList [box item list l] [declare]
+                 [body
+                  [if [isNil l]
+                      [then [return false]]
+                      [else [if [equalBox [car l] item]
+                                [then [return true]]
+                                [else [return [inList item [cdr l]]]]]]]
+                  ]]
+
+           
+           [void stackTracePush [string file string fname int line int column] [declare]
+                 [body
+       
+                  [set globalStackTrace [cons [cons [boxString file] [cons [boxString fname] [cons [boxInt line] [cons [boxInt column] nil]]]] globalStackTrace]]
+                  ]]
+
+           [list stackTracePop [] [declare [list top nil]]
+                 [body
+                  [set top [car globalStackTrace]]
+                  [set globalStackTrace [cdr globalStackTrace]]
+                  [return top]
+                  ]]
+           
            [int start []
                 [declare [bool runTests false]
                          ;[bool runMandel false]
@@ -3012,15 +3266,17 @@ bool isNil(list p) {
                  
                  [if [> [length cmdLine] 1]
                      [body [set filename [second cmdLine]]]
-                     [body [set filename [boxString "test.sexpr"]]]]
+                     [body [set filename [boxString "compiler.qon"]]]]
                  [display  filename]
-                 [set runTests  [equalBox [boxString "--test"] filename ]]
+                 [set runTests  [inList [boxString "--test"] cmdLine ]]
+                 [set globalTrace  [inList [boxString "--trace"] cmdLine ]]
+                 [set globalStepTrace  [inList [boxString "--steptrace"] cmdLine ]]
                  ;[set runMandel  [equalBox [boxString "--mandelbrot"] filename ]]
-;                 [if runMandel
-;                     [then
-;                      [printf "Displaying asciimandlbrot\n"]
-;                      [newLine 0][mandelPic]]
-;                     [else [printf ""]]]
+                 ;                 [if runMandel
+                 ;                     [then
+                 ;                      [printf "Displaying asciimandlbrot\n"]
+                 ;                      [newLine 0][mandelPic]]
+                 ;                     [else [printf ""]]]
                  
                  [if runTests
                      [then
@@ -3053,7 +3309,7 @@ bool isNil(list p) {
                  ;End of file!
                  ]]]]]]
 ;Print complete program so that the next compiler can access it.  Eventually we will incorporate this program data in the output program, so we can continue recompiling forever
-[display-to-file [pretty-format prog #:mode 'write] "test.sexpr" #:exists 'truncate]
+[display-to-file [pretty-format prog #:mode 'write] "compiler.qon" #:exists 'truncate]
 
 
 
