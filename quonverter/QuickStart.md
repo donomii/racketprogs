@@ -54,7 +54,7 @@ There are few things to note here:
 * You can call any functions from your target language without having to declare them first.  Quonverter has 100% integration with the target language.  You can call ay function from the target language, and the target language can  call any function in quon.  Naturally, if you do this, your program becomes unportable.
 * This is not LISP or SCHEME.  It looks like it, due to the syntax, but is actually a simple compiled language much closer to C and Pascal than LISP or any p-lang.
 
-## The quonverter has two debugging modes:  trace and stepTrace
+## Debugging:  trace and stepTrace
 
 ```trace``` Prints a message every time the program enters or leaves a function.  This option is always compiled in, you activate it by calling ```[tron]```, and switch it off with ```troff```
 
