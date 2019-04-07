@@ -56,9 +56,9 @@ There are few things to note here:
 
 ## Debugging:  trace and stepTrace
 
-```trace``` Prints a message every time the program enters or leaves a function.  This option is always compiled in, you activate it by calling ```[tron]```, and switch it off with ```troff```
+```trace``` Prints a message every time the program enters or leaves a function.  This option is always compiled in, you activate it by calling ```[tron]```, and switch it off with ```[troff]```
 
-```stepTrace``` prints the message for every line in your program.  This creates an amazing amount of output, so you usually need to prepare a special, smaller, version of your input data.  You activate it by calling ```[stron]``` in your code, and turn it off with ```[stroff]```.
+```stepTrace``` prints a message for every line in your program.  This creates an amazing amount of output, so you usually need to prepare a special, smaller, version of your input data.  You activate it by calling ```[stron]``` in your code, and turn it off with ```[stroff]```.
 
 ## Learning more
 
