@@ -1,4 +1,4 @@
-((includes base.qon perl.qon ansi.qon)
+((includes base.qon perl.qon ansi.qon tests.qon)
  (types)
  (functions
 
