@@ -926,20 +926,17 @@
        (astTypes (second tree))
        (alistCons (boxString "functions") (astFunctions (third tree)) nil))))
     (return library)))
-  (list
-   astInclude
-   (list tree)
-   (declare)
+
+  (list astInclude (list tree) (declare)
    (body (return (loadLib (stringify tree)))))
-  (list
-   astIncludeList
-   (list tree)
-   (declare)
+
+  (list astIncludeList (list tree) (declare)
    (body
     (if (isEmpty tree)
       (then (return (emptyList)))
       (else
        (return (cons (astInclude (car tree)) (astIncludeList (cdr tree))))))))
+
   (list astIncludes (list tree) (declare)
    (body
     ;(printf "//Building includes AST...\n")
@@ -947,7 +944,8 @@
     (then
     (return
      (makeNode "includes" "includes" tree (astIncludeList (cdr tree)))))
-     (else (panic "Includes section not found!  Every program must have an include section, even if you don't import any libraries.  Your include section should look like:'\n\n(includes file1.qon file.qon)\n\n\nThe includes section must be the first section of the file.")))))
+     (else (panic "Includes section not found!  Every program must have an include section, even if you don't import any libraries.  Your include section should look like:'\n\n(includes file1.qon file.qon)\n\n\nThe includes section must be the first section of the file.")
+     (return nil)))))
 
   (list astStruct (list tree) (declare)
    (body (return (makeNode "type" "struct" tree nil))))
