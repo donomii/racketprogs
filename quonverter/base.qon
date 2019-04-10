@@ -743,9 +743,7 @@
    (body
     ;(printf "//Building includes AST...\n")
     (if (equalBox (boxString "includes") (car tree))
-    (then
-    (return
-     (makeNode "includes" "includes" tree (astIncludeList (cdr tree)))))
+    (then (return (makeNode "includes" "includes" tree (astIncludeList (cdr tree)))))
      (else (panic "Includes section not found!  Every program must have an include section, even if you don't import any libraries.  Your include section should look like:'\n\n(includes file1.qon file.qon)\n\n\nThe includes section must be the first section of the file.")
      (return nil)))))
 
