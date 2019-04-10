@@ -708,16 +708,18 @@
 
   (list astFunctions (list tree) (declare)
    (body
-    (return
-     (makeNode "functions" "functions" tree (astFunctionList (cdr tree))))))
+    (if (equalBox (car tree) (boxString "functions"))
+     (then (return (makeNode "functions" "functions" tree (astFunctionList (cdr tree)))))
+     (else (panic "Includes section not found!  Every program must have an include section, even if you don't import any libraries.  Your include section should look like:'\n\n(includes file1.qon file.qon)\n\n\nThe includes section must be the first section of the file.")
+     (return nil)))
+     ))
 
   (list loadLib (string path) (declare (string programStr "") (list tree nil) (list library nil))
    (body
     ;(printf "//Loading library %s\n" path)
     (set programStr (read-file path))
     (set tree (readSexpr programStr path))
-    (set
-     library
+    (set library
      (alistCons
       (boxString "includes")
       (astIncludes (first tree))
