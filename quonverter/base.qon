@@ -885,7 +885,7 @@
 (box toStr (box thing) (declare)
     (body (return (boxString (stringify thing)))))
 
-    (box listLast (list alist) (declare)
+(box listLast (list alist) (declare)
    (body
     (if (isEmpty (cdr alist))
       (then (return (car alist)))
@@ -898,7 +898,7 @@
       (set tree (readSexpr programStr filename))
       (return tree)))
 
-    (void astCompile (string filename) (declare (string programStr "") (list tree nil) (list program nil))
+    (list astBuild (string filename) (declare (string programStr "") (list tree nil) (list program nil))
      (body
       (set programStr (read-file filename))
       (set tree (readSexpr programStr filename))
@@ -912,36 +912,36 @@
          (astTypes (second tree))
          (alistCons (boxString "functions") (astFunctions (third tree)) nil))))
       (set program (mergeIncludes program))
-      (display program)
-      (printf "\n")))
+      (return program)
+      ))
 
-  (list
-   concatLists
-   (list seq1 list seq2)
-   (declare)
+    (void astCompile (string filename) (declare (string programStr "") (list tree nil) (list program nil))
+    (body
+      (set program (astBuild filename))
+      (display program)
+      (printf "\n")
+    ))
+
+  (list concatLists (list seq1 list seq2) (declare)
    (body
     (if (isNil seq1)
       (then (return seq2))
       (else (return (cons (car seq1) (concatLists (cdr seq1) seq2)))))))
+
   (list alistKeys (list alist) (declare)
    (body
     (if (isNil alist)
       (then (return nil))
       (else (return (cons (car (car alist)) (alistKeys (cdr alist))))))))
 
-  (list
-   mergeIncludes
-   (list program)
-   (declare)
+  (list mergeIncludes (list program) (declare)
    (body
     (return
      (merge_recur
       (childrenof (cdr (cdr (assoc "includes" program))))
       program))))
-  (list
-   merge_recur
-   (list incs list program)
-   (declare)
+
+  (list merge_recur (list incs list program) (declare)
    (body
     (if (> (listLength incs) 0)
       (then
