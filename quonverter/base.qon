@@ -749,10 +749,8 @@
 
   (list astStruct (list tree) (declare)
    (body (return (makeNode "type" "struct" tree nil))))
-  (list
-   astType
-   (list tree)
-   (declare)
+
+  (list astType (list tree) (declare)
    (body
     (if (isList (cadr tree))
       (then (return (astStruct tree)))
@@ -765,13 +763,15 @@
       (else (return (cons (astType (car tree)) (astTypeList (cdr tree))))))))
 
   (list astTypes (list tree) (declare)
-   (body (return (makeNode "types" "types" tree (astTypeList (cdr tree))))))
+   (body 
+   (if (equalBox (car tree) (boxString "types"))
+   (then (return (makeNode "types" "types" tree (astTypeList (cdr tree)))))
+   (else 
+   (panic "Types section not found!  Every program must have a types section, even if you don't define any types")
+   (return nil)))
+   ))
 
-
-  (list
-   declarationsof
-   (list ass)
-   (declare)
+  (list declarationsof (list ass) (declare)
    (body (return (cdr (assoc "declarations" (cdr ass))))))
 
   (list codeof (list ass) (declare)
