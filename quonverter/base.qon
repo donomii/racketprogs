@@ -708,7 +708,7 @@
 
   (list astFunctions (list tree) (declare)
    (body
-    (if (equalBox (car tree) (boxString "functions"))
+    (if (equalBox  (boxString "functions")(car tree))
      (then (return (makeNode "functions" "functions" tree (astFunctionList (cdr tree)))))
      (else (panic "Includes section not found!  Every program must have an include section, even if you don't import any libraries.  Your include section should look like:'\n\n(includes file1.qon file.qon)\n\n\nThe includes section must be the first section of the file.")
      (return nil)))
@@ -764,7 +764,7 @@
 
   (list astTypes (list tree) (declare)
    (body 
-   (if (equalBox (car tree) (boxString "types"))
+   (if (equalBox  (boxString "types")(car tree))
    (then (return (makeNode "types" "types" tree (astTypeList (cdr tree)))))
    (else 
    (panic "Types section not found!  Every program must have a types section, even if you don't define any types")

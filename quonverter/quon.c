@@ -2444,7 +2444,7 @@ if (globalTrace)
     printf("astFunctions at base.qon:708\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-  if ( equalBox(car(tree ), boxString("functions" ))) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+  if ( equalBox(boxString("functions" ), car(tree ))) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
     return(makeNode("functions" , "functions" , tree , astFunctionList(cdr(tree ))));
 
@@ -2630,7 +2630,7 @@ if (globalTrace)
     printf("astTypes at base.qon:764\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-  if ( equalBox(car(tree ), boxString("types" ))) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+  if ( equalBox(boxString("types" ), car(tree ))) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
     return(makeNode("types" , "types" , tree , astTypeList(cdr(tree ))));
 
