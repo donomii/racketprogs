@@ -163,6 +163,9 @@ sub get_config {
     return $ret;
 }
 
+
+
+
 #sub link {
 #my $col = pop @_;
 #my @tables = @_;
@@ -214,6 +217,10 @@ sub safe_name {
     return $cols[0];
 }
 
+sub Flush {
+        $dbh->do("PRAGMA wal_checkpoint(TRUNCATE);");
+}
+
 #Puts an Array of Hashes into a new table
 #
 #The column names are taken from the keys of the first hash in the array
@@ -225,7 +232,7 @@ sub AoH2Table {
     $table_name = safe_name($table_name);
     return unless @$AoH;
     my @options = @_;
-    $dbh->do("PRAGMA schema.journal_mode = WAL");
+    $dbh->do("PRAGMA journal_mode = WAL");
     if ( grep ( /^DROP$/, @options ) ) {
         warn "Dropping table $table_name\n";
         $dbh->do("DROP TABLE IF EXISTS $table_name");
@@ -250,12 +257,12 @@ sub AoH2Table {
         "CREATE TABLE IF NOT EXISTS $table_name ( "
       . makeHeaderDecls(safe_headers(@headers))
       . makeIndexDecls(safe_headers(@headers)) . " )\n";
-    warn "Creating table: " . $cmd . "\n";
+      #warn "Creating table: " . $cmd . "\n";
     $dbh->do($cmd);
     my $interp = join( ",", ("?") x $numCols );
     my $headerqry = '"' . join( '","', safe_headers(@headers) ) . '"';
     my $cmd = "INSERT INTO $table_name ($headerqry) VALUES($interp);";
-    warn $cmd;
+    #warn $cmd;
     my $sth = $dbh->prepare($cmd);
 
     foreach my $h (@$AoH) {
