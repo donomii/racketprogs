@@ -1634,7 +1634,7 @@ if (globalTrace)
 
   if ( false ) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-    printf("Scanning: line %d:%d\n" , linecount , column );
+    printf("Scanning: %s:%d:%d\n" , filename, linecount , column );
 
   } else {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
@@ -6931,6 +6931,7 @@ bool runAst = false ;
 bool runNode = false ;
 bool runTree = false ;
 
+globalTrace=1;
 if (globalTrace)
     printf("start at compiler.qon:4\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);

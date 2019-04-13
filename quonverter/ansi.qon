@@ -312,8 +312,11 @@
 
   (void ansiCompile (string filename) (declare (string programStr "") (list tree nil) (list program nil))
    (body
+   (printf "//Scanning file...\n")
     (set programStr (read-file filename))
+   (printf "//Building sexpr\n")
     (set tree (readSexpr programStr filename))
+   (printf "//Building AST\n")
     (set
      program
      (alistCons
@@ -324,7 +327,9 @@
        (astTypes (second tree))
        (alistCons (boxString "functions") (astFunctions (third tree)) nil))))
 
+   (printf "//Merging ASTs\n")
     (set program (mergeIncludes program))
+   (printf "//Printing program\n")
     (ansiIncludes (cdr (assoc "includes" program)))
     (ansiTypes (childrenof (cdr (assoc "types" program))))
     (printf "Box* globalStackTrace = NULL;\n")
