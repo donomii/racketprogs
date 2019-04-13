@@ -1634,7 +1634,7 @@ if (globalTrace)
 
   if ( false ) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-    printf("Scanning: %s:%d:%d\n" , filename, linecount , column );
+    printf("Scanning: line %d:%d\n" , linecount , column );
 
   } else {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
@@ -5437,16 +5437,31 @@ if (globalTrace)
     printf("ansiCompile at ansi.qon:312\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
+  printf("//Scanning file...\n" );
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
   programStr = read_file(filename );
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  printf("//Building sexpr\n" );
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   tree = readSexpr(programStr , filename );
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
+  printf("//Building AST\n" );
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
   program = alistCons(boxString("includes" ), astIncludes(first(tree )), alistCons(boxString("types" ), astTypes(second(tree )), alistCons(boxString("functions" ), astFunctions(third(tree )), NULL )));
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
+  printf("//Merging ASTs\n" );
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
   program = mergeIncludes(program );
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  printf("//Printing program\n" );
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   ansiIncludes(cdr(assoc("includes" , program )));
@@ -6931,7 +6946,6 @@ bool runAst = false ;
 bool runNode = false ;
 bool runTree = false ;
 
-globalTrace=1;
 if (globalTrace)
     printf("start at compiler.qon:4\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
