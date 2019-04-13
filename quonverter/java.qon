@@ -324,7 +324,6 @@
     (printf "Box* globalStackTrace = NULL;\n")
     (printf
      "\npublic bool isNil(list p) {\n    return p == NULL;\n}\n\n\n")
-    
     (javaFunctions
      (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
     (printf "}\n")))
