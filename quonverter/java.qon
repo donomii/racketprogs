@@ -1,0 +1,331 @@
+((includes)
+(types)
+ (functions
+  (void javaFunctionArgs (list tree) (declare)
+   (body
+    (if (isEmpty tree)
+      (then (return))
+      (else
+       (display (javaTypeMap (first tree)))
+       (display (second tree))
+       (if (isNil (cddr tree)) (then (printf "")) (else (printf ",")))
+       (javaFunctionArgs (cddr tree))))))
+
+  (void javaLeaf (list thisNode int indent) (declare)
+   (body (display (javaFuncMap (codeof thisNode)))))
+
+  (void javaStructGetterExpression (list thisNode int indent) (declare)
+   (body
+    (if (equalBox (boxString "structGetter") (subnameof thisNode))
+      (then (javaGetStruct thisNode indent))
+      (else (javaLeaf thisNode indent)))))
+
+  (void javaExpression (list node int indent) (declare)
+   (body
+    (if (isLeaf node)
+      (then (display (javaFuncMap (codeof node))))
+      (else (javaSubExpression node indent)))))
+  (void
+   javaRecurList
+   (list expr int indent)
+   (declare)
+   (body
+    (if (isEmpty expr)
+      (then (return))
+      (else
+       (javaExpression (car expr) indent)
+       (if (isNil (cdr expr))
+         (then (printf ""))
+         (else (printf ", ") (javaRecurList (cdr expr) indent)))))
+    (return)))
+  (void javaSubExpression (list tree int indent) (declare (box thing nil))
+   (body
+    (if (isEmpty tree)
+      (then (return))
+      (else
+       (if (isNode (childrenof tree))
+         (then (javaSubExpression (childrenof tree) indent))
+         (else
+          (if (isLeaf tree)
+            (then (display (javaFuncMap (codeof tree))))
+            (else
+             (if (equal 1 (listLength (childrenof tree)))
+               (then
+                (display (codeof (car (childrenof tree))))
+                (if (equalBox
+                     (boxString "return")
+                     (codeof (car (childrenof tree))))
+                  (then (printf ""))
+                  (else (printf "()"))))
+               (else
+                (set thing (codeof (car (childrenof tree))))
+                (if (equalBox (boxSymbol "get-struct") thing)
+                  (then
+                   (printf
+                    "%s->%s"
+                    (stringify (codeof (second (childrenof tree))))
+                    (stringify (codeof (third (childrenof tree))))))
+                  (else
+                   (if (equalBox (boxSymbol "new") thing)
+                     (then
+                      (printf
+                       "malloc(sizeof(%s))"
+                       (stringify (codeof (third (childrenof tree))))))
+                     (else
+                      (printf
+                       "%s("
+                       (stringify
+                        (javaFuncMap (codeof (car (childrenof tree))))))
+                      (javaRecurList (cdr (childrenof tree)) indent)
+                      (printf ")")))))))))))))))
+  (void javaIf (list node int indent) (declare)
+   (body
+    (newLine indent)
+    (printf "if ( ")
+    (javaExpression (car (first (childrenof node))) 0)
+    (printf ") {")
+    (javaBody (second (childrenof node)) (add1 indent))
+    (newLine indent)
+    (printf "} else {")
+    (javaBody (third (childrenof node)) (add1 indent))
+    (newLine indent)
+    (printf "}")))
+
+  (void javaSetStruct (list node int indent) (declare)
+   (body
+    (newLine indent)
+    (printf
+     "%s->%s = "
+     (stringify (first (codeof node)))
+     (stringify (second (codeof node))))
+    (javaExpression (childrenof node) indent)))
+
+  (void javaGetStruct (list node int indent) (declare)
+   (body
+    (newLine indent)
+    (printf
+     "%s->%s"
+     (stringify (first (codeof node)))
+     (stringify (second (codeof node))))))
+
+  (void javaSet (list node int indent) (declare)
+   (body
+    (newLine indent)
+    (printf "%s = " (stringify (first (codeof node))))
+    (javaExpression (childrenof node) indent)))
+
+  (void javaStatement (list node int indent) (declare)
+   (body
+    (if (equalBox (boxString "setter") (subnameof node))
+      (then (javaSet node indent))
+      (else
+       (if (equalBox (boxString "structSetter") (subnameof node))
+         (then (javaSetStruct node indent))
+         (else
+          (if (equalBox (boxString "if") (subnameof node))
+            (then (javaIf node indent))
+            (else
+             (if (equalBox (boxString "returnvoid") (subnameof node))
+               (then (newLine indent) (printf "return"))
+               (else
+                (newLine indent)
+                (javaExpression (childrenof node) indent)))))))))
+    (printf ";\n")))
+
+  (void javaBody (list tree int indent) (declare)
+   (body
+    (if (isEmpty tree)
+      (then (return))
+      (else
+       (printIndent indent)
+       (printf
+        "%s"
+        "if (globalStepTrace) printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__);\n")
+       (javaStatement (car tree) indent)
+       (javaBody (cdr tree) indent)))))
+
+  (void javaDeclarations (list decls int indent) (declare (box decl nil))
+   (body
+    (if (isEmpty decls)
+      (then (return))
+      (else
+       (set decl (car decls))
+       (printf
+        "%s %s = "
+        (stringify (javaTypeMap (first decl)))
+        (stringify (second decl)))
+       (display (javaFuncMap (third decl)))
+       (printf ";\n")
+       (javaDeclarations (cdr decls) indent)))))
+
+  (void javaFunction (list node) (declare (box name nil))
+   (body
+    (set name (subnameof node))
+    (printf "\n\n//Building function %s from line: %s" (stringify name) (stringify (getTag name (boxString "line"))))
+    (newLine 0)
+    (if (isNil node)
+      (then (return))
+      (else
+       (newLine 0)
+       (printf
+        "public %s %s("
+        (stringify (javaTypeMap (cdr (assoc "outtype" (cdr node)))))
+        (stringify (subnameof node)))
+       (javaFunctionArgs (cdr (assoc "intype" (cdr node))))
+       (printf ") {")
+       (newLine 1)
+       (javaDeclarations (declarationsof node) 1)
+       (if (inList (toStr name) (noStackTrace))
+       (then (printf ""))
+       (else
+           (printf "\nif (globalTrace)\n    printf(\"%s at %s:%s\\n\");\n" (stringify name) (stringify (getTag name (boxString "filename"))) (stringify (getTag name (boxString "line"))))))
+       (if (inList (toStr name) (noStackTrace))
+         (then (printf ""))
+         (else
+          ;;(printf "\n  stackTracePush(\"%s\", \"%s\", %s, %d );\n" (stringify (getTag name (boxString "filename"))) (stringify name) (stringify (getTag name (boxString "line"))) 0)
+          ))
+       (javaBody (childrenof node) 1)
+       (if (inList (toStr name) (noStackTrace))
+         (then (printf ""))
+         (else
+            (printf "\nif (globalTrace)\n    printf(\"Leaving %s\\n\");\n" (stringify name))
+            ))
+       (printf "\n}\n")))))
+
+
+
+  (void javaFunctions (list tree) (declare)
+   (body
+    (if (isEmpty tree)
+      (then (return))
+      (else (javaFunction (car tree)) (javaFunctions (cdr tree))))))
+
+  (void javaIncludes (list nodes) (declare)
+   (body
+    (printf "%s" "public void panic(String s){abort();}\n")
+    (printf "%s" "public int sub(int a, int b) { return a - b; }\n")
+    (printf "%s" "public float mult(int a, int b) { return a * b; }\n")
+    (printf "%s" "public int greaterthan(int a, int b) { return a > b; }\n")
+    (printf "%s" "public float subf(float a, float b) { return a - b; }\n")
+    (printf "%s" "public float multf(float a, float b) { return a * b; }\n")
+    (printf "%s" "public int greaterthanf(float a, float b) { return a > b; }\n")
+    (printf "%s" "public int equal(int a, int b) { return a == b; }\n")
+    (printf "%s" "public int equalString(String a, String b) { return !strcmp(a,b); }\n")
+    (printf "%s" "public int andBool(int a, int b) { return a == b;}\n")
+    (printf "%s" "public int string_length(String s) { return strlen(s);}\n")
+    (printf "%s" "public String sub_string(String s, int start, int length) {\nString substr = calloc(length+1, 1);\nstrncpy(substr, s+start, length);\nreturn substr;\n}\n\n\n\n")
+    (printf "%s" "public String character(int num) { String string = malloc(2); if (!string) return 0; string[0] = num; string[1] = 0; return string; }")
+))
+
+  (void javaTypeDecl (list l) (declare)
+   (body
+    (if (> (listLength l) 2)
+      (then
+       (printIndent 1)
+       (printf
+        "%s %s;\n"
+        
+        (stringify (javaTypeMap (listLast l)))
+        (stringify (first l))))
+      (else
+       (printIndent 1)
+       (printf
+        "%s %s;\n"
+        (stringify (javaTypeMap (listLast l)))
+        (stringify (car l)))))))
+
+  (void javaStructComponents (list node) (declare)
+   (body
+    (if (isEmpty node)
+      (then (return))
+      (else (javaTypeDecl (car node)) (javaStructComponents (cdr node))))))
+
+  (void javaStruct (list node) (declare)
+   (body (javaStructComponents (cdr (car node))) (return)))
+
+  (box javaTypeMap (box aSym) (declare (list symMap nil))
+   (body
+    (set
+     symMap
+     (alistCons (boxSymbol "Box*") (boxSymbol "Box")
+     (alistCons (boxSymbol "struct") (boxSymbol "")
+     (alistCons (boxSymbol "int") (boxSymbol "Integer")
+     (alistCons (boxSymbol "stringArray") (boxSymbol "String[]")
+      (alistCons (boxSymbol "string") (boxSymbol "String") nil))))))
+    (if (truthy (assoc (stringify aSym) symMap))
+      (then (return (cdr (assoc (stringify aSym) symMap))))
+      (else (return aSym)))))
+
+  (box javaFuncMap (box aSym) (declare (list symMap nil))
+   (body
+    (if (equalString "symbol" (boxType aSym))
+      (then
+       (set
+        symMap
+        (alistCons
+         (boxSymbol "=")
+         (boxSymbol "equal")
+         (alistCons
+          (boxSymbol "sub-string")
+          (boxSymbol "sub_string")
+          (alistCons
+           (boxSymbol "read-file")
+           (boxSymbol "read_file")
+           (alistCons
+            (boxSymbol "write-file")
+            (boxSymbol "write_file")
+            (alistCons
+             (boxSymbol ">")
+             (boxSymbol "greaterthan")
+             (alistCons
+              (boxSymbol "string-length")
+              (boxSymbol "string_length")
+              (alistCons (boxSymbol "nil") (boxSymbol "null") nil))))))))
+
+       (if (truthy (assoc (stringify aSym) symMap))
+         (then (return (cdr (assoc (stringify aSym) symMap))))
+         (else (return aSym))))
+      (else (return aSym)))))
+
+  (void javaType (list node) (declare)
+   (body
+    (if (equalBox (subnameof node) (boxString "struct"))
+      (then
+       (printf "\npublic class %s {\n" (stringify (first (codeof node))))
+       (javaStruct (cdr (codeof node)))
+       (printf "\n} %s;\n" (stringify (first (codeof node)))))
+      (else (printf "typedef ") (javaTypeDecl (codeof node))))
+    (return)))
+
+  (void javaTypes (list nodes) (declare)
+   (body
+    (if (isEmpty nodes)
+      (then (return))
+      (else (javaType (car nodes)) (javaTypes (cdr nodes))))))
+
+  (void javaCompile (string filename) (declare (string programStr "") (list tree nil) (list program nil))
+   (body
+   (printf "class MyProgram {\n")
+    (set programStr (read-file filename))
+    (set tree (readSexpr programStr filename))
+    (set
+     program
+     (alistCons
+      (boxString "includes")
+      (astIncludes (first tree))
+      (alistCons
+       (boxString "types")
+       (astTypes (second tree))
+       (alistCons (boxString "functions") (astFunctions (third tree)) nil))))
+
+    (set program (mergeIncludes program))
+    (javaIncludes (cdr (assoc "includes" program)))
+    (javaTypes (childrenof (cdr (assoc "types" program))))
+    (printf "Box* globalStackTrace = NULL;\n")
+    (printf
+     "\npublic bool isNil(list p) {\n    return p == NULL;\n}\n\n\n")
+    
+    (javaFunctions
+     (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
+    (printf "}\n")))
+  ))
