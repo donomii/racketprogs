@@ -1,11 +1,13 @@
-((includes base.qon perl.qon ansi.qon tests.qon)
+((includes base.qon perl.qon ansi.qon tests.qon java.qon)
  (types)
  (functions 
+
  (int start () 
  (declare (bool runTests false)
   (list cmdLine nil)
   (box filename nil)
   (bool runPerl false)
+  (bool runJava false)
   (bool runAst false)
   (bool runNode false)
   (bool runTree false))
@@ -17,6 +19,7 @@
       (else (set filename (boxString "compiler.qon"))))
     ;(printf "#Parsing file: ")(display filename)(newLine 0)
     (set runTests (inList (boxString "--test") cmdLine))
+    (set runJava (inList (boxString "--java") cmdLine))
     (set runPerl (inList (boxString "--perl") cmdLine))
     (set runAst (inList (boxString "--ast") cmdLine))
     (set runTree (inList (boxString "--tree") cmdLine))
@@ -55,6 +58,12 @@
       (else
       (if runPerl
       (then (perlCompile (unBoxString filename)) (printf "\n"))
-      (else (ansiCompile (unBoxString filename)) (printf "\n")))))
+      (else 
+      (if runJava
+      (then (javaCompile (unBoxString filename)) (printf "\n"))
+      (else
+      (ansiCompile (unBoxString filename)) (printf "\n")))))))
       ))))))
-    (return 0)))))
+    (return 0)
+    ))
+ ))
