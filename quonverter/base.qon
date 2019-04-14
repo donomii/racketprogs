@@ -469,10 +469,7 @@
       (else (return (emptyList))))
     (return (emptyList))))
 
-  (bool
-   isOpenBrace
-   (box b)
-   (declare)
+  (bool isOpenBrace (box b) (declare)
    (body
     (if (equalBox (boxSymbol (openBrace)) b)
       (then (return true))
@@ -576,8 +573,8 @@
 ))
 
   (list makeStatementNode (string name string subname list code list children box functionName) (declare)
-(body
-    (return (addToNode (boxSymbol "functionName") functionName (makeNode name subname code children)))
+    (body
+      (return (addToNode (boxSymbol "functionName") functionName (makeNode name subname code children)))
 ))
 
   (list astExpression (list tree) (declare)
