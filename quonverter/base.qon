@@ -542,11 +542,7 @@
   (box cadr (list l) (declare) (body (return (car (cdr l)))))
   (box caddr (list l) (declare) (body (return (car (cdr (cdr l))))))
   (box cadddr (list l) (declare) (body (return (car (cdr (cdr (cdr l)))))))
-  (box
-   caddddr
-   (list l)
-   (declare)
-   (body (return (car (cdr (cdr (cdr (cdr l))))))))
+  (box caddddr (list l) (declare) (body (return (car (cdr (cdr (cdr (cdr l))))))))
   (box cddr (list l) (declare) (body (return (cdr (cdr l)))))
   (box first (list l) (declare) (body (return (car l))))
   (box second (list l) (declare) (body (return (cadr l))))
