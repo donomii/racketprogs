@@ -25,7 +25,9 @@ I have no idea what I'm doing but somehow this still works.  It's bizarre.
 
 Or on Windows:
 
-    perl bootstrap/quon.pl examples/mandelbrot.qon > mandelbrot.c
+    #perl bootstrap/quon.pl examples/mandelbrot.qon > mandelbrot.c
+    gcc bootstrap\quon.c -Wl,--stack,67108864 -O1 -o quon.exe
+    quon.exe examples/mandelbrot.qon > mandelbrot.c
     gcc -O3 mandelbrot.c -o mandelbrot
     mandelbrot
 
