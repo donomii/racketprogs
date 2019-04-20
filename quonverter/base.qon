@@ -680,6 +680,8 @@
   (list astFunction (list tree) (declare (box fname nil))
    (body
     (set fname (second tree))
+    ;(printf "//ast building function %s\n" (stringify fname))
+    ;(display tree)
     (return
      (alistCons
       (boxSymbol "line")
@@ -763,10 +765,10 @@
       (else (return (cons (astType (car tree)) (astTypeList (cdr tree))))))))
 
   (list astTypes (list tree) (declare)
-   (body 
+   (body
    (if (equalBox  (boxString "types")(car tree))
    (then (return (makeNode "types" "types" tree (astTypeList (cdr tree)))))
-   (else 
+   (else
    (panic "Types section not found!  Every program must have a types section, even if you don't define any types")
    (return nil)))
    ))

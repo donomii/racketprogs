@@ -1,8 +1,8 @@
-((includes base.qon perl.qon ansi.qon tests.qon java.qon)
+((includes base.qon perl.qon ansi.qon tests.qon node.qon java.qon )
  (types)
- (functions 
+ (functions
 
- (int start () 
+ (int start ()
  (declare (bool runTests false)
   (list cmdLine nil)
   (box filename nil)
@@ -52,13 +52,13 @@
       (if runAst
       (then (astCompile (unBoxString filename)))
       (else (if runNode
-      (then 
+      (then
       ;(nodeCompile (unBoxString filename)) (printf "\n")
       )
       (else
       (if runPerl
       (then (perlCompile (unBoxString filename)) (printf "\n"))
-      (else 
+      (else
       (if runJava
       (then (javaCompile (unBoxString filename)) (printf "\n"))
       (else
