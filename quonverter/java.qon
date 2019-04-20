@@ -62,7 +62,7 @@
                 (if (equalBox (boxSymbol "get-struct") thing)
                   (then
                    (printf
-                    "%s->%s"
+                    "%s.%s"
                     (stringify (codeof (second (childrenof tree))))
                     (stringify (codeof (third (childrenof tree))))))
                   (else
@@ -95,7 +95,7 @@
    (body
     (newLine indent)
     (printf
-     "%s->%s = "
+     "%s.%s = "
      (stringify (first (codeof node)))
      (stringify (second (codeof node))))
     (javaExpression (childrenof node) indent)))
@@ -104,7 +104,7 @@
    (body
     (newLine indent)
     (printf
-     "%s->%s"
+     "%s.%s"
      (stringify (first (codeof node)))
      (stringify (second (codeof node))))))
 
@@ -138,9 +138,7 @@
       (then (return))
       (else
        (printIndent indent)
-       (printf
-        "%s"
-        "if (globalStepTrace) printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__);\n")
+       (printf "")  ;FIXME add steptrace here
        (javaStatement (car tree) indent)
        (javaBody (cdr tree) indent)))))
 
@@ -178,7 +176,7 @@
        (if (inList (toStr name) (noStackTrace))
        (then (printf ""))
        (else
-           (printf "\nif (globalTrace)\n    printf(\"%s at %s:%s\\n\");\n" (stringify name) (stringify (getTag name (boxString "filename"))) (stringify (getTag name (boxString "line"))))))
+           (printf "")))
        (if (inList (toStr name) (noStackTrace))
          (then (printf ""))
          (else
@@ -247,11 +245,13 @@
    (body
     (set
      symMap
+     (alistCons (boxSymbol "box") (boxSymbol "Box")
+     (alistCons (boxSymbol "list") (boxSymbol "Box")
      (alistCons (boxSymbol "Box*") (boxSymbol "Box")
      (alistCons (boxSymbol "struct") (boxSymbol "")
      (alistCons (boxSymbol "int") (boxSymbol "Integer")
      (alistCons (boxSymbol "stringArray") (boxSymbol "String[]")
-      (alistCons (boxSymbol "string") (boxSymbol "String") nil))))))
+      (alistCons (boxSymbol "string") (boxSymbol "String") nil))))))))
     (if (truthy (assoc (stringify aSym) symMap))
       (then (return (cdr (assoc (stringify aSym) symMap))))
       (else (return aSym)))))
@@ -262,9 +262,8 @@
       (then
        (set
         symMap
-        (alistCons
-         (boxSymbol "=")
-         (boxSymbol "equal")
+        (alistCons (boxSymbol "printf") (boxSymbol "System.out.print")
+        (alistCons (boxSymbol "=") (boxSymbol "equal")
          (alistCons
           (boxSymbol "sub-string")
           (boxSymbol "sub_string")
@@ -280,7 +279,7 @@
              (alistCons
               (boxSymbol "string-length")
               (boxSymbol "string_length")
-              (alistCons (boxSymbol "nil") (boxSymbol "null") nil))))))))
+              (alistCons (boxSymbol "nil") (boxSymbol "null") nil)))))))))
 
        (if (truthy (assoc (stringify aSym) symMap))
          (then (return (cdr (assoc (stringify aSym) symMap))))
@@ -293,8 +292,8 @@
       (then
        (printf "\npublic class %s {\n" (stringify (first (codeof node))))
        (javaStruct (cdr (codeof node)))
-       (printf "\n} %s;\n" (stringify (first (codeof node)))))
-      (else (printf "typedef ") (javaTypeDecl (codeof node))))
+       (printf "\n};\n"))
+      (else (printf "public ") (javaTypeDecl (codeof node))))
     (return)))
 
   (void javaTypes (list nodes) (declare)
@@ -321,7 +320,10 @@
     (set program (mergeIncludes program))
     (javaIncludes (cdr (assoc "includes" program)))
     (javaTypes (childrenof (cdr (assoc "types" program))))
-    (printf "Box* globalStackTrace = NULL;\n")
+    (printf "public Box globalStackTrace = NULL;\n")
+    (printf "public Box globalStepTrace = NULL;\n")
+    (printf "public String FILE = NULL;\n")
+    (printf "public Integer LINE = 0;\n")
     (printf
      "\npublic bool isNil(list p) {\n    return p == NULL;\n}\n\n\n")
     (javaFunctions
