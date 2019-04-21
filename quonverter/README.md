@@ -32,6 +32,35 @@ Or on Windows:
     mandelbrot
 
 Check out the longer [QuickStart Guide](QuickStart.md)/
+
+## Compile to multiple languages
+
+Quonverter transpiles to C, perl, Javascript (nodejs) and Java (not working yet).  You can choose the output language with a command line switch:
+
+    ./quon hello.qon --node > test.js
+    node --stack_size=9999999999 test.js
+
+
+    ./quon hello.qon --perl > test.pl
+    perl test.pl
+
+    ./quon hello.qon > test.c
+    gcc test.c
+    ./a.out
+
+## Known bugs
+
+### Unicode
+
+Quonverter does not support unicode.  I rely on the underlying programming language for string support, so if that language does not have unicode support, then quonverter can't have it either.  Worse, quonverter cannot detect unicode, so instead it silently corrupts the string and gets confused.  If your compile starts failing and the code looks ok, bheck for unicode characters.
+
+### Garbage collection
+
+There is currently no garbage collector, so any program compiled to C will run out of memory if it runs for long enough.
+
+
+## Demo
+
 ```
                       ................::::::::::::::::::::::::::::::::::::::::::!!!!!!!!!!!//>o#*$o/////!!!!!!!!!::::::::::.................................
                      ...............:::::::::::::::::::::::::::::::::::::::::!!!!!!!!!!!!////>>+&*+>>>>///!!!!!!!!!::::::::::...............................
