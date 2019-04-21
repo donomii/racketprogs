@@ -469,10 +469,7 @@
       (else (return (emptyList))))
     (return (emptyList))))
 
-  (bool
-   isOpenBrace
-   (box b)
-   (declare)
+  (bool isOpenBrace (box b) (declare)
    (body
     (if (equalBox (boxSymbol (openBrace)) b)
       (then (return true))
@@ -542,11 +539,7 @@
   (box cadr (list l) (declare) (body (return (car (cdr l)))))
   (box caddr (list l) (declare) (body (return (car (cdr (cdr l))))))
   (box cadddr (list l) (declare) (body (return (car (cdr (cdr (cdr l)))))))
-  (box
-   caddddr
-   (list l)
-   (declare)
-   (body (return (car (cdr (cdr (cdr (cdr l))))))))
+  (box caddddr (list l) (declare) (body (return (car (cdr (cdr (cdr (cdr l))))))))
   (box cddr (list l) (declare) (body (return (cdr (cdr l)))))
   (box first (list l) (declare) (body (return (car l))))
   (box second (list l) (declare) (body (return (cadr l))))
@@ -580,8 +573,8 @@
 ))
 
   (list makeStatementNode (string name string subname list code list children box functionName) (declare)
-(body
-    (return (addToNode (boxSymbol "functionName") functionName (makeNode name subname code children)))
+    (body
+      (return (addToNode (boxSymbol "functionName") functionName (makeNode name subname code children)))
 ))
 
   (list astExpression (list tree) (declare)
@@ -680,6 +673,8 @@
   (list astFunction (list tree) (declare (box fname nil))
    (body
     (set fname (second tree))
+    ;(printf "//ast building function %s\n" (stringify fname))
+    ;(display tree)
     (return
      (alistCons
       (boxSymbol "line")
@@ -763,10 +758,10 @@
       (else (return (cons (astType (car tree)) (astTypeList (cdr tree))))))))
 
   (list astTypes (list tree) (declare)
-   (body 
+   (body
    (if (equalBox  (boxString "types")(car tree))
    (then (return (makeNode "types" "types" tree (astTypeList (cdr tree)))))
-   (else 
+   (else
    (panic "Types section not found!  Every program must have a types section, even if you don't define any types")
    (return nil)))
    ))

@@ -6,78 +6,80 @@
    (body
     (if (isEmpty tree)
       (then (return))
-      (esle
+      (else
        (display (second tree))
-       (if (isNil (cddr tree)) (body (printf "")) (body (printf ",")))
+       (if (isNil (cddr tree)) (then (printf "")) (else (printf ",")))
        (nodeFunctionArgs (cddr tree))))))
+
     (void nodeLeaf (list thisNode int indent) (declare)
    (body (display (nodeFuncMap (codeof thisNode)))))
 
   (void nodeStructGetterExpression (list thisNode int indent) (declare)
    (body
     (if (equalBox (boxString "structGetter") (subnameof thisNode))
-      (body (nodeGetStruct thisNode indent))
-      (body (nodeLeaf thisNode indent)))))
+      (then (nodeGetStruct thisNode indent))
+      (else (nodeLeaf thisNode indent)))))
 
   (void nodeExpression (list node int indent) (declare)
    (body
     (if (isLeaf node)
-      (body (display (nodeFuncMap (codeof node))))
-      (body (nodeSubExpression node indent)))))
+      (then (display (nodeFuncMap (codeof node))))
+      (else (nodeSubExpression node indent)))))
   (void
    nodeRecurList
    (list expr int indent)
    (declare)
    (body
     (if (isEmpty expr)
-      (body (return))
-      (body
+      (then (return))
+      (else
        (nodeExpression (car expr) indent)
        (if (isNil (cdr expr))
-         (body (printf ""))
-         (body (printf ", ") (nodeRecurList (cdr expr) indent)))))
+         (then (printf ""))
+         (else (printf ", ") (nodeRecurList (cdr expr) indent)))))
     (return)))
 
   (void nodeSubExpression (list tree int indent) (declare (box thing nil))
    (body
     (if (isEmpty tree)
-      (body (return))
-      (body
+      (then (return))
+      (else
        (if (isNode (childrenof tree))
          (then (nodeSubExpression (childrenof tree) indent))
          (else
           (if (isLeaf tree)
-            (body (display (nodeFuncMap (codeof tree))))
-            (body
+            (then (display (nodeFuncMap (codeof tree))))
+            (else
              (if (equal 1 (listLength (childrenof tree)))
-               (body
+               (then
                 (display (codeof (car (childrenof tree))))
                 (if (equalBox
                      (boxString "return")
                      (codeof (car (childrenof tree))))
-                  (body (printf ""))
-                  (body (printf "()"))))
-               (body
+                  (then (printf ""))
+                  (else (printf "()"))))
+               (else
                 (set thing (codeof (car (childrenof tree))))
                 (if (equalBox (boxSymbol "get-struct") thing)
-                  (body
+                  (then
                    (printf
                     "%s.%s"
                     (stringify (codeof (second (childrenof tree))))
                     (stringify (codeof (third (childrenof tree))))))
-                  (body
+                  (else
                    (if (equalBox (boxSymbol "new") thing)
-                     (body
+                     (then
                       (printf
                        "{}"
                        ))
-                     (body
+                     (else
                       (printf
                        "%s("
                        (stringify
                         (nodeFuncMap (codeof (car (childrenof tree))))))
                       (nodeRecurList (cdr (childrenof tree)) indent)
                       (printf ")")))))))))))))))
+
   (void nodeIf (list node int indent) (declare)
    (body
     (newLine indent)
@@ -90,52 +92,44 @@
     (nodeBody (third (childrenof node)) (add1 indent))
     (newLine indent)
     (printf "}")))
-  (void
-   nodeSetStruct
-   (list node int indent)
-   (declare)
-   (body
-    (newLine indent)
-    (printf
-     "%s.%s = "
-     (stringify (first (codeof node)))
-     (stringify (second (codeof node))))
-    (nodeExpression (childrenof node) indent)))
-  (void
-   nodeGetStruct
-   (list node int indent)
-   (declare)
+
+
+  (void nodeGetStruct  (list node int indent)  (declare)
    (body
     (newLine indent)
     (printf
      "%s.%s"
      (stringify (first (codeof node)))
      (stringify (second (codeof node))))))
-  (void
-   nodeSet
-   (list node int indent)
-   (declare)
+
+  (void nodeSet  (list node int indent)  (declare)
    (body
     (newLine indent)
     (printf "%s = " (stringify (first (codeof node))))
     (nodeExpression (childrenof node) indent)))
-  (void
-   nodeStatement
-   (list node int indent)
-   (declare)
+
+  (void nodeSetStruct (list node int indent) (declare)
+   (body
+    (newLine indent)
+    (printf "%s.%s = " (stringify (first (codeof node))) (stringify (second (codeof node))))
+    (nodeExpression (childrenof node) indent)
+    ))
+
+
+  (void nodeStatement (list node int indent) (declare)
    (body
     (if (equalBox (boxString "setter") (subnameof node))
-      (body (nodeSet node indent))
-      (body
+      (then (nodeSet node indent))
+      (else
        (if (equalBox (boxString "structSetter") (subnameof node))
-         (body (nodeSetStruct node indent))
-         (body
+         (then (nodeSetStruct node indent))
+         (else
           (if (equalBox (boxString "if") (subnameof node))
-            (body (nodeIf node indent))
-            (body
+            (then (nodeIf node indent))
+            (else
              (if (equalBox (boxString "returnvoid") (subnameof node))
-               (body (newLine indent) (printf "return"))
-               (body
+               (then (newLine indent) (printf "return"))
+               (else
                 (newLine indent)
                 (nodeExpression (childrenof node) indent)))))))))
     (printf ";\n")))
@@ -146,8 +140,8 @@
    (declare)
    (body
     (if (isEmpty tree)
-      (body (return))
-      (body
+      (then (return))
+      (else
        (printIndent indent)
        (printf
         "%s"
@@ -158,8 +152,8 @@
   (void nodeDeclarations (list decls int indent) (declare (box decl nil))
    (body
     (if (isEmpty decls)
-      (body (return))
-      (body
+      (then (return))
+      (else
        (set decl (car decls))
        (printf
         "var %s = "
@@ -176,8 +170,8 @@
     (printf "\n\n//Building function %s from line: %s" (stringify name) (stringify (getTag name (boxString "line"))))
     (newLine 0)
     (if (isNil node)
-      (body (return))
-      (body
+      (then (return))
+      (else
        (newLine 0)
        (printf
         "function %s("
@@ -188,7 +182,7 @@
        (nodeDeclarations (declarationsof node) 1)
        (if (inList (toStr name) (noStackTrace))
        (then (printf ""))
-       (else 
+       (else
            (printf "\nif (globalTrace)\n    {printf(\"%s at %s:%s\\n\");}\n" (stringify name) (stringify (getTag name (boxString "filename"))) (stringify (getTag name (boxString "line"))))))
        (if (inList (toStr name) (noStackTrace))
          (then (printf ""))
@@ -206,8 +200,8 @@
   (void nodeForwardDeclaration (list node) (declare)
    (body
     (if (isNil node)
-      (body (return))
-      (body
+      (then (return))
+      (else
        (printf
         "\n%s %s("
         (stringify (nodeTypeMap (cdr (assoc "outtype" (cdr node)))))
@@ -220,8 +214,8 @@
    (declare)
    (body
     (if (isEmpty tree)
-      (body (return))
-      (body
+      (then (return))
+      (else
        (nodeForwardDeclaration (car tree))
        (nodeForwardDeclarations (cdr tree))))))
   (void
@@ -230,8 +224,8 @@
    (declare)
    (body
     (if (isEmpty tree)
-      (body (return))
-      (body (nodeFunction (car tree)) (nodeFunctions (cdr tree))))))
+      (then (return))
+      (else (nodeFunction (car tree)) (nodeFunctions (cdr tree))))))
 
   (void nodeIncludes (list nodes) (declare)
    (body
@@ -269,14 +263,14 @@
   (void nodeTypeDecl (list l) (declare)
    (body
     (if (> (listLength l) 2)
-      (body
+      (then
        (printIndent 1)
        (printf
         "%s %s %s;\n"
         (stringify (second l))
         (stringify (nodeTypeMap (listLast l)))
         (stringify (first l))))
-      (body
+      (else
        (printIndent 1)
        (printf
         "%s %s;\n"
@@ -288,8 +282,8 @@
    (declare)
    (body
     (if (isEmpty node)
-      (body (return))
-      (body (nodeTypeDecl (car node)) (nodeStructComponents (cdr node))))))
+      (then (return))
+      (else (nodeTypeDecl (car node)) (nodeStructComponents (cdr node))))))
   (void
    nodeStruct
    (list node)
@@ -307,12 +301,15 @@
       (boxSymbol "char**")
       (alistCons (boxSymbol "string") (boxSymbol "char*") nil)))
     (if (truthy (assoc (stringify aSym) symMap))
-      (body (return (cdr (assoc (stringify aSym) symMap))))
-      (body (return aSym)))))
+      (then (return (cdr (assoc (stringify aSym) symMap))))
+      (else (return aSym)))))
+
+
   (box nodeFuncMap (box aSym) (declare (list symMap nil))
+
    (body
     (if (equalString "symbol" (boxType aSym))
-      (body
+      (then
        (set
         symMap
         (alistCons
@@ -336,9 +333,9 @@
               (alistCons (boxSymbol "nil") (boxSymbol "NULL") nil))))))))
 
        (if (truthy (assoc (stringify aSym) symMap))
-         (body (return (cdr (assoc (stringify aSym) symMap))))
-         (body (return aSym))))
-      (body (return aSym)))))
+         (then (return (cdr (assoc (stringify aSym) symMap))))
+         (else (return aSym))))
+      (else (return aSym)))))
   (void nodeType (list node) (declare)
    (body (return)))
 
@@ -348,8 +345,8 @@
    (declare)
    (body
     (if (isEmpty nodes)
-      (body (return))
-      (body (nodeType (car nodes)) (nodeTypes (cdr nodes))))))
+      (then (return))
+      (else (nodeType (car nodes)) (nodeTypes (cdr nodes))))))
   (void
    nodeCompile
    (string filename)
