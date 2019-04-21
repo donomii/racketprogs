@@ -312,7 +312,7 @@
 
   (void ansiCompile (string filename) (declare (string programStr "") (list tree nil) (list program nil))
    (body
-   (printf "//Scanning file...\n")
+   (printf "//Scanning file...%s\n" filename)
     (set programStr (read-file filename))
    (printf "//Building sexpr\n")
     (set tree (readSexpr programStr filename))
