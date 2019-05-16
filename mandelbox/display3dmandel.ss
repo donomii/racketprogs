@@ -69,205 +69,12 @@
 
 
 
-(define gears-canvas%
-  (class* canvas% ()
-    
-    (inherit refresh with-gl-context swap-gl-buffers get-parent)
-    [init best-display?]
-    [define is-best-display best-display?]
-    (define rotation 0.0)
-    
-    (define view-rotx 0.0)
-    (define view-roty 0.0)
-    (define view-rotz 0.0)
-    
-    (define gear1 #f)
-    (define gear2 #f)
-    (define gear3 #f)
-    
-    (define step? #f)
-    
-    (define/public (run)
-      (set! step? #t)
-      (refresh))
-    
-    (define/public (move-left)
-      (set! view-roty (+ view-roty 5.0))
-      (refresh))
-    
-    (define/public (move-right)
-      (set! view-roty (- view-roty 5.0))
-      (refresh))
-    
-    (define/public (move-up)
-      (set! view-rotx (+ view-rotx 5.0))
-      (refresh))
-    
-    (define/public (move-down)
-      (set! view-rotx (- view-rotx 5.0))
-      (refresh))
-    
-    (define/public (slide-left)
-      (set! view-roty (+ view-roty 5.0))
-      (refresh))
-    
-    (define/public (slide-right)
-      (set! view-roty (- view-roty 5.0))
-      (refresh))
-    
-    (define/public (slide-up)
-      (set! view-rotx (+ view-rotx 5.0))
-      (refresh))
-    
-    (define/public (slide-down)
-      (set! view-rotx (- view-rotx 5.0))
-      (refresh))
-    
-    
-    
-    (define/override (on-size width height)
-      (with-gl-context
-       (lambda ()
-         
-         ;(unless gear1
-         ; (printf "  RENDERER:   ~A\n" (gl-get-string 'renderer))
-         ; (printf "  VERSION:    ~A\n" (gl-get-string 'version))
-         ; (printf "  VENDOR:     ~A\n" (gl-get-string 'vendor))
-         ; (printf "  EXTENSIONS: ~A\n" (gl-get-string 'extensions))
-         ; )
-         
-         (gl-viewport 0 0 width height)
-         (gl-matrix-mode 'projection)
-         (gl-load-identity)
-         (let ((h (/ height width)))
-           (gl-frustum -1.0 1.0 (- h) h 5.0 60.0))
-         (gl-matrix-mode 'modelview)
-         (gl-load-identity)
-         (gl-translate 0.0 0.0 -40.0)
-         
-         (gl-light-v 'light0 'position (vector->gl-float-vector
-                                        (vector 5.0 5.0 10.0 0.0)))
-         (gl-enable 'cull-face)
-         (gl-enable 'lighting)
-         ;(gl-disable 'lighting)
-         (gl-enable 'light0)
-         (gl-enable 'depth-test)
-         
-         (unless gear1
-           
-           (set! gear1 (gl-gen-lists 1))
-           (gl-new-list gear1 'compile)
-           (gl-material-v 'front
-                          'ambient-and-diffuse
-                          (vector->gl-float-vector (vector 0.8 0.1 0.0 1.0)))
-           ;(build-gear 1.0 4.0 1.0 20 0.7)
-           (gl-end-list)
-           
-           (set! gear2 (gl-gen-lists 1))
-           (gl-new-list gear2 'compile)
-           (gl-material-v 'front
-                          'ambient-and-diffuse
-                          (vector->gl-float-vector (vector 0.0 0.8 0.2 1.0)))
-           ;(build-gear 0.5 2.0 2.0 10 0.7)
-           (gl-end-list)
-           
-           (set! gear3 (gl-gen-lists 1))
-           (gl-new-list gear3 'compile)
-           (gl-material-v 'front
-                          'ambient-and-diffuse
-                          (vector->gl-float-vector (vector 0.2 0.2 1.0 1.0)))
-           ;(build-gear 1.3 2.0 0.5 10 0.7)
-           (gl-end-list)
-           
-           (gl-enable 'normalize))))
-      (refresh))
-    
-    (define sec (current-seconds))
-    (define frames 0)
-    
-    (define/override (on-paint)
-      [with-gl-context [lambda []
-                         (gl-push-matrix)
-                         (gl-rotate view-rotx 1.0 0.0 0.0)
-                         (gl-rotate view-roty 0.0 1.0 0.0)
-                         (gl-rotate view-rotz 0.0 0.0 1.0)
-                         
-                         
-                         [do-paint ]
-                         (gl-pop-matrix)
-                         (swap-gl-buffers)
-                         (gl-flush)
-                         ;(glFinish)
-                         ; (sleep 1)
-                         [when [not is-best-display] 
-                           
-                           
-                           
-                           ;[write new-score][newline]
-                           [display "tick"][newline]
-                           
-                           
-                           ]]]
-      (when step?
-        (set! step? #f)
-        (queue-callback (lambda x (send this run)) #f ))
-      )
-    
-    (super-instantiate () (style '(gl no-autoclear)))))
+
 (define controls? #t)
 
-(define (gl-frame)
-  (let* ((f (make-object frame% "gears.ss" #f))
-         (c (new gears-canvas% (parent topwin) [best-display? #f] (min-width 400) (min-height 400) (stretchable-width #f) (stretchable-height #f) ))
-         
-         )
-    (send f create-status-line)
-    (when controls?
-      (let ((h (instantiate horizontal-panel% (topwin)
-                 (alignment '(center center)) (stretchable-height #f))))
-        (instantiate button%
-          ("Start" h (lambda (b e) (send b enable #f) (send c run)))
-          (stretchable-width #t) (stretchable-height #t))
-        
-        
-        (let ((h (instantiate horizontal-panel% (h)
-                   (alignment '(center center)))))
-          (instantiate button% ("Left" h (lambda x (send c move-left)))
-            (stretchable-width #t))
-          (let ((v (instantiate vertical-panel% (h)
-                     (alignment '(center center)) (stretchable-width #f))))
-            (instantiate button% ("Up" v (lambda x (send c move-up) ))
-              (stretchable-width #t))
-            (instantiate button% ("Down" v (lambda x (send c move-down)))
-              (stretchable-width #t)))
-          
-          (instantiate button% ("Right" h (lambda x (send c move-right)))
-            (stretchable-width #t))
-          
-          )
-        
-        (let ((h (instantiate horizontal-panel% (h)
-                   (alignment '(center center)))))
-          (instantiate button% ("Left" h (lambda x (send c slide-left)))
-            (stretchable-width #t))
-          (let ((v (instantiate vertical-panel% (h)
-                     (alignment '(center center)) (stretchable-width #f))))
-            (instantiate button% ("In" v (lambda x [begin (set! screen-scale [* screen-scale 2])(send c refresh)] ))
-              (stretchable-width #t))
-            (instantiate button% ("Out" v (lambda x [begin (set! screen-scale [* screen-scale 0.5])(send c refresh)]))
-              (stretchable-width #t)))
-          
-          (instantiate button% ("Right" h (lambda x (send c slide-right)))
-            (stretchable-width #t))
-          
-          )
-        
-        ))
-    
-    (send topwin show #t) ))
 
-(gl-frame)
-(send topwin show #t)
+
+
 ;(send dc show)
 ;(define best-gl #f)
 
@@ -428,3 +235,202 @@
 [display "Finished  creating display list"][display glist][newline]
 [picture]]
                        ]]
+
+(define gears-canvas%
+  (class* canvas% ()
+    
+    (inherit refresh with-gl-context swap-gl-buffers get-parent)
+    [init best-display?]
+    [define is-best-display best-display?]
+    (define rotation 0.0)
+    
+    (define view-rotx 0.0)
+    (define view-roty 0.0)
+    (define view-rotz 0.0)
+    
+    (define gear1 #f)
+    (define gear2 #f)
+    (define gear3 #f)
+    
+    (define step? #f)
+    
+    (define/public (run)
+      (set! step? #t)
+      (refresh))
+    
+    (define/public (move-left)
+      (set! view-roty (+ view-roty 5.0))
+      (refresh))
+    
+    (define/public (move-right)
+      (set! view-roty (- view-roty 5.0))
+      (refresh))
+    
+    (define/public (move-up)
+      (set! view-rotx (+ view-rotx 5.0))
+      (refresh))
+    
+    (define/public (move-down)
+      (set! view-rotx (- view-rotx 5.0))
+      (refresh))
+    
+    (define/public (slide-left)
+      (set! view-roty (+ view-roty 5.0))
+      (refresh))
+    
+    (define/public (slide-right)
+      (set! view-roty (- view-roty 5.0))
+      (refresh))
+    
+    (define/public (slide-up)
+      (set! view-rotx (+ view-rotx 5.0))
+      (refresh))
+    
+    (define/public (slide-down)
+      (set! view-rotx (- view-rotx 5.0))
+      (refresh))
+    
+    
+    
+    (define/override (on-size width height)
+      (with-gl-context
+       (lambda ()
+         
+         ;(unless gear1
+         ; (printf "  RENDERER:   ~A\n" (gl-get-string 'renderer))
+         ; (printf "  VERSION:    ~A\n" (gl-get-string 'version))
+         ; (printf "  VENDOR:     ~A\n" (gl-get-string 'vendor))
+         ; (printf "  EXTENSIONS: ~A\n" (gl-get-string 'extensions))
+         ; )
+         
+         (gl-viewport 0 0 width height)
+         (gl-matrix-mode 'projection)
+         (gl-load-identity)
+         (let ((h (/ height width)))
+           (gl-frustum -1.0 1.0 (- h) h 5.0 60.0))
+         (gl-matrix-mode 'modelview)
+         (gl-load-identity)
+         (gl-translate 0.0 0.0 -40.0)
+         
+         (gl-light-v 'light0 'position (vector->gl-float-vector
+                                        (vector 5.0 5.0 10.0 0.0)))
+         (gl-enable 'cull-face)
+         (gl-enable 'lighting)
+         ;(gl-disable 'lighting)
+         (gl-enable 'light0)
+         (gl-enable 'depth-test)
+         
+         (unless gear1
+           
+           (set! gear1 (gl-gen-lists 1))
+           (gl-new-list gear1 'compile)
+           (gl-material-v 'front
+                          'ambient-and-diffuse
+                          (vector->gl-float-vector (vector 0.8 0.1 0.0 1.0)))
+           ;(build-gear 1.0 4.0 1.0 20 0.7)
+           (gl-end-list)
+           
+           (set! gear2 (gl-gen-lists 1))
+           (gl-new-list gear2 'compile)
+           (gl-material-v 'front
+                          'ambient-and-diffuse
+                          (vector->gl-float-vector (vector 0.0 0.8 0.2 1.0)))
+           ;(build-gear 0.5 2.0 2.0 10 0.7)
+           (gl-end-list)
+           
+           (set! gear3 (gl-gen-lists 1))
+           (gl-new-list gear3 'compile)
+           (gl-material-v 'front
+                          'ambient-and-diffuse
+                          (vector->gl-float-vector (vector 0.2 0.2 1.0 1.0)))
+           ;(build-gear 1.3 2.0 0.5 10 0.7)
+           (gl-end-list)
+           
+           (gl-enable 'normalize))))
+      (refresh))
+    
+    (define sec (current-seconds))
+    (define frames 0)
+    
+    (define/override (on-paint)
+      [with-gl-context [lambda []
+                         (gl-push-matrix)
+                         (gl-rotate view-rotx 1.0 0.0 0.0)
+                         (gl-rotate view-roty 0.0 1.0 0.0)
+                         (gl-rotate view-rotz 0.0 0.0 1.0)
+                         
+                         
+                         [do-paint ]
+                         (gl-pop-matrix)
+                         (swap-gl-buffers)
+                         (gl-flush)
+                         ;(glFinish)
+                         ; (sleep 1)
+                         [when [not is-best-display] 
+                           
+                           
+                           
+                           ;[write new-score][newline]
+                           [display "tick"][newline]
+                           
+                           
+                           ]]]
+      (when step?
+        (set! step? #f)
+        (queue-callback (lambda x (send this run)) #f ))
+      )
+    
+    (super-instantiate () (style '(gl no-autoclear)))))
+
+(define (gl-frame)
+  (let* ((f (make-object frame% "gears.ss" #f))
+         (c (new gears-canvas% (parent topwin) [best-display? #f] (min-width 400) (min-height 400) (stretchable-width #f) (stretchable-height #f) ))
+         
+         )
+    (send f create-status-line)
+    (when controls?
+      (let ((h (instantiate horizontal-panel% (topwin)
+                 (alignment '(center center)) (stretchable-height #f))))
+        (instantiate button%
+          ("Start" h (lambda (b e) (send b enable #f) (send c run)))
+          (stretchable-width #t) (stretchable-height #t))
+        
+        
+        (let ((h (instantiate horizontal-panel% (h)
+                   (alignment '(center center)))))
+          (instantiate button% ("Left" h (lambda x (send c move-left)))
+            (stretchable-width #t))
+          (let ((v (instantiate vertical-panel% (h)
+                     (alignment '(center center)) (stretchable-width #f))))
+            (instantiate button% ("Up" v (lambda x (send c move-up) ))
+              (stretchable-width #t))
+            (instantiate button% ("Down" v (lambda x (send c move-down)))
+              (stretchable-width #t)))
+          
+          (instantiate button% ("Right" h (lambda x (send c move-right)))
+            (stretchable-width #t))
+          
+          )
+        
+        (let ((h (instantiate horizontal-panel% (h)
+                   (alignment '(center center)))))
+          (instantiate button% ("Left" h (lambda x (send c slide-left)))
+            (stretchable-width #t))
+          (let ((v (instantiate vertical-panel% (h)
+                     (alignment '(center center)) (stretchable-width #f))))
+            (instantiate button% ("In" v (lambda x [begin (set! screen-scale [* screen-scale 2])(send c refresh)] ))
+              (stretchable-width #t))
+            (instantiate button% ("Out" v (lambda x [begin (set! screen-scale [* screen-scale 0.5])(send c refresh)]))
+              (stretchable-width #t)))
+          
+          (instantiate button% ("Right" h (lambda x (send c slide-right)))
+            (stretchable-width #t))
+          
+          )
+        
+        ))
+    
+    (send topwin show #t) ))
+
+(gl-frame)
+(send topwin show #t)
