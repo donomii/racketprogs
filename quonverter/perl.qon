@@ -286,6 +286,7 @@
                  (dollar) (dollar) (dollar) (dollar) (dollar) (dollar) (dollar) (dollar) )
          (printf "%s%s%s%s%s\n" "sub stringConcatenate { "(dollar)"_[0] . "(dollar)"_[1]}")
          (printf "%s%s%s%s%s\n" "sub subtract { "(dollar)"_[0] - "(dollar)"_[1]}")
+         (printf "%s%s%s%s%s\n" "sub subf { "(dollar)"_[0] - "(dollar)"_[1]}")
          (printf "%s%s%s%s%s\n" "sub andBool { "(dollar)"_[0] && "(dollar)"_[1]}")
          (printf "%s%s%s%s%s\n" "sub equal { "(dollar)"_[0] == "(dollar)"_[1]}")
          (printf "%s%s%s%s%s\n" "sub panic { carp "(atSym)"_; die \""(atSym)"_\"}")
