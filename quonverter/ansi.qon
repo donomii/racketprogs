@@ -37,7 +37,7 @@
        (if (isNil (cdr expr))
          (then (printf ""))
          (else (printf ", ") (ansiRecurList (cdr expr) indent)))))
-    (return)))
+    ))
   (void ansiSubExpression (list tree int indent) (declare (box thing nil))
    (body
     (if (isEmpty tree)
@@ -249,7 +249,7 @@
       (else (ansiTypeDecl (car node)) (ansiStructComponents (cdr node))))))
 
   (void ansiStruct (list node) (declare)
-   (body (ansiStructComponents (cdr (car node))) (return)))
+   (body (ansiStructComponents (cdr (car node))) ))
 
   (box ansiTypeMap (box aSym) (declare (list symMap nil))
    (body
@@ -302,7 +302,7 @@
        (ansiStruct (cdr (codeof node)))
        (printf "\n} %s;\n" (stringify (first (codeof node)))))
       (else (printf "typedef ") (ansiTypeDecl (codeof node))))
-    (return)))
+    ))
 
   (void ansiTypes (list nodes) (declare)
    (body

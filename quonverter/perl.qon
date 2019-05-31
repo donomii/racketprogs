@@ -18,7 +18,7 @@
                 (if (inList  (boxString (sub-string (stringify abox) 0 1)) (numbers 9))
                     (then (return "number"))
                     (else (return "symbol")))))
-           (return "symbol")
+           
            ))
 
   (void perlLeaf (list thisNode int indent) (declare)
@@ -51,7 +51,7 @@
               (if (isNil (cdr expr))
                   (then (printf ""))
                   (else (printf ", ") (perlRecurList (cdr expr) indent)))))
-         (return)))
+         ))
 
   (void perlSubExpression (list tree int indent) (declare (box thing nil))
         (body
@@ -298,21 +298,8 @@
 
   (void perlTypeDecl (list l) (declare)
         (body
-         (return)
-         (if (> (listLength l) 2)
-             (then
-              (printIndent 1)
-              (printf
-               "%s %s %s;\n"
-               (stringify (second l))
-               (stringify (perlTypeMap (listLast l)))
-               (stringify (first l))))
-             (else
-              (printIndent 1)
-              (printf
-               "%s %s;\n"
-               (stringify (perlTypeMap (listLast l)))
-               (stringify (car l)))))))
+         
+         ))
 
   (void perlStructComponents (list node) (declare)
         (body
@@ -321,7 +308,7 @@
              (else (perlTypeDecl (car node)) (perlStructComponents (cdr node))))))
 
   (void perlStruct (list node) (declare)
-        (body (perlStructComponents (cdr (car node))) (return)))
+        (body (perlStructComponents (cdr (car node))) ))
 
   (box perlTypeMap (box aSym) (declare (list symMap nil))
        (body
@@ -364,14 +351,8 @@
 
   (void perlType (list node) (declare)
         (body
-         (return)
-         (if (equalBox (subnameof node) (boxString "struct"))
-             (then
-              (printf "\ntypedef struct %s {\n" (stringify (first (codeof node))))
-              (perlStruct (cdr (codeof node)))
-              (printf "\n} %s;\n" (stringify (first (codeof node)))))
-             (else (printf "typedef ") (perlTypeDecl (codeof node))))
-         (return)))
+         
+         ))
 
   (void perlTypes (list nodes) (declare)
         (body

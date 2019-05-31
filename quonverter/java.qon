@@ -37,7 +37,7 @@
        (if (isNil (cdr expr))
          (then (printf ""))
          (else (printf ", ") (javaRecurList (cdr expr) indent)))))
-    (return)))
+    ))
   (void javaSubExpression (list tree int indent) (declare (box thing nil))
    (body
     (if (isEmpty tree)
@@ -69,7 +69,7 @@
                    (if (equalBox (boxSymbol "new") thing)
                      (then
                       (printf
-                       "malloc(sizeof(%s))"
+                       "new %s()"
                        (stringify (codeof (third (childrenof tree))))))
                      (else
                       (printf
@@ -98,7 +98,9 @@
      "%s.%s = "
      (stringify (first (codeof node)))
      (stringify (second (codeof node))))
-    (javaExpression (childrenof node) indent)))
+    (javaExpression (childrenof node) indent)
+    (printf ";")
+    ))
 
   (void javaGetStruct (list node int indent) (declare)
    (body
@@ -112,7 +114,9 @@
    (body
     (newLine indent)
     (printf "%s = " (stringify (first (codeof node))))
-    (javaExpression (childrenof node) indent)))
+    (javaExpression (childrenof node) indent)
+    (printf ";")
+    ))
 
   (void javaStatement (list node int indent) (declare)
    (body
@@ -126,11 +130,13 @@
             (then (javaIf node indent))
             (else
              (if (equalBox (boxString "returnvoid") (subnameof node))
-               (then (newLine indent) (printf "return"))
+               (then (newLine indent) (printf "return;"))
                (else
                 (newLine indent)
-                (javaExpression (childrenof node) indent)))))))))
-    (printf ";\n")))
+                (javaExpression (childrenof node) indent)
+               (printf ";") 
+                ))))))))
+    ))
 
   (void javaBody (list tree int indent) (declare)
    (body
@@ -186,7 +192,10 @@
        (if (inList (toStr name) (noStackTrace))
          (then (printf ""))
          (else
-            (printf "\nif (globalTrace)\n    printf(\"Leaving %s\\n\");\n" (stringify name))
+         (if (equalString "void" (stringify (javaTypeMap (cdr (assoc "outtype" (cdr node))))))
+         (then
+            (printf "\nif (globalTrace)\n   System.out. printf(\"Leaving %s\\n\");\n" (stringify name)))
+         (else (printf "")))
             ))
        (printf "\n}\n")))))
 
@@ -200,19 +209,25 @@
 
   (void javaIncludes (list nodes) (declare)
    (body
-    (printf "%s" "public void panic(String s){abort();}\n")
+    (printf "%s" "public void panic(String s) {System.exit(1);}\n")
     (printf "%s" "public int sub(int a, int b) { return a - b; }\n")
     (printf "%s" "public float mult(int a, int b) { return a * b; }\n")
-    (printf "%s" "public int greaterthan(int a, int b) { return a > b; }\n")
+    (printf "%s" "public boolean greaterthan(int a, int b) { return a > b; }\n")
     (printf "%s" "public float subf(float a, float b) { return a - b; }\n")
     (printf "%s" "public float multf(float a, float b) { return a * b; }\n")
-    (printf "%s" "public int greaterthanf(float a, float b) { return a > b; }\n")
-    (printf "%s" "public int equal(int a, int b) { return a == b; }\n")
-    (printf "%s" "public int equalString(String a, String b) { return !strcmp(a,b); }\n")
-    (printf "%s" "public int andBool(int a, int b) { return a == b;}\n")
-    (printf "%s" "public int string_length(String s) { return strlen(s);}\n")
-    (printf "%s" "public String sub_string(String s, int start, int length) {\nString substr = calloc(length+1, 1);\nstrncpy(substr, s+start, length);\nreturn substr;\n}\n\n\n\n")
-    (printf "%s" "public String character(int num) { String string = malloc(2); if (!string) return 0; string[0] = num; string[1] = 0; return string; }")
+    (printf "%s" "public boolean greaterthanf(float a, float b) { return a > b; }\n")
+    (printf "%s" "public boolean equal(int a, int b) { return a == b; }\n")
+    (printf "%s" "public boolean equalString(String a, String b) { return a.equals(b); }\n")
+    (printf "%s" "public boolean andBool(boolean a, boolean b) { return a == b;}\n")
+    (printf "%s" "public int string_length(String s) { return s.length();}\n")
+    (printf "%s" "public String stringConcatenate(String s1, String s2) { return s1 + s2; }\n")
+    (printf "%s" "public int strcmp(String s1, String s2) { return s1.compareTo(s2);}\n")
+    (printf "%s" "public String read_file(String filename) {try { return new String(Files.readAllBytes(Paths.get(filename)));} catch (Exception e) {panic(\"Could not read file\");return \"\";}}\n")
+    (printf "%s" "public void write_file(String filename, String data) {try {Files.write(Paths.get(filename), data.getBytes(\"UTF-8\"));} catch (Exception e) {panic(\"Could not write file\");}}\n")
+    (printf "%s" "public String sub_string(String s, int start, int length) {\nreturn s.substring(start, start+length);\n}\n\n\n\n")
+    (printf "%s" "public String intToString(int num) { char c=(char) num;  String s=Character.toString(c); return s;}")
+    (printf "%s" "public String character(int num) { char c=(char) num;  String s=Character.toString(c); return s;}")
+    (printf "%s" "public String getStringArray(int index, String[] arr) { return arr[index];}")
 ))
 
   (void javaTypeDecl (list l) (declare)
@@ -239,19 +254,21 @@
       (else (javaTypeDecl (car node)) (javaStructComponents (cdr node))))))
 
   (void javaStruct (list node) (declare)
-   (body (javaStructComponents (cdr (car node))) (return)))
+   (body (javaStructComponents (cdr (car node))) ))
 
   (box javaTypeMap (box aSym) (declare (list symMap nil))
    (body
     (set
      symMap
+     (alistCons (boxSymbol "pair") (boxSymbol "Box")
+     (alistCons (boxSymbol "bool") (boxSymbol "boolean")
      (alistCons (boxSymbol "box") (boxSymbol "Box")
      (alistCons (boxSymbol "list") (boxSymbol "Box")
      (alistCons (boxSymbol "Box*") (boxSymbol "Box")
      (alistCons (boxSymbol "struct") (boxSymbol "")
      (alistCons (boxSymbol "int") (boxSymbol "Integer")
      (alistCons (boxSymbol "stringArray") (boxSymbol "String[]")
-      (alistCons (boxSymbol "string") (boxSymbol "String") nil))))))))
+      (alistCons (boxSymbol "string") (boxSymbol "String") nil))))))))))
     (if (truthy (assoc (stringify aSym) symMap))
       (then (return (cdr (assoc (stringify aSym) symMap))))
       (else (return aSym)))))
@@ -262,7 +279,7 @@
       (then
        (set
         symMap
-        (alistCons (boxSymbol "printf") (boxSymbol "System.out.print")
+        (alistCons (boxSymbol "printf") (boxSymbol "System.out.printf")
         (alistCons (boxSymbol "=") (boxSymbol "equal")
          (alistCons
           (boxSymbol "sub-string")
@@ -293,8 +310,10 @@
        (printf "\npublic class %s {\n" (stringify (first (codeof node))))
        (javaStruct (cdr (codeof node)))
        (printf "\n};\n"))
-      (else (printf "public ") (javaTypeDecl (codeof node))))
-    (return)))
+      (else 
+      (printf "public class %s extends %s {};\n" (stringify (first (codeof node)))  (stringify (javaTypeMap (listLast (codeof node)))))
+      ))
+    ))
 
   (void javaTypes (list nodes) (declare)
    (body
@@ -304,6 +323,11 @@
 
   (void javaCompile (string filename) (declare (string programStr "") (list tree nil) (list program nil))
    (body
+    (printf "%s" "package quonverter;\n")
+    (printf "%s" "import java.nio.file.Files;\n")
+    (printf "%s" "import java.nio.file.Paths;\n")
+    (printf "%s" "import java.io.IOException;\n")
+    (printf "%s" "import java.io.UnsupportedEncodingException;\n")
    (printf "class MyProgram {\n")
     (set programStr (read-file filename))
     (set tree (readSexpr programStr filename))
@@ -320,13 +344,17 @@
     (set program (mergeIncludes program))
     (javaIncludes (cdr (assoc "includes" program)))
     (javaTypes (childrenof (cdr (assoc "types" program))))
-    (printf "public Box globalStackTrace = NULL;\n")
-    (printf "public Box globalStepTrace = NULL;\n")
-    (printf "public String FILE = NULL;\n")
+    (printf "public boolean globalStackTrace = false;\n")
+    (printf "public boolean globalStepTrace = false;\n")
+    (printf "public boolean globalTrace = false;\n")
+    (printf "public String FILE = null;\n")
     (printf "public Integer LINE = 0;\n")
+    (printf "public Integer globalArgsCount = 0;\n")
+    (printf "public String globalArgs[];\n")
     (printf
-     "\npublic bool isNil(list p) {\n    return p == NULL;\n}\n\n\n")
+     "\npublic boolean isNil(Box p) {\n    return p == null;\n}\n\n\n")
     (javaFunctions
      (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
+    (printf "%s" "public void main(String args[]) {\nglobalArgs = args;\nglobalArgsCount = args.length;\n}")
     (printf "}\n")))
   ))

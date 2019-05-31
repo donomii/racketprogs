@@ -37,7 +37,7 @@
        (if (isNil (cdr expr))
          (then (printf ""))
          (else (printf ", ") (nodeRecurList (cdr expr) indent)))))
-    (return)))
+    ))
 
   (void nodeSubExpression (list tree int indent) (declare (box thing nil))
    (body
@@ -288,7 +288,7 @@
    nodeStruct
    (list node)
    (declare)
-   (body (nodeStructComponents (cdr (car node))) (return)))
+   (body (nodeStructComponents (cdr (car node))) ))
   (box
    nodeTypeMap
    (box aSym)
@@ -337,7 +337,7 @@
          (else (return aSym))))
       (else (return aSym)))))
   (void nodeType (list node) (declare)
-   (body (return)))
+   (body ))
 
   (void
    nodeTypes

@@ -379,7 +379,7 @@
        (if (equalString "\\" token)
          (then (return (readString prog start (add 2 len))))
          (else (return (readString prog start (add1 len)))))
-       (return (readString prog start (add1 len)))))))
+       ))))
 
   (string readComment (string prog int start int len) (declare (string token ""))
    (body
@@ -467,7 +467,7 @@
                      (else
                       (return (scan prog start (sub len -1) linecount (add1 column) filename)))))))))))))
       (else (return (emptyList))))
-    (return (emptyList))))
+    ))
 
   (bool isOpenBrace (box b) (declare)
    (body
@@ -507,8 +507,8 @@
              (return
               (setTag (boxString "line") (getTagFail b (boxString "line") (boxInt -1)) (cons b (sexprTree (cdr l))))
               )))))))
-    (printf "AAAAAA code should never reach here!\n")
-    (return (emptyList))))
+    
+    ))
 
   (list skipList (list l) (declare (box b nil))
    (body
@@ -522,8 +522,8 @@
           (if (isCloseBrace b)
             (then (return (cdr l)))
             (else (return (skipList (cdr l)))))))))
-    (printf "AAAAAA code should never reach here!\n")
-    (return (emptyList))))
+    
+    ))
 
   (list readSexpr (string aStr string filename) (declare (list tokens nil) (list as nil))
    (body
@@ -763,7 +763,8 @@
    (then (return (makeNode "types" "types" tree (astTypeList (cdr tree)))))
    (else
    (panic "Types section not found!  Every program must have a types section, even if you don't define any types")
-   (return nil)))
+   (return (boxString "Fuck java"))
+   ))
    ))
 
   (list declarationsof (list ass) (declare)
