@@ -367,6 +367,6 @@
      "\npublic boolean isNil(Box p) {\n    return p == null;\n}\n\n\n")
     (javaFunctions
      (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
-    (printf "%s" "public static void main(String args[]) {\nglobalArgs = args;\nglobalArgsCount = args.length;start();\n}")
+    (printf "%s" "public static void main(String args[]) {\nglobalArgs = args;\nglobalArgsCount = args.length;MyProgram mp = new MyProgram(); mp.start();\n}")
     (printf "}\n")))
   ))
