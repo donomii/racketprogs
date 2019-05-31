@@ -10,7 +10,6 @@
                         (then ;(printf "Requested value cannot be larger than 15, was %d!" val)
                          (return (asciiShade 15)))
                         (else (return (sub-string dithers val 1))))
-                    (return "")
                     ))
 
            (int escape (float x float y float c1 float c2 int iteration int max) (declare)
@@ -31,7 +30,6 @@
                        (mandelRow (addf start step) end step y))
                       (else
                        (return)))
-                  (return)
                   ))
 
            (void mandelRows (float start float end float step) (declare)
@@ -43,7 +41,6 @@
                        (mandelRows (addf start step) end step))
                       (else
                        (return)))
-                  (return)
                   ))
 
            (void mandelPic () (declare)
