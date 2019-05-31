@@ -12,9 +12,9 @@
     (car struct Box*)
     (cdr struct Box*)
     (tag struct Box*)))
-  (box Box*)
   (Pair Box)
   (pair Box*)
+  (box Box*)
   (list Box*))
  (functions
   (int add (int a int b) (declare) (body (return (sub a (sub 0 b)))))

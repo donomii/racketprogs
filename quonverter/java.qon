@@ -273,6 +273,15 @@
       (then (return (cdr (assoc (stringify aSym) symMap))))
       (else (return aSym)))))
 
+(box javaTypesNoDeclare () (declare (list syms nil))
+   (body
+    (set
+     syms
+     (cons (boxString "pair") 
+     (cons (boxString "box") 
+      nil)))
+    (return syms)))
+
   (box javaFuncMap (box aSym) (declare (list symMap nil))
    (body
     (if (equalString "symbol" (boxType aSym))
@@ -311,7 +320,10 @@
        (javaStruct (cdr (codeof node)))
        (printf "\n};\n"))
       (else 
-      (printf "public class %s extends %s {};\n" (stringify (first (codeof node)))  (stringify (javaTypeMap (listLast (codeof node)))))
+      (if (inList (boxString (stringify (first (codeof node)))) (javaTypesNoDeclare))
+      (then (printf ""))
+      (else
+      (printf "public class %s extends %s {};\n" (stringify (first (codeof node)))  (stringify (javaTypeMap (listLast (codeof node))))))a)
       ))
     ))
 
@@ -349,12 +361,12 @@
     (printf "public boolean globalTrace = false;\n")
     (printf "public String FILE = null;\n")
     (printf "public Integer LINE = 0;\n")
-    (printf "public Integer globalArgsCount = 0;\n")
-    (printf "public String globalArgs[];\n")
+    (printf "public static Integer globalArgsCount = 0;\n")
+    (printf "public static String globalArgs[];\n")
     (printf
      "\npublic boolean isNil(Box p) {\n    return p == null;\n}\n\n\n")
     (javaFunctions
      (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
-    (printf "%s" "public void main(String args[]) {\nglobalArgs = args;\nglobalArgsCount = args.length;\n}")
+    (printf "%s" "public static void main(String args[]) {\nglobalArgs = args;\nglobalArgsCount = args.length;\n}")
     (printf "}\n")))
   ))
