@@ -26,25 +26,27 @@
    (box b)
    (declare (box newb nil))
    (body
-    (set newb (new newb Box))
+    (set newb (makeBox))
     (set-struct newb typ (get-struct b typ))
     (set-struct newb lis (get-struct b lis))
     (set-struct newb str (get-struct b str))
     (set-struct newb i (get-struct b i))
     (set-struct newb lengt (get-struct b lengt))
     (return newb)))
+
   (box
    newVoid
    ()
    (declare (box newb nil))
    (body
-    (set newb (new newb Box))
+    (set newb (makeBox))
     (set-struct newb voi true)
     (set-struct newb typ "void")
     (return newb)))
+
   (list cons (box data list l) (declare (pair p nil))
    (body
-    (set p (new pair Pair))
+    (set p (makePair))
     (set-struct p cdr l)
     (set-struct p car data)
     (set-struct p typ "list")
@@ -192,12 +194,28 @@
   ;; Types and type converters ;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (string boxType (box b) (declare) (body (return (get-struct b typ))))
+  (box makeBox () (declare (box b nil))
+  (body
+  (set b (new box Box))
+  (set-struct b tag nil)
+  (set-struct b car nil)
+  (set-struct b cdr nil)
+  (set-struct b lis nil)
+  (set-struct b typ "None - error!")
+  (return b)
+  ))
+  
+  (pair makePair () (declare)
+  (body
+  (return (makeBox))))
+  
+  
   (box
    boxString
    (string s)
    (declare (box b nil))
    (body
-    (set b (new box Box))
+    (set b (makeBox))
     (set-struct b str s)
     (set-struct b lengt (string-length s))
     (set-struct b typ "string")
@@ -206,13 +224,17 @@
    boxSymbol
    (string s)
    (declare (box b nil))
-   (body (set b (boxString s)) (set-struct b typ "symbol") (return b)))
+   (body 
+   (set b (boxString s)) 
+   (set-struct b typ "symbol") 
+   (return b)))
+   
   (box
    boxBool
    (bool boo)
    (declare (box b nil))
    (body
-    (set b (new box Box))
+    (set b (makeBox))
     (set-struct b boo boo)
     (set-struct b typ "bool")
     (return b)))
@@ -221,7 +243,7 @@
    (int val)
    (declare (box b nil))
    (body
-    (set b (new box Box))
+    (set b (makeBox))
     (set-struct b i val)
     (set-struct b typ "int")
     (return b)))
@@ -404,12 +426,15 @@
     (if (equalString " " s)
       (then (return true))
       (else
+      (if (equalString "\t" s)
+      (then (return true))
+      (else
        (if (equalString "\n" s)
          (then (return true))
          (else
           (if (equalString "\r" s)
             (then (return true))
-            (else (return false)))))))))
+            (else (return false)))))))))))
 
   (bool isLineBreak (string s) (declare)
    (body
