@@ -60,7 +60,7 @@
 
   (box car (list l) (declare)
    (body
-    (assertType "list" l)
+    (assertType "list" l __LINE__ __FILE__)
     (if (isNil l)
       (then
        (printf "Cannot call car on empty list!\n")
@@ -73,7 +73,7 @@
 
   (list cdr (list l) (declare)
    (body
-    (assertType "list" l)
+    (assertType "list" l __LINE__ __FILE__)
     (if (isEmpty l)
       (then
        (printf "Attempt to cdr an empty list!!!!\n")
@@ -109,13 +109,13 @@
 
   (list assoc (string searchTerm list l) (declare (list elem nil))
    (body
-    (assertType "list" l)
+    (assertType "list" l __LINE__ __FILE__)
 
     (if (isEmpty l)
       (then (return (boxBool false)))
       (else
        (set elem (car l))
-       (assertType "list" elem)
+       (assertType "list" elem __LINE__ __FILE__)
        (if (isEmpty elem)
          (then (return (assoc searchTerm (cdr l))))
          (else
@@ -226,7 +226,7 @@
     (set-struct b typ "int")
     (return b)))
 
-  (void assertType (string atype box abox) (declare)
+  (void assertType (string atype box abox int line string file) (declare)
    (body
     (if (isNil abox)
       (then (if (equalString atype "nil") (then (return)) (else (return))))
@@ -234,12 +234,12 @@
        (if (equalString atype (boxType abox))
          (then (return))
          (else
-          (printf "Assertion failure: provided value is not a '%s'!  It was actually:" atype)
+          (printf "Assertion failure at line %s, in file %s: provided value is not a '%s'!  It was actually:"  line file atype)
           (display abox)
           (panic "Invalid type!")))))))
 
   (string unBoxString (box b) (declare)
-   (body (assertType "string" b) (return (get-struct b str))))
+   (body (assertType "string" b __LINE__ __FILE__) (return (get-struct b str))))
 
   (string unBoxSymbol (box b) (declare) (body (return (get-struct b str))))
   (bool unBoxBool (box b) (declare) (body (return (get-struct b boo))))
@@ -352,7 +352,15 @@
                  (cons
                   (getTagFail token (boxString "column") (boxInt -1))
                   (filterTokens (cdr l)))))
-               (else (return (cons token (filterTokens (cdr l)))))))))
+               (else 
+                 (if (equalString "__FILE__" (stringify token))
+                 (then
+                   (return
+                     (cons
+                     (getTagFail token (boxString "filename") (boxString "Unknown file"))
+                     (filterTokens (cdr l)))))
+   (else
+   (return (cons token (filterTokens (cdr l)))))))))))
          (else (return (cons token (filterTokens (cdr l))))))))))
 
   (box finish_token (string prog int start int len int line int column string filename) (declare (box token nil))
