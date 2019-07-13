@@ -52,14 +52,18 @@ Quonverter transpiles to C, perl, Javascript (nodejs) and Java (not working yet)
 
 ### Unicode
 
-Quonverter does not support unicode.  I rely on the underlying programming language for string support, so if that language does not have unicode support, then quonverter can't have it either.  Worse, quonverter cannot detect unicode, so instead it silently corrupts the string and gets confused.  If your compile starts failing and the code looks ok, bheck for unicode characters.
+Quonverter does not support unicode.  I rely on the underlying programming language for string support, so if that language does not have unicode support, then quonverter can't have it either.  Worse, quonverter cannot detect unicode, so instead it silently corrupts the string and gets confused.  If your compile starts failing and the code looks ok, check for unicode characters.
 
 ### Garbage collection
 
-There is currently no garbage collector, so any program compiled to C will run out of memory if it runs for long enough.
+There is currently no built-in garbage collector, so any program compiled to C will run out of memory if it runs for long enough.  If the target language has a garbage collector, then memory will be reclaimed as usual.
 
 
 ## Demo
+
+```
+	mandelbrot.exe
+```
 
 ```
                       ................::::::::::::::::::::::::::::::::::::::::::!!!!!!!!!!!//>o#*$o/////!!!!!!!!!::::::::::.................................
@@ -126,3 +130,85 @@ There is currently no garbage collector, so any program compiled to C will run o
                     .............:::::::::::::::::::::::::::::::::::::::::!!!!!!!!!!!!!!/////>>o&#%+oooo+>/!!!!!!!!!!:::::::::::............................
                      ...............:::::::::::::::::::::::::::::::::::::::::!!!!!!!!!!!!////>>+$*o>>>>///!!!!!!!!!::::::::::...............................
 		     ```
+
+
+## Language reference
+
+Quonverter is not really a language.  It is a pre-processor that compiles (transpiles!) into many other languages.  It is a scripting language for other languages.  It adds features that the target language doesn't have, but ultimately all functionality is provided by the target language.  This means that it is only possible to write trivial programs that are cross-platform.
+
+However, it is easy to write _libraries_ that are cross platform.  Using quonverter, you can write sort routines, mathematical functions and anything else that manipulates data, and then compile it for many different target platforms.
+
+Quonverter offers _perfect_ integration with the target platform.  You can call any function in your target platform from quonverter, and you can call any quonverter function from your target language.
+
+## Types and variables
+
+Quonverter uses types from the target language.  If you use a type that isn't declared in your program, quonverter will assume that it will be provided in the target language.
+
+In order to stop you going insane trying to manage basic types between different platforms, quonverter provides the following types, which will be translated into their closest equivalent in the target language:
+
+* int
+* float
+* string
+* byteArray
+* bool
+
+Don't rely on these being the same format, or the same size, across platforms!  for instance, if there is no native Boolean type, quonverter will usually just use an integer, and then true/false will just be 1/0
+
+Note that there is no character type.  If you want a character, just use a string with one character in it.
+
+## Built-in functions
+
+Quonverter currently provides these functions and statements
+
+### clone
+
+### newVoid
+
+### car, cdr, cons, isList, isEmpty, listLength, displayList
+
+### nop
+
+### boxString, boxSymbol, boxBool, boxInt unBoxString, unboxInt, etc
+
+Convert to and from native data types.  See the entry on Boxes for more details.
+
+### assertType type box
+
+panic if the box contains the wrong type
+
+### stringify
+
+Create a string representation of a box value, regardless of its underlying type
+
+### hasTag, getTag, getTagFail
+
+See the section on tags
+
+## Tags
+
+Tags are notes that you can place on data.  At the moment, only boxes can be tagged, but I hope that I will be able to tag everything, eventually.
+
+Tags are key/value data that can be attached to a box.  Quonverter uses them heavily during parsing, to store things like line number, type, file origin, etc.
+
+Tags solve a common problem in programming, and the parse tree is the most clear example.  You have a complex data structure, like a program, and you want to add extra data to the structure.  Normally you can't, because you don't "own" the data type.  If you change the data type, you can no longer pass it to any of the old functions, because they only accept the old type, not your new, improved type.
+
+Some languages solve this by having generics, but quonverter doesn't have generics yet, and generics don't work exactly like tags.  So instead quonverter hides the extra data.  Now the old functions can keep working like usual, but you can also keep extra data in your data structure that the old functions can't see.
+
+Note that because quonverter tries to be as immutable as possible, you cannot "update" tags, you actually create a new box with the new tag.  The old data remains intact.
+
+## Boxes
+
+Boxes "solve" the problem of static type systems, by wrapping data and turning it into an "any" type.
+
+While compile-time type systems have many benefits, they have a massive drawback as well:  dealing with flexible data structures.  Compile-time typed languages have immense difficulty dealing with JSON and the (moderately) complicated data structures that you tend to find being passed around in JSON.
+
+If you don't know  what the JSON structure will be ahead of time, then you have to dedicate thousands of lines of code, or complex libraries, to dealing with it.  Quonverter uses a little bit of both, with boxes.
+
+Boxes are complex data structures that can wrap any other type.  They are a "any" type, or a "varying" type.  Most compile-time type systems only allow you to create a list of strings, or a list of integers, but not combine the two in list of strings and integers.  But if you wrap your strings and integers in boxes, then you can mix and match them however you like.
+
+The drawback is that you have to box and unbox your values, but with compiler support, most of that can be automated.
+
+
+
+## Statements
+
