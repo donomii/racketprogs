@@ -319,17 +319,22 @@
       (then (return nil))
       (else
 	  
-	  (printf "type: %s\n" (get-struct l typ))
+	  ;(printf "type: %s\n" (get-struct l typ))
        (if (isList l)
          (then
-			(printf "//Listlength: %d\n" (listLength l))
-			(display l)
+		 ;(printf "Processing list\n")
+			;(printf "//Listlength: %d\n" (listLength l))
+			;(display l)
             (return   (cons (treewalk (car l) ) (treewalk (cdr l) ))
 				))
          (else
-		 (printf "//Comparing %s and %s\n" "uniqueTarget" (stringify l))
+		 ;(printf "Processing non list: %s\n" (stringify l))
+		 ;(printf "//Comparing %s and %s at %s,%s\n" "uniqueTarget" (stringify l) (stringify (getTagFail l (boxString "line")(boxString "no tag"))) (stringify (getTagFail l (boxString "filename" )(boxString "no tag"))))
           (if (equalString "uniqueTarget" (stringify l))
-            (then (panic "yay!")(return (boxString "b0rk")))
+            (then 
+			(set val (clone l))
+			(set-struct val str "b0rk")
+			(return val))
             (else (return l)))
 			))))))
 

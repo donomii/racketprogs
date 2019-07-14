@@ -28,6 +28,7 @@
    (body
     (set newb (makeBox))
     (set-struct newb typ (get-struct b typ))
+	(set-struct newb tag (get-struct b tag))
     (set-struct newb lis (get-struct b lis))
     (set-struct newb str (get-struct b str))
     (set-struct newb i (get-struct b i))
