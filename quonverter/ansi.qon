@@ -310,12 +310,39 @@
       (then (return))
       (else (ansiType (car nodes)) (ansiTypes (cdr nodes))))))
 
+	  (list
+   treewalk
+   (list l  )
+   (declare (box val nil))
+   (body
+    (if (isEmpty l)
+      (then (return nil))
+      (else
+	  
+	  (printf "type: %s\n" (get-struct l typ))
+       (if (isList l)
+         (then
+			(printf "//Listlength: %d\n" (listLength l))
+			(display l)
+            (return   (cons (treewalk (car l) ) (treewalk (cdr l) ))
+				))
+         (else
+		 (printf "//Comparing %s and %s\n" "uniqueTarget" (stringify l))
+          (if (equalString "uniqueTarget" (stringify l))
+            (then (panic "yay!")(return (boxString "b0rk")))
+            (else (return l)))
+			))))))
+
+	  (void uniqueTarget () (declare) (body))
   (void ansiCompile (string filename) (declare (string programStr "") (list tree nil) (list program nil))
    (body
    (printf "//Scanning file...%s\n" filename)
     (set programStr (read-file filename))
    (printf "//Building sexpr\n")
     (set tree (readSexpr programStr filename))
+	(set tree (treewalk tree))
+	;(display tree)
+	(uniqueTarget "blah" "blah")
    (printf "//Building AST\n")
     (set
      program

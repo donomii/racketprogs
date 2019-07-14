@@ -85,6 +85,7 @@
 
   (bool isList (box b) (declare)
    (body
+   
     (if (isNil b)
       (then (return true))
       (else (return (equalString "list" (get-struct b typ)))))))
@@ -256,7 +257,7 @@
        (if (equalString atype (boxType abox))
          (then (return))
          (else
-          (printf "Assertion failure at line %s, in file %s: provided value is not a '%s'!  It was actually:"  line file atype)
+          (printf "Assertion failure at line %d, in file %s: provided value is not a '%s'!  It was actually (%s):"  line file atype abox->typ)
           (display abox)
           (panic "Invalid type!")))))))
 
@@ -747,6 +748,7 @@
     ;(printf "//Loading library %s\n" path)
     (set programStr (read-file path))
     (set tree (readSexpr programStr path))
+	(set tree (treewalk tree))
     (set library
      (alistCons
       (boxString "includes")
@@ -1030,6 +1032,8 @@
            (cons (boxSymbol "includes") nil)
            newProgram))))
        (return newProgram)))))
+	   
+	   
   ; Return command line args.  FIXME rename
     (list
    argList
