@@ -262,6 +262,8 @@ list alistKeys(list alist );
 list mergeIncludes(list program );
 list merge_recur(list incs ,list program );
 list mergeInclude(list inc ,list program );
+list macrowalk(list l );
+list doBoxList(list l );
 list argList(int count ,int pos ,char** args );
 list listReverse(list l );
 bool inList(box item ,list l );
@@ -326,8 +328,7 @@ box ansiTypeMap(box aSym );
 box ansiFuncMap(box aSym );
 void ansiType(list node );
 void ansiTypes(list nodes );
-list treewalk(list l );
-void b0rk();
+void uniqueTarget(char* a ,char* b );
 void ansiCompile(char* filename );
 void test0();
 void test1();
@@ -1149,7 +1150,7 @@ void assertType(char* atype ,box abox ,int line ,char* file ) {
 
     } else {      if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-      printf("Assertion failure at line %d, in file %s: provided value is not a '%s'!  It was actually (%s):" , line , file , atype , abox->typ );
+      printf("Assertion failure at line %d, in file %s: provided value is not a '%s'!  It was actually (%s):" , line , file , atype , abox->typ);
       if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
       display(abox );
@@ -2592,7 +2593,7 @@ if (globalTrace)
   tree = readSexpr(programStr , path );
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-  tree = treewalk(tree );
+  tree = macrowalk(tree );
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   library = alistCons(boxString("includes" ), astIncludes(first(tree )), alistCons(boxString("types" ), astTypes(second(tree )), alistCons(boxString("functions" ), astFunctions(third(tree )), NULL )));
@@ -3351,12 +3352,77 @@ if (globalTrace)
 }
 
 
-//Building function argList from line: 1039
+//Building function macrowalk from line: 1037
+
+list macrowalk(list l ) {
+  box val = NULL ;
+
+if (globalTrace)
+    printf("macrowalk at base.qon:1037\n");
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  if ( isEmpty(l )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+    return(NULL );
+
+  } else {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+    if ( isList(l )) {      if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+      if ( equalString(stringConcatenate("box" , "List" ), stringify(car(l )))) {        if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+        return(car(doBoxList(cdr(l ))));
+
+      } else {        if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+        return(cons(macrowalk(car(l )), macrowalk(cdr(l ))));
+
+      };
+
+    } else {      if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+      return(l );
+
+    };
+
+  };
+
+if (globalTrace)
+    printf("Leaving macrowalk\n");
+
+}
+
+
+//Building function doBoxList from line: 1069
+
+list doBoxList(list l ) {
+  
+if (globalTrace)
+    printf("doBoxList at base.qon:1069\n");
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  if ( isNil(l )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+    return(cons(boxSymbol("nil" ), NULL ));
+
+  } else {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+    return(cons(cons(boxSymbol("cons" ), cons(first(l ), doBoxList(cdr(l )))), NULL ));
+
+  };
+
+if (globalTrace)
+    printf("Leaving doBoxList\n");
+
+}
+
+
+//Building function argList from line: 1088
 
 list argList(int count ,int pos ,char** args ) {
   
 if (globalTrace)
-    printf("argList at base.qon:1039\n");
+    printf("argList at base.qon:1088\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   if ( greaterthan(count , pos )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -3375,12 +3441,12 @@ if (globalTrace)
 }
 
 
-//Building function listReverse from line: 1051
+//Building function listReverse from line: 1100
 
 list listReverse(list l ) {
   
 if (globalTrace)
-    printf("listReverse at base.qon:1051\n");
+    printf("listReverse at base.qon:1100\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   if ( isNil(l )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -3399,7 +3465,7 @@ if (globalTrace)
 }
 
 
-//Building function inList from line: 1057
+//Building function inList from line: 1106
 
 bool inList(box item ,list l ) {
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -3425,7 +3491,7 @@ bool inList(box item ,list l ) {
 }
 
 
-//Building function tron from line: 1068
+//Building function tron from line: 1117
 
 void tron() {
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -3435,7 +3501,7 @@ void tron() {
 }
 
 
-//Building function troff from line: 1069
+//Building function troff from line: 1118
 
 void troff() {
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -3445,7 +3511,7 @@ void troff() {
 }
 
 
-//Building function stron from line: 1070
+//Building function stron from line: 1119
 
 void stron() {
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -3455,7 +3521,7 @@ void stron() {
 }
 
 
-//Building function stroff from line: 1071
+//Building function stroff from line: 1120
 
 void stroff() {
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -5456,67 +5522,20 @@ if (globalTrace)
 }
 
 
-//Building function treewalk from line: 313
+//Building function uniqueTarget from line: 314
 
-list treewalk(list l ) {
-  box val = NULL ;
-
-if (globalTrace)
-    printf("treewalk at ansi.qon:313\n");
-  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
-
-  if ( isEmpty(l )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
-
-    return(NULL );
-
-  } else {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
-
-    if ( isList(l )) {      if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
-
-      return(cons(treewalk(car(l )), treewalk(cdr(l ))));
-
-    } else {      if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
-
-      if ( equalString("b0rk" , stringify(l ))) {        if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
-
-        val = clone(l );
-        if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
-
-        val->str = "b0rk" ;
-        if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
-
-        return(val );
-
-      } else {        if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
-
-        return(l );
-
-      };
-
-    };
-
-  };
-
-if (globalTrace)
-    printf("Leaving treewalk\n");
-
-}
-
-
-//Building function b0rk from line: 340
-
-void b0rk() {
+void uniqueTarget(char* a ,char* b ) {
   
 if (globalTrace)
-    printf("b0rk at ansi.qon:340\n");
+    printf("uniqueTarget at ansi.qon:314\n");
 
 if (globalTrace)
-    printf("Leaving b0rk\n");
+    printf("Leaving uniqueTarget\n");
 
 }
 
 
-//Building function ansiCompile from line: 341
+//Building function ansiCompile from line: 315
 
 void ansiCompile(char* filename ) {
   char* programStr = "" ;
@@ -5524,7 +5543,7 @@ list tree = NULL ;
 list program = NULL ;
 
 if (globalTrace)
-    printf("ansiCompile at ansi.qon:341\n");
+    printf("ansiCompile at ansi.qon:315\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   printf("//Scanning file...%s\n" , filename );
@@ -5539,10 +5558,10 @@ if (globalTrace)
   tree = readSexpr(programStr , filename );
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-  tree = treewalk(tree );
+  tree = macrowalk(tree );
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-  b0rk("blah" , "blah" );
+  cons(boxString("a" ), cons(boxString("b" ), cons(boxString("c" ), NULL )));
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   printf("//Building AST\n" );
@@ -8174,7 +8193,7 @@ if (globalTrace)
 
     if ( runTree ) {      if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-      display(treeCompile(unBoxString(filename )));
+      display(macrowalk(treeCompile(unBoxString(filename ))));
 
     } else {      if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 

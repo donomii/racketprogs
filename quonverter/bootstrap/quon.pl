@@ -152,6 +152,8 @@ sub alistKeys;
 sub mergeIncludes;
 sub merge_recur;
 sub mergeInclude;
+sub macrowalk;
+sub doBoxList;
 sub argList;
 sub listReverse;
 sub inList;
@@ -216,8 +218,7 @@ sub ansiTypeMap;
 sub ansiFuncMap;
 sub ansiType;
 sub ansiTypes;
-sub treewalk;
-sub b0rk;
+sub uniqueTarget;
 sub ansiCompile;
 sub test0;
 sub test1;
@@ -1211,7 +1212,7 @@ if ($globalTrace) { printf("assertType at base.qon:252\n") }
 
 #standard expression
 
-      printf("Assertion failure at line %d, in file %s: provided value is not a '%s'!  It was actually (%s):" , $line , $file , $atype , $abox->typ )
+      printf("Assertion failure at line %d, in file %s: provided value is not a '%s'!  It was actually (%s):" , $line , $file , $atype , $abox->{typ})
       ;
       if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
@@ -3064,7 +3065,7 @@ if ($globalTrace) { printf("loadLib at base.qon:746\n") }
   $tree = readSexpr($programStr , $path );
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
-  $tree = treewalk($tree );
+  $tree = macrowalk($tree );
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $library = alistCons(boxString("includes" ), astIncludes(first($tree )), alistCons(boxString("types" ), astTypes(second($tree )), alistCons(boxString("functions" ), astFunctions(third($tree )), $undef )));
@@ -3973,7 +3974,92 @@ if ($globalTrace) { printf("mergeInclude at base.qon:983\n") }
 }
 
 
-#Building function argList from line: 1039
+#Building function macrowalk from line: 1037
+
+sub macrowalk {
+  my $l  = shift;
+
+  my $val = undef ;
+
+if ($globalTrace) { printf("macrowalk at base.qon:1037\n") }
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+  if ( isEmpty($l )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard return: macrowalk
+
+    if ($globalTrace) {printf("Leaving \n")}
+
+    return($undef );
+
+  } else {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+    if ( isList($l )) {      if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+      if ( equalString(stringConcatenate("box" , "List" ), stringify(car($l )))) {        if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard return: macrowalk
+
+        if ($globalTrace) {printf("Leaving \n")}
+
+        return(car(doBoxList(cdr($l ))));
+
+      } else {        if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard return: macrowalk
+
+        if ($globalTrace) {printf("Leaving \n")}
+
+        return(cons(macrowalk(car($l )), macrowalk(cdr($l ))));
+
+      };
+
+    } else {      if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard return: macrowalk
+
+      if ($globalTrace) {printf("Leaving \n")}
+
+      return($l );
+
+    };
+
+  };
+
+}
+
+
+#Building function doBoxList from line: 1069
+
+sub doBoxList {
+  my $l  = shift;
+
+  
+if ($globalTrace) { printf("doBoxList at base.qon:1069\n") }
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+  if ( isNil($l )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard return: doBoxList
+
+    if ($globalTrace) {printf("Leaving \n")}
+
+    return(cons(boxSymbol("nil" ), $undef ));
+
+  } else {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard return: doBoxList
+
+    if ($globalTrace) {printf("Leaving \n")}
+
+    return(cons(cons(boxSymbol("cons" ), cons(first($l ), doBoxList(cdr($l )))), $undef ));
+
+  };
+
+}
+
+
+#Building function argList from line: 1088
 
 sub argList {
   my $count  = shift;
@@ -3981,7 +4067,7 @@ my $pos  = shift;
 my $args  = shift;
 
   
-if ($globalTrace) { printf("argList at base.qon:1039\n") }
+if ($globalTrace) { printf("argList at base.qon:1088\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( greaterthan($count , $pos )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -4005,13 +4091,13 @@ if ($globalTrace) { printf("argList at base.qon:1039\n") }
 }
 
 
-#Building function listReverse from line: 1051
+#Building function listReverse from line: 1100
 
 sub listReverse {
   my $l  = shift;
 
   
-if ($globalTrace) { printf("listReverse at base.qon:1051\n") }
+if ($globalTrace) { printf("listReverse at base.qon:1100\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isNil($l )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -4035,14 +4121,14 @@ if ($globalTrace) { printf("listReverse at base.qon:1051\n") }
 }
 
 
-#Building function inList from line: 1057
+#Building function inList from line: 1106
 
 sub inList {
   my $item  = shift;
 my $l  = shift;
 
   
-if ($globalTrace) { printf("inList at base.qon:1057\n") }
+if ($globalTrace) { printf("inList at base.qon:1106\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isNil($l )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -4066,12 +4152,12 @@ if ($globalTrace) { printf("inList at base.qon:1057\n") }
 }
 
 
-#Building function tron from line: 1068
+#Building function tron from line: 1117
 
 sub tron {
   
   
-if ($globalTrace) { printf("tron at base.qon:1068\n") }
+if ($globalTrace) { printf("tron at base.qon:1117\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $globalTrace = $true ;
@@ -4079,12 +4165,12 @@ if ($globalTrace) { printf("tron at base.qon:1068\n") }
 }
 
 
-#Building function troff from line: 1069
+#Building function troff from line: 1118
 
 sub troff {
   
   
-if ($globalTrace) { printf("troff at base.qon:1069\n") }
+if ($globalTrace) { printf("troff at base.qon:1118\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $globalTrace = $false ;
@@ -4092,12 +4178,12 @@ if ($globalTrace) { printf("troff at base.qon:1069\n") }
 }
 
 
-#Building function stron from line: 1070
+#Building function stron from line: 1119
 
 sub stron {
   
   
-if ($globalTrace) { printf("stron at base.qon:1070\n") }
+if ($globalTrace) { printf("stron at base.qon:1119\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $globalStepTrace = $true ;
@@ -4105,12 +4191,12 @@ if ($globalTrace) { printf("stron at base.qon:1070\n") }
 }
 
 
-#Building function stroff from line: 1071
+#Building function stroff from line: 1120
 
 sub stroff {
   
   
-if ($globalTrace) { printf("stroff at base.qon:1071\n") }
+if ($globalTrace) { printf("stroff at base.qon:1120\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $globalStepTrace = $false ;
@@ -6869,78 +6955,19 @@ if ($globalTrace) { printf("ansiTypes at ansi.qon:306\n") }
 }
 
 
-#Building function treewalk from line: 313
+#Building function uniqueTarget from line: 314
 
-sub treewalk {
-  my $l  = shift;
+sub uniqueTarget {
+  my $a  = shift;
+my $b  = shift;
 
-  my $val = undef ;
-
-if ($globalTrace) { printf("treewalk at ansi.qon:313\n") }
-  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
-
-  if ( isEmpty($l )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
-
-#standard return: treewalk
-
-    if ($globalTrace) {printf("Leaving \n")}
-
-    return($undef );
-
-  } else {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
-
-    if ( isList($l )) {      if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
-
-#standard return: treewalk
-
-      if ($globalTrace) {printf("Leaving \n")}
-
-      return(cons(treewalk(car($l )), treewalk(cdr($l ))));
-
-    } else {      if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
-
-      if ( equalString("b0rk" , stringify($l ))) {        if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
-
-        $val = clone($l );
-        if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
-
-        $val->{str} = "b0rk" ;
-        if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
-
-#standard return: treewalk
-
-        if ($globalTrace) {printf("Leaving \n")}
-
-        return($val );
-
-      } else {        if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
-
-#standard return: treewalk
-
-        if ($globalTrace) {printf("Leaving \n")}
-
-        return($l );
-
-      };
-
-    };
-
-  };
+  
+if ($globalTrace) { printf("uniqueTarget at ansi.qon:314\n") }
 
 }
 
 
-#Building function b0rk from line: 340
-
-sub b0rk {
-  
-  
-if ($globalTrace) { printf("b0rk at ansi.qon:340\n") }
-
-}
-
-
-#Building function ansiCompile from line: 341
+#Building function ansiCompile from line: 315
 
 sub ansiCompile {
   my $filename  = shift;
@@ -6949,7 +6976,7 @@ sub ansiCompile {
 my $tree = undef ;
 my $program = undef ;
 
-if ($globalTrace) { printf("ansiCompile at ansi.qon:341\n") }
+if ($globalTrace) { printf("ansiCompile at ansi.qon:315\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard expression
@@ -6970,12 +6997,12 @@ if ($globalTrace) { printf("ansiCompile at ansi.qon:341\n") }
   $tree = readSexpr($programStr , $filename );
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
-  $tree = treewalk($tree );
+  $tree = macrowalk($tree );
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard expression
 
-  b0rk("blah" , "blah" )
+  cons(boxString("a" ), cons(boxString("b" ), cons(boxString("c" ), $undef )))
   ;
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
@@ -10547,7 +10574,7 @@ if ($globalTrace) { printf("start at compiler.qon:4\n") }
 
 #standard expression
 
-      display(treeCompile(unBoxString($filename )))
+      display(macrowalk(treeCompile(unBoxString($filename ))))
       ;
 
     } else {      if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
