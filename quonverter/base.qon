@@ -749,7 +749,7 @@
     ;(printf "//Loading library %s\n" path)
     (set programStr (read-file path))
     (set tree (readSexpr programStr path))
-	(set tree (treewalk tree))
+	(set tree (macrowalk tree))
     (set library
      (alistCons
       (boxString "includes")
@@ -1035,7 +1035,7 @@
        (return newProgram)))))
 	   
 	   
-	   	  (list treewalk (list l  ) (declare (box val nil)) (body
+	   	  (list macrowalk (list l  ) (declare (box val nil)) (body
     (if (isEmpty l)
       (then (return nil))
       (else
@@ -1052,7 +1052,7 @@
             ;(display (doBoxList (cdr l)))
           (return (car (doBoxList (cdr l)))))
           (else 
-            (return   (cons (treewalk (car l) ) (treewalk (cdr l) ))))
+            (return   (cons (macrowalk (car l) ) (macrowalk (cdr l) ))))
 				))
          (else
 		 ;(printf "Processing non list: %s\n" (stringify l))

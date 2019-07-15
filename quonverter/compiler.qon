@@ -47,7 +47,7 @@
        (beers 9))
       (else
       (if runTree
-      (then (display (treewalk (treeCompile (unBoxString filename)))))
+      (then (display (macrowalk (treeCompile (unBoxString filename)))))
       (else
       (if runAst
       (then (astCompile (unBoxString filename)))
