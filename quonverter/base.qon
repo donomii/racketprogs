@@ -1035,6 +1035,55 @@
        (return newProgram)))))
 	   
 	   
+	   	  (list treewalk (list l  ) (declare (box val nil)) (body
+    (if (isEmpty l)
+      (then (return nil))
+      (else
+	  
+	  ;(printf "type: %s\n" (get-struct l typ))
+       (if (isList l)
+         (then
+		 ;(printf "Processing list\n")
+			;(printf "//Listlength: %d\n" (listLength l))
+			;(display l)
+
+          (if (equalString (stringConcatenate "box" "List") (stringify (car l)))
+          (then
+            ;(display (doBoxList (cdr l)))
+          (return (car (doBoxList (cdr l)))))
+          (else 
+            (return   (cons (treewalk (car l) ) (treewalk (cdr l) ))))
+				))
+         (else
+		 ;(printf "Processing non list: %s\n" (stringify l))
+		 ;(printf "//Comparing %s and %s at %s,%s\n" "uniqueTarget" (stringify l) (stringify (getTagFail l (boxString "line")(boxString "no tag"))) (stringify (getTagFail l (boxString "filename" )(boxString "no tag"))))
+			(return l)
+          ;(if (equalString "blahblahblah" (stringify l))
+            ;(then 
+			;(set val (clone l))
+			;(set-struct val str "b0rk")
+			;(return l))
+            ;(else (return l)))
+			))))))
+
+
+ (list doBoxList (list l) (declare)
+ (body
+ ;(printf "doBoxList\n")
+ (if (isNil l)
+ (then (return (cons (boxSymbol "nil") nil)))
+ (else
+ (return 
+    (cons
+            (cons
+                (boxSymbol "cons") 
+                (cons 
+                    (first l) 
+                    (doBoxList (cdr l)))
+            ) nil)))) ))
+			
+			
+	   
   ; Return command line args.  FIXME rename
     (list
    argList
