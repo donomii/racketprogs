@@ -258,7 +258,7 @@
        (if (equalString atype (boxType abox))
          (then (return))
          (else
-          (printf "Assertion failure at line %d, in file %s: provided value is not a '%s'!  It was actually (%s):"  line file atype abox->typ)
+          (printf "Assertion failure at line %d, in file %s: provided value is not a '%s'!  It was actually (%s):"  line file atype (get-struct abox typ))
           (display abox)
           (panic "Invalid type!")))))))
 
