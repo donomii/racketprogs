@@ -197,6 +197,8 @@
       (void test17 () (declare (list l nil))
       (body 
       (set l (boxList (boxInt 1) (boxInt 2) (boxInt 3)))
-      (display l)
+         (if (equalBox (car l) (boxInt 1))
+         (then (printf "17 pass list literal works\n"))
+         (else (printf "17 fail list literal failed\n")))
       ))
   ))
