@@ -195,8 +195,8 @@
       (else (printf "16.2 fail assoc list\n")))))
 
       (void test17 () (declare (list l nil))
-      (set l (boxList 1 2 3))
       (body 
+      (set l (boxList (boxInt 1) (boxInt 2) (boxInt 3)))
       (display l)
       ))
   ))
