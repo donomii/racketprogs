@@ -1,0 +1,10 @@
+((includes)
+ (types)
+  (functions
+
+(void test17 () (declare (list l nil))
+      (set l (boxList 1 2 3))
+            (body
+	          (display l)
+		        ))
+			))
