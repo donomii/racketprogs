@@ -429,4 +429,27 @@ sub deAmazonify {
     return $outVal;
 }
 
+sub deAmazonifyHash {
+    my $in_hash = shift;
+    my @keys = qw/B BOOL N S/;
+    my $outHash;
+    foreach my $rkey (%$in_hash) {
+        my $inVal = $in_hash->{$rkey};
+        my $outVal;
+        foreach my $key (@keys) {
+            if (defined($inVal->{$key})) {
+                $outVal //= $inVal->{$key};
+            }
+        }
+
+        #$outVal //= Dumper($inVal);
+        if (defined($outVal)) {
+            $outHash->{$rkey} = $outVal;
+        }
+    }
+    return $outHash;
+
+ 
+}
+
 1;

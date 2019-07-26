@@ -12,13 +12,13 @@ use strict;
 
 my $dynamodb = Paws->service( 'DynamoDB', region => "eu-west-1" );
 my $table = shift;
-my $limit = 1000;
+my $limit = 100000000;
 my $count = 0;
 chomp $table;
 
 #Get data from dynamoDB
 
-print "Scanning table '$table'\n";
+warn "Scanning table '$table'\n";
 my @t;
 my $QueryOutput = $dynamodb->Scan(
     'TableName' => $table,
@@ -30,7 +30,7 @@ ProcessQuery($QueryOutput);
 
 #$count += $QueryOutput->Items;
 
-print "Starting loop\n";
+warn "Starting loop\n";
 
 sub CleanUpAttribute {
     my $a = shift;
@@ -47,17 +47,31 @@ sub CleanUpAttribute {
     return $a;
 }
 
+my $resume = {
+          'car_driver_id' => bless( {
+                                      'N' => '49676163'
+                                    }, 'Paws::DynamoDB::AttributeValue' ),
+          'creation_date' => bless( {
+                                      'N' => '1511853909194'
+                                    }, 'Paws::DynamoDB::AttributeValue' )
+        };
+
 while (my $lastObj =  $QueryOutput->LastEvaluatedKey) {
     warn "More to fetch" if ($lastObj);
     my $last = $lastObj->Map;
+    if ($resume) {
+        $last = $resume;
+        $resume = undef;
+    }
     CleanUpAttribute($last);
-    #print Dumper($last);
+    warn Dumper($last);
 
-    #$count += $QueryOutput->Items;
-if($count>$limit) {
-    warn "Fetched $count items, exceeded limit $limit";
-    last;
-}
+    #$total += $QueryOutput->Items;
+    warn "Fetched $count items\n";
+    if($count>$limit) {
+        warn "Fetched $count items, exceeded limit $limit";
+        last;
+    }
     $QueryOutput = $dynamodb->Scan('TableName' => $table, Limit => $limit,ExclusiveStartKey=>$last);
     #my $qo = dclone($QueryOutput);
     #unbless($qo);
@@ -65,6 +79,7 @@ if($count>$limit) {
     warn "Fetching more...\n";
 }
 
+my $headersDumped;
 sub ProcessQuery {
     my $QueryOutput = shift;
     die "Query failed" unless $QueryOutput;
@@ -78,15 +93,23 @@ sub ProcessQuery {
             foreach my $key ( keys %$m ) {
                 $n{$key} = encode_json( [ $m->{$key} ] );
             }
-            push @t, \%n;
+            #push @t, \%n;
             $count++;
+            my $tname = $table;
+            $tname =~ s/\./_/g;
+            print $m->{latitude}->{N}, "," , $m->{longitude}->{N}, "\n";
+            my $row = DataLib::deAmazonifyHash($m);
+            if (!$headersDumped) {
+                print join(',', sort keys %$row), "\n";
+                $headersDumped++;
+            }
+            print join(',', map { $row->{$_} } sort keys %$row), "\n";
+            #DataLib::AoH2Table( $tname, [\%n], "DEAMAZONIFY" );
+            #DataLib::Flush();
         }
     }
 }
 
-my $tname = $table;
-$tname =~ s/\./_/g;
-DataLib::AoH2Table( $tname, \@t, "DROP", "DEAMAZONIFY" );
 exit 0;
 
 #print "Query: ";
