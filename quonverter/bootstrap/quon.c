@@ -353,6 +353,7 @@ void test12();
 void test13();
 void test15();
 void test16();
+void test17();
 void nodeFunctionArgs(list tree );
 void nodeLeaf(list thisNode ,int indent );
 void nodeStructGetterExpression(list thisNode ,int indent );
@@ -6169,6 +6170,34 @@ if (globalTrace)
 }
 
 
+//Building function test17 from line: 196
+
+void test17() {
+  list l = NULL ;
+
+if (globalTrace)
+    printf("test17 at tests.qon:196\n");
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  l = cons(boxInt(1 ), cons(boxInt(2 ), cons(boxInt(3 ), NULL )));
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  if ( equalBox(car(l ), boxInt(1 ))) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+    printf("17 pass list literal works\n" );
+
+  } else {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+    printf("17 fail list literal failed\n" );
+
+  };
+
+if (globalTrace)
+    printf("Leaving test17\n");
+
+}
+
+
 //Building function nodeFunctionArgs from line: 4
 
 void nodeFunctionArgs(list tree ) {
@@ -8182,6 +8211,9 @@ if (globalTrace)
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
     test16 ();
+    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+    test17 ();
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
     printf("\n\nAfter all that hard work, I need a beer...\n" );

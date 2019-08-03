@@ -3112,6 +3112,23 @@ if (globalTrace)
 }
 
 
+//Building function test17 from line: 196
+
+public void test17() {
+  Box l = null ;
+  
+  l = cons(boxInt(1 ), cons(boxInt(2 ), cons(boxInt(3 ), null )));  
+  if ( equalBox(car(l ), boxInt(1 ))) {    
+    System.out.printf("17 pass list literal works\n" );
+  } else {    
+    System.out.printf("17 fail list literal failed\n" );
+  }
+if (globalTrace)
+   System.out. printf("Leaving test17\n");
+
+}
+
+
 //Building function nodeFunctionArgs from line: 4
 
 public void nodeFunctionArgs(Box tree ) {
@@ -4164,6 +4181,7 @@ boolean runTree = false ;
     test13 ();    
     test15 ();    
     test16 ();    
+    test17 ();    
     System.out.printf("\n\nAfter all that hard work, I need a beer...\n" );    
     beers(9 );
   } else {    

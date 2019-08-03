@@ -243,6 +243,7 @@ sub test12;
 sub test13;
 sub test15;
 sub test16;
+sub test17;
 sub nodeFunctionArgs;
 sub nodeLeaf;
 sub nodeStructGetterExpression;
@@ -7713,6 +7714,37 @@ if ($globalTrace) { printf("test16 at tests.qon:171\n") }
 }
 
 
+#Building function test17 from line: 196
+
+sub test17 {
+  
+  my $l = undef ;
+
+if ($globalTrace) { printf("test17 at tests.qon:196\n") }
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+  $l = cons(boxInt(1 ), cons(boxInt(2 ), cons(boxInt(3 ), $undef )));
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+  if ( equalBox(car($l ), boxInt(1 ))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard expression
+
+    printf("17 pass list literal works\n" )
+    ;
+
+  } else {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard expression
+
+    printf("17 fail list literal failed\n" )
+    ;
+
+  };
+
+}
+
+
 #Building function nodeFunctionArgs from line: 4
 
 sub nodeFunctionArgs {
@@ -10554,6 +10586,12 @@ if ($globalTrace) { printf("start at compiler.qon:4\n") }
 #standard expression
 
     test16 ()
+    ;
+    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard expression
+
+    test17 ()
     ;
     if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
