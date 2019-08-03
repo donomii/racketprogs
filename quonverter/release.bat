@@ -1,11 +1,11 @@
-gcc -O3   bootstrap/quon.c -o quon
-quon --test
+rm -rf release
 mkdir release
-cp quon release/
+gcc -O3   bootstrap\quon.c -o release\quon
+release\quon --test
 
 
-quon examples/mandelbrot.qon  > mandelbrot.c 
-gcc -O3   mandelbrot.c -o release/mandelbrot
+quon examples\mandelbrot.qon  > mandelbrot.c 
+gcc -O3   mandelbrot.c -o release\mandelbrot
 
 
 quon compiler.qon --java > test.java
