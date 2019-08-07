@@ -578,7 +578,7 @@ func OptimiserWorker() {
                     pix, diff = renderAll2(new, newColor, state.Views)
                     CompareAndSwap(diff, pix)
 
-                    for _, v := range []int{-11, -7, -5, -3, -1, 1, 3, 5, 7, 11} {
+                    for _, _ := range []int{-11, -7, -5, -3, -1, 1, 3, 5, 7, 11} {
                     Mutate(scale)
                     pix, diff = renderAll2(new, newColor, state.Views)
                     CompareAndSwap(diff, pix)

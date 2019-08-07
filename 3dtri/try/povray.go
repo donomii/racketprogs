@@ -3,22 +3,28 @@ package main
 import (
     "fmt"
     "math/rand"
+    "math"
 )
 
 func p(n float32) float32 {
     return 2.0 * n - 1.0
 }
 
+func c(n float32) float32 {
+	v :=math.Mod(float64(n), 0.5)
+	return float32(v)*2.0
+}
+
 func genscene(cam []float32, elements [][]float32) string{
 
     scene :=fmt.Sprintf(`  #include "colors.inc"
   global_settings { ambient_light 5.0 }
-   background { color Cyan }
+   background { color Black }
    camera { location <%v, %v, %v> look_at  < %v, %v,  %v> }
    `, cam[0], cam[1], cam[2], cam[3], cam[4], cam[5])
 
    for _, v := range elements {
-   scene = scene + fmt.Sprintf("sphere { <%v, %v, %v>, %v texture { pigment { color rgb <%v, %v, %v> } } } \n", p(v[0]), p(v[1]), p(v[2]), v[3]/2.0, v[4], v[5], v[6])
+   scene = scene + fmt.Sprintf("sphere { <%v, %v, %v>, %v texture { pigment { color rgb <%v, %v, %v> } } } \n", p(v[0]), p(v[1]), p(v[2]), v[3]/5.0, c(v[4]), c(v[5]), c(v[6]))
 }
 return scene
 }
@@ -35,7 +41,7 @@ func defaultGenome() []float32 {
 
     //gen := []float32{0.0,2.0,-3.0,0.0,0.0,0.0,   0.0,0.0,0.0,0.5,   1.0,1.0,0.0}
     gen := []float32{0.0,2.0,-3.0,0.0,0.0,0.0}
-    for i:=0; i<100; i++ {
+    for i:=0; i<7; i++ {
     gen = append(gen, randomElement()...)
 }
 
