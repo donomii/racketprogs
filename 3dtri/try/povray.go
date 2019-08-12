@@ -25,13 +25,15 @@ func genscene(cam []float32, elements [][]float32) string {
 
 	scene := fmt.Sprintf(`  #include "colors.inc"
   global_settings { ambient_light 5.0 }
-   background { color Black }
+   background { color White }
    camera { location <%v, %v, %v> look_at  < %v, %v,  %v> }
-   `, cam[0], cam[1], cam[2], cam[3], cam[4], cam[5])
+   `,
+		//, cam[0], cam[1], cam[2], cam[3], cam[4], cam[5])
+		0, 0, 3, 0, 0, 0)
 
 	for _, v := range elements {
 
-		scene = scene + fmt.Sprintf("superellipsoid { <%v, %v>  texture { pigment { color rgb <%v, %v, %v> } finish { phong 1} } scale %v translate <%v,%v,%v>} \n", v[7]*3.0, v[8]*3.0, c(v[4]), c(v[5]), c(v[6]), v[3]/5.0, p(v[0]), p(v[1]), p(v[2]))
+		scene = scene + fmt.Sprintf("superellipsoid { <%v, %v>  texture { pigment { color rgb <%v, %v, %v> } finish { phong 1} } scale %v translate <%v,%v,%v>} \n", v[7]*3.0, v[8]*3.0, c(v[4]), c(v[5]), c(v[6]), v[3]/10.0, p(v[0])/2.0, p(v[1])/2.0, p(v[2])/2.0)
 
 		//scene = scene + fmt.Sprintf("sphere { <%v, %v, %v>, %v texture { pigment { color rgb <%v, %v, %v> } } } \n", p(v[0]), p(v[1]), p(v[2]), v[3]/5.0, c(v[4]), c(v[5]), c(v[6]))
 		//scene = scene + fmt.Sprintf("box { <%v, %v, %v>, <%v, %v, %v>  texture { pigment { color rgb <%v, %v, %v> } } }\n", p(v[0]), p(v[1]), p(v[2]), p(v[4]), p(v[5]), p(v[6]), c(v[3])

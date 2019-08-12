@@ -1,16 +1,19 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
-
 	"time"
 
 	"github.com/donomii/glim"
 	"github.com/donomii/goof"
 	"github.com/thoj/go-galib"
 )
+
+var refImagePath string = "../input/front.png"
 
 // Abs64 returns the absolute value of x.
 func Abs64(x int64) int64 {
@@ -68,7 +71,7 @@ func unpackGenome(genome []float32) ([]float32, [][]float32) {
 
 func anneal(renderFunc func([]float32, int, int) []byte, rounds int, oldGen []float32, refImage []byte, x, y int) []float32 {
 	renderImage := renderFunc(oldGen, x, y)
-	oldDiff, _ := glim.CalcDiff(refImage, renderImage, x, y)
+	oldDiff, _ := glim.CalcDiffSq(refImage, renderImage, x, y)
 	//oldRender := renderImage
 
 	count := 1
@@ -88,7 +91,7 @@ func anneal(renderFunc func([]float32, int, int) []byte, rounds int, oldGen []fl
 			for i := 1; i < repeats; i++ {
 				newGen := mutate(oldGen, scale)
 				renderImage := renderFunc(newGen, x, y)
-				diff, diffbuff := glim.CalcDiff(refImage, renderImage, x, y)
+				diff, diffbuff := glim.CalcDiffSq(refImage, renderImage, x, y)
 
 				if diff < oldDiff {
 					repeats = repeats + 100
@@ -121,18 +124,22 @@ func ga_render(g *ga.GAFloatGenome) float64 {
 		gen32[i] = float32(v)
 	}
 
-	refImage, x, y := glim.LoadImage("../testpics/cow.png")
+	refImage, x, y := glim.LoadImage(refImagePath)
 	renderImage := render_povray(gen32, x, y)
 
-	go glim.SaveBuff(x, y, renderImage, fmt.Sprintf("pix/render_%05d.png", saveCount))
 	saveCount = saveCount + 1
-	diff, _ := glim.CalcDiff(refImage, renderImage, x, y)
+	localCount := saveCount
+	glim.SaveBuff(x, y, glim.FlipUp(x, y, renderImage), fmt.Sprintf("pix/render_%05d.png", localCount))
+
+	diff, diffBuff := glim.CalcDiff(refImage, renderImage, x, y)
+
+	SaveState("./", renderImage, diffBuff, diff, gen32, []View{})
 	return float64(diff)
 
 }
 
 func gasolve(renderFunc func([]float32, int, int) []byte, rounds int, oldGen []float32, refImage []byte, x, y int) []float32 {
-	genome := ga.NewFloatGenome(make([]float64, len(oldGen)), ga_render, 1, -1)
+	genome := ga.NewFloatGenome(make([]float64, len(oldGen)), ga_render, 1, 0)
 
 	for i, v := range oldGen {
 		genome.Gene[i] = float64(v)
@@ -149,10 +156,11 @@ func gasolve(renderFunc func([]float32, int, int) []byte, rounds int, oldGen []f
 		PBreed:      0.2}
 
 	gao := ga.NewGAParallel(param, 4)
+	//gao := ga.NewGA(param)
 	genome.Max = 1.0
 	genome.Min = 0.0
 
-	gao.Init(1000, genome) //Total population
+	gao.Init(100, genome) //Total population
 
 	gao.OptimizeUntil(func(best ga.GAGenome) bool {
 		return best.Score() < 1e-3
@@ -170,12 +178,17 @@ func gasolve(renderFunc func([]float32, int, int) []byte, rounds int, oldGen []f
 }
 
 func main() {
-
+	resumeFile := flag.String("resume", "", "File containing resume data")
+	flag.Parse()
 	os.Mkdir("pix", 0755)
 	oldGen := defaultGenome(200)
-	refImage, x, y := glim.LoadImage("../testpics/cow.png")
+	refImage, x, y := glim.LoadImage(refImagePath)
 	diff, _ := glim.CalcDiff(refImage, refImage, x, y)
 	fmt.Printf("Self diff is %v\n", diff)
+	if *resumeFile != "" {
+		log.Println("Loading triangle data from file: ", *resumeFile)
+		oldGen, _ = LoadState(*resumeFile)
+	}
 
 	//genome := anneal(render_povray, 500, oldGen, refImage, x, y)
 	genome := gasolve(render_povray, 500, oldGen, refImage, x, y)
