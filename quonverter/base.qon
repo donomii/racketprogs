@@ -280,7 +280,7 @@
   (string stringify (box b) (declare)
    (body
     (if (isNil b)
-      (then (return "nil"))
+      (then (return "()"))
       (else
        (if (equalString "string" (boxType b))
          (then (return (unBoxString b)))
