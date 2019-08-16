@@ -285,7 +285,35 @@
                   (else 
                   
                 (if (equalString "list" (boxType b))
-                  (then (return (stringConcatenate (stringify (car b)) (stringConcatenate " " (stringify (cdr b))))))
+                  (then 
+                 
+                 (if true
+                  (then
+                  (if (isList (car b))
+                  (then
+                      (return (stringConcatenate 
+                      (stringConcatenate "(" (stringConcatenate (stringify (car b)) ")")) 
+                      (stringConcatenate " " (stringify (cdr b)))))
+                      )
+                  (else
+                      (return 
+                       (stringConcatenate (stringify (car b))  
+                      (stringConcatenate " " (stringify (cdr b)))))
+                  
+                  ))
+                      
+                      
+                      )
+                  (else 
+                  (return 
+                  (stringConcatenate "("
+                  (stringConcatenate 
+                    (stringConcatenate (stringify (car b)) (stringConcatenate " " (stringify (cdr b))))
+                    ")"))))
+
+
+
+                  ))
                   (else
                   (return (stringConcatenate "Unsupported type: " (boxType b)))))))))))))))))
   ;;;;;;;;;;;;;;;;;;
