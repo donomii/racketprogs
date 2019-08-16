@@ -65,9 +65,9 @@
        (body
         (set ast (astTree "compiler.qon"))
         ;(display (cdr (car ast)))
-        (dumpAst (cdr (first ast)))
-        ;(dumpAst (cdr (second ast)))
-        ;(dumpAst (cdr (third ast)))
+        ;(dumpAst (cdr (first ast)))
+        (dumpAst (cdr (second ast)))
+        (dumpAst (cdr (third ast)))
         (return 0)
         ))
   ))
