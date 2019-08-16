@@ -150,10 +150,8 @@
                 (if (equalString "int" (boxType a))
                   (then (return (equal (unBoxInt a) (unBoxInt b))))
                   (else (return false)))))))))))))
-(void
-   displayList
-   (list l int indent)
-   (declare (box val nil))
+
+(void displayList (list l int indent) (declare (box val nil))
    (body
     (if (isEmpty l)
       (then (return))
@@ -170,7 +168,7 @@
                 (printf "%s" (openBrace))
                 (displayList (car l) (add1 indent))
                 (printf "%s" (closeBrace))
-                (displayList (cdr l) (add1 indent)))
+                (displayList (cdr l) indent))
                (else
                 (if (equalString "string" (get-struct val typ))
                   (then (printf "\"%s\" " (unBoxString val)))
@@ -180,10 +178,8 @@
           (if (equalString "string" (get-struct l typ))
             (then (printf "\"%s\" " (unBoxString l)))
             (else (printf "%s " (stringify l))))))))))
-  (void
-   display
-   (list l)
-   (declare)
+
+  (void display (list l) (declare)
    (body
     (if (isEmpty l)
       (then (printf "nil ") (return))
@@ -286,7 +282,7 @@
                (else
                 (if (equalString "symbol" (boxType b))
                   (then (return (unBoxSymbol b)))
-                  (else (return (boxType b))))))))))))))
+                  (else (return (stringConcatenate "Unsupported type: " (boxType b)))))))))))))))
   ;;;;;;;;;;;;;;;;;;
   ;; Tag functions
   ;;;;;;;;;;;;;;;;;;
@@ -812,31 +808,22 @@
   (list functionNameof (list ass) (declare)
    (body (return (cdr (assoc "functionName" (cdr ass))))))
 
-  (list
-   nodeof
-   (list ass)
-   (declare)
+  (list nodeof (list ass) (declare)
    (body
     (if (equalBox (boxBool false) (assoc "node" (cdr ass)))
       (then (return (boxBool false)))
       (else (return (cdr (assoc "node" (cdr ass))))))))
-  (list
-   lineof
-   (list ass)
-   (declare)
+
+  (list lineof (list ass) (declare)
    (body
     (if (equalBox (boxBool false) (assoc "line" (cdr ass)))
       (then (return (boxInt -1)))
       (else (return (cdr (assoc "line" (cdr ass))))))))
-  (list
-   subnameof
-   (list ass)
-   (declare)
+
+  (list subnameof (list ass) (declare)
    (body (return (cdr (assoc "subname" (cdr ass))))))
-  (list
-   nameof
-   (list ass)
-   (declare)
+
+  (list nameof (list ass) (declare)
    (body (return (cdr (assoc "name" (cdr ass))))))
 
   (list childrenof (list ass) (declare)
