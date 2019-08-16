@@ -44,6 +44,8 @@ import (
 	"github.com/donomii/glim"
 	"golang.org/x/mobile/event/key"
 
+	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/go-gl/mathgl/mgl32"
 	"golang.org/x/mobile/app"
 	"golang.org/x/mobile/event/lifecycle"
 	"golang.org/x/mobile/event/mouse"
@@ -53,11 +55,13 @@ import (
 	"golang.org/x/mobile/exp/f32"
 	"golang.org/x/mobile/exp/gl/glutil"
 	"golang.org/x/mobile/gl"
+
 	//"math"
 	"fmt"
 	"image"
 	"os"
 	"time"
+
 	//"math/rand"
 	_ "image/jpeg"
 	_ "image/png"
@@ -163,17 +167,15 @@ func do_profile() {
 	time.Sleep(60 * time.Second)
 }
 
-
 var strategies map[string]bool
 var strOpts map[string]string
 var intOpts map[string]int
 var resetFitness *bool
 
-
 func main() {
-    strategies = make(map[string]bool)
-    strOpts = make(map[string]string)
-    intOpts = make(map[string]int)
+	strategies = make(map[string]bool)
+	strOpts = make(map[string]string)
+	intOpts = make(map[string]int)
 	DrawRequestCh = make(chan DrawRequest, 10)
 	DrawResultCh = make(chan DrawResult, 10)
 	pixDir = fmt.Sprintf("%v/%v", outputDir, "pix")
@@ -193,33 +195,33 @@ func main() {
 	poly := flag.String("poly-mode", "TRIANGLES", "Draw shape (TRIANGLES, TRIANGLE_STRIP, LINE_STRIP, POINTS)")
 	triCount := flag.Int("triangle-count", 100, "Number of triangles to start with")
 	flag.Parse()
-    strategies["view"] = !*viewStrat
-    strategies["shaker"] = !*shakerStrat
-    strategies["dead_triangle"] = !*deadStrat
-    strategies["dead_point"] = *deadStratPoint
-    strategies["tweak"] = !*tweakStrat
-    strategies["diffs"] = *doDiffs
-    strOpts["poly_mode"] = *poly
+	strategies["view"] = !*viewStrat
+	strategies["shaker"] = !*shakerStrat
+	strategies["dead_triangle"] = !*deadStrat
+	strategies["dead_point"] = *deadStratPoint
+	strategies["tweak"] = !*tweakStrat
+	strategies["diffs"] = *doDiffs
+	strOpts["poly_mode"] = *poly
 
-    intOpts["triCount"] = *triCount
+	intOpts["triCount"] = *triCount
 
-    log.Println("Using strategies:")
-    for k, v := range strategies {
-        log.Println( k, " : ", v )
-    }
+	log.Println("Using strategies:")
+	for k, v := range strategies {
+		log.Println(k, " : ", v)
+	}
 
 	log.Printf("Starting main...")
 
 	InitOptimiser()
-    log.Println("Resume file name: ", *resumeFile)
+	log.Println("Resume file name: ", *resumeFile)
 	if *resumeFile != "" {
-        log.Println("Loading triangle data from file: ", *resumeFile)
-        newDiff := int64(0)
+		log.Println("Loading triangle data from file: ", *resumeFile)
+		newDiff := int64(0)
 		old, oldColor, newDiff = ReadStateFromFile(*resumeFile)
 		new, newColor, newDiff = ReadStateFromFile(*resumeFile)
-        if !*resetFitness {
-            currDiff = newDiff
-        }
+		if !*resetFitness {
+			currDiff = newDiff
+		}
 	}
 
 	sceneCam = sceneCamera.New()
@@ -289,7 +291,7 @@ func main() {
 				// after this one is shown.
 				a.Send(paint.Event{})
 			case key.Event:
-                addTriangle()
+				addTriangle()
 			case mouse.Event:
 				//log.Printf("%v", e)
 				//cursorX = int(e.X/2)
@@ -367,16 +369,16 @@ func onStart(glctx gl.Context) {
 	reCalcNeeded = true
 	//reDimBuff(int(screenWidth),int(screenHeight))
 
-/*
-	if len(os.Args) > 1 {
-		fname = os.Args[1]
-		log.Println("Loading file: ", fname)
-		refImage, rx, ry = glim.LoadImage(fname)
-		log.Printf("Loaded reference image %v:%v\n", rx, ry)
-	} else {
-		log.Fatal("please give a reference image on the command line")
-	}
-*/
+	/*
+		if len(os.Args) > 1 {
+			fname = os.Args[1]
+			log.Println("Loading file: ", fname)
+			refImage, rx, ry = glim.LoadImage(fname)
+			log.Printf("Loaded reference image %v:%v\n", rx, ry)
+		} else {
+			log.Fatal("please give a reference image on the command line")
+		}
+	*/
 	var err error
 	program, err = glutil.CreateProgram(glctx, vertexShader, fragmentShader)
 	if err != nil {
@@ -490,15 +492,15 @@ func doDraw(glctx gl.Context, new, newColor []float32, width, height int) {
 	glctx.VertexAttribPointer(a_TexCoordinate, 4, gl.FLOAT, false, 0, 0)
 
 	glctx.Viewport(0, 0, width, height)
-    if strOpts["poly_mode"] == "POINTS" {
-	    glctx.DrawArrays(gl.POINTS, 0, len(new))
-    } else if strOpts["poly_mode"] == "LINE_STRIP" {
-	    glctx.DrawArrays(gl.LINE_STRIP, 0, len(new))
-    } else if strOpts["poly_mode"] == "TRIANGLE_STRIP" {
-        glctx.DrawArrays(gl.TRIANGLE_STRIP, 0, len(new))
-    } else {
-        glctx.DrawArrays(gl.TRIANGLES, 0, len(new))
-    }
+	if strOpts["poly_mode"] == "POINTS" {
+		glctx.DrawArrays(gl.POINTS, 0, len(new))
+	} else if strOpts["poly_mode"] == "LINE_STRIP" {
+		glctx.DrawArrays(gl.LINE_STRIP, 0, len(new))
+	} else if strOpts["poly_mode"] == "TRIANGLE_STRIP" {
+		glctx.DrawArrays(gl.TRIANGLE_STRIP, 0, len(new))
+	} else {
+		glctx.DrawArrays(gl.TRIANGLES, 0, len(new))
+	}
 
 	glctx.DisableVertexAttribArray(position)
 	glctx.DisableVertexAttribArray(a_TexCoordinate)
@@ -506,7 +508,7 @@ func doDraw(glctx gl.Context, new, newColor []float32, width, height int) {
 
 type DrawRequest struct {
 	Triangles, Colours []float32
-    Width, Height int
+	Width, Height      int
 }
 
 type DrawResult struct {
@@ -542,8 +544,8 @@ func onPaint(glctx gl.Context, sz size.Event) {
 	DrawResultCh <- DrawResult{renderPix}
 	//log.Println("Fetching request from optimiser")
 	req := <-DrawRequestCh
-    lastWidth = req.Width
-    lastHeight = req.Height
+	lastWidth = req.Width
+	lastHeight = req.Height
 	doDraw(glctx, req.Triangles, req.Colours, lastWidth, lastHeight)
 	lastTris = req.Triangles
 	lastCols = req.Colours
