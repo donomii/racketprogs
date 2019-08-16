@@ -265,6 +265,18 @@
   (bool unBoxBool (box b) (declare) (body (return (get-struct b boo))))
   (int unBoxInt (box b) (declare) (body (return (get-struct b i))))
 
+(string stringify_rec (box b) (declare)
+(body
+    (if (isNil b)
+    (then (return ""))
+    (else 
+      (return 
+       (stringConcatenate (stringify (car b))  
+      (stringConcatenate " " (stringify_rec (cdr b)))))
+    ))
+
+))
+
   (string stringify (box b) (declare)
    (body
     (if (isNil b)
@@ -283,37 +295,13 @@
                 (if (equalString "symbol" (boxType b))
                   (then (return (unBoxSymbol b)))
                   (else 
-                  
-                (if (equalString "list" (boxType b))
-                  (then 
-                 
-                 (if true
-                  (then
-                  (if (isList (car b))
-                  (then
-                      (return (stringConcatenate 
-                      (stringConcatenate "(" (stringConcatenate (stringify (car b)) ")")) 
-                      (stringConcatenate " " (stringify (cdr b)))))
-                      )
-                  (else
-                      (return 
-                       (stringConcatenate (stringify (car b))  
-                      (stringConcatenate " " (stringify (cdr b)))))
-                  
-                  ))
-                      
-                      
-                      )
-                  (else 
-                  (return 
-                  (stringConcatenate "("
-                  (stringConcatenate 
-                    (stringConcatenate (stringify (car b)) (stringConcatenate " " (stringify (cdr b))))
-                    ")"))))
-
-
-
-                  ))
+                    (if (equalString "list" (boxType b))
+                      (then 
+                          (return 
+                          (stringConcatenate "(" 
+                            (stringConcatenate (stringify (car b))
+                                (stringConcatenate " " 
+                                    (stringConcatenate (stringify_rec (cdr b)) ")"))))))
                   (else
                   (return (stringConcatenate "Unsupported type: " (boxType b)))))))))))))))))
   ;;;;;;;;;;;;;;;;;;

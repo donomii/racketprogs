@@ -11,7 +11,7 @@
             (printf "Dumping node")
             (printf "Type: %s\n" (stringify (nameof node)))
             (printf "SubType: %s\n" (stringify (subnameof node)))
-            (printf "Code: %s\n" (stringify (second (codeof node))))
+            (printf "Code: %s\n" (stringify (codeof node)))
             (printf "Children: %d\n" (listLength (childrenof node))))
         (else 
             (printf "Not a node!!! %s\n" (stringify (car node)))
@@ -19,13 +19,15 @@
 ))
 
 
-(void dumpAst (list node) (declare   )
+(void dumpAst (list node) (declare (list children nil)  )
 (body
-    (printf "Dupming node*******")
+    (printf "*******\n")
     (displayNode node)
-    (printf "%s " (stringify (nameof (cdr node))))
-    (printf "%s\n" (stringify (codeof (cdr node))))
-    (dumpChildren (cdr (childrenof (cdr node))))
+    (printf "*******\n")
+    (set children (childrenof (cdr node)))
+    (if (> (listLength children) 1)
+    (then (dumpChildren (cdr children)))
+    (else))
 ))
 
 (void dumpChildren (list children) (declare)
@@ -62,8 +64,10 @@
   (int start () (declare (list ast nil))
        (body
         (set ast (astTree "compiler.qon"))
-        (display (cdr (car ast)))
-        (dumpAst (cdr (car ast)))
+        ;(display (cdr (car ast)))
+        (dumpAst (cdr (first ast)))
+        ;(dumpAst (cdr (second ast)))
+        ;(dumpAst (cdr (third ast)))
         (return 0)
         ))
   ))
