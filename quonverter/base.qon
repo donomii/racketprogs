@@ -282,7 +282,12 @@
                (else
                 (if (equalString "symbol" (boxType b))
                   (then (return (unBoxSymbol b)))
-                  (else (return (stringConcatenate "Unsupported type: " (boxType b)))))))))))))))
+                  (else 
+                  
+                (if (equalString "list" (boxType b))
+                  (then (return (stringConcatenate (stringify (car b)) (stringConcatenate " " (stringify (cdr b))))))
+                  (else
+                  (return (stringConcatenate "Unsupported type: " (boxType b)))))))))))))))))
   ;;;;;;;;;;;;;;;;;;
   ;; Tag functions
   ;;;;;;;;;;;;;;;;;;
