@@ -56,13 +56,13 @@ func Genome2Blocks(size int, genomeAndViews []float32, inblocks [][][]govox.Bloc
 }
 
 func render_voxel(newGen []float32, x, y int) []byte {
-	//	size := int32(10)
+	size := int32(10)
 	os.Mkdir("renderfiles", 0755)
 	//_, elements := unpackGenome(newGen)
 
 	gl.Viewport(0, 0, int32(x), int32(y))
-	//	drawBlocks := Genome2Blocks(int(size), newGen, nil)
-	//govox.Renderblocks(rv, window, drawBlocks, newGen[0], newGen[1], int(size))
+	drawBlocks := Genome2Blocks(int(size), newGen, nil)
+	govox.Renderblocks(rv, window, drawBlocks, 0, 0, int(size))
 
 	renderImage := govox.ScreenshotBuff(x, y)
 	/*

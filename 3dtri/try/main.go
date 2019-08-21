@@ -22,6 +22,7 @@ var refImageDir string = "../input-sphere/"
 var CameraViews []View
 var window *glfw.Window
 var rv govox.RenderVars
+var currDiff int
 
 // Abs64 returns the absolute value of x.
 func Abs64(x int64) int64 {
@@ -208,8 +209,11 @@ func ga_render(g *ga.GAFloatGenome) float64 {
 
 	diff, front, x, y := renderAndDiff(render_voxel, CameraViews, gen32)
 	//log.Printf("New: %v\n", diff)
-	saveCount = saveCount + 1
-	go glim.SaveBuff(x, y, front, fmt.Sprintf("pix/render%05d.png", saveCount))
+	if diff < currDiff {
+		curDiff = diff
+		saveCount = saveCount + 1
+		go glim.SaveBuff(x, y, front, fmt.Sprintf("pix/render%05d.png", saveCount))
+	}
 	/*
 		refImage, x, y := glim.LoadImage(refImagePath)
 		renderImage := render_povray(gen32, x, y)
@@ -273,11 +277,11 @@ func init() {
 func main() {
 	resumeFile := flag.String("resume", "", "File containing resume data")
 	flag.Parse()
-
+	currDiff = 9999999999
 	size := int(10)
 	window, rv = govox.InitGraphics(size, 1000, 1000)
 
-	CameraViews = InitViews("../input-sphere")
+	CameraViews = InitViews("../input-bluesphere")
 	os.Mkdir("pix", 0755)
 	oldGen := defaultGenome(size*size*size + 7)
 	refImage, _, _ := glim.LoadImage(refImagePath)
@@ -289,7 +293,7 @@ func main() {
 		oldGen, _ = LoadState(*resumeFile)
 	}
 
-	genome := anneal(render_voxel, 1000000, oldGen, refImage)
-	//genome := gasolve(render_voxel, 1000, oldGen, refImage)
+	//genome := anneal(render_voxel, 1000000, oldGen, refImage)
+	genome := gasolve(render_voxel, 1000, oldGen, refImage)
 	fmt.Println(genome)
 }
