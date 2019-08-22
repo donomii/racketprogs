@@ -734,7 +734,7 @@
     ;(printf "//ast building function %s\n" (stringify fname))
     ;(display tree)
     (set line (stringify (getTag fname (boxString "line"))))
-    (set file (stringify (getTag fname (boxString "file"))))
+    (set file (stringify (getTag fname (boxString "filename"))))
     (if (greaterthan 1 (listLength tree) ) (then (linePanic line "Malformed function, seems to be empty"))(else))
     (if (greaterthan 2 (listLength tree) ) (then (linePanic line "Malformed function, expected function name"))(else))
     (if (greaterthan 3 (listLength tree) ) (then (linePanic line "Malformed function, expected argument list"))(else))
