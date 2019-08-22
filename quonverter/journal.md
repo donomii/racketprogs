@@ -107,3 +107,27 @@ The main drawback of tags at the moment is that I can only tag data structures b
 The final point is style.  I dislike always having to type "variable.value()" to access the default value of an object.  It is such a clumsy choice to force the programmer to type so much to get the default value.  I want to access the default value as quickly and simply as possible.  And if I want something more complicated, then I should start typing more.
 
 And some thoughts for the future: debugging could become even easier if I record, in the tags, every time a variable's value is set (or where it is created, in functional style).  Then when I get a crash because a variable has the wrong value, I can just check the tags to see where the wrong value was set.  Because that is what I am really looking for when I print a trace, so why bother with the trace when I can get the correct answer immediately?
+
+Addendum:  I could get the same by just modifying the set function to print a line to the log every time I set a variable, which is probably better overall.  No need to write a complicated solution when the simple one works just fine.
+
+## Thursday, 24th August
+
+The big features are all in, and they seem to work.  Tags are fantastic, and now all that remains is putting error messages at the right point.
+
+Program tracing works, although it is less helpful than I hoped.  Stack traces are NOT working, mainly because it is too difficult to detect all the points where a function returns, and put the correct stack trace code there(to remove the function from the trace after it returns).
+
+Quon now targets C, Perl, NodeJs and Java, and I am constantly surprised that this works at all.  Naturally, the programs can't do much, but this project will be very handy for writing algorithm libraries that are wanted on every platform.
+
+The multiple targets have already proved their value.  I managed to improve the code to the point where the current version of the compiler could not read its own code, and my last backup/bootstrap file was from a week ago.  Rolling back would have lost a lot of work.  Luckily, while the C version was't working, the Perl version still ran fine, and I was able to compile a working C version.  Every quon compiler (C, Perl, NodeJS and Java) is able to generate source code for any of the other languages, making it wonderfully robust.
+
+Error checking and reporting is now the top priority - it was almost impossible to write a quon program, because any syntax error would result in the compiler simply printing an empty file.  Now, there are some error messages, covering the most common errors I make (function definitions and if statements).  It would be fascinating to do some data collecting to discover which errors are the most common.  We know which errors are the most common in running code, especially
+security-related errors, but I have never heard of a study of errors during the initial creation phase.
+
+The next enhancements after errors seem to be:
+
+* macros
+* better type handling, and better types
+* first-class functions, or a good way to fake them
+* networking
+* subprocesses and system functions
+* some kind of gui?
