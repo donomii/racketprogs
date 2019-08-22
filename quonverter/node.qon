@@ -371,5 +371,8 @@
     (nodeFunctions
      (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))
     (printf "\n")
+    (printf "const [asfdasdf, ...qwerqwer] = process.argv;")
+    (printf "globalArgs = qwerqwer;")
+    (printf "globalArgsCount = qwerqwer.length;")
     (printf "%s" "start();\n")))
   ))
