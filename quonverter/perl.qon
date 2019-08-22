@@ -374,8 +374,7 @@
         (body
          (set programStr (read-file filename))
          (set tree (readSexpr programStr filename))
-         (set
-          program
+         (set program
           (alistCons
            (boxString "includes")
            (astIncludes (first tree))

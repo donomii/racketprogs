@@ -86,7 +86,7 @@
 
   (bool isList (box b) (declare)
    (body
-   
+
     (if (isNil b)
       (then (return true))
       (else (return (equalString "list" (get-struct b typ)))))))
@@ -150,10 +150,8 @@
                 (if (equalString "int" (boxType a))
                   (then (return (equal (unBoxInt a) (unBoxInt b))))
                   (else (return false)))))))))))))
-(void
-   displayList
-   (list l int indent)
-   (declare (box val nil))
+
+(void displayList (list l int indent) (declare (box val nil))
    (body
     (if (isEmpty l)
       (then (return))
@@ -170,7 +168,7 @@
                 (printf "%s" (openBrace))
                 (displayList (car l) (add1 indent))
                 (printf "%s" (closeBrace))
-                (displayList (cdr l) (add1 indent)))
+                (displayList (cdr l) indent))
                (else
                 (if (equalString "string" (get-struct val typ))
                   (then (printf "\"%s\" " (unBoxString val)))
@@ -180,10 +178,8 @@
           (if (equalString "string" (get-struct l typ))
             (then (printf "\"%s\" " (unBoxString l)))
             (else (printf "%s " (stringify l))))))))))
-  (void
-   display
-   (list l)
-   (declare)
+
+  (void display (list l) (declare)
    (body
     (if (isEmpty l)
       (then (printf "nil ") (return))
@@ -206,12 +202,12 @@
   (set-struct b typ "None - error!")
   (return b)
   ))
-  
+
   (pair makePair () (declare)
   (body
   (return (makeBox))))
-  
-  
+
+
   (box
    boxString
    (string s)
@@ -226,11 +222,11 @@
    boxSymbol
    (string s)
    (declare (box b nil))
-   (body 
-   (set b (boxString s)) 
-   (set-struct b typ "symbol") 
+   (body
+   (set b (boxString s))
+   (set-struct b typ "symbol")
    (return b)))
-   
+
   (box
    boxBool
    (bool boo)
@@ -269,10 +265,22 @@
   (bool unBoxBool (box b) (declare) (body (return (get-struct b boo))))
   (int unBoxInt (box b) (declare) (body (return (get-struct b i))))
 
+(string stringify_rec (box b) (declare)
+(body
+    (if (isNil b)
+    (then (return ""))
+    (else
+      (return
+       (stringConcatenate (stringify (car b))
+      (stringConcatenate " " (stringify_rec (cdr b)))))
+    ))
+
+))
+
   (string stringify (box b) (declare)
    (body
     (if (isNil b)
-      (then (return "nil"))
+      (then (return "()"))
       (else
        (if (equalString "string" (boxType b))
          (then (return (unBoxString b)))
@@ -286,7 +294,16 @@
                (else
                 (if (equalString "symbol" (boxType b))
                   (then (return (unBoxSymbol b)))
-                  (else (return (boxType b))))))))))))))
+                  (else
+                    (if (equalString "list" (boxType b))
+                      (then
+                          (return
+                          (stringConcatenate "("
+                            (stringConcatenate (stringify (car b))
+                                (stringConcatenate " "
+                                    (stringConcatenate (stringify_rec (cdr b)) ")"))))))
+                  (else
+                  (return (stringConcatenate "Unsupported type: " (boxType b)))))))))))))))))
   ;;;;;;;;;;;;;;;;;;
   ;; Tag functions
   ;;;;;;;;;;;;;;;;;;
@@ -376,7 +393,7 @@
                  (cons
                   (getTagFail token (boxString "column") (boxInt -1))
                   (filterTokens (cdr l)))))
-               (else 
+               (else
                  (if (equalString "__FILE__" (stringify token))
                  (then
                    (return
@@ -542,7 +559,7 @@
              (return
               (setTag (boxString "line") (getTagFail b (boxString "line") (boxInt -1)) (cons b (sexprTree (cdr l))))
               )))))))
-    
+
     ))
 
   (list skipList (list l) (declare (box b nil))
@@ -557,7 +574,7 @@
           (if (isCloseBrace b)
             (then (return (cdr l)))
             (else (return (skipList (cdr l)))))))))
-    
+
     ))
 
   (list readSexpr (string aStr string filename) (declare (list tokens nil) (list as nil))
@@ -705,11 +722,24 @@
       (then (return (emptyList)))
       (else (return (cons (astStatement (car tree) fname) (astBody (cdr tree) fname)))))))
 
-  (list astFunction (list tree) (declare (box fname nil))
+      (void linePanic (string line string message) (declare)
+       (body
+        (printf "line %s: %s\n" line message)
+        (panic message)))
+
+
+  (list astFunction (list tree) (declare (string line "")(string file "")(box fname nil))
    (body
     (set fname (second tree))
     ;(printf "//ast building function %s\n" (stringify fname))
     ;(display tree)
+    (set line (stringify (getTag fname (boxString "line"))))
+    (set file (stringify (getTag fname (boxString "filename"))))
+    (if (greaterthan 1 (listLength tree) ) (then (linePanic line "Malformed function, seems to be empty"))(else))
+    (if (greaterthan 2 (listLength tree) ) (then (linePanic line "Malformed function, expected function name"))(else))
+    (if (greaterthan 3 (listLength tree) ) (then (linePanic line "Malformed function, expected argument list"))(else))
+    (if (greaterthan 4 (listLength tree) ) (then (linePanic line "Malformed function, expected variable declarations"))(else))
+    (if (greaterthan 5 (listLength tree) ) (then (linePanic line "Malformed function, expected body"))(else))
     (return
      (alistCons
       (boxSymbol "line")
@@ -740,7 +770,7 @@
    (body
     (if (equalBox  (boxString "functions")(car tree))
      (then (return (makeNode "functions" "functions" tree (astFunctionList (cdr tree)))))
-     (else (panic "Includes section not found!  Every program must have an include section, even if you don't import any libraries.  Your include section should look like:'\n\n(includes file1.qon file.qon)\n\n\nThe includes section must be the first section of the file.")
+     (else (panic "Functions section not found!  Every program must have a function section, even if you don't define any functions, although that is a rather pointless program.  Your function section should look like:'\n\n(return_type function_name (arg1 arg2 arg3 ...) (declare types) (body (statement)(statement)))\n\n\nThe function section must be directly after the types section.")
      (return nil)))
      ))
 
@@ -812,31 +842,22 @@
   (list functionNameof (list ass) (declare)
    (body (return (cdr (assoc "functionName" (cdr ass))))))
 
-  (list
-   nodeof
-   (list ass)
-   (declare)
+  (list nodeof (list ass) (declare)
    (body
     (if (equalBox (boxBool false) (assoc "node" (cdr ass)))
       (then (return (boxBool false)))
       (else (return (cdr (assoc "node" (cdr ass))))))))
-  (list
-   lineof
-   (list ass)
-   (declare)
+
+  (list lineof (list ass) (declare)
    (body
     (if (equalBox (boxBool false) (assoc "line" (cdr ass)))
       (then (return (boxInt -1)))
       (else (return (cdr (assoc "line" (cdr ass))))))))
-  (list
-   subnameof
-   (list ass)
-   (declare)
+
+  (list subnameof (list ass) (declare)
    (body (return (cdr (assoc "subname" (cdr ass))))))
-  (list
-   nameof
-   (list ass)
-   (declare)
+
+  (list nameof (list ass) (declare)
    (body (return (cdr (assoc "name" (cdr ass))))))
 
   (list childrenof (list ass) (declare)
@@ -1033,13 +1054,13 @@
            (cons (boxSymbol "includes") nil)
            newProgram))))
        (return newProgram)))))
-	   
-	   
+
+
 	   	  (list macrowalk (list l  ) (declare (box val nil)) (body
     (if (isEmpty l)
       (then (return nil))
       (else
-	  
+
 	  ;(printf "type: %s\n" (get-struct l typ))
        (if (isList l)
          (then
@@ -1051,7 +1072,7 @@
           (then
             ;(display (doBoxList (cdr l)))
           (return (car (doBoxList (cdr l)))))
-          (else 
+          (else
             (return   (cons (macrowalk (car l) ) (macrowalk (cdr l) ))))
 				))
          (else
@@ -1059,7 +1080,7 @@
 		 ;(printf "//Comparing %s and %s at %s,%s\n" "uniqueTarget" (stringify l) (stringify (getTagFail l (boxString "line")(boxString "no tag"))) (stringify (getTagFail l (boxString "filename" )(boxString "no tag"))))
 			(return l)
           ;(if (equalString "blahblahblah" (stringify l))
-            ;(then 
+            ;(then
 			;(set val (clone l))
 			;(set-struct val str "b0rk")
 			;(return l))
@@ -1073,17 +1094,17 @@
  (if (isNil l)
  (then (return (cons (boxSymbol "nil") nil)))
  (else
- (return 
+ (return
     (cons
             (cons
-                (boxSymbol "cons") 
-                (cons 
-                    (first l) 
+                (boxSymbol "cons")
+                (cons
+                    (first l)
                     (doBoxList (cdr l)))
             ) nil)))) ))
-			
-			
-	   
+
+
+
   ; Return command line args.  FIXME rename
     (list
    argList
