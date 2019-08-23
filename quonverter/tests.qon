@@ -201,4 +201,16 @@
          (then (printf "17 pass list literal works\n"))
          (else (printf "17 fail list literal failed\n")))
       ))
+
+
+       (void test18 () (declare 
+       
+       (string val1 "a")
+       (string val2 "b")
+       (string val3 "c")
+       (list l nil) )
+             (body
+                (set l (stringList val1 val2 "c"))
+               (display l)
+                 ))
   ))
