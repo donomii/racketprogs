@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // Renders a textured spinning cube using GLFW 3 and OpenGL 4.1 core forward-compatible profile.
-package myvox // import "github.com/donomii/myvox"
+package main // import "github.com/donomii/myvox"
 
 import (
 	"fmt"
@@ -27,6 +27,45 @@ const windowHeight = 600
 func init() {
 	// GLFW event handling must run on the main OS thread
 	runtime.LockOSThread()
+}
+
+func main() {
+
+	window, rv := InitGraphics()
+	angle := 30
+
+	texture, _ := NewTexture("square.png")
+	for !window.ShouldClose() {
+		log.Println("Start loop")
+		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+		log.Println("Updating")
+		//time.Sleep(1 * time.Second)
+		// Update
+		//		time := glfw.GetTime()
+
+		model := mgl32.Ident4()
+		modelUniform := gl.GetUniformLocation(rv.Program, gl.Str("model\x00"))
+		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
+		model = mgl32.HomogRotate3D(float32(angle), mgl32.Vec3{0, 1, 0})
+		log.Println("Rendering")
+		// Render
+
+		gl.UseProgram(rv.Program)
+		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
+
+		gl.BindVertexArray(rv.Vao)
+
+		gl.ActiveTexture(gl.TEXTURE0)
+		gl.BindTexture(gl.TEXTURE_2D, texture)
+
+		gl.DrawArrays(gl.TRIANGLES, 0, 6*2*3)
+		log.Println("Swapping")
+		// Maintenance
+		window.SwapBuffers()
+		glfw.PollEvents()
+		log.Println("End loop")
+	}
+
 }
 
 func InitGraphics() (*glfw.Window, RenderVars) {
@@ -213,6 +252,7 @@ var vertexShader = `
 uniform mat4 projection;
 uniform mat4 camera;
 uniform mat4 model;
+uniform vec3 aOffset;
 
 in vec3 vert;
 in vec2 vertTexCoord;
@@ -225,6 +265,107 @@ void main() {
 }
 ` + "\x00"
 
+var vertexShaderInstanced = `
+#version 330
+
+uniform mat4 projection;
+uniform mat4 camera;
+uniform mat4 model;
+uniform vec3 aOffset;
+
+in vec3 vert;
+in vec2 vertTexCoord;
+
+out vec2 fragTexCoord;
+
+void main() {
+    fragTexCoord = vertTexCoord;
+    gl_Position = projection * camera * model * vec4(vert, 1);
+}
+` + "\x00"
+
+var vertexShaderVoxel = `
+#version 410
+uniform mat4 mvp;
+
+attribute lowp vec3 vColor;
+attribute vec3 vPos;
+attribute int vEnabledFaces;
+
+flat out lowp vec3 gColor;
+flat out int gEnabledFaces;
+
+void main() {
+    gl_Position = mvp * vec4(vPos, 1.0);
+    
+    gColor = vColor;
+    gEnabledFaces = vEnabledFaces;
+}
+` + "\x00"
+var geomShaderVoxel = `
+#version 410
+
+layout(points) in;
+layout(triangle_strip, max_vertices = 12) out;
+
+flat in lowp vec3 gColor[];
+flat in int gEnabledFaces[];
+
+flat out lowp vec3 fColor;
+
+uniform float voxSize = 0.25;
+uniform mat4 mvp;
+
+void AddQuad(vec4 center, vec4 dy, vec4 dx) {
+    fColor = gColor[0];
+    gl_Position = center + (dx - dy);
+    EmitVertex();
+
+    fColor = gColor[0];
+    gl_Position = center + (-dx - dy);
+    EmitVertex();
+
+    fColor = gColor[0];
+    gl_Position = center + (dx + dy);
+    EmitVertex();
+
+    fColor = gColor[0];
+    gl_Position = center + (-dx + dy);
+    EmitVertex();
+
+    EndPrimitive();
+}
+
+bool IsCulled(vec4 normal) {
+    return normal.z > 0;
+}
+
+void main() {
+    vec4 center = gl_in[0].gl_Position;
+    
+    vec4 dx = mvp[0] / 2.0f * voxSize;
+    vec4 dy = mvp[1] / 2.0f * voxSize;
+    vec4 dz = mvp[2] / 2.0f * voxSize;
+
+    if ((gEnabledFaces[0] & 0x01) != 0 && !IsCulled(dx))
+        AddQuad(center + dx, dy, dz);
+    
+    if ((gEnabledFaces[0] & 0x02) != 0 && !IsCulled(-dx))
+        AddQuad(center - dx, dz, dy);
+
+    if ((gEnabledFaces[0] & 0x04) != 0 && !IsCulled(dy))
+        AddQuad(center + dy, dz, dx);
+
+    if ((gEnabledFaces[0] & 0x08) != 0 && !IsCulled(-dy))
+        AddQuad(center - dy, dx, dz);
+
+    if ((gEnabledFaces[0] & 0x10) != 0 && !IsCulled(dz))
+        AddQuad(center + dz, dx, dy);
+
+    if ((gEnabledFaces[0] & 0x20) != 0 && !IsCulled(-dz))
+        AddQuad(center - dz, dy, dx);
+}
+` + "\x00"
 var fragmentShader = `
 #version 330
 
