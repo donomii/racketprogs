@@ -45,6 +45,8 @@
        (test16)
        (test17)
        (test18)
+       (test19)
+       (test20)
        (printf "\n\nAfter all that hard work, I need a beer...\n")
        (beers 9))
       (else
