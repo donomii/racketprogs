@@ -313,8 +313,15 @@
 
 
 	  (void uniqueTarget (string a string b) (declare) (body))
-  (void ansiCompile (string filename) (declare (string programStr "") (list tree nil) (list program nil))
-   (body
+
+
+(void ansiCompile (string filename) (declare (list foundationFuncs nil) (list foundation nil) (string programStr "") (list tree nil) (list program nil))
+    (body
+   (set foundation (readSexpr (read-file "foundationlibs/ansi.qon") "foundationlibs/ansi.qon"))
+   (set foundationFuncs (cdr (third foundation)))
+   ;(display foundationFuncs)
+
+
    (printf "//Scanning file...%s\n" filename)
     (set programStr (read-file filename))
    (printf "//Building sexpr\n")
