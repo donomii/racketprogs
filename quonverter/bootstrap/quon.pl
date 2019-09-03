@@ -69,6 +69,7 @@ sub unBoxString;
 sub unBoxSymbol;
 sub unBoxBool;
 sub unBoxInt;
+sub stringify_rec;
 sub stringify;
 sub hasTag;
 sub getTag;
@@ -116,6 +117,7 @@ sub astGetStruct;
 sub astReturnVoid;
 sub astStatement;
 sub astBody;
+sub linePanic;
 sub astFunction;
 sub astFunctionList;
 sub astFunctions;
@@ -154,6 +156,7 @@ sub merge_recur;
 sub mergeInclude;
 sub macrowalk;
 sub doBoxList;
+sub doStringList;
 sub argList;
 sub listReverse;
 sub inList;
@@ -244,6 +247,8 @@ sub test13;
 sub test15;
 sub test16;
 sub test17;
+sub test18;
+sub reverseRec;
 sub nodeFunctionArgs;
 sub nodeLeaf;
 sub nodeStructGetterExpression;
@@ -890,7 +895,7 @@ if ($globalTrace) { printf("displayList at base.qon:153\n") }
 
 #standard expression
 
-          displayList(cdr($l ), add1($indent ))
+          displayList(cdr($l ), $indent )
           ;
 
         } else {          if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -946,13 +951,13 @@ if ($globalTrace) { printf("displayList at base.qon:153\n") }
 }
 
 
-#Building function display from line: 183
+#Building function display from line: 181
 
 sub display {
   my $l  = shift;
 
   
-if ($globalTrace) { printf("display at base.qon:183\n") }
+if ($globalTrace) { printf("display at base.qon:181\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isEmpty($l )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -1003,13 +1008,13 @@ if ($globalTrace) { printf("display at base.qon:183\n") }
 }
 
 
-#Building function boxType from line: 197
+#Building function boxType from line: 193
 
 sub boxType {
   my $b  = shift;
 
   
-if ($globalTrace) { printf("boxType at base.qon:197\n") }
+if ($globalTrace) { printf("boxType at base.qon:193\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   return($b->{typ});
@@ -1017,13 +1022,13 @@ if ($globalTrace) { printf("boxType at base.qon:197\n") }
 }
 
 
-#Building function makeBox from line: 198
+#Building function makeBox from line: 194
 
 sub makeBox {
   
   my $b = undef ;
 
-if ($globalTrace) { printf("makeBox at base.qon:198\n") }
+if ($globalTrace) { printf("makeBox at base.qon:194\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $b = {};
@@ -1053,12 +1058,12 @@ if ($globalTrace) { printf("makeBox at base.qon:198\n") }
 }
 
 
-#Building function makePair from line: 209
+#Building function makePair from line: 205
 
 sub makePair {
   
   
-if ($globalTrace) { printf("makePair at base.qon:209\n") }
+if ($globalTrace) { printf("makePair at base.qon:205\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: makePair
@@ -1070,14 +1075,14 @@ if ($globalTrace) { printf("makePair at base.qon:209\n") }
 }
 
 
-#Building function boxString from line: 215
+#Building function boxString from line: 211
 
 sub boxString {
   my $s  = shift;
 
   my $b = undef ;
 
-if ($globalTrace) { printf("boxString at base.qon:215\n") }
+if ($globalTrace) { printf("boxString at base.qon:211\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $b = makeBox ();
@@ -1097,14 +1102,14 @@ if ($globalTrace) { printf("boxString at base.qon:215\n") }
 }
 
 
-#Building function boxSymbol from line: 225
+#Building function boxSymbol from line: 221
 
 sub boxSymbol {
   my $s  = shift;
 
   my $b = undef ;
 
-if ($globalTrace) { printf("boxSymbol at base.qon:225\n") }
+if ($globalTrace) { printf("boxSymbol at base.qon:221\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $b = boxString($s );
@@ -1118,14 +1123,14 @@ if ($globalTrace) { printf("boxSymbol at base.qon:225\n") }
 }
 
 
-#Building function boxBool from line: 234
+#Building function boxBool from line: 230
 
 sub boxBool {
   my $boo  = shift;
 
   my $b = undef ;
 
-if ($globalTrace) { printf("boxBool at base.qon:234\n") }
+if ($globalTrace) { printf("boxBool at base.qon:230\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $b = makeBox ();
@@ -1146,14 +1151,14 @@ if ($globalTrace) { printf("boxBool at base.qon:234\n") }
 }
 
 
-#Building function boxInt from line: 243
+#Building function boxInt from line: 239
 
 sub boxInt {
   my $val  = shift;
 
   my $b = undef ;
 
-if ($globalTrace) { printf("boxInt at base.qon:243\n") }
+if ($globalTrace) { printf("boxInt at base.qon:239\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $b = makeBox ();
@@ -1170,7 +1175,7 @@ if ($globalTrace) { printf("boxInt at base.qon:243\n") }
 }
 
 
-#Building function assertType from line: 252
+#Building function assertType from line: 248
 
 sub assertType {
   my $atype  = shift;
@@ -1179,7 +1184,7 @@ my $line  = shift;
 my $file  = shift;
 
   
-if ($globalTrace) { printf("assertType at base.qon:252\n") }
+if ($globalTrace) { printf("assertType at base.qon:248\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isNil($abox )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -1235,18 +1240,18 @@ if ($globalTrace) { printf("assertType at base.qon:252\n") }
 }
 
 
-#Building function unBoxString from line: 264
+#Building function unBoxString from line: 260
 
 sub unBoxString {
   my $b  = shift;
 
   
-if ($globalTrace) { printf("unBoxString at base.qon:264\n") }
+if ($globalTrace) { printf("unBoxString at base.qon:260\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard expression
 
-  assertType("string" , $b , 265 , "base.qon" )
+  assertType("string" , $b , 261 , "base.qon" )
   ;
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
@@ -1255,13 +1260,13 @@ if ($globalTrace) { printf("unBoxString at base.qon:264\n") }
 }
 
 
-#Building function unBoxSymbol from line: 267
+#Building function unBoxSymbol from line: 263
 
 sub unBoxSymbol {
   my $b  = shift;
 
   
-if ($globalTrace) { printf("unBoxSymbol at base.qon:267\n") }
+if ($globalTrace) { printf("unBoxSymbol at base.qon:263\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   return($b->{str});
@@ -1269,13 +1274,13 @@ if ($globalTrace) { printf("unBoxSymbol at base.qon:267\n") }
 }
 
 
-#Building function unBoxBool from line: 268
+#Building function unBoxBool from line: 264
 
 sub unBoxBool {
   my $b  = shift;
 
   
-if ($globalTrace) { printf("unBoxBool at base.qon:268\n") }
+if ($globalTrace) { printf("unBoxBool at base.qon:264\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   return($b->{boo});
@@ -1283,13 +1288,13 @@ if ($globalTrace) { printf("unBoxBool at base.qon:268\n") }
 }
 
 
-#Building function unBoxInt from line: 269
+#Building function unBoxInt from line: 265
 
 sub unBoxInt {
   my $b  = shift;
 
   
-if ($globalTrace) { printf("unBoxInt at base.qon:269\n") }
+if ($globalTrace) { printf("unBoxInt at base.qon:265\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   return($b->{i});
@@ -1297,18 +1302,48 @@ if ($globalTrace) { printf("unBoxInt at base.qon:269\n") }
 }
 
 
-#Building function stringify from line: 271
+#Building function stringify_rec from line: 267
+
+sub stringify_rec {
+  my $b  = shift;
+
+  
+if ($globalTrace) { printf("stringify_rec at base.qon:267\n") }
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+  if ( isNil($b )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard return: stringify_rec
+
+    if ($globalTrace) {printf("Leaving \n")}
+
+    return("" );
+
+  } else {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard return: stringify_rec
+
+    if ($globalTrace) {printf("Leaving \n")}
+
+    return(stringConcatenate(stringify(car($b )), stringConcatenate(" " , stringify_rec(cdr($b )))));
+
+  };
+
+}
+
+
+#Building function stringify from line: 279
 
 sub stringify {
   my $b  = shift;
 
   
-if ($globalTrace) { printf("stringify at base.qon:271\n") }
+if ($globalTrace) { printf("stringify at base.qon:279\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isNil($b )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
-    return("nil" );
+    return("()" );
 
   } else {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
@@ -1344,7 +1379,15 @@ if ($globalTrace) { printf("stringify at base.qon:271\n") }
 
           } else {            if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
-            return(boxType($b ));
+            if ( equalString("list" , boxType($b ))) {              if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+              return(stringConcatenate("(" , stringConcatenate(stringify(car($b )), stringConcatenate(" " , stringConcatenate(stringify_rec(cdr($b )), ")" )))));
+
+            } else {              if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+              return(stringConcatenate("Unsupported type: " , boxType($b )));
+
+            };
 
           };
 
@@ -1359,14 +1402,14 @@ if ($globalTrace) { printf("stringify at base.qon:271\n") }
 }
 
 
-#Building function hasTag from line: 293
+#Building function hasTag from line: 310
 
 sub hasTag {
   my $aBox  = shift;
 my $key  = shift;
 
   
-if ($globalTrace) { printf("hasTag at base.qon:293\n") }
+if ($globalTrace) { printf("hasTag at base.qon:310\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isNil($aBox )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -1390,14 +1433,14 @@ if ($globalTrace) { printf("hasTag at base.qon:293\n") }
 }
 
 
-#Building function getTag from line: 299
+#Building function getTag from line: 316
 
 sub getTag {
   my $aBox  = shift;
 my $key  = shift;
 
   
-if ($globalTrace) { printf("getTag at base.qon:299\n") }
+if ($globalTrace) { printf("getTag at base.qon:316\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( $false ) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -1438,7 +1481,7 @@ if ($globalTrace) { printf("getTag at base.qon:299\n") }
 }
 
 
-#Building function getTagFail from line: 311
+#Building function getTagFail from line: 328
 
 sub getTagFail {
   my $aBox  = shift;
@@ -1446,7 +1489,7 @@ my $key  = shift;
 my $onFail  = shift;
 
   
-if ($globalTrace) { printf("getTagFail at base.qon:311\n") }
+if ($globalTrace) { printf("getTagFail at base.qon:328\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( hasTag($aBox , $key )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -1470,14 +1513,14 @@ if ($globalTrace) { printf("getTagFail at base.qon:311\n") }
 }
 
 
-#Building function assocExists from line: 317
+#Building function assocExists from line: 334
 
 sub assocExists {
   my $key  = shift;
 my $aBox  = shift;
 
   
-if ($globalTrace) { printf("assocExists at base.qon:317\n") }
+if ($globalTrace) { printf("assocExists at base.qon:334\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isNil($aBox )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -1501,7 +1544,7 @@ if ($globalTrace) { printf("assocExists at base.qon:317\n") }
 }
 
 
-#Building function assocFail from line: 325
+#Building function assocFail from line: 342
 
 sub assocFail {
   my $key  = shift;
@@ -1509,7 +1552,7 @@ my $aBox  = shift;
 my $onFail  = shift;
 
   
-if ($globalTrace) { printf("assocFail at base.qon:325\n") }
+if ($globalTrace) { printf("assocFail at base.qon:342\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( assocExists($key , $aBox )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -1533,7 +1576,7 @@ if ($globalTrace) { printf("assocFail at base.qon:325\n") }
 }
 
 
-#Building function setTag from line: 333
+#Building function setTag from line: 350
 
 sub setTag {
   my $key  = shift;
@@ -1541,7 +1584,7 @@ my $val  = shift;
 my $aStruct  = shift;
 
   
-if ($globalTrace) { printf("setTag at base.qon:333\n") }
+if ($globalTrace) { printf("setTag at base.qon:350\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $aStruct->{tag} = alistCons($key , $val , $aStruct->{tag});
@@ -1556,14 +1599,14 @@ if ($globalTrace) { printf("setTag at base.qon:333\n") }
 }
 
 
-#Building function filterVoid from line: 343
+#Building function filterVoid from line: 360
 
 sub filterVoid {
   my $l  = shift;
 
   my $token = undef ;
 
-if ($globalTrace) { printf("filterVoid at base.qon:343\n") }
+if ($globalTrace) { printf("filterVoid at base.qon:360\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isEmpty($l )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -1602,14 +1645,14 @@ if ($globalTrace) { printf("filterVoid at base.qon:343\n") }
 }
 
 
-#Building function filterTokens from line: 355
+#Building function filterTokens from line: 372
 
 sub filterTokens {
   my $l  = shift;
 
   my $token = undef ;
 
-if ($globalTrace) { printf("filterTokens at base.qon:355\n") }
+if ($globalTrace) { printf("filterTokens at base.qon:372\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isEmpty($l )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -1684,7 +1727,7 @@ if ($globalTrace) { printf("filterTokens at base.qon:355\n") }
 }
 
 
-#Building function finish_token from line: 389
+#Building function finish_token from line: 406
 
 sub finish_token {
   my $prog  = shift;
@@ -1696,7 +1739,7 @@ my $filename  = shift;
 
   my $token = undef ;
 
-if ($globalTrace) { printf("finish_token at base.qon:389\n") }
+if ($globalTrace) { printf("finish_token at base.qon:406\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( greaterthan($len , 0 )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -1726,7 +1769,7 @@ if ($globalTrace) { printf("finish_token at base.qon:389\n") }
 }
 
 
-#Building function readString from line: 404
+#Building function readString from line: 421
 
 sub readString {
   my $prog  = shift;
@@ -1735,7 +1778,7 @@ my $len  = shift;
 
   my $token = "" ;
 
-if ($globalTrace) { printf("readString at base.qon:404\n") }
+if ($globalTrace) { printf("readString at base.qon:421\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $token = substr($prog , sub1(add($start , $len )), 1 );
@@ -1774,7 +1817,7 @@ if ($globalTrace) { printf("readString at base.qon:404\n") }
 }
 
 
-#Building function readComment from line: 415
+#Building function readComment from line: 432
 
 sub readComment {
   my $prog  = shift;
@@ -1783,7 +1826,7 @@ my $len  = shift;
 
   my $token = "" ;
 
-if ($globalTrace) { printf("readComment at base.qon:415\n") }
+if ($globalTrace) { printf("readComment at base.qon:432\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $token = substr($prog , sub1(add($start , $len )), 1 );
@@ -1810,13 +1853,13 @@ if ($globalTrace) { printf("readComment at base.qon:415\n") }
 }
 
 
-#Building function isWhiteSpace from line: 423
+#Building function isWhiteSpace from line: 440
 
 sub isWhiteSpace {
   my $s  = shift;
 
   
-if ($globalTrace) { printf("isWhiteSpace at base.qon:423\n") }
+if ($globalTrace) { printf("isWhiteSpace at base.qon:440\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( equalString(" " , $s )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -1876,13 +1919,13 @@ if ($globalTrace) { printf("isWhiteSpace at base.qon:423\n") }
 }
 
 
-#Building function isLineBreak from line: 440
+#Building function isLineBreak from line: 457
 
 sub isLineBreak {
   my $s  = shift;
 
   
-if ($globalTrace) { printf("isLineBreak at base.qon:440\n") }
+if ($globalTrace) { printf("isLineBreak at base.qon:457\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( equalString("\n" , $s )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -1918,14 +1961,14 @@ if ($globalTrace) { printf("isLineBreak at base.qon:440\n") }
 }
 
 
-#Building function incForNewLine from line: 447
+#Building function incForNewLine from line: 464
 
 sub incForNewLine {
   my $token  = shift;
 my $val  = shift;
 
   
-if ($globalTrace) { printf("incForNewLine at base.qon:447\n") }
+if ($globalTrace) { printf("incForNewLine at base.qon:464\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( equalString("\n" , stringify($token ))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -1949,7 +1992,7 @@ if ($globalTrace) { printf("incForNewLine at base.qon:447\n") }
 }
 
 
-#Building function annotateReadPosition from line: 454
+#Building function annotateReadPosition from line: 471
 
 sub annotateReadPosition {
   my $filename  = shift;
@@ -1959,7 +2002,7 @@ my $start  = shift;
 my $newBox  = shift;
 
   
-if ($globalTrace) { printf("annotateReadPosition at base.qon:454\n") }
+if ($globalTrace) { printf("annotateReadPosition at base.qon:471\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: annotateReadPosition
@@ -1971,7 +2014,7 @@ if ($globalTrace) { printf("annotateReadPosition at base.qon:454\n") }
 }
 
 
-#Building function scan from line: 466
+#Building function scan from line: 483
 
 sub scan {
   my $prog  = shift;
@@ -1985,7 +2028,7 @@ my $filename  = shift;
 my $newString = "" ;
 my $newBox = undef ;
 
-if ($globalTrace) { printf("scan at base.qon:466\n") }
+if ($globalTrace) { printf("scan at base.qon:483\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( $false ) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -2098,13 +2141,13 @@ if ($globalTrace) { printf("scan at base.qon:466\n") }
 }
 
 
-#Building function isOpenBrace from line: 506
+#Building function isOpenBrace from line: 523
 
 sub isOpenBrace {
   my $b  = shift;
 
   
-if ($globalTrace) { printf("isOpenBrace at base.qon:506\n") }
+if ($globalTrace) { printf("isOpenBrace at base.qon:523\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( equalBox(boxSymbol(openBrace ()), $b )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -2140,12 +2183,12 @@ if ($globalTrace) { printf("isOpenBrace at base.qon:506\n") }
 }
 
 
-#Building function openBrace from line: 514
+#Building function openBrace from line: 531
 
 sub openBrace {
   
   
-if ($globalTrace) { printf("openBrace at base.qon:514\n") }
+if ($globalTrace) { printf("openBrace at base.qon:531\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: openBrace
@@ -2157,13 +2200,13 @@ if ($globalTrace) { printf("openBrace at base.qon:514\n") }
 }
 
 
-#Building function isCloseBrace from line: 516
+#Building function isCloseBrace from line: 533
 
 sub isCloseBrace {
   my $b  = shift;
 
   
-if ($globalTrace) { printf("isCloseBrace at base.qon:516\n") }
+if ($globalTrace) { printf("isCloseBrace at base.qon:533\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( equalBox(boxSymbol(closeBrace ()), $b )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -2199,12 +2242,12 @@ if ($globalTrace) { printf("isCloseBrace at base.qon:516\n") }
 }
 
 
-#Building function closeBrace from line: 526
+#Building function closeBrace from line: 543
 
 sub closeBrace {
   
   
-if ($globalTrace) { printf("closeBrace at base.qon:526\n") }
+if ($globalTrace) { printf("closeBrace at base.qon:543\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: closeBrace
@@ -2216,14 +2259,14 @@ if ($globalTrace) { printf("closeBrace at base.qon:526\n") }
 }
 
 
-#Building function sexprTree from line: 528
+#Building function sexprTree from line: 545
 
 sub sexprTree {
   my $l  = shift;
 
   my $b = undef ;
 
-if ($globalTrace) { printf("sexprTree at base.qon:528\n") }
+if ($globalTrace) { printf("sexprTree at base.qon:545\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isEmpty($l )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -2274,14 +2317,14 @@ if ($globalTrace) { printf("sexprTree at base.qon:528\n") }
 }
 
 
-#Building function skipList from line: 547
+#Building function skipList from line: 564
 
 sub skipList {
   my $l  = shift;
 
   my $b = undef ;
 
-if ($globalTrace) { printf("skipList at base.qon:547\n") }
+if ($globalTrace) { printf("skipList at base.qon:564\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isEmpty($l )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -2332,7 +2375,7 @@ if ($globalTrace) { printf("skipList at base.qon:547\n") }
 }
 
 
-#Building function readSexpr from line: 562
+#Building function readSexpr from line: 579
 
 sub readSexpr {
   my $aStr  = shift;
@@ -2341,7 +2384,7 @@ my $filename  = shift;
   my $tokens = undef ;
 my $as = undef ;
 
-if ($globalTrace) { printf("readSexpr at base.qon:562\n") }
+if ($globalTrace) { printf("readSexpr at base.qon:579\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $tokens = emptyList ();
@@ -2362,13 +2405,13 @@ if ($globalTrace) { printf("readSexpr at base.qon:562\n") }
 }
 
 
-#Building function caar from line: 572
+#Building function caar from line: 589
 
 sub caar {
   my $l  = shift;
 
   
-if ($globalTrace) { printf("caar at base.qon:572\n") }
+if ($globalTrace) { printf("caar at base.qon:589\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: caar
@@ -2380,13 +2423,13 @@ if ($globalTrace) { printf("caar at base.qon:572\n") }
 }
 
 
-#Building function cadr from line: 573
+#Building function cadr from line: 590
 
 sub cadr {
   my $l  = shift;
 
   
-if ($globalTrace) { printf("cadr at base.qon:573\n") }
+if ($globalTrace) { printf("cadr at base.qon:590\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: cadr
@@ -2398,13 +2441,13 @@ if ($globalTrace) { printf("cadr at base.qon:573\n") }
 }
 
 
-#Building function caddr from line: 574
+#Building function caddr from line: 591
 
 sub caddr {
   my $l  = shift;
 
   
-if ($globalTrace) { printf("caddr at base.qon:574\n") }
+if ($globalTrace) { printf("caddr at base.qon:591\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: caddr
@@ -2416,13 +2459,13 @@ if ($globalTrace) { printf("caddr at base.qon:574\n") }
 }
 
 
-#Building function cadddr from line: 575
+#Building function cadddr from line: 592
 
 sub cadddr {
   my $l  = shift;
 
   
-if ($globalTrace) { printf("cadddr at base.qon:575\n") }
+if ($globalTrace) { printf("cadddr at base.qon:592\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: cadddr
@@ -2434,13 +2477,13 @@ if ($globalTrace) { printf("cadddr at base.qon:575\n") }
 }
 
 
-#Building function caddddr from line: 576
+#Building function caddddr from line: 593
 
 sub caddddr {
   my $l  = shift;
 
   
-if ($globalTrace) { printf("caddddr at base.qon:576\n") }
+if ($globalTrace) { printf("caddddr at base.qon:593\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: caddddr
@@ -2452,13 +2495,13 @@ if ($globalTrace) { printf("caddddr at base.qon:576\n") }
 }
 
 
-#Building function cddr from line: 577
+#Building function cddr from line: 594
 
 sub cddr {
   my $l  = shift;
 
   
-if ($globalTrace) { printf("cddr at base.qon:577\n") }
+if ($globalTrace) { printf("cddr at base.qon:594\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: cddr
@@ -2470,13 +2513,13 @@ if ($globalTrace) { printf("cddr at base.qon:577\n") }
 }
 
 
-#Building function first from line: 578
+#Building function first from line: 595
 
 sub first {
   my $l  = shift;
 
   
-if ($globalTrace) { printf("first at base.qon:578\n") }
+if ($globalTrace) { printf("first at base.qon:595\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: first
@@ -2488,13 +2531,13 @@ if ($globalTrace) { printf("first at base.qon:578\n") }
 }
 
 
-#Building function second from line: 579
+#Building function second from line: 596
 
 sub second {
   my $l  = shift;
 
   
-if ($globalTrace) { printf("second at base.qon:579\n") }
+if ($globalTrace) { printf("second at base.qon:596\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: second
@@ -2506,13 +2549,13 @@ if ($globalTrace) { printf("second at base.qon:579\n") }
 }
 
 
-#Building function third from line: 580
+#Building function third from line: 597
 
 sub third {
   my $l  = shift;
 
   
-if ($globalTrace) { printf("third at base.qon:580\n") }
+if ($globalTrace) { printf("third at base.qon:597\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: third
@@ -2524,13 +2567,13 @@ if ($globalTrace) { printf("third at base.qon:580\n") }
 }
 
 
-#Building function fourth from line: 581
+#Building function fourth from line: 598
 
 sub fourth {
   my $l  = shift;
 
   
-if ($globalTrace) { printf("fourth at base.qon:581\n") }
+if ($globalTrace) { printf("fourth at base.qon:598\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: fourth
@@ -2542,13 +2585,13 @@ if ($globalTrace) { printf("fourth at base.qon:581\n") }
 }
 
 
-#Building function fifth from line: 582
+#Building function fifth from line: 599
 
 sub fifth {
   my $l  = shift;
 
   
-if ($globalTrace) { printf("fifth at base.qon:582\n") }
+if ($globalTrace) { printf("fifth at base.qon:599\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: fifth
@@ -2560,7 +2603,7 @@ if ($globalTrace) { printf("fifth at base.qon:582\n") }
 }
 
 
-#Building function makeNode from line: 588
+#Building function makeNode from line: 605
 
 sub makeNode {
   my $name  = shift;
@@ -2569,7 +2612,7 @@ my $code  = shift;
 my $children  = shift;
 
   
-if ($globalTrace) { printf("makeNode at base.qon:588\n") }
+if ($globalTrace) { printf("makeNode at base.qon:605\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: makeNode
@@ -2581,7 +2624,7 @@ if ($globalTrace) { printf("makeNode at base.qon:588\n") }
 }
 
 
-#Building function addToNode from line: 604
+#Building function addToNode from line: 621
 
 sub addToNode {
   my $key  = shift;
@@ -2589,7 +2632,7 @@ my $val  = shift;
 my $node  = shift;
 
   
-if ($globalTrace) { printf("addToNode at base.qon:604\n") }
+if ($globalTrace) { printf("addToNode at base.qon:621\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: addToNode
@@ -2601,7 +2644,7 @@ if ($globalTrace) { printf("addToNode at base.qon:604\n") }
 }
 
 
-#Building function makeStatementNode from line: 609
+#Building function makeStatementNode from line: 626
 
 sub makeStatementNode {
   my $name  = shift;
@@ -2611,7 +2654,7 @@ my $children  = shift;
 my $functionName  = shift;
 
   
-if ($globalTrace) { printf("makeStatementNode at base.qon:609\n") }
+if ($globalTrace) { printf("makeStatementNode at base.qon:626\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: makeStatementNode
@@ -2623,13 +2666,13 @@ if ($globalTrace) { printf("makeStatementNode at base.qon:609\n") }
 }
 
 
-#Building function astExpression from line: 614
+#Building function astExpression from line: 631
 
 sub astExpression {
   my $tree  = shift;
 
   
-if ($globalTrace) { printf("astExpression at base.qon:614\n") }
+if ($globalTrace) { printf("astExpression at base.qon:631\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isList($tree )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -2653,13 +2696,13 @@ if ($globalTrace) { printf("astExpression at base.qon:614\n") }
 }
 
 
-#Building function astSubExpression from line: 622
+#Building function astSubExpression from line: 639
 
 sub astSubExpression {
   my $tree  = shift;
 
   
-if ($globalTrace) { printf("astSubExpression at base.qon:622\n") }
+if ($globalTrace) { printf("astSubExpression at base.qon:639\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isEmpty($tree )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -2695,14 +2738,14 @@ if ($globalTrace) { printf("astSubExpression at base.qon:622\n") }
 }
 
 
-#Building function astIf from line: 633
+#Building function astIf from line: 650
 
 sub astIf {
   my $tree  = shift;
 my $fname  = shift;
 
   
-if ($globalTrace) { printf("astIf at base.qon:633\n") }
+if ($globalTrace) { printf("astIf at base.qon:650\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( equalBox(boxString("then" ), car(second($tree )))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -2760,13 +2803,13 @@ if ($globalTrace) { printf("astIf at base.qon:633\n") }
 }
 
 
-#Building function astSetStruct from line: 654
+#Building function astSetStruct from line: 671
 
 sub astSetStruct {
   my $tree  = shift;
 
   
-if ($globalTrace) { printf("astSetStruct at base.qon:654\n") }
+if ($globalTrace) { printf("astSetStruct at base.qon:671\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: astSetStruct
@@ -2778,13 +2821,13 @@ if ($globalTrace) { printf("astSetStruct at base.qon:654\n") }
 }
 
 
-#Building function astSet from line: 659
+#Building function astSet from line: 676
 
 sub astSet {
   my $tree  = shift;
 
   
-if ($globalTrace) { printf("astSet at base.qon:659\n") }
+if ($globalTrace) { printf("astSet at base.qon:676\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: astSet
@@ -2796,13 +2839,13 @@ if ($globalTrace) { printf("astSet at base.qon:659\n") }
 }
 
 
-#Building function astGetStruct from line: 664
+#Building function astGetStruct from line: 681
 
 sub astGetStruct {
   my $tree  = shift;
 
   
-if ($globalTrace) { printf("astGetStruct at base.qon:664\n") }
+if ($globalTrace) { printf("astGetStruct at base.qon:681\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: astGetStruct
@@ -2814,13 +2857,13 @@ if ($globalTrace) { printf("astGetStruct at base.qon:664\n") }
 }
 
 
-#Building function astReturnVoid from line: 667
+#Building function astReturnVoid from line: 684
 
 sub astReturnVoid {
   my $fname  = shift;
 
   
-if ($globalTrace) { printf("astReturnVoid at base.qon:667\n") }
+if ($globalTrace) { printf("astReturnVoid at base.qon:684\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: astReturnVoid
@@ -2832,14 +2875,14 @@ if ($globalTrace) { printf("astReturnVoid at base.qon:667\n") }
 }
 
 
-#Building function astStatement from line: 671
+#Building function astStatement from line: 688
 
 sub astStatement {
   my $tree  = shift;
 my $fname  = shift;
 
   
-if ($globalTrace) { printf("astStatement at base.qon:671\n") }
+if ($globalTrace) { printf("astStatement at base.qon:688\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( equalBox(boxString("if" ), car($tree ))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -2929,14 +2972,14 @@ if ($globalTrace) { printf("astStatement at base.qon:671\n") }
 }
 
 
-#Building function astBody from line: 701
+#Building function astBody from line: 718
 
 sub astBody {
   my $tree  = shift;
 my $fname  = shift;
 
   
-if ($globalTrace) { printf("astBody at base.qon:701\n") }
+if ($globalTrace) { printf("astBody at base.qon:718\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isEmpty($tree )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -2960,17 +3003,104 @@ if ($globalTrace) { printf("astBody at base.qon:701\n") }
 }
 
 
-#Building function astFunction from line: 707
+#Building function linePanic from line: 724
+
+sub linePanic {
+  my $line  = shift;
+my $message  = shift;
+
+  
+if ($globalTrace) { printf("linePanic at base.qon:724\n") }
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard expression
+
+  printf("line %s: %s\n" , $line , $message )
+  ;
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard expression
+
+  panic($message )
+  ;
+
+}
+
+
+#Building function astFunction from line: 730
 
 sub astFunction {
   my $tree  = shift;
 
-  my $fname = undef ;
+  my $line = "" ;
+my $file = "" ;
+my $fname = undef ;
 
-if ($globalTrace) { printf("astFunction at base.qon:707\n") }
+if ($globalTrace) { printf("astFunction at base.qon:730\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $fname = second($tree );
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+  $line = stringify(getTag($fname , boxString("line" )));
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+  $file = stringify(getTag($fname , boxString("filename" )));
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+  if ( greaterthan(1 , listLength($tree ))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard expression
+
+    linePanic($line , "Malformed function, seems to be empty" )
+    ;
+
+  } else {
+  };
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+  if ( greaterthan(2 , listLength($tree ))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard expression
+
+    linePanic($line , "Malformed function, expected function name" )
+    ;
+
+  } else {
+  };
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+  if ( greaterthan(3 , listLength($tree ))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard expression
+
+    linePanic($line , "Malformed function, expected argument list" )
+    ;
+
+  } else {
+  };
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+  if ( greaterthan(4 , listLength($tree ))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard expression
+
+    linePanic($line , "Malformed function, expected variable declarations" )
+    ;
+
+  } else {
+  };
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+  if ( greaterthan(5 , listLength($tree ))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard expression
+
+    linePanic($line , "Malformed function, expected body" )
+    ;
+
+  } else {
+  };
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: astFunction
@@ -2982,13 +3112,13 @@ if ($globalTrace) { printf("astFunction at base.qon:707\n") }
 }
 
 
-#Building function astFunctionList from line: 730
+#Building function astFunctionList from line: 760
 
 sub astFunctionList {
   my $tree  = shift;
 
   
-if ($globalTrace) { printf("astFunctionList at base.qon:730\n") }
+if ($globalTrace) { printf("astFunctionList at base.qon:760\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isEmpty($tree )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -3012,13 +3142,13 @@ if ($globalTrace) { printf("astFunctionList at base.qon:730\n") }
 }
 
 
-#Building function astFunctions from line: 738
+#Building function astFunctions from line: 768
 
 sub astFunctions {
   my $tree  = shift;
 
   
-if ($globalTrace) { printf("astFunctions at base.qon:738\n") }
+if ($globalTrace) { printf("astFunctions at base.qon:768\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( equalBox(boxString("functions" ), car($tree ))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -3033,7 +3163,7 @@ if ($globalTrace) { printf("astFunctions at base.qon:738\n") }
 
 #standard expression
 
-    panic("Includes section not found!  Every program must have an include section, even if you don't import any libraries.  Your include section should look like:'\n\n(includes file1.qon file.qon)\n\n\nThe includes section must be the first section of the file." )
+    panic("Functions section not found!  Every program must have a function section, even if you don't define any functions, although that is a rather pointless program.  Your function section should look like:'\n\n(return_type function_name (arg1 arg2 arg3 ...) (declare types) (body (statement)(statement)))\n\n\nThe function section must be directly after the types section." )
     ;
     if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
@@ -3048,7 +3178,7 @@ if ($globalTrace) { printf("astFunctions at base.qon:738\n") }
 }
 
 
-#Building function loadLib from line: 746
+#Building function loadLib from line: 776
 
 sub loadLib {
   my $path  = shift;
@@ -3057,7 +3187,7 @@ sub loadLib {
 my $tree = undef ;
 my $library = undef ;
 
-if ($globalTrace) { printf("loadLib at base.qon:746\n") }
+if ($globalTrace) { printf("loadLib at base.qon:776\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $programStr = read_file($path );
@@ -3081,13 +3211,13 @@ if ($globalTrace) { printf("loadLib at base.qon:746\n") }
 }
 
 
-#Building function astInclude from line: 762
+#Building function astInclude from line: 792
 
 sub astInclude {
   my $tree  = shift;
 
   
-if ($globalTrace) { printf("astInclude at base.qon:762\n") }
+if ($globalTrace) { printf("astInclude at base.qon:792\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: astInclude
@@ -3099,13 +3229,13 @@ if ($globalTrace) { printf("astInclude at base.qon:762\n") }
 }
 
 
-#Building function astIncludeList from line: 765
+#Building function astIncludeList from line: 795
 
 sub astIncludeList {
   my $tree  = shift;
 
   
-if ($globalTrace) { printf("astIncludeList at base.qon:765\n") }
+if ($globalTrace) { printf("astIncludeList at base.qon:795\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isEmpty($tree )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -3129,13 +3259,13 @@ if ($globalTrace) { printf("astIncludeList at base.qon:765\n") }
 }
 
 
-#Building function astIncludes from line: 772
+#Building function astIncludes from line: 802
 
 sub astIncludes {
   my $tree  = shift;
 
   
-if ($globalTrace) { printf("astIncludes at base.qon:772\n") }
+if ($globalTrace) { printf("astIncludes at base.qon:802\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( equalBox(boxString("includes" ), car($tree ))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -3165,13 +3295,13 @@ if ($globalTrace) { printf("astIncludes at base.qon:772\n") }
 }
 
 
-#Building function astStruct from line: 780
+#Building function astStruct from line: 810
 
 sub astStruct {
   my $tree  = shift;
 
   
-if ($globalTrace) { printf("astStruct at base.qon:780\n") }
+if ($globalTrace) { printf("astStruct at base.qon:810\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: astStruct
@@ -3183,13 +3313,13 @@ if ($globalTrace) { printf("astStruct at base.qon:780\n") }
 }
 
 
-#Building function astType from line: 783
+#Building function astType from line: 813
 
 sub astType {
   my $tree  = shift;
 
   
-if ($globalTrace) { printf("astType at base.qon:783\n") }
+if ($globalTrace) { printf("astType at base.qon:813\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isList(cadr($tree ))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -3213,13 +3343,13 @@ if ($globalTrace) { printf("astType at base.qon:783\n") }
 }
 
 
-#Building function astTypeList from line: 789
+#Building function astTypeList from line: 819
 
 sub astTypeList {
   my $tree  = shift;
 
   
-if ($globalTrace) { printf("astTypeList at base.qon:789\n") }
+if ($globalTrace) { printf("astTypeList at base.qon:819\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isEmpty($tree )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -3243,13 +3373,13 @@ if ($globalTrace) { printf("astTypeList at base.qon:789\n") }
 }
 
 
-#Building function astTypes from line: 795
+#Building function astTypes from line: 825
 
 sub astTypes {
   my $tree  = shift;
 
   
-if ($globalTrace) { printf("astTypes at base.qon:795\n") }
+if ($globalTrace) { printf("astTypes at base.qon:825\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( equalBox(boxString("types" ), car($tree ))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -3279,13 +3409,13 @@ if ($globalTrace) { printf("astTypes at base.qon:795\n") }
 }
 
 
-#Building function declarationsof from line: 805
+#Building function declarationsof from line: 835
 
 sub declarationsof {
   my $ass  = shift;
 
   
-if ($globalTrace) { printf("declarationsof at base.qon:805\n") }
+if ($globalTrace) { printf("declarationsof at base.qon:835\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: declarationsof
@@ -3297,13 +3427,13 @@ if ($globalTrace) { printf("declarationsof at base.qon:805\n") }
 }
 
 
-#Building function codeof from line: 808
+#Building function codeof from line: 838
 
 sub codeof {
   my $ass  = shift;
 
   
-if ($globalTrace) { printf("codeof at base.qon:808\n") }
+if ($globalTrace) { printf("codeof at base.qon:838\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: codeof
@@ -3315,13 +3445,13 @@ if ($globalTrace) { printf("codeof at base.qon:808\n") }
 }
 
 
-#Building function functionNameof from line: 811
+#Building function functionNameof from line: 841
 
 sub functionNameof {
   my $ass  = shift;
 
   
-if ($globalTrace) { printf("functionNameof at base.qon:811\n") }
+if ($globalTrace) { printf("functionNameof at base.qon:841\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: functionNameof
@@ -3333,13 +3463,13 @@ if ($globalTrace) { printf("functionNameof at base.qon:811\n") }
 }
 
 
-#Building function nodeof from line: 815
+#Building function nodeof from line: 844
 
 sub nodeof {
   my $ass  = shift;
 
   
-if ($globalTrace) { printf("nodeof at base.qon:815\n") }
+if ($globalTrace) { printf("nodeof at base.qon:844\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( equalBox(boxBool($false ), assoc("node" , cdr($ass )))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -3363,13 +3493,13 @@ if ($globalTrace) { printf("nodeof at base.qon:815\n") }
 }
 
 
-#Building function lineof from line: 823
+#Building function lineof from line: 850
 
 sub lineof {
   my $ass  = shift;
 
   
-if ($globalTrace) { printf("lineof at base.qon:823\n") }
+if ($globalTrace) { printf("lineof at base.qon:850\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( equalBox(boxBool($false ), assoc("line" , cdr($ass )))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -3393,13 +3523,13 @@ if ($globalTrace) { printf("lineof at base.qon:823\n") }
 }
 
 
-#Building function subnameof from line: 831
+#Building function subnameof from line: 856
 
 sub subnameof {
   my $ass  = shift;
 
   
-if ($globalTrace) { printf("subnameof at base.qon:831\n") }
+if ($globalTrace) { printf("subnameof at base.qon:856\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: subnameof
@@ -3411,13 +3541,13 @@ if ($globalTrace) { printf("subnameof at base.qon:831\n") }
 }
 
 
-#Building function nameof from line: 836
+#Building function nameof from line: 859
 
 sub nameof {
   my $ass  = shift;
 
   
-if ($globalTrace) { printf("nameof at base.qon:836\n") }
+if ($globalTrace) { printf("nameof at base.qon:859\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: nameof
@@ -3429,13 +3559,13 @@ if ($globalTrace) { printf("nameof at base.qon:836\n") }
 }
 
 
-#Building function childrenof from line: 841
+#Building function childrenof from line: 862
 
 sub childrenof {
   my $ass  = shift;
 
   
-if ($globalTrace) { printf("childrenof at base.qon:841\n") }
+if ($globalTrace) { printf("childrenof at base.qon:862\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: childrenof
@@ -3447,13 +3577,13 @@ if ($globalTrace) { printf("childrenof at base.qon:841\n") }
 }
 
 
-#Building function isNode from line: 845
+#Building function isNode from line: 866
 
 sub isNode {
   my $val  = shift;
 
   
-if ($globalTrace) { printf("isNode at base.qon:845\n") }
+if ($globalTrace) { printf("isNode at base.qon:866\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isEmpty($val )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -3501,13 +3631,13 @@ if ($globalTrace) { printf("isNode at base.qon:845\n") }
 }
 
 
-#Building function truthy from line: 859
+#Building function truthy from line: 880
 
 sub truthy {
   my $aVal  = shift;
 
   
-if ($globalTrace) { printf("truthy at base.qon:859\n") }
+if ($globalTrace) { printf("truthy at base.qon:880\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: truthy
@@ -3519,13 +3649,13 @@ if ($globalTrace) { printf("truthy at base.qon:859\n") }
 }
 
 
-#Building function isNotFalse from line: 863
+#Building function isNotFalse from line: 884
 
 sub isNotFalse {
   my $aVal  = shift;
 
   
-if ($globalTrace) { printf("isNotFalse at base.qon:863\n") }
+if ($globalTrace) { printf("isNotFalse at base.qon:884\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( equalString(boxType($aVal ), "bool" )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -3561,13 +3691,13 @@ if ($globalTrace) { printf("isNotFalse at base.qon:863\n") }
 }
 
 
-#Building function isLeaf from line: 870
+#Building function isLeaf from line: 891
 
 sub isLeaf {
   my $n  = shift;
 
   
-if ($globalTrace) { printf("isLeaf at base.qon:870\n") }
+if ($globalTrace) { printf("isLeaf at base.qon:891\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: isLeaf
@@ -3579,13 +3709,13 @@ if ($globalTrace) { printf("isLeaf at base.qon:870\n") }
 }
 
 
-#Building function printIndent from line: 875
+#Building function printIndent from line: 896
 
 sub printIndent {
   my $ii  = shift;
 
   
-if ($globalTrace) { printf("printIndent at base.qon:875\n") }
+if ($globalTrace) { printf("printIndent at base.qon:896\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( greaterthan($ii , 0 )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -3613,13 +3743,13 @@ if ($globalTrace) { printf("printIndent at base.qon:875\n") }
 }
 
 
-#Building function newLine from line: 883
+#Building function newLine from line: 904
 
 sub newLine {
   my $indent  = shift;
 
   
-if ($globalTrace) { printf("newLine at base.qon:883\n") }
+if ($globalTrace) { printf("newLine at base.qon:904\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard expression
@@ -3636,12 +3766,12 @@ if ($globalTrace) { printf("newLine at base.qon:883\n") }
 }
 
 
-#Building function noStackTrace from line: 887
+#Building function noStackTrace from line: 908
 
 sub noStackTrace {
   
   
-if ($globalTrace) { printf("noStackTrace at base.qon:887\n") }
+if ($globalTrace) { printf("noStackTrace at base.qon:908\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: noStackTrace
@@ -3653,13 +3783,13 @@ if ($globalTrace) { printf("noStackTrace at base.qon:887\n") }
 }
 
 
-#Building function toStr from line: 916
+#Building function toStr from line: 937
 
 sub toStr {
   my $thing  = shift;
 
   
-if ($globalTrace) { printf("toStr at base.qon:916\n") }
+if ($globalTrace) { printf("toStr at base.qon:937\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: toStr
@@ -3671,13 +3801,13 @@ if ($globalTrace) { printf("toStr at base.qon:916\n") }
 }
 
 
-#Building function listLast from line: 919
+#Building function listLast from line: 940
 
 sub listLast {
   my $alist  = shift;
 
   
-if ($globalTrace) { printf("listLast at base.qon:919\n") }
+if ($globalTrace) { printf("listLast at base.qon:940\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isEmpty(cdr($alist ))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -3701,7 +3831,7 @@ if ($globalTrace) { printf("listLast at base.qon:919\n") }
 }
 
 
-#Building function treeCompile from line: 926
+#Building function treeCompile from line: 947
 
 sub treeCompile {
   my $filename  = shift;
@@ -3710,7 +3840,7 @@ sub treeCompile {
 my $tree = undef ;
 my $program = undef ;
 
-if ($globalTrace) { printf("treeCompile at base.qon:926\n") }
+if ($globalTrace) { printf("treeCompile at base.qon:947\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $programStr = read_file($filename );
@@ -3728,7 +3858,7 @@ if ($globalTrace) { printf("treeCompile at base.qon:926\n") }
 }
 
 
-#Building function astBuild from line: 932
+#Building function astBuild from line: 953
 
 sub astBuild {
   my $filename  = shift;
@@ -3737,7 +3867,7 @@ sub astBuild {
 my $tree = undef ;
 my $program = undef ;
 
-if ($globalTrace) { printf("astBuild at base.qon:932\n") }
+if ($globalTrace) { printf("astBuild at base.qon:953\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $programStr = read_file($filename );
@@ -3761,7 +3891,7 @@ if ($globalTrace) { printf("astBuild at base.qon:932\n") }
 }
 
 
-#Building function astCompile from line: 949
+#Building function astCompile from line: 970
 
 sub astCompile {
   my $filename  = shift;
@@ -3770,7 +3900,7 @@ sub astCompile {
 my $tree = undef ;
 my $program = undef ;
 
-if ($globalTrace) { printf("astCompile at base.qon:949\n") }
+if ($globalTrace) { printf("astCompile at base.qon:970\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $program = astBuild($filename );
@@ -3790,14 +3920,14 @@ if ($globalTrace) { printf("astCompile at base.qon:949\n") }
 }
 
 
-#Building function concatLists from line: 956
+#Building function concatLists from line: 977
 
 sub concatLists {
   my $seq1  = shift;
 my $seq2  = shift;
 
   
-if ($globalTrace) { printf("concatLists at base.qon:956\n") }
+if ($globalTrace) { printf("concatLists at base.qon:977\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isNil($seq1 )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -3821,13 +3951,13 @@ if ($globalTrace) { printf("concatLists at base.qon:956\n") }
 }
 
 
-#Building function alistKeys from line: 962
+#Building function alistKeys from line: 983
 
 sub alistKeys {
   my $alist  = shift;
 
   
-if ($globalTrace) { printf("alistKeys at base.qon:962\n") }
+if ($globalTrace) { printf("alistKeys at base.qon:983\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isNil($alist )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -3851,13 +3981,13 @@ if ($globalTrace) { printf("alistKeys at base.qon:962\n") }
 }
 
 
-#Building function mergeIncludes from line: 968
+#Building function mergeIncludes from line: 989
 
 sub mergeIncludes {
   my $program  = shift;
 
   
-if ($globalTrace) { printf("mergeIncludes at base.qon:968\n") }
+if ($globalTrace) { printf("mergeIncludes at base.qon:989\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: mergeIncludes
@@ -3869,14 +3999,14 @@ if ($globalTrace) { printf("mergeIncludes at base.qon:968\n") }
 }
 
 
-#Building function merge_recur from line: 975
+#Building function merge_recur from line: 996
 
 sub merge_recur {
   my $incs  = shift;
 my $program  = shift;
 
   
-if ($globalTrace) { printf("merge_recur at base.qon:975\n") }
+if ($globalTrace) { printf("merge_recur at base.qon:996\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( greaterthan(listLength($incs ), 0 )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -3900,7 +4030,7 @@ if ($globalTrace) { printf("merge_recur at base.qon:975\n") }
 }
 
 
-#Building function mergeInclude from line: 983
+#Building function mergeInclude from line: 1004
 
 sub mergeInclude {
   my $inc  = shift;
@@ -3918,7 +4048,7 @@ my $newtypes = undef ;
 my $newTypeNode = undef ;
 my $types = undef ;
 
-if ($globalTrace) { printf("mergeInclude at base.qon:983\n") }
+if ($globalTrace) { printf("mergeInclude at base.qon:1004\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isNil($inc )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -3975,14 +4105,14 @@ if ($globalTrace) { printf("mergeInclude at base.qon:983\n") }
 }
 
 
-#Building function macrowalk from line: 1037
+#Building function macrowalk from line: 1058
 
 sub macrowalk {
   my $l  = shift;
 
   my $val = undef ;
 
-if ($globalTrace) { printf("macrowalk at base.qon:1037\n") }
+if ($globalTrace) { printf("macrowalk at base.qon:1058\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isEmpty($l )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -4005,15 +4135,27 @@ if ($globalTrace) { printf("macrowalk at base.qon:1037\n") }
 
         return(car(doBoxList(cdr($l ))));
 
-      } else {        if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+      } else {
+      };
+      if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+      if ( equalString(stringConcatenate("string" , "List" ), stringify(car($l )))) {        if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: macrowalk
 
         if ($globalTrace) {printf("Leaving \n")}
 
-        return(cons(macrowalk(car($l )), macrowalk(cdr($l ))));
+        return(car(doStringList(cdr($l ))));
 
+      } else {
       };
+      if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard return: macrowalk
+
+      if ($globalTrace) {printf("Leaving \n")}
+
+      return(cons(macrowalk(car($l )), macrowalk(cdr($l ))));
 
     } else {      if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
@@ -4030,13 +4172,13 @@ if ($globalTrace) { printf("macrowalk at base.qon:1037\n") }
 }
 
 
-#Building function doBoxList from line: 1069
+#Building function doBoxList from line: 1100
 
 sub doBoxList {
   my $l  = shift;
 
   
-if ($globalTrace) { printf("doBoxList at base.qon:1069\n") }
+if ($globalTrace) { printf("doBoxList at base.qon:1100\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isNil($l )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -4060,7 +4202,45 @@ if ($globalTrace) { printf("doBoxList at base.qon:1069\n") }
 }
 
 
-#Building function argList from line: 1088
+#Building function doStringList from line: 1116
+
+sub doStringList {
+  my $l  = shift;
+
+  my $newlist = undef ;
+my $ret = undef ;
+
+if ($globalTrace) { printf("doStringList at base.qon:1116\n") }
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+  if ( isNil($l )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard return: doStringList
+
+    if ($globalTrace) {printf("Leaving \n")}
+
+    return(cons(boxSymbol("nil" ), $undef ));
+
+  } else {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+    $newlist = cons(boxSymbol("boxString" ), cons(first($l ), $newlist ));
+    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+    $ret = cons(cons(boxSymbol("cons" ), cons($newlist , doStringList(cdr($l )))), $undef );
+    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard return: doStringList
+
+    if ($globalTrace) {printf("Leaving \n")}
+
+    return($ret );
+
+  };
+
+}
+
+
+#Building function argList from line: 1140
 
 sub argList {
   my $count  = shift;
@@ -4068,7 +4248,7 @@ my $pos  = shift;
 my $args  = shift;
 
   
-if ($globalTrace) { printf("argList at base.qon:1088\n") }
+if ($globalTrace) { printf("argList at base.qon:1140\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( greaterthan($count , $pos )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -4092,13 +4272,13 @@ if ($globalTrace) { printf("argList at base.qon:1088\n") }
 }
 
 
-#Building function listReverse from line: 1100
+#Building function listReverse from line: 1152
 
 sub listReverse {
   my $l  = shift;
 
   
-if ($globalTrace) { printf("listReverse at base.qon:1100\n") }
+if ($globalTrace) { printf("listReverse at base.qon:1152\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isNil($l )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -4122,14 +4302,14 @@ if ($globalTrace) { printf("listReverse at base.qon:1100\n") }
 }
 
 
-#Building function inList from line: 1106
+#Building function inList from line: 1158
 
 sub inList {
   my $item  = shift;
 my $l  = shift;
 
   
-if ($globalTrace) { printf("inList at base.qon:1106\n") }
+if ($globalTrace) { printf("inList at base.qon:1158\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isNil($l )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -4153,12 +4333,12 @@ if ($globalTrace) { printf("inList at base.qon:1106\n") }
 }
 
 
-#Building function tron from line: 1117
+#Building function tron from line: 1169
 
 sub tron {
   
   
-if ($globalTrace) { printf("tron at base.qon:1117\n") }
+if ($globalTrace) { printf("tron at base.qon:1169\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $globalTrace = $true ;
@@ -4166,12 +4346,12 @@ if ($globalTrace) { printf("tron at base.qon:1117\n") }
 }
 
 
-#Building function troff from line: 1118
+#Building function troff from line: 1170
 
 sub troff {
   
   
-if ($globalTrace) { printf("troff at base.qon:1118\n") }
+if ($globalTrace) { printf("troff at base.qon:1170\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $globalTrace = $false ;
@@ -4179,12 +4359,12 @@ if ($globalTrace) { printf("troff at base.qon:1118\n") }
 }
 
 
-#Building function stron from line: 1119
+#Building function stron from line: 1171
 
 sub stron {
   
   
-if ($globalTrace) { printf("stron at base.qon:1119\n") }
+if ($globalTrace) { printf("stron at base.qon:1171\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $globalStepTrace = $true ;
@@ -4192,12 +4372,12 @@ if ($globalTrace) { printf("stron at base.qon:1119\n") }
 }
 
 
-#Building function stroff from line: 1120
+#Building function stroff from line: 1172
 
 sub stroff {
   
   
-if ($globalTrace) { printf("stroff at base.qon:1120\n") }
+if ($globalTrace) { printf("stroff at base.qon:1172\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $globalStepTrace = $false ;
@@ -6693,7 +6873,7 @@ if ($globalTrace) { printf("ansiIncludes at ansi.qon:219\n") }
 
 #standard expression
 
-  printf("%s" , "\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nvoid panic(char* s){abort();}\nint sub(int a, int b) { return a - b; }\nfloat mult(int a, int b) { return a * b; }\nint greaterthan(int a, int b) { return a > b; }\nfloat subf(float a, float b) { return a - b; }\nfloat multf(float a, float b) { return a * b; }\nint greaterthanf(float a, float b) { return a > b; }\nint equal(int a, int b) { return a == b; }\nint equalString(char* a, char* b) { return !strcmp(a,b); }\nint andBool(int a, int b) { return a == b;}\nint string_length(char* s) { return strlen(s);}\nchar* sub_string(char* s, int start, int length) {\nchar* substr = calloc(length+1, 1);\nstrncpy(substr, s+start, length);\nreturn substr;\n}\n\n\n\nchar* stringConcatenate(char* a, char* b) {\nint len = strlen(a) + strlen(b) + 1;\nchar* target = calloc(len,1);\nstrncat(target, a, len);\nstrncat(target, b, len);\nreturn target;\n}\n\nchar* intToString(int a) {\nint len = 100;\nchar* target = calloc(len,1);\nsnprintf(target, 99, \"%d\", a);\nreturn target;\n}\n\ntypedef int*  array;\ntypedef int bool;\n#define true 1\n#define false 0\n\n\nvoid * gc_malloc( unsigned int size ) {\nreturn malloc( size);\n}\n\nint* makeArray(int length) {\n    int * array = gc_malloc(length*sizeof(int));\n    return array;\n}\n\nint at(int* arr, int index) {\n  return arr[index];\n}\n\nvoid setAt(int* array, int index, int value) {\n    array[index] = value;\n}\n\nchar * read_file(char * filename) {\nchar * buffer = 0;\nlong length;\nFILE * f = fopen (filename, \"rb\");\n\nif (f)\n{\n  fseek (f, 0, SEEK_END);\n  length = ftell (f);\n  fseek (f, 0, SEEK_SET);\n  buffer = malloc (length);\n  if (buffer == NULL) {\n  printf(\"Malloc failed!\\n\");\n  exit(1);\n}\n  if (buffer)\n  {\n    fread (buffer, 1, length, f);\n  }\n  fclose (f);\n}\nreturn buffer;\n}\n\n\nvoid write_file (char * filename, char * data) {\nFILE *f = fopen(filename, \"w\");\nif (f == NULL)\n{\n    printf(\"Error opening file!\");\n    exit(1);\n}\n\nfprintf(f, \"%s\", data);\n\nfclose(f);\n}\n\nchar* getStringArray(int index, char** strs) {\nreturn strs[index];\n}\n\nint start();  //Forwards declare the user's main routine\nchar** globalArgs;\nint globalArgsCount;\nbool globalTrace = false;\nbool globalStepTrace = false;\n\nint main( int argc, char *argv[] )  {\n  globalArgs = argv;\n  globalArgsCount = argc;\n\n  return start();\n\n}\n\n" )
+  printf("%s" , "\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nconst char* getEnv(char* key){return getenv(key);}\n void panic(char* s){abort();}\nint sub(int a, int b) { return a - b; }\nfloat mult(int a, int b) { return a * b; }\nint greaterthan(int a, int b) { return a > b; }\nfloat subf(float a, float b) { return a - b; }\nfloat multf(float a, float b) { return a * b; }\nint greaterthanf(float a, float b) { return a > b; }\nint equal(int a, int b) { return a == b; }\nint equalString(char* a, char* b) { return !strcmp(a,b); }\nint andBool(int a, int b) { return a == b;}\nint string_length(char* s) { return strlen(s);}\nchar* setSubString(char* target, int start,char *source){target[start]=source[0]; return target;}\nchar* sub_string(char* s, int start, int length) {\nchar* substr = calloc(length+1, 1);\nstrncpy(substr, s+start, length);\nreturn substr;\n}\n\n\n\nchar* stringConcatenate(char* a, char* b) {\nint len = strlen(a) + strlen(b) + 1;\nchar* target = calloc(len,1);\nstrncat(target, a, len);\nstrncat(target, b, len);\nreturn target;\n}\n\nchar* intToString(int a) {\nint len = 100;\nchar* target = calloc(len,1);\nsnprintf(target, 99, \"%d\", a);\nreturn target;\n}\n\ntypedef int*  array;\ntypedef int bool;\n#define true 1\n#define false 0\n\n\nvoid * gc_malloc( unsigned int size ) {\nreturn malloc( size);\n}\n\nint* makeArray(int length) {\n    int * array = gc_malloc(length*sizeof(int));\n    return array;\n}\n\nint at(int* arr, int index) {\n  return arr[index];\n}\n\nvoid setAt(int* array, int index, int value) {\n    array[index] = value;\n}\n\nchar * read_file(char * filename) {\nchar * buffer = 0;\nlong length;\nFILE * f = fopen (filename, \"rb\");\n\nif (f)\n{\n  fseek (f, 0, SEEK_END);\n  length = ftell (f);\n  fseek (f, 0, SEEK_SET);\n  buffer = malloc (length);\n  if (buffer == NULL) {\n  printf(\"Malloc failed!\\n\");\n  exit(1);\n}\n  if (buffer)\n  {\n    fread (buffer, 1, length, f);\n  }\n  fclose (f);\n}\nreturn buffer;\n}\n\n\nvoid write_file (char * filename, char * data) {\nFILE *f = fopen(filename, \"w\");\nif (f == NULL)\n{\n    printf(\"Error opening file!\");\n    exit(1);\n}\n\nfprintf(f, \"%s\", data);\n\nfclose(f);\n}\n\nchar* getStringArray(int index, char** strs) {\nreturn strs[index];\n}\n\nint start();  //Forwards declare the user's main routine\nchar** globalArgs;\nint globalArgsCount;\nbool globalTrace = false;\nbool globalStepTrace = false;\n\nint main( int argc, char *argv[] )  {\n  globalArgs = argv;\n  globalArgsCount = argc;\n\n  return start();\n\n}\n\n" )
   ;
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
@@ -6973,11 +7153,19 @@ if ($globalTrace) { printf("uniqueTarget at ansi.qon:314\n") }
 sub ansiCompile {
   my $filename  = shift;
 
-  my $programStr = "" ;
+  my $foundationFuncs = undef ;
+my $foundation = undef ;
+my $programStr = "" ;
 my $tree = undef ;
 my $program = undef ;
 
 if ($globalTrace) { printf("ansiCompile at ansi.qon:315\n") }
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+  $foundation = readSexpr(read_file("foundationlibs/ansi.qon" ), "foundationlibs/ansi.qon" );
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+  $foundationFuncs = cdr(third($foundation ));
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard expression
@@ -7739,6 +7927,60 @@ if ($globalTrace) { printf("test17 at tests.qon:196\n") }
 
     printf("17 fail list literal failed\n" )
     ;
+
+  };
+
+}
+
+
+#Building function test18 from line: 205
+
+sub test18 {
+  
+  my $val1 = "a" ;
+my $val2 = "b" ;
+my $val3 = "c" ;
+my $l = undef ;
+
+if ($globalTrace) { printf("test18 at tests.qon:205\n") }
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+  $l = cons(boxString($val1 ), cons(boxString($val2 ), cons(boxString("c" ), $undef )));
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard expression
+
+  display($l )
+  ;
+
+}
+
+
+#Building function reverseRec from line: 215
+
+sub reverseRec {
+  my $old  = shift;
+my $new  = shift;
+
+  
+if ($globalTrace) { printf("reverseRec at tests.qon:215\n") }
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+  if ( isEmpty($old )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard return: reverseRec
+
+    if ($globalTrace) {printf("Leaving \n")}
+
+    return($undef );
+
+  } else {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard return: reverseRec
+
+    if ($globalTrace) {printf("Leaving \n")}
+
+    return(reverseRec(cdr($old ), cons(first($old ), $new )));
 
   };
 
@@ -10592,6 +10834,12 @@ if ($globalTrace) { printf("start at compiler.qon:4\n") }
 #standard expression
 
     test17 ()
+    ;
+    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard expression
+
+    test18 ()
     ;
     if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
