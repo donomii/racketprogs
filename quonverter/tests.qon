@@ -5,10 +5,7 @@
   ;; Power on self tests
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (void
-   test0
-   ()
-   (declare)
+  (void test0 () (declare)
    (body
     (if (equalString
          (stringify (boxString "hello"))
@@ -20,11 +17,10 @@
          (stringify (boxSymbol "hello")))
       (then (printf "0.  pass string compare works\n"))
       (else (printf "0.  pass string compare fails\n")))))
-  (void
-   test1
-   ()
-   (declare)
+
+  (void test1 () (declare)
    (body (printf "1.  pass Function call and print work\n")))
+
   (void
    test2_do
    (string message)
