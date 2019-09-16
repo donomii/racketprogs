@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termios.h>
+#include <unistd.h>
 const char* getEnv(char* key){return getenv(key);}
  void panic(char* s){abort();}
 int sub(int a, int b) { return a - b; }
@@ -121,6 +123,7 @@ int main( int argc, char *argv[] )  {
   return start();
 
 }
+ int getCharImmediate( ) { struct termios oldt, newt; int            ch;         tcgetattr( STDIN_FILENO, &oldt ); newt = oldt; newt.c_lflag &= ~( ICANON |      ECHO ); tcsetattr( STDIN_FILENO, TCSANOW, &newt ); ch = getchar();              putchar(ch); tcsetattr( STDIN_FILENO, TCSANOW, &oldt ); return ch; }
 
 char * character(int num) { char *string = malloc(2); if (!string) return 0; string[0] = num; string[1] = 0; return string; }
 typedef struct Box {
@@ -361,6 +364,10 @@ void test16();
 void test17();
 void test18();
 list reverseRec(list old ,list new );
+list reverseList(list l );
+void test19();
+list concatenateLists(list old ,list new );
+void test20();
 void nodeFunctionArgs(list tree );
 void nodeLeaf(list thisNode ,int indent );
 void nodeStructGetterExpression(list thisNode ,int indent );
@@ -3463,6 +3470,7 @@ if (globalTrace)
 
 list macrowalk(list l ) {
   box val = NULL ;
+char* funcName = "" ;
 
 if (globalTrace)
     printf("macrowalk at base.qon:1058\n");
@@ -3475,6 +3483,17 @@ if (globalTrace)
   } else {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
     if ( isList(l )) {      if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+      funcName = stringify(car(l ));
+      if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+      if ( equalString(stringConcatenate("an" , "y" ), funcName )) {        if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+        return(NULL );
+
+      } else {
+      };
+      if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
       if ( equalString(stringConcatenate("box" , "List" ), stringify(car(l )))) {        if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
@@ -3508,12 +3527,12 @@ if (globalTrace)
 }
 
 
-//Building function doBoxList from line: 1100
+//Building function doBoxList from line: 1108
 
 list doBoxList(list l ) {
   
 if (globalTrace)
-    printf("doBoxList at base.qon:1100\n");
+    printf("doBoxList at base.qon:1108\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   if ( isNil(l )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -3532,14 +3551,14 @@ if (globalTrace)
 }
 
 
-//Building function doStringList from line: 1116
+//Building function doStringList from line: 1124
 
 list doStringList(list l ) {
   list newlist = NULL ;
 list ret = NULL ;
 
 if (globalTrace)
-    printf("doStringList at base.qon:1116\n");
+    printf("doStringList at base.qon:1124\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   if ( isNil(l )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -3564,12 +3583,12 @@ if (globalTrace)
 }
 
 
-//Building function argList from line: 1140
+//Building function argList from line: 1148
 
 list argList(int count ,int pos ,char** args ) {
   
 if (globalTrace)
-    printf("argList at base.qon:1140\n");
+    printf("argList at base.qon:1148\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   if ( greaterthan(count , pos )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -3588,12 +3607,12 @@ if (globalTrace)
 }
 
 
-//Building function listReverse from line: 1152
+//Building function listReverse from line: 1160
 
 list listReverse(list l ) {
   
 if (globalTrace)
-    printf("listReverse at base.qon:1152\n");
+    printf("listReverse at base.qon:1160\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   if ( isNil(l )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -3612,7 +3631,7 @@ if (globalTrace)
 }
 
 
-//Building function inList from line: 1158
+//Building function inList from line: 1166
 
 bool inList(box item ,list l ) {
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -3638,7 +3657,7 @@ bool inList(box item ,list l ) {
 }
 
 
-//Building function tron from line: 1169
+//Building function tron from line: 1180
 
 void tron() {
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -3648,7 +3667,7 @@ void tron() {
 }
 
 
-//Building function troff from line: 1170
+//Building function troff from line: 1181
 
 void troff() {
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -3658,7 +3677,7 @@ void troff() {
 }
 
 
-//Building function stron from line: 1171
+//Building function stron from line: 1182
 
 void stron() {
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -3668,7 +3687,7 @@ void stron() {
 }
 
 
-//Building function stroff from line: 1172
+//Building function stroff from line: 1183
 
 void stroff() {
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
@@ -5682,7 +5701,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiCompile from line: 315
+//Building function ansiCompile from line: 317
 
 void ansiCompile(char* filename ) {
   list foundationFuncs = NULL ;
@@ -5692,7 +5711,7 @@ list tree = NULL ;
 list program = NULL ;
 
 if (globalTrace)
-    printf("ansiCompile at ansi.qon:315\n");
+    printf("ansiCompile at ansi.qon:317\n");
   if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
   foundation = readSexpr(read_file("foundationlibs/ansi.qon" ), "foundationlibs/ansi.qon" );
@@ -6385,7 +6404,7 @@ if (globalTrace)
 
   if ( isEmpty(old )) {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
-    return(NULL );
+    return(new );
 
   } else {    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
@@ -6395,6 +6414,106 @@ if (globalTrace)
 
 if (globalTrace)
     printf("Leaving reverseRec\n");
+
+}
+
+
+//Building function reverseList from line: 222
+
+list reverseList(list l ) {
+  
+if (globalTrace)
+    printf("reverseList at tests.qon:222\n");
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  return(reverseRec(l , NULL ));
+
+if (globalTrace)
+    printf("Leaving reverseList\n");
+
+}
+
+
+//Building function test19 from line: 226
+
+void test19() {
+  char* val1 = "a" ;
+char* val2 = "b" ;
+char* val3 = "c" ;
+list l = NULL ;
+list revlist = NULL ;
+
+if (globalTrace)
+    printf("test19 at tests.qon:226\n");
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  printf("Starting reverselist\n" );
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  l = cons(boxString(val1 ), cons(boxString(val2 ), cons(boxString("c" ), NULL )));
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  revlist = reverseList(l );
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  display(revlist );
+
+if (globalTrace)
+    printf("Leaving test19\n");
+
+}
+
+
+//Building function concatenateLists from line: 239
+
+list concatenateLists(list old ,list new ) {
+  
+if (globalTrace)
+    printf("concatenateLists at tests.qon:239\n");
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  return(reverseRec(reverseList(old ), new ));
+
+if (globalTrace)
+    printf("Leaving concatenateLists\n");
+
+}
+
+
+//Building function test20 from line: 245
+
+void test20() {
+  char* val1 = "a" ;
+char* val2 = "b" ;
+char* val3 = "c" ;
+list l = NULL ;
+list l2 = NULL ;
+list combined = NULL ;
+list revlist = NULL ;
+
+if (globalTrace)
+    printf("test20 at tests.qon:245\n");
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  l = cons(boxString(val1 ), cons(boxString(val2 ), cons(boxString("c" ), NULL )));
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  l2 = cons(boxString("d" ), cons(boxString("e" ), cons(boxString("f" ), NULL )));
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  combined = concatenateLists(l , l2 );
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  display(l );
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  display(l2 );
+  if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+  display(combined );
+
+if (globalTrace)
+    printf("Leaving test20\n");
 
 }
 
@@ -8418,6 +8537,12 @@ if (globalTrace)
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
     test18 ();
+    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+    test19 ();
+    if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
+
+    test20 ();
     if (globalStepTrace) printf("StepTrace %s:%d\n", __FILE__, __LINE__);
 
     printf("\n\nAfter all that hard work, I need a beer...\n" );
