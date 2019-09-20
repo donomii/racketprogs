@@ -121,3 +121,11 @@ func TestParseAny(t *testing.T) {
   parseAny(yamlTestString())
   parseAny(sexpTestString())
 }
+
+func TestJsonWalk(t *testing.T) {
+    tree := parseAny(tomlTestString())
+    json := jsonWalkTree(tree, 0)
+    if ! json.Valid([]byte(json)) {
+        t.Error() // to indicate test failed
+    }
+}

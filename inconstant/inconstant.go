@@ -14,6 +14,8 @@ import (
     "os"
 )
 
+var tabStep = 4
+
 func nodeToMap(node interface{}) map[string]interface{} {
     m, ok := node.(map[string]interface{})
     if !ok {
@@ -55,9 +57,9 @@ switch parsed.(type) {
         accum += fmt.Sprintf("\n%v(", i2s(indent))
         val := parsed.(map[string]interface{})
         for k,v := range val {
-        accum += fmt.Sprintf("\n%v(", i2s(indent+1))
+        accum += fmt.Sprintf("\n%v(", i2s(indent+tabStep))
             accum += fmt.Sprintf("%v: ",k)
-            accum += walkTree(v, indent+1)
+            accum += walkTree(v, indent+tabStep)
             accum += fmt.Sprintf(")")
         }
         accum += fmt.Sprintf(")")
@@ -69,7 +71,7 @@ switch parsed.(type) {
         for _,v := range val {
             //fmt.Println(i)
             accum += fmt.Sprintf("\n%v", i2s(indent))
-            accum += walkTree(v, indent+1)
+            accum += walkTree(v, indent+tabStep)
             //accum += fmt.Sprintf(" ")
         }
         accum += fmt.Sprintf(")")
@@ -93,27 +95,51 @@ switch parsed.(type) {
     case []uint8:
         return fmt.Sprintf("\"%v\"",string(parsed.([]uint8)))  //FIXME
     case string:
-        return fmt.Sprintf("\"%v\"", parsed.(string))
+        str := parsed.(string)
+        json, err := json.Marshal(str)
+        if err != nil { 
+            panic("Couldn't marshal string")
+        }
+        return fmt.Sprintf("%v", string(json))
     case float64:
         return fmt.Sprintln(parsed.(float64))
     case map[string]interface{}:
         accum := ""
-        accum += fmt.Sprintf("%v{", i2s(indent))
+        accum += fmt.Sprintf("{")
         val := parsed.(map[string]interface{})
+        first := true
         for k,v := range val {
-        accum += fmt.Sprintf("\n%v", i2s(indent+1))
+            if first   {
+            accum += fmt.Sprintf("\n%v", i2s(indent+tabStep))
+            first = false
+        } else {
+            accum += fmt.Sprintf(",\n%v", i2s(indent+tabStep))
+        }
             accum += fmt.Sprintf("\"%v\" : ",k)
-            accum += jsonWalkTree(v, indent+1)
+            accum += jsonWalkTree(v, indent+tabStep)
         }
         accum += fmt.Sprintf("}")
         return accum
         //fmt.Println(parsed.(map[string]interface{}))
     case []interface{}:
-        accum := fmt.Sprintf("\n%v(", i2s(indent))
+        newline := fmt.Sprintf("\n%s", i2s(indent))
+        accum := ""
         val := parsed.([]interface{})
+        if len(val) < 5 {
+            newline = ""
+            accum = fmt.Sprintf("(")
+        } else {
+            accum = fmt.Sprintf("%s(", newline)
+        }
+        first := true
         for _,v := range val {
             //fmt.Println(i)
-            accum += fmt.Sprintf("\n%v", i2s(indent))
+            if first   {
+            accum += fmt.Sprintf("%s", newline)
+            first = false
+        } else {
+            accum += fmt.Sprintf(",%s", newline)
+        }
             accum += jsonWalkTree(v, indent+1)
             //accum += fmt.Sprintf(" ")
         }
@@ -190,6 +216,5 @@ func main() {
     } else {
         object = parseAny(data)
     }
-    
     fmt.Println(jsonWalkTree(object, 0))
 }
