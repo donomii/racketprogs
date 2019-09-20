@@ -1,5 +1,6 @@
 package main
 import "testing"
+import "encoding/json"
 
 func tomlTestString() []byte {
     testData := `Age = 25
@@ -124,8 +125,8 @@ func TestParseAny(t *testing.T) {
 
 func TestJsonWalk(t *testing.T) {
     tree := parseAny(tomlTestString())
-    json := jsonWalkTree(tree, 0)
-    if ! json.Valid([]byte(json)) {
+    js := jsonWalkTree(tree, 0)
+    if ! json.Valid([]byte(js)) {
         t.Error() // to indicate test failed
     }
 }

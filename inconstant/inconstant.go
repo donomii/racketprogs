@@ -126,10 +126,10 @@ switch parsed.(type) {
         accum := ""
         val := parsed.([]interface{})
         if len(val) < 5 {
-            newline = ""
-            accum = fmt.Sprintf("(")
+            newline = " "
+            accum = fmt.Sprintf("[")
         } else {
-            accum = fmt.Sprintf("%s(", newline)
+            accum = fmt.Sprintf("%s[", newline)
         }
         first := true
         for _,v := range val {
@@ -143,7 +143,7 @@ switch parsed.(type) {
             accum += jsonWalkTree(v, indent+1)
             //accum += fmt.Sprintf(" ")
         }
-        accum += fmt.Sprintf(")")
+        accum += fmt.Sprintf("]")
         return accum
         //fmt.Println(parsed.([]interface{}))
     default:
