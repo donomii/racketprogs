@@ -10,7 +10,7 @@ import (
     "strings"
     "reflect"
     "fmt"
-    "github.com/beego/goyaml2"
+    "github.com/go-yaml/yaml"
     "os"
 )
 
@@ -155,27 +155,41 @@ func unmarshalJson(data []byte) (object interface{}, err error) {
     return object, err
 }
 
+func unmarshalYaml(data []byte) (object interface{}, err error) {
+        defer func() {
+        if r := recover(); r != nil {
+            err = errors.New(fmt.Sprintf("%v",r))
+        }
+    }()
+    err = yaml.Unmarshal(data, &object)
+    return object, err
+}
 
-func main() {
-    filename := os.Args[1]
-    file, err := os.Open(filename)
-    if err != nil {
-        panic(err)
-    }
-    var object interface{}
-    data, err := ioutil.ReadFile(filename)
-    if err != nil {
-        panic("Unable to read " + filename)
-    } else {
-        object, err = unmarshalJson(data)
+
+func parseAny(data []byte) (object interface{}){
+    var err error
+    object, err = unmarshalJson(data)
     if err != nil {
         object, err = unmarshalSexp(data)
     if err != nil {
         object, err = unmarshalToml(data)
     if err != nil {
-        object, err = goyaml2.Read(file)
+        object, err = unmarshalYaml(data)
     if err != nil {
         panic(err)
-    }}}}}
+    }}}}
+    return object
+}
+
+func main() {
+    filename := os.Args[1]
+    var object interface{}
+    data, err := ioutil.ReadFile(filename)
+    if err != nil {
+        panic("Unable to read " + filename)
+    } else {
+        object = parseAny(data)
+    }
+    
     fmt.Println(jsonWalkTree(object, 0))
 }
