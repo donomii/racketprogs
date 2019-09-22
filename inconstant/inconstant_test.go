@@ -91,6 +91,7 @@ _, err := unmarshalToml([]byte(tomlTestString()))
 if err != nil {
     t.Error() // to indicate test failed
 }
+t.Log("Can parse toml")
 }
 
 
@@ -99,6 +100,7 @@ func TestJson(t *testing.T) {
 if err != nil {
     t.Error() // to indicate test failed
 }
+t.Log("Can parse Json")
 }
 
 func TestYaml(t *testing.T) {
@@ -106,6 +108,7 @@ func TestYaml(t *testing.T) {
 if err != nil {
     t.Error() // to indicate test failed
 }
+t.Log("Can parse yaml")
 }
 
 func TestSexp(t *testing.T) {
@@ -113,6 +116,7 @@ func TestSexp(t *testing.T) {
 if err != nil {
     t.Error() // to indicate test failed
 }
+t.Log("Can parse sexp")
 }
 
 
@@ -121,6 +125,8 @@ func TestParseAny(t *testing.T) {
   parseAny(jsonTestString())
   parseAny(yamlTestString())
   parseAny(sexpTestString())
+    t.Log("Can autodetect and parse ")
+
 }
 
 func TestJsonWalk(t *testing.T) {
@@ -129,4 +135,6 @@ func TestJsonWalk(t *testing.T) {
     if ! json.Valid([]byte(js)) {
         t.Error() // to indicate test failed
     }
+    t.Log("Can generate valid json")
+
 }
