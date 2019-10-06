@@ -5,10 +5,7 @@
   ;; Power on self tests
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (void
-   test0
-   ()
-   (declare)
+  (void test0 () (declare)
    (body
     (if (equalString
          (stringify (boxString "hello"))
@@ -20,11 +17,10 @@
          (stringify (boxSymbol "hello")))
       (then (printf "0.  pass string compare works\n"))
       (else (printf "0.  pass string compare fails\n")))))
-  (void
-   test1
-   ()
-   (declare)
+
+  (void test1 () (declare)
    (body (printf "1.  pass Function call and print work\n")))
+
   (void
    test2_do
    (string message)
@@ -201,4 +197,62 @@
          (then (printf "17 pass list literal works\n"))
          (else (printf "17 fail list literal failed\n")))
       ))
+
+
+       (void test18 () (declare 
+       
+       (string val1 "a")
+       (string val2 "b")
+       (string val3 "c")
+       (list l nil) )
+             (body
+                (set l (stringList val1 val2 "c"))
+               (display l)
+                 ))
+       (list reverseRec (list old list new) (declare)
+       (body
+           (if (isEmpty old)
+           (then (return new))
+           (else (return (reverseRec (cdr old) (cons (first old) new)))))
+       ))
+
+       (list reverseList (list l) (declare)
+       (body
+        (return (reverseRec l nil))
+       ))
+(void test19 () (declare 
+       
+       (string val1 "a")
+       (string val2 "b")
+       (string val3 "c")
+       (list l nil)
+       (list revlist nil))
+             (body
+             (printf "Starting reverselist\n")
+                (set l (stringList val1 val2 "c"))
+                (set revlist (reverseList l))
+               (display revlist)
+                 ))
+(list concatenateLists (list old list new) (declare)
+(body
+    (return (reverseRec (reverseList old) new))
+))
+
+
+(void test20 () (declare 
+       (string val1 "a")
+       (string val2 "b")
+       (string val3 "c")
+       (list l nil)
+       (list l2 nil)
+       (list combined nil)
+       (list revlist nil))
+             (body
+                (set l (stringList val1 val2 "c"))
+                (set l2 (stringList "d" "e" "f"))
+                (set combined (concatenateLists l l2))
+               (display l)
+               (display l2)
+               (display combined)
+                 ))
   ))

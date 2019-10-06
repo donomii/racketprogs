@@ -3,8 +3,15 @@
   (functions
 
 (void test17 () (declare (list l nil))
-      (set l (boxList 1 2 3))
             (body
+      (set l (boxList 1 2 3))
 	          (display l)
 		        ))
+
+(void test18 () (declare (string val "a")(list l nil) )
+            (body
+      (set l (stringList val "b" "c"))
+	          (display l)
+		        ))
+
 			))

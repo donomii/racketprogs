@@ -1056,7 +1056,7 @@
        (return newProgram)))))
 
 
-	   	  (list macrowalk (list l  ) (declare (box val nil)) (body
+  (list macrowalk (list l  ) (declare (box val nil)) (body
     (if (isEmpty l)
       (then (return nil))
       (else
@@ -1068,13 +1068,23 @@
 			;(printf "//Listlength: %d\n" (listLength l))
 			;(display l)
 
+        ;Handle boxList
           (if (equalString (stringConcatenate "box" "List") (stringify (car l)))
           (then
             ;(display (doBoxList (cdr l)))
           (return (car (doBoxList (cdr l)))))
-          (else
+          (else))
+
+        ;Handle stringList
+          (if (equalString (stringConcatenate "string" "List") (stringify (car l)))
+          (then
+            ;(display (doStringList (cdr l)))
+          (return (car (doStringList (cdr l)))))
+          (else))
+
+
             (return   (cons (macrowalk (car l) ) (macrowalk (cdr l) ))))
-				))
+
          (else
 		 ;(printf "Processing non list: %s\n" (stringify l))
 		 ;(printf "//Comparing %s and %s at %s,%s\n" "uniqueTarget" (stringify l) (stringify (getTagFail l (boxString "line")(boxString "no tag"))) (stringify (getTagFail l (boxString "filename" )(boxString "no tag"))))
@@ -1102,6 +1112,27 @@
                     (first l)
                     (doBoxList (cdr l)))
             ) nil)))) ))
+
+
+ (list doStringList (list l) (declare (list newlist nil) (list ret nil))
+ (body
+ ;(printf "doStringList\n")
+ (if (isNil l)
+ (then (return (cons (boxSymbol "nil") nil)))
+ (else
+ (set newlist (cons (boxSymbol "boxString")(cons (first l) newlist)))
+ (set ret
+    (cons
+            (cons
+                (boxSymbol "cons")
+                (cons
+                   newlist 
+                    (doStringList (cdr l)))
+            ) nil)
+    )
+ ;(display ret)
+ (return ret))) ))
+
 
 
 
