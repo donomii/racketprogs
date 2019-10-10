@@ -2,6 +2,7 @@ package main
 import "testing"
 import "encoding/json"
 
+
 func tomlTestString() []byte {
     testData := `Age = 25
 Cats = [ "Cauchy", "Plato" ]
