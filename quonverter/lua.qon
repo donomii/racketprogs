@@ -1,0 +1,150 @@
+((includes)
+(types)
+ (functions
+
+(void luaFunctionArgs (int indent list tree) (declare)
+   (body
+    (if (isEmpty tree)
+      (then (return))
+      (else
+       (display (second tree))
+       (if (isNil (cddr tree)) (then (printf "")) (else (printf ",")))
+       (luaFunctionArgs indent (cddr tree))))))
+
+
+(void luaFunction (int indent list function ) (declare)
+(body
+(printf "\nfunction %s(" (stringify (second function)))
+(luaFunctionArgs indent (third function))
+(printf ")\n")
+(luaBody indent (cdr (fifth function)))
+(printf "end\n")))
+
+
+(void luaExpressionStart (int indent list program) (declare)
+(body
+  (if (isNil program)
+    (then 
+      (return))
+    (else 
+      (if (isList program)
+      (then 
+        (printf "%s(" (stringify (car program)))
+        (luaExpression indent (cdr program))
+        (printf ")")
+      )
+      (else
+        (luaExpression indent program)
+      )
+      )
+    )
+  )
+))
+
+(void luaExpression (int indent list program) (declare)
+(body
+  (if (isNil program)
+    (then 
+      (return))
+    (else 
+      (if (isList program)
+        (then
+          (if (isList (car program))
+            (then 
+              (luaExpressionStart indent (car program))
+            )
+            (else
+              ;(printf "%s" (stringify (car program)))
+              (display (car program))
+            )
+          )
+          (if (greaterthan (listLength program) 1)
+          (then 
+            (printf ", "))
+          (else ))
+            (luaExpression indent (cdr program))
+        )
+        (else
+          (display program)
+          ))))))
+
+
+(void luaStatement (int indent list program) (declare)
+  (body
+  (if (equalString (stringify (car program)) "if")
+    (then
+    ;do if thing
+    (printIndent indent)
+      (printf "if (")
+      (add1 indent)
+      (luaExpressionStart (add1 indent) (second program))
+      
+      (printf ") then\n" )
+     (luaBody (add1 indent) (cdr (third program)))
+     (printIndent indent)
+      (printf "else\n" )
+     (luaBody (add1 indent) (cdr (fourth program)))
+     (printIndent indent)
+      (printf "end\n" )
+     )
+    (else
+    (printIndent indent)
+      (luaExpressionStart indent program)
+      (printf ";\n")
+    )
+  )))
+
+(void luaBody (int indent list program) (declare)
+  (body
+  (if (isNil program)
+    (then (return))
+    (else 
+      (luaStatement (add1 indent) (car program))
+      (printf "\n")
+      (luaBody indent  (cdr program))))
+))
+
+(void luaFunctions (int indent list program) (declare)
+(body
+(if (isNil program)
+  (then 
+    (return))
+  (else 
+    (luaFunction indent  (car program))
+    (luaFunctions indent (cdr program))))
+))
+
+
+
+(void luaProgram (list program) (declare)
+  (body
+  (luaIncludes nil)
+    (luaFunctions 0 (cdr (third program)))
+  )
+)
+
+(void luaIncludes (list nodes) (declare)
+   (body
+    (printf
+     "%s"
+     "\n     function getEnv(key)\n        return os.getenv(key);\n     end\n    \n    function panic(s)\n      do return end;\n    end\n    \n    function sub(a, b) \n      return a - b; \n    end\n\n    function mult(a, b) \n      return a * b;\n    end\n    \n    function greaterthan(a, b)\n      return a > b;\n    end\n    \n    function subf(a, b) \n      return a - b;\n    end\n    \n    function multf(a, b)\n      return a * b;\n    end\n    \n    function greaterthanf(a, b)\n      return a > b;\n    end\n    \n    function equal(a, b)\n      return a == b;\n    end\n    \n    function equalString(a, b)\n      return not strcmp(a,b);\n    end\n    \n    function andBool(a, b)\n      return a == b;\n    end\n    \n    function string_length(s)\n      return strlen(s);\n    end\n    \n    function setSubString(target, start, source)\n      target[start]=source[0];\n      return target;\n    end\n    \n    function sub_string(s, start, length)\n      substr = calloc(length+1, 1);\n      strncpy(substr, s+start, length);\n      return substr;\n    end\n    \n    function stringConcatenate(a, b)\n      len = strlen(a) + strlen(b) + 1;\n      target = calloc(len,1);\n      strncat(target, a, len);\n      strncat(target, b, len);\n      return target;\n    end\n    \n    function intToString(a)\n      return a\n    end\n\n    function gc_malloc(size)\n      return \"\"\n    end\n    \n    function makeArray(length)\n      return {}\n    end\n    \n    function at(arr, index)\n      return arr[index];\n    end\n    \n    function setAt(array, index, value)\n      array[index] = value;\n    end\n    \n    function read_file(file)\n      local f = io.open(file, \"r\")\n      local content = \"\"\n      local length = 0\n\n      while f:read(0) ~= \"\" do\n          local current = f:read(\"*all\")\n\n          print(#current, length)\n          length = length + #current\n\n          content = content .. current\n      end\n\n      return content\n    end\n    \n    function write_file(filename, data)\n      local file = io.open(filename,'w')\n      file:write(tostring(data))\n      file:close()\n    end\n    \n    caller=\"\";\n    \n    globalArgs={};\n    globalArgsCount=0;\n    globalTrace = false;\n    globalStepTrace = false;\n\n    function main()\n      globalArgs = arg;\n      globalArgsCount = #arg;\n      return start();\n    end\n    \n")
+))
+
+(void luaCompile (string filename) (declare (list foundationFuncs nil) (list foundation nil) (string programStr "") (list tree nil) (list program nil))
+    (body
+   (set foundation (readSexpr (read-file "foundationlibs/ansi.qon") "foundationlibs/ansi.qon"))
+   (set foundationFuncs (cdr (third foundation)))
+
+   (printf "--[[Scanning file...%s--]]\n" filename)
+    (set programStr (read-file filename))
+   (printf "--[[Building sexpr--]]\n")
+    (set tree (readSexpr programStr filename))
+	(set tree (macrowalk tree))
+
+;(printf "Transformed tree")
+(luaProgram tree)
+    (printf "\n")
+    (printf "main()")
+    ))
+    
+  ))
