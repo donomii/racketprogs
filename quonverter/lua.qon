@@ -130,9 +130,9 @@
      "\n     function getEnv(key)\n        return os.getenv(key);\n     end\n    \n    function panic(s)\n      do return end;\n    end\n    \n    function sub(a, b) \n      return a - b; \n    end\n\n    function mult(a, b) \n      return a * b;\n    end\n    \n    function greaterthan(a, b)\n      return a > b;\n    end\n    \n    function subf(a, b) \n      return a - b;\n    end\n    \n    function multf(a, b)\n      return a * b;\n    end\n    \n    function greaterthanf(a, b)\n      return a > b;\n    end\n    \n    function equal(a, b)\n      return a == b;\n    end\n    \n    function equalString(a, b)\n      return not strcmp(a,b);\n    end\n    \n    function andBool(a, b)\n      return a == b;\n    end\n    \n    function string_length(s)\n      return strlen(s);\n    end\n    \n    function setSubString(target, start, source)\n      target[start]=source[0];\n      return target;\n    end\n    \n    function sub_string(s, start, length)\n      substr = calloc(length+1, 1);\n      strncpy(substr, s+start, length);\n      return substr;\n    end\n    \n    function stringConcatenate(a, b)\n      len = strlen(a) + strlen(b) + 1;\n      target = calloc(len,1);\n      strncat(target, a, len);\n      strncat(target, b, len);\n      return target;\n    end\n    \n    function intToString(a)\n      return a\n    end\n\n    function gc_malloc(size)\n      return \"\"\n    end\n    \n    function makeArray(length)\n      return {}\n    end\n    \n    function at(arr, index)\n      return arr[index];\n    end\n    \n    function setAt(array, index, value)\n      array[index] = value;\n    end\n    \n    function read_file(file)\n      local f = io.open(file, \"r\")\n      local content = \"\"\n      local length = 0\n\n      while f:read(0) ~= \"\" do\n          local current = f:read(\"*all\")\n\n          print(#current, length)\n          length = length + #current\n\n          content = content .. current\n      end\n\n      return content\n    end\n    \n    function write_file(filename, data)\n      local file = io.open(filename,'w')\n      file:write(tostring(data))\n      file:close()\n    end\n    \n    caller=\"\";\n    \n    globalArgs={};\n    globalArgsCount=0;\n    globalTrace = false;\n    globalStepTrace = false;\n\n    function main()\n      globalArgs = arg;\n      globalArgsCount = #arg;\n      return start();\n    end\n    \n")
 ))
 
-(void luaCompile (string filename) (declare (list foundationFuncs nil) (list foundation nil) (string programStr "") (list tree nil) (list program nil))
-    (body
-   (set foundation (readSexpr (read-file "foundationlibs/ansi.qon") "foundationlibs/ansi.qon"))
+(list loadQuon (string filename) (declare (list foundationFuncs nil) (list foundation nil) (string programStr "")  (list tree nil) )
+(body
+   (set foundation (readSexpr (read-file filename) filename))
    (set foundationFuncs (cdr (third foundation)))
 
    (printf "--[[Scanning file...%s--]]\n" filename)
@@ -140,11 +140,59 @@
    (printf "--[[Building sexpr--]]\n")
     (set tree (readSexpr programStr filename))
 	(set tree (macrowalk tree))
+  (return tree)
+))
 
+(list getIncludes (list program) (declare)
+  (body
+    (return  (cdr (first program)))))
+
+(list getTypes (list program) (declare)
+  (body
+    (return  (cdr (second program)))))
+
+(list getFunctions (list program) (declare)
+  (body
+    (return  (cdr (third program)))))
+
+
+(list loadIncludes (list tree) (declare (string includeFile "") (list functionsCombined nil) (list typesCombined nil) (list includeTree nil) (list program nil))
+(body
+(printf "Includes:\n")
+ ; (display tree)
+(display (getIncludes tree))
+(set includeFile (stringify (first (getIncludes tree))))
+(printf "\nLoading %s" includeFile)
+(set includeTree (loadQuon includeFile))
+;(display tree)
+(set functionsCombined (concatLists (getFunctions includeTree) (getFunctions tree)))
+(set typesCombined (concatLists (getTypes includeTree) (getTypes tree)))
+;(display typesCombined)
+(return (buildProg (cdr (getIncludes tree)) typesCombined functionsCombined))
+
+))
+
+(list buildProg (list includes list types list functions)(declare (list program nil))
+(body
+(set includes (cons (boxSymbol "includes") includes))
+(set types (cons (boxSymbol "types") types))
+(set functions (cons (boxSymbol "functions") functions))
+  (set program (cons includes
+            (cons types
+              (cons functions nil))))
+  (return program)
+)
+)
+
+(void luaCompile (string filename) (declare (list tree nil)  )
+    (body
+  
+  	(set tree (loadQuon "compiler.qon"))
+  (display (loadIncludes tree))
 ;(printf "Transformed tree")
-(luaProgram tree)
+;(luaProgram tree)
     (printf "\n")
     (printf "main()")
     ))
-    
-  ))
+  )
+  )
