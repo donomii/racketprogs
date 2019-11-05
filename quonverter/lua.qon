@@ -12,13 +12,28 @@
        (luaFunctionArgs indent (cddr tree))))))
 
 
-(void luaFunction (int indent list function ) (declare)
+(void luaFunction (int indent list functionDefinition ) (declare)
 (body
-(printf "\nfunction %s(" (stringify (second function)))
-(luaFunctionArgs indent (third function))
+(printf "\nfunction %s(" (stringify (second functionDefinition)))
+(luaFunctionArgs indent (third functionDefinition))
 (printf ")\n")
-(luaBody indent (cdr (fifth function)))
+(luaDeclarations (add1 indent) (cdr (fourth functionDefinition)))
+(luaBody indent (cdr (fifth functionDefinition)))
 (printf "end\n")))
+
+(void luaDeclarations (int indent list declarations ) (declare (list decl nil))
+(body
+  (if (isNil declarations)
+    (then 
+      (return))
+    (else 
+    (set decl (first declarations))
+      (printf "local %s =" (stringify (second decl)) )
+      (luaExpressionStart indent (third decl))
+      (printf "\n")
+    ))
+))
+
 
 
 (void luaExpressionStart (int indent list program) (declare)
@@ -28,10 +43,32 @@
       (return))
     (else 
       (if (isList program)
-      (then 
-        (printf "%s(" (stringify (car program)))
-        (luaExpression indent (cdr program))
-        (printf ")")
+      (then
+         (if (equalString (stringify (car program)) "get-struct")
+         (then
+            (printf "%s.%s" (stringify (second program)) (stringify (third program)))
+         )
+         (else 
+            (if (equalString (stringify (car program)) ">")
+            (then
+               (printf "greaterthan(" )
+               (luaExpression indent (cdr program))
+               (printf ")")
+            )
+            (else 
+            (if (equalString (stringify (car program)) "=")
+            (then
+               (printf "equal(" )
+               (luaExpression indent (cdr program))
+               (printf ")")
+            )
+            (else 
+               (printf "%s(" (stringify (car program)))
+               (luaExpression indent (cdr program))
+               (printf ")")
+            ))
+            ))
+        ))
       )
       (else
         (luaExpression indent program)
@@ -69,28 +106,54 @@
           ))))))
 
 
-(void luaStatement (int indent list program) (declare)
+(void luaStatement (int indent list statement) (declare)
   (body
-  (if (equalString (stringify (car program)) "if")
+  (if (equalString (stringify (car statement)) "if")
     (then
-    ;do if thing
-    (printIndent indent)
+      ;do if thing
+      (printIndent indent)
       (printf "if (")
       (add1 indent)
-      (luaExpressionStart (add1 indent) (second program))
+      (luaExpressionStart (add1 indent) (second statement))
       
       (printf ") then\n" )
-     (luaBody (add1 indent) (cdr (third program)))
-     (printIndent indent)
+      (luaBody (add1 indent) (cdr (third statement)))
+      (printIndent indent)
       (printf "else\n" )
-     (luaBody (add1 indent) (cdr (fourth program)))
-     (printIndent indent)
+      (luaBody (add1 indent) (cdr (fourth statement)))
+      (printIndent indent)
       (printf "end\n" )
      )
     (else
-    (printIndent indent)
-      (luaExpressionStart indent program)
-      (printf ";\n")
+      (if (equalString (stringify (car statement)) "set")
+      (then
+         (printIndent indent)
+         (printf "%s = " (stringify (second statement)) )
+         (luaExpressionStart (add1 indent) (third statement))
+      )
+      (else
+         (if (equalString (stringify (car statement)) "set-struct")
+            (then
+               (printf "%s.%s = " (stringify (second statement)) (stringify (third statement)))
+               (luaExpressionStart indent (fourth statement))
+            )
+            (else  
+            (if (equalString (stringify (car statement)) "return")
+               (then
+                  (printf "return ")
+                  (if (greaterthan (listLength statement) 1)
+                  (then 
+                     (luaExpressionStart indent (second statement)))
+                  (else))
+                     (printf "\n")
+               )
+               (else 
+                  (printIndent indent)
+                  (luaExpressionStart indent statement)
+                  (printf ";\n")
+            ))
+            ))
+      ))
     )
   )))
 
@@ -135,9 +198,9 @@
    (set foundation (readSexpr (read-file filename) filename))
    (set foundationFuncs (cdr (third foundation)))
 
-   (printf "--[[Scanning file...%s--]]\n" filename)
+   ;(printf "--[[Scanning file...%s--]]\n" filename)
     (set programStr (read-file filename))
-   (printf "--[[Building sexpr--]]\n")
+   ;(printf "--[[Building sexpr--]]\n")
     (set tree (readSexpr programStr filename))
 	(set tree (macrowalk tree))
   (return tree)
@@ -162,11 +225,11 @@
 (if ( greaterthan (listLength (getIncludes tree)) 0)
 (then
 
-  (printf "Includes: ")
+  ;(printf "Includes: ")
   ; (display tree)
-  (display (getIncludes tree))
+  ;(display (getIncludes tree))
   (set includeFile (stringify (first (getIncludes tree))))
-  (printf "\nLoading %s\n" includeFile)
+  ;(printf "\nLoading %s\n" includeFile)
   (set includeTree (loadQuon includeFile))
   ;(display tree)
   (set functionsCombined (concatLists (getFunctions includeTree) (getFunctions tree)))
@@ -196,10 +259,10 @@
   
   	(set tree (loadQuon "compiler.qon"))
 
-    (printf "Final program: \n")
-  (display (loadIncludes tree))
+    ;(printf "Final program: \n")
+  (set tree (loadIncludes tree))
 ;(printf "Transformed tree")
-;(luaProgram tree)
+(luaProgram tree)
     (printf "\n")
     (printf "main()")
     ))
