@@ -202,7 +202,7 @@
     (set programStr (read-file filename))
    ;(printf "--[[Building sexpr--]]\n")
     (set tree (readSexpr programStr filename))
-	(set tree (macrowalk tree))
+	
   (return tree)
 ))
 
@@ -261,6 +261,7 @@
 
     ;(printf "Final program: \n")
   (set tree (loadIncludes tree))
+  (set tree (macrowalk tree "write-file" "luaWriteFile"))
 ;(printf "Transformed tree")
 (luaProgram tree)
     (printf "\n")

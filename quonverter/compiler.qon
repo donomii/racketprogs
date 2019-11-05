@@ -53,7 +53,7 @@
        (beers 9))
       (else
       (if runTree
-      (then (display (macrowalk (treeCompile (unBoxString filename)))))
+      (then (display (macrowalk (treeCompile (unBoxString filename)) "asdfgasdf" "asdfsadf")))
       (else
       (if runAst
       (then (astCompile (unBoxString filename)))
