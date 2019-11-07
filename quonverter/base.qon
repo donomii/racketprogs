@@ -779,7 +779,7 @@
     ;(printf "//Loading library %s\n" path)
     (set programStr (read-file path))
     (set tree (readSexpr programStr path))
-	(set tree (macrowalk tree))
+    (set tree (macrowalk tree))
     (set library
      (alistCons
       (boxString "includes")
@@ -1056,16 +1056,16 @@
        (return newProgram)))))
 
 
-  (list macrowalk (list l  ) (declare (box val nil)) (body
+  (list macrowalk (list l ) (declare (box val nil)) (body
     (if (isEmpty l)
       (then (return nil))
       (else
 
-	  ;(printf "type: %s\n" (get-struct l typ))
+	  ;(printf "//type: %s\n" (get-struct l typ))
        (if (isList l)
          (then
-		 ;(printf "Processing list\n")
-			;(printf "//Listlength: %d\n" (listLength l))
+		 ;(printf "//Processing list\n")
+		;	(printf "//Listlength: %d\n" (listLength l))
 			;(display l)
 
         ;Handle boxList
@@ -1081,22 +1081,35 @@
             ;(display (doStringList (cdr l)))
           (return (car (doStringList (cdr l)))))
           (else))
-
-
             (return   (cons (macrowalk (car l) ) (macrowalk (cdr l) ))))
-
          (else
-		 ;(printf "Processing non list: %s\n" (stringify l))
-		 ;(printf "//Comparing %s and %s at %s,%s\n" "uniqueTarget" (stringify l) (stringify (getTagFail l (boxString "line")(boxString "no tag"))) (stringify (getTagFail l (boxString "filename" )(boxString "no tag"))))
-			(return l)
-          ;(if (equalString "blahblahblah" (stringify l))
-            ;(then
-			;(set val (clone l))
-			;(set-struct val str "b0rk")
-			;(return l))
-            ;(else (return l)))
+         (return l)
 			))))))
 
+
+
+  (list macrosingle (list l string search string replace ) (declare (box val nil)) (body
+    (if (isEmpty l)
+      (then (return nil))
+      (else
+
+	  ;(printf "//type: %s\n" (get-struct l typ))
+       (if (isList l)
+         (then
+            (return   (cons (macrosingle (car l) search replace) (macrosingle (cdr l) search replace ))))
+         (else
+                      ;(printf "---Processing non list: %s\n" (stringify l))
+          ;(printf "--Comparing %s and %s at %s,%s\n" search (stringify l) (stringify (getTagFail l (boxString "line")(boxString "no tag"))) (stringify (getTagFail l (boxString "filename" )(boxString "no tag"))))
+          
+          (if (equalString search (stringify l))
+            (then
+            (printf "---Matched!: %s\n" (stringify l))
+              (set val (clone l))
+              (set-struct val str replace)
+              (return val))
+            (else))
+         (return l)
+			))))))
 
  (list doBoxList (list l) (declare)
  (body
@@ -1165,6 +1178,33 @@
        (if (equalBox (car l) item)
          (then (return true))
          (else (return (inList item (cdr l)))))))))
+
+ (bool equalList (list a list b) (declare)
+   (body
+      (if (isNil a)
+       (then (if (isNil b)
+          (then 
+            (return true))
+          (else
+            (return true))))
+       (else))
+      (if (equalBox (car a) (car b))
+       (then (return (equalList (cdr a)(cdr b))))
+       (else (return false)))
+    ))
+
+  (list reverseRec (list old list new) (declare)
+    (body
+      (if (isEmpty old)
+      (then (return new))
+      (else (return (reverseRec (cdr old) (cons (first old) new)))))
+    ))
+
+  (list reverseList (list l) (declare)
+  (body
+    (return (reverseRec l nil))
+  ))
+
 
 
   (void tron  () (declare) (body (set globalTrace true)))
