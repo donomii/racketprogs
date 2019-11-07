@@ -333,7 +333,7 @@
     (set programStr (read-file filename))
    (printf "//Building sexpr\n")
     (set tree (readSexpr programStr filename))
-	(set tree (macrowalk tree "asdfasdf" "sadfsadf"))
+	(set tree (macrowalk tree))
 	;(display tree)
 	;(uniqueTarget "blah" "blah")
     (boxList (boxString "a") (boxString "b") (boxString "c"))
