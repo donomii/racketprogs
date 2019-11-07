@@ -49,11 +49,12 @@
        (test18)
        (test19)
        (test20)
+       (test21)
        (printf "\n\nAfter all that hard work, I need a beer...\n")
        (beers 9))
       (else
       (if runTree
-      (then (display (macrowalk (treeCompile (unBoxString filename)) "asdfgasdf" "asdfsadf")))
+      (then (display (macrowalk (treeCompile (unBoxString filename)))))
       (else
       (if runAst
       (then (astCompile (unBoxString filename)))
