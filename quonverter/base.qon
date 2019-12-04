@@ -825,13 +825,14 @@
 
   (list astTypes (list tree) (declare)
    (body
-   (if (equalBox  (boxString "types")(car tree))
-   (then (return (makeNode "types" "types" tree (astTypeList (cdr tree)))))
-   (else
-   (panic "Types section not found!  Every program must have a types section, even if you don't define any types")
-   (return (boxString "Fuck java"))
-   ))
-   ))
+     (if (equalBox  (boxString "types")(car tree))
+       (then (return (makeNode "types" "types" tree (astTypeList (cdr tree)))))
+       (else
+         (panic "Types section not found!  Every program must have a types section, even if you don't define any types")
+         (return (boxString "Fuck java"))
+       )
+     )
+ ))
 
   (list declarationsof (list ass) (declare)
    (body (return (cdr (assoc "declarations" (cdr ass))))))
