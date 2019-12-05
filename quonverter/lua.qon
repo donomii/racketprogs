@@ -12,13 +12,16 @@
        (luaFunctionArgs indent (cddr tree))))))
 
 
-(void luaFunction (int indent list functionDefinition ) (declare)
+(void luaFunction (int indent list functionDefinition ) (declare (string fname ""))
 (body
-(printf "\nfunction %s(" (stringify (second functionDefinition)))
+(set fname (stringify (second functionDefinition)))
+(printf "-- Chose function name %s" fname)
+(printf "\nfunction %s(" fname)
 (luaFunctionArgs indent (third functionDefinition))
 (printf ")\n")
+(printf "print(\"caller: \", caller, \"-> %s\")\n" fname)
 (luaDeclarations (add1 indent) (cdr (fourth functionDefinition)))
-(luaBody indent (cdr (fifth functionDefinition)))
+(luaBody fname indent (cdr (fifth functionDefinition)))
 (printf "end\n")))
 
 (void luaDeclarations (int indent list declarations ) (declare (list decl nil))
@@ -118,10 +121,10 @@
       (luaExpressionStart (add1 indent) (second statement))
       
       (printf " then\n" )
-      (luaBody (add1 indent) (cdr (third statement)))
+      (luaBody caller (add1 indent) (cdr (third statement)))
       (printIndent indent)
       (printf "else\n" )
-      (luaBody (add1 indent) (cdr (fourth statement)))
+      (luaBody caller (add1 indent) (cdr (fourth statement)))
       (printIndent indent)
       (printf "end\n" )
      )
@@ -159,14 +162,15 @@
     )
   )))
 
-(void luaBody (int indent list program) (declare)
+(void luaBody (string local_caller int indent list program) (declare)
   (body
   (if (isNil program)
     (then (return))
     (else 
+      (printf "caller=\"%s\"\n" local_caller)
       (luaStatement (add1 indent) (car program))
       (printf "\n")
-      (luaBody indent  (cdr program))))
+      (luaBody local_caller indent  (cdr program))))
 ))
 
 (void luaFunctions (int indent list program) (declare)
