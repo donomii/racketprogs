@@ -1194,11 +1194,11 @@
        (else (return false)))
     ))
 
-  (list reverseRec (list old list new) (declare)
+  (list reverseRec (list oldL list newL) (declare)
     (body
-      (if (isEmpty old)
-      (then (return new))
-      (else (return (reverseRec (cdr old) (cons (first old) new)))))
+      (if (isEmpty oldL)
+      (then (return newL))
+      (else (return (reverseRec (cdr oldL) (cons (first oldL) newL)))))
     ))
 
   (list reverseList (list l) (declare)
