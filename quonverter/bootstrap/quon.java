@@ -1321,7 +1321,7 @@ public Box astTypes(Box tree ) {
 }
 
 
-//Building function declarationsof from line: 835
+//Building function declarationsof from line: 836
 
 public Box declarationsof(Box ass ) {
     
@@ -1329,7 +1329,7 @@ public Box declarationsof(Box ass ) {
 }
 
 
-//Building function codeof from line: 838
+//Building function codeof from line: 839
 
 public Box codeof(Box ass ) {
     
@@ -1337,7 +1337,7 @@ public Box codeof(Box ass ) {
 }
 
 
-//Building function functionNameof from line: 841
+//Building function functionNameof from line: 842
 
 public Box functionNameof(Box ass ) {
     
@@ -1345,7 +1345,7 @@ public Box functionNameof(Box ass ) {
 }
 
 
-//Building function nodeof from line: 844
+//Building function nodeof from line: 845
 
 public Box nodeof(Box ass ) {
     
@@ -1357,7 +1357,7 @@ public Box nodeof(Box ass ) {
 }
 
 
-//Building function lineof from line: 850
+//Building function lineof from line: 851
 
 public Box lineof(Box ass ) {
     
@@ -1369,7 +1369,7 @@ public Box lineof(Box ass ) {
 }
 
 
-//Building function subnameof from line: 856
+//Building function subnameof from line: 857
 
 public Box subnameof(Box ass ) {
     
@@ -1377,7 +1377,7 @@ public Box subnameof(Box ass ) {
 }
 
 
-//Building function nameof from line: 859
+//Building function nameof from line: 860
 
 public Box nameof(Box ass ) {
     
@@ -1385,7 +1385,7 @@ public Box nameof(Box ass ) {
 }
 
 
-//Building function childrenof from line: 862
+//Building function childrenof from line: 863
 
 public Box childrenof(Box ass ) {
     
@@ -1393,7 +1393,7 @@ public Box childrenof(Box ass ) {
 }
 
 
-//Building function isNode from line: 866
+//Building function isNode from line: 867
 
 public boolean isNode(Box val ) {
     
@@ -1413,7 +1413,7 @@ public boolean isNode(Box val ) {
 }
 
 
-//Building function truthy from line: 880
+//Building function truthy from line: 881
 
 public boolean truthy(Box aVal ) {
     
@@ -1421,7 +1421,7 @@ public boolean truthy(Box aVal ) {
 }
 
 
-//Building function isNotFalse from line: 884
+//Building function isNotFalse from line: 885
 
 public boolean isNotFalse(Box aVal ) {
     
@@ -1437,7 +1437,7 @@ public boolean isNotFalse(Box aVal ) {
 }
 
 
-//Building function isLeaf from line: 891
+//Building function isLeaf from line: 892
 
 public boolean isLeaf(Box n ) {
     
@@ -1445,7 +1445,7 @@ public boolean isLeaf(Box n ) {
 }
 
 
-//Building function printIndent from line: 896
+//Building function printIndent from line: 897
 
 public void printIndent(Integer ii ) {
     
@@ -1461,7 +1461,7 @@ if (globalTrace)
 }
 
 
-//Building function newLine from line: 904
+//Building function newLine from line: 905
 
 public void newLine(Integer indent ) {
     
@@ -1473,7 +1473,7 @@ if (globalTrace)
 }
 
 
-//Building function noStackTrace from line: 908
+//Building function noStackTrace from line: 909
 
 public Box noStackTrace() {
     
@@ -1481,7 +1481,7 @@ public Box noStackTrace() {
 }
 
 
-//Building function toStr from line: 937
+//Building function toStr from line: 938
 
 public Box toStr(Box thing ) {
     
@@ -1489,7 +1489,7 @@ public Box toStr(Box thing ) {
 }
 
 
-//Building function listLast from line: 940
+//Building function listLast from line: 941
 
 public Box listLast(Box alist ) {
     
@@ -1501,7 +1501,7 @@ public Box listLast(Box alist ) {
 }
 
 
-//Building function treeCompile from line: 947
+//Building function treeCompile from line: 948
 
 public Box treeCompile(String filename ) {
   String programStr = "" ;
@@ -1514,7 +1514,7 @@ Box program = null ;
 }
 
 
-//Building function astBuild from line: 953
+//Building function astBuild from line: 954
 
 public Box astBuild(String filename ) {
   String programStr = "" ;
@@ -1529,7 +1529,7 @@ Box program = null ;
 }
 
 
-//Building function astCompile from line: 970
+//Building function astCompile from line: 971
 
 public void astCompile(String filename ) {
   String programStr = "" ;
@@ -1545,7 +1545,7 @@ if (globalTrace)
 }
 
 
-//Building function concatLists from line: 977
+//Building function concatLists from line: 978
 
 public Box concatLists(Box seq1 ,Box seq2 ) {
     
@@ -1557,7 +1557,7 @@ public Box concatLists(Box seq1 ,Box seq2 ) {
 }
 
 
-//Building function alistKeys from line: 983
+//Building function alistKeys from line: 984
 
 public Box alistKeys(Box alist ) {
     
@@ -1569,7 +1569,7 @@ public Box alistKeys(Box alist ) {
 }
 
 
-//Building function mergeIncludes from line: 989
+//Building function mergeIncludes from line: 990
 
 public Box mergeIncludes(Box program ) {
     
@@ -1577,7 +1577,7 @@ public Box mergeIncludes(Box program ) {
 }
 
 
-//Building function merge_recur from line: 996
+//Building function merge_recur from line: 997
 
 public Box merge_recur(Box incs ,Box program ) {
     
@@ -1589,7 +1589,7 @@ public Box merge_recur(Box incs ,Box program ) {
 }
 
 
-//Building function mergeInclude from line: 1004
+//Building function mergeInclude from line: 1005
 
 public Box mergeInclude(Box inc ,Box program ) {
   Box newProgram = null ;
@@ -1623,7 +1623,7 @@ Box types = null ;
 }
 
 
-//Building function macrowalk from line: 1058
+//Building function macrowalk from line: 1059
 
 public Box macrowalk(Box l ) {
   Box val = null ;
@@ -1648,7 +1648,31 @@ public Box macrowalk(Box l ) {
 }
 
 
-//Building function doBoxList from line: 1100
+//Building function macrosingle from line: 1091
+
+public Box macrosingle(Box l ,String search ,String replace ) {
+  Box val = null ;
+  
+  if ( isEmpty(l )) {    
+    return(null );
+  } else {    
+    if ( isList(l )) {      
+      return(cons(macrosingle(car(l ), search , replace ), macrosingle(cdr(l ), search , replace )));
+    } else {      
+      if ( equalString(search , stringify(l ))) {        
+        System.out.printf("---Matched!: %s\n" , stringify(l ));        
+        val = clone(l );        
+        val.str = replace ;        
+        return(val );
+      } else {
+      }      
+      return(l );
+    }
+  }
+}
+
+
+//Building function doBoxList from line: 1114
 
 public Box doBoxList(Box l ) {
     
@@ -1660,7 +1684,7 @@ public Box doBoxList(Box l ) {
 }
 
 
-//Building function doStringList from line: 1116
+//Building function doStringList from line: 1130
 
 public Box doStringList(Box l ) {
   Box newlist = null ;
@@ -1676,7 +1700,7 @@ Box ret = null ;
 }
 
 
-//Building function argList from line: 1140
+//Building function argList from line: 1154
 
 public Box argList(Integer count ,Integer pos ,String[] args ) {
     
@@ -1688,7 +1712,7 @@ public Box argList(Integer count ,Integer pos ,String[] args ) {
 }
 
 
-//Building function listReverse from line: 1152
+//Building function listReverse from line: 1166
 
 public Box listReverse(Box l ) {
     
@@ -1700,7 +1724,7 @@ public Box listReverse(Box l ) {
 }
 
 
-//Building function inList from line: 1158
+//Building function inList from line: 1172
 
 public boolean inList(Box item ,Box l ) {
     
@@ -1716,7 +1740,47 @@ public boolean inList(Box item ,Box l ) {
 }
 
 
-//Building function tron from line: 1169
+//Building function equalList from line: 1182
+
+public boolean equalList(Box a ,Box b ) {
+    
+  if ( isNil(a )) {    
+    if ( isNil(b )) {      
+      return(true );
+    } else {      
+      return(true );
+    }
+  } else {
+  }  
+  if ( equalBox(car(a ), car(b ))) {    
+    return(equalList(cdr(a ), cdr(b )));
+  } else {    
+    return(false );
+  }
+}
+
+
+//Building function reverseRec from line: 1196
+
+public Box reverseRec(Box old ,Box new ) {
+    
+  if ( isEmpty(old )) {    
+    return(new );
+  } else {    
+    return(reverseRec(cdr(old ), cons(first(old ), new )));
+  }
+}
+
+
+//Building function reverseList from line: 1203
+
+public Box reverseList(Box l ) {
+    
+  return(reverseRec(l , null ));
+}
+
+
+//Building function tron from line: 1210
 
 public void tron() {
     
@@ -1724,7 +1788,7 @@ public void tron() {
 }
 
 
-//Building function troff from line: 1170
+//Building function troff from line: 1211
 
 public void troff() {
     
@@ -1732,7 +1796,7 @@ public void troff() {
 }
 
 
-//Building function stron from line: 1171
+//Building function stron from line: 1212
 
 public void stron() {
     
@@ -1740,7 +1804,7 @@ public void stron() {
 }
 
 
-//Building function stroff from line: 1172
+//Building function stroff from line: 1213
 
 public void stroff() {
     
@@ -3138,7 +3202,9 @@ String contents = "" ;
   if ( equalString(testString , contents )) {    
     System.out.printf("13. pass Read and write files\n" );
   } else {    
-    System.out.printf("13. fail Read and write files\n" );
+    System.out.printf("13. fail Read and write files\n" );    
+    System.out.printf("Expected: %s\n" , testString );    
+    System.out.printf("Got: %s\n" , contents );
   }
 if (globalTrace)
    System.out. printf("Leaving test13\n");
@@ -3146,7 +3212,7 @@ if (globalTrace)
 }
 
 
-//Building function test15 from line: 157
+//Building function test15 from line: 161
 
 public void test15() {
   String a = "hello" ;
@@ -3165,7 +3231,7 @@ if (globalTrace)
 }
 
 
-//Building function test16 from line: 167
+//Building function test16 from line: 169
 
 public void test16() {
   Box assocCell1 = null ;
@@ -3195,16 +3261,16 @@ if (globalTrace)
 }
 
 
-//Building function test17 from line: 192
+//Building function test17 from line: 193
 
 public void test17() {
   Box l = null ;
   
   l = cons(boxInt(1 ), cons(boxInt(2 ), cons(boxInt(3 ), null )));  
   if ( equalBox(car(l ), boxInt(1 ))) {    
-    System.out.printf("17 pass list literal works\n" );
+    System.out.printf("17. pass list literal works\n" );
   } else {    
-    System.out.printf("17 fail list literal failed\n" );
+    System.out.printf("17. fail list literal failed\n" );
   }
 if (globalTrace)
    System.out. printf("Leaving test17\n");
@@ -3212,7 +3278,7 @@ if (globalTrace)
 }
 
 
-//Building function test18 from line: 201
+//Building function test18 from line: 204
 
 public void test18() {
   String val1 = "a" ;
@@ -3221,34 +3287,18 @@ String val3 = "c" ;
 Box l = null ;
   
   l = cons(boxString(val1 ), cons(boxString(val2 ), cons(boxString("c" ), null )));  
-  display(l );
+  if ( equalList(l , cons(boxString("a" ), cons(boxString("b" ), cons(boxString("c" ), null ))))) {    
+    System.out.printf("18. pass string list constructor works\n" );
+  } else {    
+    System.out.printf("18. fail string list constructor failed\n" );
+  }
 if (globalTrace)
    System.out. printf("Leaving test18\n");
 
 }
 
 
-//Building function reverseRec from line: 211
-
-public Box reverseRec(Box old ,Box new ) {
-    
-  if ( isEmpty(old )) {    
-    return(new );
-  } else {    
-    return(reverseRec(cdr(old ), cons(first(old ), new )));
-  }
-}
-
-
-//Building function reverseList from line: 218
-
-public Box reverseList(Box l ) {
-    
-  return(reverseRec(l , null ));
-}
-
-
-//Building function test19 from line: 222
+//Building function test19 from line: 219
 
 public void test19() {
   String val1 = "a" ;
@@ -3256,18 +3306,23 @@ String val2 = "b" ;
 String val3 = "c" ;
 Box l = null ;
 Box revlist = null ;
+Box answer = null ;
   
-  System.out.printf("Starting reverselist\n" );  
   l = cons(boxString(val1 ), cons(boxString(val2 ), cons(boxString("c" ), null )));  
+  answer = cons(boxString("c" ), cons(boxString(val2 ), cons(boxString(val1 ), null )));  
   revlist = reverseList(l );  
-  display(revlist );
+  if ( equalList(answer , revlist )) {    
+    System.out.printf("19. pass reverseList\n" );
+  } else {    
+    System.out.printf("19. fail reverseList\n" );
+  }
 if (globalTrace)
    System.out. printf("Leaving test19\n");
 
 }
 
 
-//Building function concatenateLists from line: 235
+//Building function concatenateLists from line: 238
 
 public Box concatenateLists(Box old ,Box new ) {
     
@@ -3275,7 +3330,7 @@ public Box concatenateLists(Box old ,Box new ) {
 }
 
 
-//Building function test20 from line: 241
+//Building function test20 from line: 243
 
 public void test20() {
   String val1 = "a" ;
@@ -3283,17 +3338,43 @@ String val2 = "b" ;
 String val3 = "c" ;
 Box l = null ;
 Box l2 = null ;
+Box l3 = null ;
 Box combined = null ;
 Box revlist = null ;
   
   l = cons(boxString(val1 ), cons(boxString(val2 ), cons(boxString("c" ), null )));  
   l2 = cons(boxString("d" ), cons(boxString("e" ), cons(boxString("f" ), null )));  
+  l3 = cons(boxString(val1 ), cons(boxString(val2 ), cons(boxString("c" ), cons(boxString("d" ), cons(boxString("e" ), cons(boxString("f" ), null ))))));  
   combined = concatenateLists(l , l2 );  
-  display(l );  
-  display(l2 );  
-  display(combined );
+  if ( equalList(l3 , combined )) {    
+    System.out.printf("21. pass concatenateLists\n" );
+  } else {    
+    System.out.printf("21. fail concatenateLists\n" );
+  }
 if (globalTrace)
    System.out. printf("Leaving test20\n");
+
+}
+
+
+//Building function test21 from line: 264
+
+public void test21() {
+  String val1 = "a" ;
+String val2 = "b" ;
+String val3 = "c" ;
+Box l = null ;
+Box l2 = null ;
+  
+  l = cons(boxString(val1 ), cons(boxString(val2 ), cons(boxString(val3 ), null )));  
+  l2 = cons(boxString("a" ), cons(boxString("b" ), cons(boxString("c" ), null )));  
+  if ( equalList(l , l2 )) {    
+    System.out.printf("21. pass equalList\n" );
+  } else {    
+    System.out.printf("21. fail equalList\n" );
+  }
+if (globalTrace)
+   System.out. printf("Leaving test21\n");
 
 }
 
@@ -4311,6 +4392,336 @@ if (globalTrace)
 }
 
 
+//Building function luaFunctionArgs from line: 4
+
+public void luaFunctionArgs(Integer indent ,Box tree ) {
+    
+  if ( isEmpty(tree )) {    
+    return;
+  } else {    
+    display(second(tree ));    
+    if ( isNil(cddr(tree ))) {      
+      System.out.printf("" );
+    } else {      
+      System.out.printf("," );
+    }    
+    luaFunctionArgs(indent , cddr(tree ));
+  }
+if (globalTrace)
+   System.out. printf("Leaving luaFunctionArgs\n");
+
+}
+
+
+//Building function luaFunction from line: 14
+
+public void luaFunction(Integer indent ,Box functionDefinition ) {
+  String fname = "" ;
+  
+  fname = stringify(second(functionDefinition ));  
+  System.out.printf("-- Chose function name %s" , fname );  
+  System.out.printf("\nfunction %s(" , fname );  
+  luaFunctionArgs(indent , third(functionDefinition ));  
+  System.out.printf(")\n" );  
+  System.out.printf("print(\"caller: \", caller, \"-> %s\")\n" , fname );  
+  luaDeclarations(add1(indent ), cdr(fourth(functionDefinition )));  
+  luaBody(fname , indent , cdr(fifth(functionDefinition )));  
+  System.out.printf("end\n" );
+if (globalTrace)
+   System.out. printf("Leaving luaFunction\n");
+
+}
+
+
+//Building function luaDeclarations from line: 26
+
+public void luaDeclarations(Integer indent ,Box declarations ) {
+  Box decl = null ;
+  
+  if ( isNil(declarations )) {    
+    return;
+  } else {    
+    decl = first(declarations );    
+    System.out.printf("local %s =" , stringify(second(decl )));    
+    luaExpressionStart(indent , third(decl ));    
+    System.out.printf("\n" );    
+    luaDeclarations(indent , cdr(declarations ));
+  }
+if (globalTrace)
+   System.out. printf("Leaving luaDeclarations\n");
+
+}
+
+
+//Building function luaExpressionStart from line: 42
+
+public void luaExpressionStart(Integer indent ,Box program ) {
+    
+  if ( isNil(program )) {    
+    return;
+  } else {    
+    if ( isList(program )) {      
+      if ( equalString(stringify(car(program )), "get-struct" )) {        
+        System.out.printf("%s.%s" , stringify(second(program )), stringify(third(program )));
+      } else {        
+        if ( equalString(stringify(car(program )), ">" )) {          
+          System.out.printf("greaterthan(" );          
+          luaExpression(indent , cdr(program ));          
+          System.out.printf(")" );
+        } else {          
+          if ( equalString(stringify(car(program )), "=" )) {            
+            System.out.printf("equal(" );            
+            luaExpression(indent , cdr(program ));            
+            System.out.printf(")" );
+          } else {            
+            System.out.printf("%s(" , stringify(car(program )));            
+            luaExpression(indent , cdr(program ));            
+            System.out.printf(")" );
+          }
+        }
+      }
+    } else {      
+      luaExpression(indent , program );
+    }
+  }
+if (globalTrace)
+   System.out. printf("Leaving luaExpressionStart\n");
+
+}
+
+
+//Building function luaExpression from line: 84
+
+public void luaExpression(Integer indent ,Box program ) {
+    
+  if ( isNil(program )) {    
+    return;
+  } else {    
+    if ( isList(program )) {      
+      if ( isList(car(program ))) {        
+        luaExpressionStart(indent , car(program ));
+      } else {        
+        display(car(program ));
+      }      
+      if ( greaterthan(listLength(program ), 1 )) {        
+        System.out.printf(", " );
+      } else {
+      }      
+      luaExpression(indent , cdr(program ));
+    } else {      
+      display(program );
+    }
+  }
+if (globalTrace)
+   System.out. printf("Leaving luaExpression\n");
+
+}
+
+
+//Building function luaStatement from line: 112
+
+public void luaStatement(Integer indent ,Box statement ) {
+    
+  if ( equalString(stringify(car(statement )), "if" )) {    
+    printIndent(indent );    
+    System.out.printf("if " );    
+    add1(indent );    
+    luaExpressionStart(add1(indent ), second(statement ));    
+    System.out.printf(" then\n" );    
+    luaBody(caller , add1(indent ), cdr(third(statement )));    
+    printIndent(indent );    
+    System.out.printf("else\n" );    
+    luaBody(caller , add1(indent ), cdr(fourth(statement )));    
+    printIndent(indent );    
+    System.out.printf("end\n" );
+  } else {    
+    if ( equalString(stringify(car(statement )), "set" )) {      
+      printIndent(indent );      
+      System.out.printf("%s = " , stringify(second(statement )));      
+      luaExpressionStart(add1(indent ), third(statement ));
+    } else {      
+      if ( equalString(stringify(car(statement )), "set-struct" )) {        
+        System.out.printf("%s.%s = " , stringify(second(statement )), stringify(third(statement )));        
+        luaExpressionStart(indent , fourth(statement ));
+      } else {        
+        if ( equalString(stringify(car(statement )), "return" )) {          
+          printIndent(indent );          
+          System.out.printf("return " );          
+          if ( greaterthan(listLength(statement ), 1 )) {            
+            luaExpressionStart(indent , second(statement ));
+          } else {
+          }          
+          System.out.printf("\n" );
+        } else {          
+          printIndent(indent );          
+          luaExpressionStart(indent , statement );          
+          System.out.printf(";\n" );
+        }
+      }
+    }
+  }
+if (globalTrace)
+   System.out. printf("Leaving luaStatement\n");
+
+}
+
+
+//Building function luaBody from line: 164
+
+public void luaBody(String local_caller ,Integer indent ,Box program ) {
+    
+  if ( isNil(program )) {    
+    return;
+  } else {    
+    System.out.printf("caller=\"%s\"\n" , local_caller );    
+    luaStatement(add1(indent ), car(program ));    
+    System.out.printf("\n" );    
+    luaBody(local_caller , indent , cdr(program ));
+  }
+if (globalTrace)
+   System.out. printf("Leaving luaBody\n");
+
+}
+
+
+//Building function luaFunctions from line: 175
+
+public void luaFunctions(Integer indent ,Box program ) {
+    
+  if ( isNil(program )) {    
+    return;
+  } else {    
+    luaFunction(indent , car(program ));    
+    luaFunctions(indent , cdr(program ));
+  }
+if (globalTrace)
+   System.out. printf("Leaving luaFunctions\n");
+
+}
+
+
+//Building function luaProgram from line: 187
+
+public void luaProgram(Box program ) {
+    
+  luaIncludes(null );  
+  luaFunctions(0 , cdr(third(program )));
+if (globalTrace)
+   System.out. printf("Leaving luaProgram\n");
+
+}
+
+
+//Building function luaIncludes from line: 194
+
+public void luaIncludes(Box nodes ) {
+    
+  System.out.printf("%s" , "\nfunction luaDump(o)\n   if type(o) == 'table' then\n      local s = '{ '\n      for k,v in pairs(o) do\n         if type(k) ~= 'number' then k = '\"'..k..'\"' end\n         s = s .. '['..k..'] = ' .. luaDump(v) .. ','\n      end\n      return s .. '} '\n   else\n      return tostring(o)\n   end\nend\nprintf = function(s,...)\nreturn io.write(s:format(...))\nend -- function\n    \nfunction stringConcatenate(a,b)\nreturn a..b\nend\n    \nfunction getStringArray(index, arr)\nreturn arr[index]\nend\n       \nfunction luaWriteFile(name, data)  \nlocal file = io.open(name, \"w\")\nfile:write(data)\nfile:close(file)\nend\n    function luaSubstring(s, start, length)\nreturn string.sub(s, start, start+length)\nend\n    \n    function luaReadFile(file)\n      local f = assert(io.open(file, \"rb\"))\n      local content = f:read(\"*all\")      f:close()\n      return content\n    end\n     \nfunction equalString(a,b)\n        return a==b;\n     end\n    \n     function new()\n        return {};\n     end\n    \n     function isNil(val)\n        return val == nil;\n     end\n    \n     function getEnv(key)\n        return os.getenv(key);\n     end\n    \n    function panic(s)\n      do return end;\n    end\n    \n    function sub(a, b) \n      return a - b; \n    end\n\n    function mult(a, b) \n      return a * b;\n    end\n    \n    function greaterthan(a, b)\n      return a > b;\n    end\n    \n    function subf(a, b) \n      return a - b;\n    end\n    \n    function multf(a, b)\n      return a * b;\n    end\n    \n    function greaterthanf(a, b)\n      return a > b;\n    end\n    \n    function equal(a, b)\n      return a == b;\n    end\n    \n    function andBool(a, b)\n      return a == b;\n    end\n    \n    function string_length(s)\n      return strlen(s);\n    end\n    \n    function setSubString(target, start, source)\n      target[start]=source[0];\n      return target;\n    end\n    \n    function sub_string(s, start, length)\n      substr = calloc(length+1, 1);\n      strncpy(substr, s+start, length);\n      return substr;\n    end\n    \n    function intToString(a)\n      return a\n    end\n\n    function gc_malloc(size)\n      return \"\"\n    end\n    \n    function makeArray(length)\n      return {}\n    end\n    \n    function at(arr, index)\n      return arr[index];\n    end\n    \n    function setAt(array, index, value)\n      array[index] = value;\n    end\n    \n    function read_file(file)\n      local f = io.open(file, \"r\")\n      local content = \"\"\n      local length = 0\n\n      while f:read(0) ~= \"\" do\n          local current = f:read(\"*all\")\n\n          print(#current, length)\n          length = length + #current\n\n          content = content .. current\n      end\n\n      return content\n    end\n    \n    function write_file(filename, data)\n      local file = io.open(filename,'w')\n      file:write(tostring(data))\n      file:close()\n    end\n    \n    caller=\"\";\n    \n    globalArgs={};\n    globalArgsCount=0;\n    globalTrace = false;\n    globalStepTrace = false;\n\n    function main()\n      globalArgs = arg;\n      globalArgsCount = #arg + 1;\n      return start();\n    end\n    \n" );
+if (globalTrace)
+   System.out. printf("Leaving luaIncludes\n");
+
+}
+
+
+//Building function loadQuon from line: 201
+
+public Box loadQuon(String filename ) {
+  Box foundationFuncs = null ;
+Box foundation = null ;
+String programStr = "" ;
+Box tree = null ;
+  
+  foundation = readSexpr(read_file(filename ), filename );  
+  foundationFuncs = cdr(third(foundation ));  
+  programStr = read_file(filename );  
+  tree = readSexpr(programStr , filename );  
+  return(tree );
+}
+
+
+//Building function getIncludes from line: 214
+
+public Box getIncludes(Box program ) {
+    
+  return(cdr(first(program )));
+}
+
+
+//Building function getTypes from line: 218
+
+public Box getTypes(Box program ) {
+    
+  return(cdr(second(program )));
+}
+
+
+//Building function getFunctions from line: 222
+
+public Box getFunctions(Box program ) {
+    
+  return(cdr(third(program )));
+}
+
+
+//Building function loadIncludes from line: 227
+
+public Box loadIncludes(Box tree ) {
+  Box newProg = null ;
+String includeFile = "" ;
+Box functionsCombined = null ;
+Box typesCombined = null ;
+Box includeTree = null ;
+Box program = null ;
+  
+  if ( greaterthan(listLength(getIncludes(tree )), 0 )) {    
+    includeFile = stringify(first(getIncludes(tree )));    
+    includeTree = loadQuon(includeFile );    
+    functionsCombined = concatLists(getFunctions(includeTree ), getFunctions(tree ));    
+    typesCombined = concatLists(getTypes(includeTree ), getTypes(tree ));    
+    newProg = buildProg(cdr(getIncludes(tree )), typesCombined , functionsCombined );    
+    return(loadIncludes(newProg ));
+  } else {    
+    return(tree );
+  }
+}
+
+
+//Building function buildProg from line: 250
+
+public Box buildProg(Box includes ,Box types ,Box functions ) {
+  Box program = null ;
+  
+  includes = cons(boxSymbol("includes" ), includes );  
+  types = cons(boxSymbol("types" ), types );  
+  functions = cons(boxSymbol("functions" ), functions );  
+  program = cons(includes , cons(types , cons(functions , null )));  
+  return(program );
+}
+
+
+//Building function luaCompile from line: 262
+
+public void luaCompile(String filename ) {
+  Box tree = null ;
+  
+  tree = loadQuon("compiler.qon" );  
+  tree = loadIncludes(tree );  
+  tree = macrowalk(tree );  
+  tree = macrosingle(tree , "write-file" , "luaWriteFile" );  
+  tree = macrosingle(tree , "read-file" , "luaReadFile" );  
+  tree = macrosingle(tree , "string-length" , "string.len" );  
+  tree = macrosingle(tree , "sub-string" , "luaSubstring" );  
+  tree = macrosingle(tree , "stringLength" , "string.len" );  
+  luaProgram(tree );  
+  System.out.printf("\n" );  
+  System.out.printf("function main()\nglobalArgs = arg\nglobalArgsCount = #arg\nstart()\nend\n" );  
+  System.out.printf("main()" );
+if (globalTrace)
+   System.out. printf("Leaving luaCompile\n");
+
+}
+
+
 //Building function start from line: 4
 
 public Integer start() {
@@ -4321,6 +4732,7 @@ boolean runPerl = false ;
 boolean runJava = false ;
 boolean runAst = false ;
 boolean runNode = false ;
+boolean runLua = false ;
 boolean runTree = false ;
   
   cmdLine = listReverse(argList(globalArgsCount , 0 , globalArgs ));  
@@ -4335,6 +4747,7 @@ boolean runTree = false ;
   runAst = inList(boxString("--ast" ), cmdLine );  
   runTree = inList(boxString("--tree" ), cmdLine );  
   runNode = inList(boxString("--node" ), cmdLine );  
+  runLua = inList(boxString("--lua" ), cmdLine );  
   globalTrace = inList(boxString("--trace" ), cmdLine );  
   globalStepTrace = inList(boxString("--steptrace" ), cmdLine );  
   if ( runTests ) {    
@@ -4357,6 +4770,7 @@ boolean runTree = false ;
     test18 ();    
     test19 ();    
     test20 ();    
+    test21 ();    
     System.out.printf("\n\nAfter all that hard work, I need a beer...\n" );    
     beers(9 );
   } else {    
@@ -4378,8 +4792,13 @@ boolean runTree = false ;
               javaCompile(unBoxString(filename ));              
               System.out.printf("\n" );
             } else {              
-              ansiCompile(unBoxString(filename ));              
-              System.out.printf("\n" );
+              if ( runLua ) {                
+                luaCompile(unBoxString(filename ));                
+                System.out.printf("\n" );
+              } else {                
+                ansiCompile(unBoxString(filename ));                
+                System.out.printf("\n" );
+              }
             }
           }
         }
