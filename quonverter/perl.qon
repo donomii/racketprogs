@@ -266,6 +266,7 @@
   (void perlIncludes (list nodes) (declare)
         (body
          (printf "%s\n" "use strict;")
+         (printf "%s\n" "my $caller;")
          (printf "%s\n" "use Carp;")
          (dollar)
          (printf "%s\n" "use Carp::Always;")
