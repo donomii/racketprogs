@@ -1,4 +1,5 @@
 use strict;
+my $caller;
 use Carp;
 use Carp::Always;
 sub greaterthan { $_[0] > $_[1] };
@@ -4484,20 +4485,20 @@ if ($globalTrace) { printf("equalList at base.qon:1182\n") }
 #Building function reverseRec from line: 1196
 
 sub reverseRec {
-  my $old  = shift;
-my $new  = shift;
+  my $oldL  = shift;
+my $newL  = shift;
 
   
 if ($globalTrace) { printf("reverseRec at base.qon:1196\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
-  if ( isEmpty($old )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+  if ( isEmpty($oldL )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard return: reverseRec
 
     if ($globalTrace) {printf("Leaving \n")}
 
-    return($new );
+    return($newL );
 
   } else {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
@@ -4505,7 +4506,7 @@ if ($globalTrace) { printf("reverseRec at base.qon:1196\n") }
 
     if ($globalTrace) {printf("Leaving \n")}
 
-    return(reverseRec(cdr($old ), cons(first($old ), $new )));
+    return(reverseRec(cdr($oldL ), cons(first($oldL ), $newL )));
 
   };
 
@@ -5663,6 +5664,12 @@ if ($globalTrace) { printf("perlIncludes at perl.qon:265\n") }
 
 #standard expression
 
+  printf("%s\n" , "my $caller;" )
+  ;
+  if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
+
+#standard expression
+
   printf("%s\n" , "use Carp;" )
   ;
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -5777,24 +5784,24 @@ if ($globalTrace) { printf("perlIncludes at perl.qon:265\n") }
 }
 
 
-#Building function perlTypeDecl from line: 298
+#Building function perlTypeDecl from line: 299
 
 sub perlTypeDecl {
   my $l  = shift;
 
   
-if ($globalTrace) { printf("perlTypeDecl at perl.qon:298\n") }
+if ($globalTrace) { printf("perlTypeDecl at perl.qon:299\n") }
 
 }
 
 
-#Building function perlStructComponents from line: 303
+#Building function perlStructComponents from line: 304
 
 sub perlStructComponents {
   my $node  = shift;
 
   
-if ($globalTrace) { printf("perlStructComponents at perl.qon:303\n") }
+if ($globalTrace) { printf("perlStructComponents at perl.qon:304\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isEmpty($node )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -5822,13 +5829,13 @@ if ($globalTrace) { printf("perlStructComponents at perl.qon:303\n") }
 }
 
 
-#Building function perlStruct from line: 309
+#Building function perlStruct from line: 310
 
 sub perlStruct {
   my $node  = shift;
 
   
-if ($globalTrace) { printf("perlStruct at perl.qon:309\n") }
+if ($globalTrace) { printf("perlStruct at perl.qon:310\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
 #standard expression
@@ -5839,14 +5846,14 @@ if ($globalTrace) { printf("perlStruct at perl.qon:309\n") }
 }
 
 
-#Building function perlTypeMap from line: 312
+#Building function perlTypeMap from line: 313
 
 sub perlTypeMap {
   my $aSym  = shift;
 
   my $symMap = undef ;
 
-if ($globalTrace) { printf("perlTypeMap at perl.qon:312\n") }
+if ($globalTrace) { printf("perlTypeMap at perl.qon:313\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $symMap = alistCons(boxSymbol("stringArray" ), boxSymbol("char**" ), alistCons(boxSymbol("string" ), boxSymbol("char*" ), $undef ));
@@ -5873,14 +5880,14 @@ if ($globalTrace) { printf("perlTypeMap at perl.qon:312\n") }
 }
 
 
-#Building function perlConstMap from line: 324
+#Building function perlConstMap from line: 325
 
 sub perlConstMap {
   my $aSym  = shift;
 
   my $symMap = undef ;
 
-if ($globalTrace) { printf("perlConstMap at perl.qon:324\n") }
+if ($globalTrace) { printf("perlConstMap at perl.qon:325\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( equalString("symbol" , boxType($aSym ))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -5907,14 +5914,14 @@ if ($globalTrace) { printf("perlConstMap at perl.qon:324\n") }
 }
 
 
-#Building function perlFuncMap from line: 334
+#Building function perlFuncMap from line: 335
 
 sub perlFuncMap {
   my $aSym  = shift;
 
   my $symMap = undef ;
 
-if ($globalTrace) { printf("perlFuncMap at perl.qon:334\n") }
+if ($globalTrace) { printf("perlFuncMap at perl.qon:335\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( equalString("symbol" , boxType($aSym ))) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -5941,24 +5948,24 @@ if ($globalTrace) { printf("perlFuncMap at perl.qon:334\n") }
 }
 
 
-#Building function perlType from line: 351
+#Building function perlType from line: 352
 
 sub perlType {
   my $node  = shift;
 
   
-if ($globalTrace) { printf("perlType at perl.qon:351\n") }
+if ($globalTrace) { printf("perlType at perl.qon:352\n") }
 
 }
 
 
-#Building function perlTypes from line: 356
+#Building function perlTypes from line: 357
 
 sub perlTypes {
   my $nodes  = shift;
 
   
-if ($globalTrace) { printf("perlTypes at perl.qon:356\n") }
+if ($globalTrace) { printf("perlTypes at perl.qon:357\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isEmpty($nodes )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -5986,13 +5993,13 @@ if ($globalTrace) { printf("perlTypes at perl.qon:356\n") }
 }
 
 
-#Building function perlFunctionArgs from line: 362
+#Building function perlFunctionArgs from line: 363
 
 sub perlFunctionArgs {
   my $tree  = shift;
 
   
-if ($globalTrace) { printf("perlFunctionArgs at perl.qon:362\n") }
+if ($globalTrace) { printf("perlFunctionArgs at perl.qon:363\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   if ( isEmpty($tree )) {    if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
@@ -6032,7 +6039,7 @@ if ($globalTrace) { printf("perlFunctionArgs at perl.qon:362\n") }
 }
 
 
-#Building function perlCompile from line: 372
+#Building function perlCompile from line: 373
 
 sub perlCompile {
   my $filename  = shift;
@@ -6041,7 +6048,7 @@ sub perlCompile {
 my $tree = undef ;
 my $program = undef ;
 
-if ($globalTrace) { printf("perlCompile at perl.qon:372\n") }
+if ($globalTrace) { printf("perlCompile at perl.qon:373\n") }
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
   $programStr = read_file($filename );
@@ -8239,8 +8246,8 @@ if ($globalTrace) { printf("test19 at tests.qon:219\n") }
 #Building function concatenateLists from line: 238
 
 sub concatenateLists {
-  my $old  = shift;
-my $new  = shift;
+  my $oldL  = shift;
+my $newL  = shift;
 
   
 if ($globalTrace) { printf("concatenateLists at tests.qon:238\n") }
@@ -8250,7 +8257,7 @@ if ($globalTrace) { printf("concatenateLists at tests.qon:238\n") }
 
   if ($globalTrace) {printf("Leaving \n")}
 
-  return(reverseRec(reverseList($old ), $new ));
+  return(reverseRec(reverseList($oldL ), $newL ));
 
 }
 

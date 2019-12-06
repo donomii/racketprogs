@@ -3363,19 +3363,19 @@ if (globalTrace)
 
 //Building function reverseRec from line: 1196
 
-function reverseRec(old ,new ) {
+function reverseRec(oldL ,newL ) {
   
 if (globalTrace)
     {printf("reverseRec at base.qon:1196\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(old )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(oldL )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(new );
+    return(newL );
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(reverseRec(cdr(old ), cons(first(old ), new )));
+    return(reverseRec(cdr(oldL ), cons(first(oldL ), newL )));
 
   };
 
@@ -4220,6 +4220,9 @@ if (globalTrace)
   printf("%s\n" , "use strict;" );
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
+  printf("%s\n" , "my $caller;" );
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
   printf("%s\n" , "use Carp;" );
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
@@ -4282,12 +4285,12 @@ if (globalTrace)
 }
 
 
-//Building function perlTypeDecl from line: 298
+//Building function perlTypeDecl from line: 299
 
 function perlTypeDecl(l ) {
   
 if (globalTrace)
-    {printf("perlTypeDecl at perl.qon:298\n");}
+    {printf("perlTypeDecl at perl.qon:299\n");}
 
 if (globalTrace)
     {printf("Leaving perlTypeDecl\n");}
@@ -4295,12 +4298,12 @@ if (globalTrace)
 }
 
 
-//Building function perlStructComponents from line: 303
+//Building function perlStructComponents from line: 304
 
 function perlStructComponents(node ) {
   
 if (globalTrace)
-    {printf("perlStructComponents at perl.qon:303\n");}
+    {printf("perlStructComponents at perl.qon:304\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
   if ( isEmpty(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
@@ -4322,12 +4325,12 @@ if (globalTrace)
 }
 
 
-//Building function perlStruct from line: 309
+//Building function perlStruct from line: 310
 
 function perlStruct(node ) {
   
 if (globalTrace)
-    {printf("perlStruct at perl.qon:309\n");}
+    {printf("perlStruct at perl.qon:310\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
   perlStructComponents(cdr(car(node )));
@@ -4338,13 +4341,13 @@ if (globalTrace)
 }
 
 
-//Building function perlTypeMap from line: 312
+//Building function perlTypeMap from line: 313
 
 function perlTypeMap(aSym ) {
   var symMap = NULL ;
 
 if (globalTrace)
-    {printf("perlTypeMap at perl.qon:312\n");}
+    {printf("perlTypeMap at perl.qon:313\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
   symMap = alistCons(boxSymbol("stringArray" ), boxSymbol("char**" ), alistCons(boxSymbol("string" ), boxSymbol("char*" ), NULL ));
@@ -4366,13 +4369,13 @@ if (globalTrace)
 }
 
 
-//Building function perlConstMap from line: 324
+//Building function perlConstMap from line: 325
 
 function perlConstMap(aSym ) {
   var symMap = NULL ;
 
 if (globalTrace)
-    {printf("perlConstMap at perl.qon:324\n");}
+    {printf("perlConstMap at perl.qon:325\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
   if ( equalString("symbol" , boxType(aSym ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
@@ -4394,13 +4397,13 @@ if (globalTrace)
 }
 
 
-//Building function perlFuncMap from line: 334
+//Building function perlFuncMap from line: 335
 
 function perlFuncMap(aSym ) {
   var symMap = NULL ;
 
 if (globalTrace)
-    {printf("perlFuncMap at perl.qon:334\n");}
+    {printf("perlFuncMap at perl.qon:335\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
   if ( equalString("symbol" , boxType(aSym ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
@@ -4422,12 +4425,12 @@ if (globalTrace)
 }
 
 
-//Building function perlType from line: 351
+//Building function perlType from line: 352
 
 function perlType(node ) {
   
 if (globalTrace)
-    {printf("perlType at perl.qon:351\n");}
+    {printf("perlType at perl.qon:352\n");}
 
 if (globalTrace)
     {printf("Leaving perlType\n");}
@@ -4435,12 +4438,12 @@ if (globalTrace)
 }
 
 
-//Building function perlTypes from line: 356
+//Building function perlTypes from line: 357
 
 function perlTypes(nodes ) {
   
 if (globalTrace)
-    {printf("perlTypes at perl.qon:356\n");}
+    {printf("perlTypes at perl.qon:357\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
   if ( isEmpty(nodes )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
@@ -4462,12 +4465,12 @@ if (globalTrace)
 }
 
 
-//Building function perlFunctionArgs from line: 362
+//Building function perlFunctionArgs from line: 363
 
 function perlFunctionArgs(tree ) {
   
 if (globalTrace)
-    {printf("perlFunctionArgs at perl.qon:362\n");}
+    {printf("perlFunctionArgs at perl.qon:363\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
   if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
@@ -4495,7 +4498,7 @@ if (globalTrace)
 }
 
 
-//Building function perlCompile from line: 372
+//Building function perlCompile from line: 373
 
 function perlCompile(filename ) {
   var programStr = "" ;
@@ -4503,7 +4506,7 @@ var tree = NULL ;
 var program = NULL ;
 
 if (globalTrace)
-    {printf("perlCompile at perl.qon:372\n");}
+    {printf("perlCompile at perl.qon:373\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
   programStr = read_file(filename );
@@ -6208,13 +6211,13 @@ if (globalTrace)
 
 //Building function concatenateLists from line: 238
 
-function concatenateLists(old ,new ) {
+function concatenateLists(oldL ,newL ) {
   
 if (globalTrace)
     {printf("concatenateLists at tests.qon:238\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(reverseRec(reverseList(old ), new ));
+  return(reverseRec(reverseList(oldL ), newL ));
 
 if (globalTrace)
     {printf("Leaving concatenateLists\n");}

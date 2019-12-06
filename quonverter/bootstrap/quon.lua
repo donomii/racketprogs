@@ -2531,10 +2531,10 @@ caller=""
 
 end
 -- Chose function name concatenateLists
-function concatenateLists(old ,new )
+function concatenateLists(oldL ,newL )
 print("caller: ", caller, "-> concatenateLists")
 caller="concatenateLists"
-  return reverseRec(reverseList(old ), new )
+  return reverseRec(reverseList(oldL ), newL )
 
 end
 -- Chose function name test20
@@ -3869,6 +3869,9 @@ function perlIncludes(nodes )
 print("caller: ", caller, "-> perlIncludes")
 caller="perlIncludes"
   printf("%s\n" , "use strict;" );
+
+caller="perlIncludes"
+  printf("%s\n" , "my $caller;" );
 
 caller="perlIncludes"
   printf("%s\n" , "use Carp;" );
@@ -6356,16 +6359,16 @@ caller=""
 
 end
 -- Chose function name reverseRec
-function reverseRec(old ,new )
+function reverseRec(oldL ,newL )
 print("caller: ", caller, "-> reverseRec")
 caller="reverseRec"
-  if isEmpty(old ) then
+  if isEmpty(oldL ) then
 caller=""
-      return new 
+      return newL 
 
   else
 caller=""
-      return reverseRec(cdr(old ), cons(first(old ), new ))
+      return reverseRec(cdr(oldL ), cons(first(oldL ), newL ))
 
   end
 
