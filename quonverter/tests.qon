@@ -236,9 +236,9 @@
                  )
                  ))
 
-(list concatenateLists (list old list new) (declare)
+(list concatenateLists (list oldL list newL) (declare)
   (body
-      (return (reverseRec (reverseList old) new))
+      (return (reverseRec (reverseList oldL) newL))
 ))
 
 (void test20 () (declare 
