@@ -367,6 +367,7 @@
     (nodeIncludes (cdr (assoc "includes" program)))
     (nodeTypes (childrenof (cdr (assoc "types" program))))
     (printf "\nvar globalStackTrace = NULL;\n")
+    (printf "\nvar caller = \"\";\n")
     (printf "\nfunction isNil(p) {\n    return p == NULL;\n}\n\n")
     (nodeFunctions
      (cdr (assoc "children" (cdr (cdr (assoc "functions" program))))))

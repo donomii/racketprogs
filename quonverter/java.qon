@@ -318,6 +318,7 @@
     (if (equalBox (subnameof node) (boxString "struct"))
       (then
        (printf "\npublic class %s {\n" (stringify (first (codeof node))))
+       (printf "\npublic String caller =\"\";")
        (javaStruct (cdr (codeof node)))
        (printf "\n};\n"))
       (else 
