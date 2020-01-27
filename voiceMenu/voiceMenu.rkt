@@ -5,15 +5,35 @@
 (define q (fuckwits:queue))
 (define current-command "")
 
+
+
 (define (make-command)
-  ;(printf "current command: ~a\n" current-command)
+  
+  
   (let ((new-char (read-line)))
+    
+    ;(when (or (equal? 32 (char->integer (car (string->list new-char))))(string=? "" new-char) (string=? " " new-char))
+    ;    (begin
+    ;      (set! q (fuckwits:enqueue current-command q))
+    ;      (set! current-command ""))
+    ;    (begin
+    
+    (set! current-command (string-concatenate (list current-command new-char)))
     ;(printf "new char: ~a\n" (char->integer (car (string->list new-char))))
-    (if (or (equal? 32 (char->integer (car (string->list new-char))))(string=? "" new-char) (string=? " " new-char))
+    
+    
+    (printf "command length: ~a\n" (string-length current-command))
+    (printf "current command: ~a\n" current-command)
+    (when (equal? 2 (string-length current-command))
         (begin
+          
           (set! q (fuckwits:enqueue current-command q))
           (set! current-command ""))
-        (set! current-command (string-concatenate (list current-command new-char))))
+        
+        )
+    ;))
+
+    
     (make-command)))
 
 (define (do-menu options)
