@@ -11,11 +11,11 @@ int getCHAR( ) {
     newt.c_lflag &= ~( ICANON | ECHO );
     tcsetattr( STDIN_FILENO, TCSANOW, &newt );
     ch = getchar();
-    putchar(ch);
     tcsetattr( STDIN_FILENO, TCSANOW, &oldt );
     return ch;
 }
 int main() {
+  setbuf(stdout, NULL);
     int c = getCHAR();
     int nl = 10;
     

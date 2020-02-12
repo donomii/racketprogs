@@ -97,7 +97,8 @@
    (body
     (if (isNil b)
       (then (return true))
-      (else (return false)))))
+      (else 
+       (return false)))))
 
   (int listLength
    (list l)
@@ -345,6 +346,15 @@
     (if (assocExists key aBox)
       (then (return (assoc key aBox)))
       (else (return (cons (boxString key) onFail))))))
+
+  (box assocPanic (string key box aBox string onFail) (declare)
+   (body
+    (if (assocExists key aBox)
+      (then (return (assoc key aBox)))
+      (else (panic onFail)))
+    (panic "Inconceivable")
+    (exit 1)))
+
 
 
 ;arg order is different to aconslist!
@@ -829,16 +839,17 @@
        (then (return (makeNode "types" "types" tree (astTypeList (cdr tree)))))
        (else
          (panic "Types section not found!  Every program must have a types section, even if you don't define any types")
-         (return (boxString "Fuck java"))
+         (printf "Types section not found!  Every program must have a types section, even if you don't define any types")
+         (return (boxString "!!!Fuck java"))
        )
      )
  ))
 
   (list declarationsof (list ass) (declare)
-   (body (return (cdr (assoc "declarations" (cdr ass))))))
+   (body (return (cdr (assocPanic "declarations" (cdr ass) "Cons list has no declarations key")))))
 
   (list codeof (list ass) (declare)
-   (body (return (cdr (assoc "code" (cdr ass))))))
+   (body (return (cdr (assocPanic "code" (cdr ass) "Given cons list does not contain a code key")))))
 
   (list functionNameof (list ass) (declare)
    (body (return (cdr (assoc "functionName" (cdr ass))))))
@@ -846,14 +857,15 @@
   (list nodeof (list ass) (declare)
    (body
     (if (equalBox (boxBool false) (assoc "node" (cdr ass)))
-      (then (return (boxBool false)))
+      (then 
+       (printf "Given list does not contain nodes")
+       (return (boxBool false)))
       (else (return (cdr (assoc "node" (cdr ass))))))))
 
   (list lineof (list ass) (declare)
    (body
-    (if (equalBox (boxBool false) (assoc "line" (cdr ass)))
-      (then (return (boxInt -1)))
-      (else (return (cdr (assoc "line" (cdr ass))))))))
+    (return (cdr (assocFail "line" (cdr ass) (boxInt -1))))
+    ))
 
   (list subnameof (list ass) (declare)
    (body (return (cdr (assoc "subname" (cdr ass))))))
@@ -992,7 +1004,7 @@
    (body
     (return
      (merge_recur
-      (childrenof (cdr (cdr (assoc "includes" program))))
+      (childrenof (cdr (cdr (assocPanic "includes" program "Program lacks include section"))))
       program))))
 
   (list merge_recur (list incs list program) (declare)
@@ -1021,8 +1033,8 @@
     (if (isNil inc)
       (then (return program))
       (else
-       (set functions (childrenof (cdr (assoc "functions" inc))))
-       (set oldfunctionsnode (cdr (assoc "functions" program)))
+       (set functions (childrenof (cdr (assocPanic "functions" inc "Included file has no functions section"))))
+       (set oldfunctionsnode (cdr (assocPanic "functions" program "Current module has no functions section")))
        (set oldfunctions (childrenof oldfunctionsnode))
        (set newfunctions (concatLists functions oldfunctions))
        (set
@@ -1033,8 +1045,8 @@
           (boxSymbol "children")
           newfunctions
           (cdr oldfunctionsnode))))
-       (set types (childrenof (cdr (assoc "types" inc))))
-       (set oldtypesnode (cdr (assoc "types" program)))
+       (set types (childrenof (cdr (assocPanic "types" inc "Included file has no types section"))))
+       (set oldtypesnode (cdr (assocPanic "types" program "Current module has no types section")))
        (set oldtypes (childrenof oldtypesnode))
        (set newtypes (concatLists types oldtypes))
        (set
