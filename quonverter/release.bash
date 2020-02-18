@@ -1,4 +1,6 @@
 #!/bin/bash
+rm -r release
+
 gcc -O3   bootstrap/quon.c -o quon
 ./quon --test
 mkdir release

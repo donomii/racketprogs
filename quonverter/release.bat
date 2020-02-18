@@ -8,6 +8,10 @@ quon examples\mandelbrot.qon  > mandelbrot.c
 gcc -O3   mandelbrot.c -o release\mandelbrot
 
 
+quon compiler.qon --perl > quon.pl
+mv quon.pl release/
+quon examples/mandelbrot.qon --perl > release/mandelbrot.pl
+
 quon compiler.qon --java > test.java
 mkdir quonverter
 javac -d ./ test.java
@@ -27,6 +31,3 @@ mv mandelbrot.jar release/
 rm -r quonverter
 
 
-quon compiler.qon --perl > quon.pl
-mv quon.pl release/
-quon examples/mandelbrot.qon --perl > release/mandelbrot.pl
