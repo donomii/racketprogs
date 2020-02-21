@@ -1,6 +1,6 @@
 #!/bin/bash
 ./quon compiler.qon   > quon.c
-gcc -Ofast -flto   quon.c -Wl,-stack_size,4000000 -o quon_new
+gcc -O2 -flto   quon.c -Wl,-stack_size,4000000 -o quon_new
 ./quon_new --test
 ./quon_new compiler.qon
 
@@ -22,4 +22,5 @@ java -Xss100M -jar MyProgram.jar --test
 #jar -cvfm mandelbrot.jar MANIFEST.MF quonverter/*.class
 #java -Xss100M -jar mandelbrot.jar --test
 
-#./quon_new compiler.qon --lua
+./quon_new compiler.qon --lua > test.lua
+lua test.lua  compiler.qon --ast
