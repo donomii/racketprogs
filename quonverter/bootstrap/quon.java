@@ -4,7 +4,8 @@ import java.nio.file.Paths;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 class MyProgram {
-public void panic(String s) {System.exit(1);}
+
+public String caller ="";public void panic(String s) {System.exit(1);}
 public int sub(int a, int b) { return a - b; }
 public double mult(int a, int b) { return a * b; }
 public boolean greaterthan(int a, int b) { return a > b; }
@@ -27,7 +28,8 @@ return s.substring(start, start+length);
 
 public String intToString(int num) { char c=(char) num;  String s=Character.toString(c); return s;}public String character(int num) { char c=(char) num;  String s=Character.toString(c); return s;}public String getStringArray(int index, String[] arr) { return arr[index];}
 public class Box {
-  Box lis;
+
+public String caller ="";  Box lis;
   String str;
   Integer i;
   String typ;
@@ -217,7 +219,7 @@ public boolean isEmpty(Box b ) {
 }
 
 
-//Building function listLength from line: 101
+//Building function listLength from line: 102
 
 public Integer listLength(Box l ) {
     
@@ -229,7 +231,7 @@ public Integer listLength(Box l ) {
 }
 
 
-//Building function alistCons from line: 110
+//Building function alistCons from line: 111
 
 public Box alistCons(Box key ,Box value ,Box alist ) {
     
@@ -237,17 +239,17 @@ public Box alistCons(Box key ,Box value ,Box alist ) {
 }
 
 
-//Building function assoc from line: 113
+//Building function assoc from line: 114
 
 public Box assoc(String searchTerm ,Box l ) {
   Box elem = null ;
   
-  assertType("list" , l , 115 , "base.qon" );  
+  assertType("list" , l , 116 , "base.qon" );  
   if ( isEmpty(l )) {    
     return(boxBool(false ));
   } else {    
     elem = car(l );    
-    assertType("list" , elem , 121 , "base.qon" );    
+    assertType("list" , elem , 122 , "base.qon" );    
     if ( isEmpty(elem )) {      
       return(assoc(searchTerm , cdr(l )));
     } else {      
@@ -266,7 +268,7 @@ public Box assoc(String searchTerm ,Box l ) {
 }
 
 
-//Building function equalBox from line: 132
+//Building function equalBox from line: 133
 
 public boolean equalBox(Box a ,Box b ) {
     
@@ -298,7 +300,7 @@ public boolean equalBox(Box a ,Box b ) {
 }
 
 
-//Building function displayList from line: 153
+//Building function displayList from line: 154
 
 public void displayList(Box l ,Integer indent ) {
   Box val = null ;
@@ -340,7 +342,7 @@ if (globalTrace)
 }
 
 
-//Building function display from line: 181
+//Building function display from line: 182
 
 public void display(Box l ) {
     
@@ -362,7 +364,7 @@ if (globalTrace)
 }
 
 
-//Building function boxType from line: 193
+//Building function boxType from line: 194
 
 public String boxType(Box b ) {
     
@@ -370,7 +372,7 @@ public String boxType(Box b ) {
 }
 
 
-//Building function makeBox from line: 194
+//Building function makeBox from line: 195
 
 public Box makeBox() {
   Box b = null ;
@@ -385,7 +387,7 @@ public Box makeBox() {
 }
 
 
-//Building function makePair from line: 205
+//Building function makePair from line: 206
 
 public Box makePair() {
     
@@ -393,7 +395,7 @@ public Box makePair() {
 }
 
 
-//Building function boxString from line: 211
+//Building function boxString from line: 212
 
 public Box boxString(String s ) {
   Box b = null ;
@@ -406,7 +408,7 @@ public Box boxString(String s ) {
 }
 
 
-//Building function boxSymbol from line: 221
+//Building function boxSymbol from line: 222
 
 public Box boxSymbol(String s ) {
   Box b = null ;
@@ -417,7 +419,7 @@ public Box boxSymbol(String s ) {
 }
 
 
-//Building function boxBool from line: 230
+//Building function boxBool from line: 231
 
 public Box boxBool(boolean boo ) {
   Box b = null ;
@@ -429,7 +431,7 @@ public Box boxBool(boolean boo ) {
 }
 
 
-//Building function boxInt from line: 239
+//Building function boxInt from line: 240
 
 public Box boxInt(Integer val ) {
   Box b = null ;
@@ -441,7 +443,7 @@ public Box boxInt(Integer val ) {
 }
 
 
-//Building function assertType from line: 248
+//Building function assertType from line: 249
 
 public void assertType(String atype ,Box abox ,Integer line ,String file ) {
     
@@ -463,16 +465,16 @@ public void assertType(String atype ,Box abox ,Integer line ,String file ) {
 }
 
 
-//Building function unBoxString from line: 260
+//Building function unBoxString from line: 261
 
 public String unBoxString(Box b ) {
     
-  assertType("string" , b , 261 , "base.qon" );  
+  assertType("string" , b , 262 , "base.qon" );  
   return(b.str);
 }
 
 
-//Building function unBoxSymbol from line: 263
+//Building function unBoxSymbol from line: 264
 
 public String unBoxSymbol(Box b ) {
     
@@ -480,7 +482,7 @@ public String unBoxSymbol(Box b ) {
 }
 
 
-//Building function unBoxBool from line: 264
+//Building function unBoxBool from line: 265
 
 public boolean unBoxBool(Box b ) {
     
@@ -488,7 +490,7 @@ public boolean unBoxBool(Box b ) {
 }
 
 
-//Building function unBoxInt from line: 265
+//Building function unBoxInt from line: 266
 
 public Integer unBoxInt(Box b ) {
     
@@ -496,7 +498,7 @@ public Integer unBoxInt(Box b ) {
 }
 
 
-//Building function stringify_rec from line: 267
+//Building function stringify_rec from line: 268
 
 public String stringify_rec(Box b ) {
     
@@ -508,7 +510,7 @@ public String stringify_rec(Box b ) {
 }
 
 
-//Building function stringify from line: 279
+//Building function stringify from line: 280
 
 public String stringify(Box b ) {
     
@@ -544,7 +546,7 @@ public String stringify(Box b ) {
 }
 
 
-//Building function hasTag from line: 310
+//Building function hasTag from line: 311
 
 public boolean hasTag(Box aBox ,Box key ) {
     
@@ -556,7 +558,7 @@ public boolean hasTag(Box aBox ,Box key ) {
 }
 
 
-//Building function getTag from line: 316
+//Building function getTag from line: 317
 
 public Box getTag(Box aBox ,Box key ) {
     
@@ -571,7 +573,7 @@ public Box getTag(Box aBox ,Box key ) {
 }
 
 
-//Building function getTagFail from line: 328
+//Building function getTagFail from line: 329
 
 public Box getTagFail(Box aBox ,Box key ,Box onFail ) {
     
@@ -583,7 +585,7 @@ public Box getTagFail(Box aBox ,Box key ,Box onFail ) {
 }
 
 
-//Building function assocExists from line: 334
+//Building function assocExists from line: 335
 
 public boolean assocExists(String key ,Box aBox ) {
     
@@ -595,7 +597,7 @@ public boolean assocExists(String key ,Box aBox ) {
 }
 
 
-//Building function assocFail from line: 342
+//Building function assocFail from line: 343
 
 public Box assocFail(String key ,Box aBox ,Box onFail ) {
     
@@ -607,7 +609,21 @@ public Box assocFail(String key ,Box aBox ,Box onFail ) {
 }
 
 
-//Building function setTag from line: 350
+//Building function assocPanic from line: 349
+
+public Box assocPanic(String key ,Box aBox ,String onFail ) {
+    
+  if ( assocExists(key , aBox )) {    
+    return(assoc(key , aBox ));
+  } else {    
+    panic(onFail );
+  }  
+  panic("Inconceivable" );  
+  return(null );
+}
+
+
+//Building function setTag from line: 362
 
 public Box setTag(Box key ,Box val ,Box aStruct ) {
     
@@ -616,7 +632,7 @@ public Box setTag(Box key ,Box val ,Box aStruct ) {
 }
 
 
-//Building function filterVoid from line: 360
+//Building function filterVoid from line: 372
 
 public Box filterVoid(Box l ) {
   Box token = null ;
@@ -634,7 +650,7 @@ public Box filterVoid(Box l ) {
 }
 
 
-//Building function filterTokens from line: 372
+//Building function filterTokens from line: 384
 
 public Box filterTokens(Box l ) {
   Box token = null ;
@@ -664,7 +680,7 @@ public Box filterTokens(Box l ) {
 }
 
 
-//Building function finish_token from line: 406
+//Building function finish_token from line: 418
 
 public Box finish_token(String prog ,Integer start ,Integer len ,Integer line ,Integer column ,String filename ) {
   Box token = null ;
@@ -679,7 +695,7 @@ public Box finish_token(String prog ,Integer start ,Integer len ,Integer line ,I
 }
 
 
-//Building function readString from line: 421
+//Building function readString from line: 433
 
 public String readString(String prog ,Integer start ,Integer len ) {
   String token = "" ;
@@ -697,7 +713,7 @@ public String readString(String prog ,Integer start ,Integer len ) {
 }
 
 
-//Building function readComment from line: 432
+//Building function readComment from line: 444
 
 public String readComment(String prog ,Integer start ,Integer len ) {
   String token = "" ;
@@ -711,7 +727,7 @@ public String readComment(String prog ,Integer start ,Integer len ) {
 }
 
 
-//Building function isWhiteSpace from line: 440
+//Building function isWhiteSpace from line: 452
 
 public boolean isWhiteSpace(String s ) {
     
@@ -735,7 +751,7 @@ public boolean isWhiteSpace(String s ) {
 }
 
 
-//Building function isLineBreak from line: 457
+//Building function isLineBreak from line: 469
 
 public boolean isLineBreak(String s ) {
     
@@ -751,7 +767,7 @@ public boolean isLineBreak(String s ) {
 }
 
 
-//Building function incForNewLine from line: 464
+//Building function incForNewLine from line: 476
 
 public Integer incForNewLine(Box token ,Integer val ) {
     
@@ -763,7 +779,7 @@ public Integer incForNewLine(Box token ,Integer val ) {
 }
 
 
-//Building function annotateReadPosition from line: 471
+//Building function annotateReadPosition from line: 483
 
 public Box annotateReadPosition(String filename ,Integer linecount ,Integer column ,Integer start ,Box newBox ) {
     
@@ -771,7 +787,7 @@ public Box annotateReadPosition(String filename ,Integer linecount ,Integer colu
 }
 
 
-//Building function scan from line: 483
+//Building function scan from line: 495
 
 public Box scan(String prog ,Integer start ,Integer len ,Integer linecount ,Integer column ,String filename ) {
   Box token = null ;
@@ -815,7 +831,7 @@ Box newBox = null ;
 }
 
 
-//Building function isOpenBrace from line: 523
+//Building function isOpenBrace from line: 535
 
 public boolean isOpenBrace(Box b ) {
     
@@ -831,7 +847,7 @@ public boolean isOpenBrace(Box b ) {
 }
 
 
-//Building function openBrace from line: 531
+//Building function openBrace from line: 543
 
 public String openBrace() {
     
@@ -839,7 +855,7 @@ public String openBrace() {
 }
 
 
-//Building function isCloseBrace from line: 533
+//Building function isCloseBrace from line: 545
 
 public boolean isCloseBrace(Box b ) {
     
@@ -855,7 +871,7 @@ public boolean isCloseBrace(Box b ) {
 }
 
 
-//Building function closeBrace from line: 543
+//Building function closeBrace from line: 555
 
 public String closeBrace() {
     
@@ -863,7 +879,7 @@ public String closeBrace() {
 }
 
 
-//Building function sexprTree from line: 545
+//Building function sexprTree from line: 557
 
 public Box sexprTree(Box l ) {
   Box b = null ;
@@ -885,7 +901,7 @@ public Box sexprTree(Box l ) {
 }
 
 
-//Building function skipList from line: 564
+//Building function skipList from line: 576
 
 public Box skipList(Box l ) {
   Box b = null ;
@@ -907,7 +923,7 @@ public Box skipList(Box l ) {
 }
 
 
-//Building function readSexpr from line: 579
+//Building function readSexpr from line: 591
 
 public Box readSexpr(String aStr ,String filename ) {
   Box tokens = null ;
@@ -920,7 +936,7 @@ Box as = null ;
 }
 
 
-//Building function caar from line: 589
+//Building function caar from line: 601
 
 public Box caar(Box l ) {
     
@@ -928,7 +944,7 @@ public Box caar(Box l ) {
 }
 
 
-//Building function cadr from line: 590
+//Building function cadr from line: 602
 
 public Box cadr(Box l ) {
     
@@ -936,7 +952,7 @@ public Box cadr(Box l ) {
 }
 
 
-//Building function caddr from line: 591
+//Building function caddr from line: 603
 
 public Box caddr(Box l ) {
     
@@ -944,7 +960,7 @@ public Box caddr(Box l ) {
 }
 
 
-//Building function cadddr from line: 592
+//Building function cadddr from line: 604
 
 public Box cadddr(Box l ) {
     
@@ -952,7 +968,7 @@ public Box cadddr(Box l ) {
 }
 
 
-//Building function caddddr from line: 593
+//Building function caddddr from line: 605
 
 public Box caddddr(Box l ) {
     
@@ -960,7 +976,7 @@ public Box caddddr(Box l ) {
 }
 
 
-//Building function cddr from line: 594
+//Building function cddr from line: 606
 
 public Box cddr(Box l ) {
     
@@ -968,7 +984,7 @@ public Box cddr(Box l ) {
 }
 
 
-//Building function first from line: 595
+//Building function first from line: 607
 
 public Box first(Box l ) {
     
@@ -976,7 +992,7 @@ public Box first(Box l ) {
 }
 
 
-//Building function second from line: 596
+//Building function second from line: 608
 
 public Box second(Box l ) {
     
@@ -984,7 +1000,7 @@ public Box second(Box l ) {
 }
 
 
-//Building function third from line: 597
+//Building function third from line: 609
 
 public Box third(Box l ) {
     
@@ -992,7 +1008,7 @@ public Box third(Box l ) {
 }
 
 
-//Building function fourth from line: 598
+//Building function fourth from line: 610
 
 public Box fourth(Box l ) {
     
@@ -1000,7 +1016,7 @@ public Box fourth(Box l ) {
 }
 
 
-//Building function fifth from line: 599
+//Building function fifth from line: 611
 
 public Box fifth(Box l ) {
     
@@ -1008,7 +1024,7 @@ public Box fifth(Box l ) {
 }
 
 
-//Building function makeNode from line: 605
+//Building function makeNode from line: 617
 
 public Box makeNode(String name ,String subname ,Box code ,Box children ) {
     
@@ -1016,7 +1032,7 @@ public Box makeNode(String name ,String subname ,Box code ,Box children ) {
 }
 
 
-//Building function addToNode from line: 621
+//Building function addToNode from line: 633
 
 public Box addToNode(Box key ,Box val ,Box node ) {
     
@@ -1024,7 +1040,7 @@ public Box addToNode(Box key ,Box val ,Box node ) {
 }
 
 
-//Building function makeStatementNode from line: 626
+//Building function makeStatementNode from line: 638
 
 public Box makeStatementNode(String name ,String subname ,Box code ,Box children ,Box functionName ) {
     
@@ -1032,7 +1048,7 @@ public Box makeStatementNode(String name ,String subname ,Box code ,Box children
 }
 
 
-//Building function astExpression from line: 631
+//Building function astExpression from line: 643
 
 public Box astExpression(Box tree ) {
     
@@ -1044,7 +1060,7 @@ public Box astExpression(Box tree ) {
 }
 
 
-//Building function astSubExpression from line: 639
+//Building function astSubExpression from line: 651
 
 public Box astSubExpression(Box tree ) {
     
@@ -1060,7 +1076,7 @@ public Box astSubExpression(Box tree ) {
 }
 
 
-//Building function astIf from line: 650
+//Building function astIf from line: 662
 
 public Box astIf(Box tree ,Box fname ) {
     
@@ -1080,7 +1096,7 @@ public Box astIf(Box tree ,Box fname ) {
 }
 
 
-//Building function astSetStruct from line: 671
+//Building function astSetStruct from line: 683
 
 public Box astSetStruct(Box tree ) {
     
@@ -1088,7 +1104,7 @@ public Box astSetStruct(Box tree ) {
 }
 
 
-//Building function astSet from line: 676
+//Building function astSet from line: 688
 
 public Box astSet(Box tree ) {
     
@@ -1096,7 +1112,7 @@ public Box astSet(Box tree ) {
 }
 
 
-//Building function astGetStruct from line: 681
+//Building function astGetStruct from line: 693
 
 public Box astGetStruct(Box tree ) {
     
@@ -1104,7 +1120,7 @@ public Box astGetStruct(Box tree ) {
 }
 
 
-//Building function astReturnVoid from line: 684
+//Building function astReturnVoid from line: 696
 
 public Box astReturnVoid(Box fname ) {
     
@@ -1112,7 +1128,7 @@ public Box astReturnVoid(Box fname ) {
 }
 
 
-//Building function astStatement from line: 688
+//Building function astStatement from line: 700
 
 public Box astStatement(Box tree ,Box fname ) {
     
@@ -1145,7 +1161,7 @@ public Box astStatement(Box tree ,Box fname ) {
 }
 
 
-//Building function astBody from line: 718
+//Building function astBody from line: 730
 
 public Box astBody(Box tree ,Box fname ) {
     
@@ -1157,7 +1173,7 @@ public Box astBody(Box tree ,Box fname ) {
 }
 
 
-//Building function linePanic from line: 724
+//Building function linePanic from line: 736
 
 public void linePanic(String line ,String message ) {
     
@@ -1169,7 +1185,7 @@ if (globalTrace)
 }
 
 
-//Building function astFunction from line: 730
+//Building function astFunction from line: 742
 
 public Box astFunction(Box tree ) {
   String line = "" ;
@@ -1203,7 +1219,7 @@ Box fname = null ;
 }
 
 
-//Building function astFunctionList from line: 760
+//Building function astFunctionList from line: 772
 
 public Box astFunctionList(Box tree ) {
     
@@ -1215,7 +1231,7 @@ public Box astFunctionList(Box tree ) {
 }
 
 
-//Building function astFunctions from line: 768
+//Building function astFunctions from line: 780
 
 public Box astFunctions(Box tree ) {
     
@@ -1228,7 +1244,7 @@ public Box astFunctions(Box tree ) {
 }
 
 
-//Building function loadLib from line: 776
+//Building function loadLib from line: 788
 
 public Box loadLib(String path ) {
   String programStr = "" ;
@@ -1243,7 +1259,7 @@ Box library = null ;
 }
 
 
-//Building function astInclude from line: 792
+//Building function astInclude from line: 804
 
 public Box astInclude(Box tree ) {
     
@@ -1251,7 +1267,7 @@ public Box astInclude(Box tree ) {
 }
 
 
-//Building function astIncludeList from line: 795
+//Building function astIncludeList from line: 807
 
 public Box astIncludeList(Box tree ) {
     
@@ -1263,7 +1279,7 @@ public Box astIncludeList(Box tree ) {
 }
 
 
-//Building function astIncludes from line: 802
+//Building function astIncludes from line: 814
 
 public Box astIncludes(Box tree ) {
     
@@ -1276,7 +1292,7 @@ public Box astIncludes(Box tree ) {
 }
 
 
-//Building function astStruct from line: 810
+//Building function astStruct from line: 822
 
 public Box astStruct(Box tree ) {
     
@@ -1284,7 +1300,7 @@ public Box astStruct(Box tree ) {
 }
 
 
-//Building function astType from line: 813
+//Building function astType from line: 825
 
 public Box astType(Box tree ) {
     
@@ -1296,7 +1312,7 @@ public Box astType(Box tree ) {
 }
 
 
-//Building function astTypeList from line: 819
+//Building function astTypeList from line: 831
 
 public Box astTypeList(Box tree ) {
     
@@ -1308,7 +1324,7 @@ public Box astTypeList(Box tree ) {
 }
 
 
-//Building function astTypes from line: 825
+//Building function astTypes from line: 837
 
 public Box astTypes(Box tree ) {
     
@@ -1316,28 +1332,29 @@ public Box astTypes(Box tree ) {
     return(makeNode("types" , "types" , tree , astTypeList(cdr(tree ))));
   } else {    
     panic("Types section not found!  Every program must have a types section, even if you don't define any types" );    
-    return(boxString("Fuck java" ));
+    System.out.printf("Types section not found!  Every program must have a types section, even if you don't define any types" );    
+    return(boxString("!!!Fuck java" ));
   }
 }
 
 
-//Building function declarationsof from line: 836
+//Building function declarationsof from line: 849
 
 public Box declarationsof(Box ass ) {
     
-  return(cdr(assoc("declarations" , cdr(ass ))));
+  return(cdr(assocPanic("declarations" , cdr(ass ), "Cons list has no declarations key" )));
 }
 
 
-//Building function codeof from line: 839
+//Building function codeof from line: 852
 
 public Box codeof(Box ass ) {
     
-  return(cdr(assoc("code" , cdr(ass ))));
+  return(cdr(assocPanic("code" , cdr(ass ), "Given cons list does not contain a code key" )));
 }
 
 
-//Building function functionNameof from line: 842
+//Building function functionNameof from line: 855
 
 public Box functionNameof(Box ass ) {
     
@@ -1345,11 +1362,12 @@ public Box functionNameof(Box ass ) {
 }
 
 
-//Building function nodeof from line: 845
+//Building function nodeof from line: 858
 
 public Box nodeof(Box ass ) {
     
   if ( equalBox(boxBool(false ), assoc("node" , cdr(ass )))) {    
+    System.out.printf("Given list does not contain nodes" );    
     return(boxBool(false ));
   } else {    
     return(cdr(assoc("node" , cdr(ass ))));
@@ -1357,19 +1375,15 @@ public Box nodeof(Box ass ) {
 }
 
 
-//Building function lineof from line: 851
+//Building function lineof from line: 866
 
 public Box lineof(Box ass ) {
     
-  if ( equalBox(boxBool(false ), assoc("line" , cdr(ass )))) {    
-    return(boxInt(-1 ));
-  } else {    
-    return(cdr(assoc("line" , cdr(ass ))));
-  }
+  return(cdr(assocFail("line" , cdr(ass ), boxInt(-1 ))));
 }
 
 
-//Building function subnameof from line: 857
+//Building function subnameof from line: 871
 
 public Box subnameof(Box ass ) {
     
@@ -1377,7 +1391,7 @@ public Box subnameof(Box ass ) {
 }
 
 
-//Building function nameof from line: 860
+//Building function nameof from line: 874
 
 public Box nameof(Box ass ) {
     
@@ -1385,7 +1399,7 @@ public Box nameof(Box ass ) {
 }
 
 
-//Building function childrenof from line: 863
+//Building function childrenof from line: 877
 
 public Box childrenof(Box ass ) {
     
@@ -1393,7 +1407,7 @@ public Box childrenof(Box ass ) {
 }
 
 
-//Building function isNode from line: 867
+//Building function isNode from line: 881
 
 public boolean isNode(Box val ) {
     
@@ -1413,7 +1427,7 @@ public boolean isNode(Box val ) {
 }
 
 
-//Building function truthy from line: 881
+//Building function truthy from line: 895
 
 public boolean truthy(Box aVal ) {
     
@@ -1421,7 +1435,7 @@ public boolean truthy(Box aVal ) {
 }
 
 
-//Building function isNotFalse from line: 885
+//Building function isNotFalse from line: 899
 
 public boolean isNotFalse(Box aVal ) {
     
@@ -1437,7 +1451,7 @@ public boolean isNotFalse(Box aVal ) {
 }
 
 
-//Building function isLeaf from line: 892
+//Building function isLeaf from line: 906
 
 public boolean isLeaf(Box n ) {
     
@@ -1445,7 +1459,7 @@ public boolean isLeaf(Box n ) {
 }
 
 
-//Building function printIndent from line: 897
+//Building function printIndent from line: 911
 
 public void printIndent(Integer ii ) {
     
@@ -1461,7 +1475,7 @@ if (globalTrace)
 }
 
 
-//Building function newLine from line: 905
+//Building function newLine from line: 919
 
 public void newLine(Integer indent ) {
     
@@ -1473,7 +1487,7 @@ if (globalTrace)
 }
 
 
-//Building function noStackTrace from line: 909
+//Building function noStackTrace from line: 923
 
 public Box noStackTrace() {
     
@@ -1481,7 +1495,7 @@ public Box noStackTrace() {
 }
 
 
-//Building function toStr from line: 938
+//Building function toStr from line: 952
 
 public Box toStr(Box thing ) {
     
@@ -1489,7 +1503,7 @@ public Box toStr(Box thing ) {
 }
 
 
-//Building function listLast from line: 941
+//Building function listLast from line: 955
 
 public Box listLast(Box alist ) {
     
@@ -1501,7 +1515,7 @@ public Box listLast(Box alist ) {
 }
 
 
-//Building function treeCompile from line: 948
+//Building function treeCompile from line: 962
 
 public Box treeCompile(String filename ) {
   String programStr = "" ;
@@ -1514,7 +1528,7 @@ Box program = null ;
 }
 
 
-//Building function astBuild from line: 954
+//Building function astBuild from line: 968
 
 public Box astBuild(String filename ) {
   String programStr = "" ;
@@ -1529,7 +1543,7 @@ Box program = null ;
 }
 
 
-//Building function astCompile from line: 971
+//Building function astCompile from line: 985
 
 public void astCompile(String filename ) {
   String programStr = "" ;
@@ -1545,7 +1559,7 @@ if (globalTrace)
 }
 
 
-//Building function concatLists from line: 978
+//Building function concatLists from line: 992
 
 public Box concatLists(Box seq1 ,Box seq2 ) {
     
@@ -1557,7 +1571,7 @@ public Box concatLists(Box seq1 ,Box seq2 ) {
 }
 
 
-//Building function alistKeys from line: 984
+//Building function alistKeys from line: 998
 
 public Box alistKeys(Box alist ) {
     
@@ -1569,15 +1583,15 @@ public Box alistKeys(Box alist ) {
 }
 
 
-//Building function mergeIncludes from line: 990
+//Building function mergeIncludes from line: 1004
 
 public Box mergeIncludes(Box program ) {
     
-  return(merge_recur(childrenof(cdr(cdr(assoc("includes" , program )))), program ));
+  return(merge_recur(childrenof(cdr(cdr(assocPanic("includes" , program , "Program lacks include section" )))), program ));
 }
 
 
-//Building function merge_recur from line: 997
+//Building function merge_recur from line: 1011
 
 public Box merge_recur(Box incs ,Box program ) {
     
@@ -1589,7 +1603,7 @@ public Box merge_recur(Box incs ,Box program ) {
 }
 
 
-//Building function mergeInclude from line: 1005
+//Building function mergeInclude from line: 1019
 
 public Box mergeInclude(Box inc ,Box program ) {
   Box newProgram = null ;
@@ -1607,13 +1621,13 @@ Box types = null ;
   if ( isNil(inc )) {    
     return(program );
   } else {    
-    functions = childrenof(cdr(assoc("functions" , inc )));    
-    oldfunctionsnode = cdr(assoc("functions" , program ));    
+    functions = childrenof(cdr(assocPanic("functions" , inc , "Included file has no functions section" )));    
+    oldfunctionsnode = cdr(assocPanic("functions" , program , "Current module has no functions section" ));    
     oldfunctions = childrenof(oldfunctionsnode );    
     newfunctions = concatLists(functions , oldfunctions );    
     newFunctionNode = cons(boxSymbol("node" ), alistCons(boxSymbol("children" ), newfunctions , cdr(oldfunctionsnode )));    
-    types = childrenof(cdr(assoc("types" , inc )));    
-    oldtypesnode = cdr(assoc("types" , program ));    
+    types = childrenof(cdr(assocPanic("types" , inc , "Included file has no types section" )));    
+    oldtypesnode = cdr(assocPanic("types" , program , "Current module has no types section" ));    
     oldtypes = childrenof(oldtypesnode );    
     newtypes = concatLists(types , oldtypes );    
     newTypeNode = cons(boxSymbol("node" ), alistCons(boxSymbol("children" ), newtypes , cdr(oldtypesnode )));    
@@ -1623,7 +1637,7 @@ Box types = null ;
 }
 
 
-//Building function macrowalk from line: 1059
+//Building function macrowalk from line: 1073
 
 public Box macrowalk(Box l ) {
   Box val = null ;
@@ -1648,7 +1662,7 @@ public Box macrowalk(Box l ) {
 }
 
 
-//Building function macrosingle from line: 1091
+//Building function macrosingle from line: 1105
 
 public Box macrosingle(Box l ,String search ,String replace ) {
   Box val = null ;
@@ -1672,7 +1686,7 @@ public Box macrosingle(Box l ,String search ,String replace ) {
 }
 
 
-//Building function doBoxList from line: 1114
+//Building function doBoxList from line: 1128
 
 public Box doBoxList(Box l ) {
     
@@ -1684,7 +1698,7 @@ public Box doBoxList(Box l ) {
 }
 
 
-//Building function doStringList from line: 1130
+//Building function doStringList from line: 1144
 
 public Box doStringList(Box l ) {
   Box newlist = null ;
@@ -1700,7 +1714,7 @@ Box ret = null ;
 }
 
 
-//Building function argList from line: 1154
+//Building function argList from line: 1168
 
 public Box argList(Integer count ,Integer pos ,String[] args ) {
     
@@ -1712,7 +1726,7 @@ public Box argList(Integer count ,Integer pos ,String[] args ) {
 }
 
 
-//Building function listReverse from line: 1166
+//Building function listReverse from line: 1180
 
 public Box listReverse(Box l ) {
     
@@ -1724,7 +1738,7 @@ public Box listReverse(Box l ) {
 }
 
 
-//Building function inList from line: 1172
+//Building function inList from line: 1186
 
 public boolean inList(Box item ,Box l ) {
     
@@ -1740,7 +1754,7 @@ public boolean inList(Box item ,Box l ) {
 }
 
 
-//Building function equalList from line: 1182
+//Building function equalList from line: 1196
 
 public boolean equalList(Box a ,Box b ) {
     
@@ -1760,7 +1774,7 @@ public boolean equalList(Box a ,Box b ) {
 }
 
 
-//Building function reverseRec from line: 1196
+//Building function reverseRec from line: 1210
 
 public Box reverseRec(Box oldL ,Box newL ) {
     
@@ -1772,7 +1786,7 @@ public Box reverseRec(Box oldL ,Box newL ) {
 }
 
 
-//Building function reverseList from line: 1203
+//Building function reverseList from line: 1217
 
 public Box reverseList(Box l ) {
     
@@ -1780,7 +1794,7 @@ public Box reverseList(Box l ) {
 }
 
 
-//Building function tron from line: 1210
+//Building function tron from line: 1224
 
 public void tron() {
     
@@ -1788,7 +1802,7 @@ public void tron() {
 }
 
 
-//Building function troff from line: 1211
+//Building function troff from line: 1225
 
 public void troff() {
     
@@ -1796,7 +1810,7 @@ public void troff() {
 }
 
 
-//Building function stron from line: 1212
+//Building function stron from line: 1226
 
 public void stron() {
     
@@ -1804,7 +1818,7 @@ public void stron() {
 }
 
 
-//Building function stroff from line: 1213
+//Building function stroff from line: 1227
 
 public void stroff() {
     
@@ -2765,7 +2779,7 @@ if (globalTrace)
 
 public void ansiIncludes(Box nodes ) {
     
-  System.out.printf("%s" , "\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nconst char* getEnv(char* key){return getenv(key);}\n void panic(char* s){abort();}\nint sub(int a, int b) { return a - b; }\nfloat mult(int a, int b) { return a * b; }\nint greaterthan(int a, int b) { return a > b; }\nfloat subf(float a, float b) { return a - b; }\nfloat multf(float a, float b) { return a * b; }\nint greaterthanf(float a, float b) { return a > b; }\nint equal(int a, int b) { return a == b; }\nint equalString(char* a, char* b) { return !strcmp(a,b); }\nint andBool(int a, int b) { return a == b;}\nint string_length(char* s) { return strlen(s);}\nchar* setSubString(char* target, int start,char *source){target[start]=source[0]; return target;}\nchar* sub_string(char* s, int start, int length) {\nchar* substr = calloc(length+1, 1);\nstrncpy(substr, s+start, length);\nreturn substr;\n}\n\n\n\nchar* stringConcatenate(char* a, char* b) {\nint len = strlen(a) + strlen(b) + 1;\nchar* target = calloc(len,1);\nstrncat(target, a, len);\nstrncat(target, b, len);\nreturn target;\n}\n\nchar* intToString(int a) {\nint len = 100;\nchar* target = calloc(len,1);\nsnprintf(target, 99, \"%d\", a);\nreturn target;\n}\n\ntypedef int*  array;\ntypedef int bool;\n#define true 1\n#define false 0\n\n\nvoid * gc_malloc( unsigned int size ) {\nreturn malloc( size);\n}\n\nint* makeArray(int length) {\n    int * array = gc_malloc(length*sizeof(int));\n    return array;\n}\n\nint at(int* arr, int index) {\n  return arr[index];\n}\n\nvoid setAt(int* array, int index, int value) {\n    array[index] = value;\n}\n\nchar * read_file(char * filename) {\nchar * buffer = 0;\nlong length;\nFILE * f = fopen (filename, \"rb\");\n\nif (f)\n{\n  fseek (f, 0, SEEK_END);\n  length = ftell (f);\n  fseek (f, 0, SEEK_SET);\n  buffer = malloc (length);\n  if (buffer == NULL) {\n  printf(\"Malloc failed!\\n\");\n  exit(1);\n}\n  if (buffer)\n  {\n    fread (buffer, 1, length, f);\n  }\n  fclose (f);\n}\nreturn buffer;\n}\n\n\nvoid write_file (char * filename, char * data) {\nFILE *f = fopen(filename, \"w\");\nif (f == NULL)\n{\n    printf(\"Error opening file!\");\n    exit(1);\n}\n\nfprintf(f, \"%s\", data);\n\nfclose(f);\n}\n\nchar* getStringArray(int index, char** strs) {\nreturn strs[index];\n}\n\nint start();  //Forwards declare the user's main routine\nchar* caller;\nchar** globalArgs;\nint globalArgsCount;\nbool globalTrace = false;\nbool globalStepTrace = false;\n\nint main( int argc, char *argv[] )  {\n  globalArgs = argv;\n  globalArgsCount = argc;\n  caller=calloc(1024,1);\n\n  return start();\n\n}\n\n" );  
+  System.out.printf("%s" , "\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nconst char* getEnv(char* key){return getenv(key);}\n void panic(char* s){abort();exit(1);}\nint sub(int a, int b) { return a - b; }\nfloat mult(int a, int b) { return a * b; }\nint greaterthan(int a, int b) { return a > b; }\nfloat subf(float a, float b) { return a - b; }\nfloat multf(float a, float b) { return a * b; }\nint greaterthanf(float a, float b) { return a > b; }\nint equal(int a, int b) { return a == b; }\nint equalString(char* a, char* b) { return !strcmp(a,b); }\nint andBool(int a, int b) { return a == b;}\nint string_length(char* s) { return strlen(s);}\nchar* setSubString(char* target, int start,char *source){target[start]=source[0]; return target;}\nchar* sub_string(char* s, int start, int length) {\nchar* substr = calloc(length+1, 1);\nstrncpy(substr, s+start, length);\nreturn substr;\n}\n\n\n\nchar* stringConcatenate(char* a, char* b) {\nint len = strlen(a) + strlen(b) + 1;\nchar* target = calloc(len,1);\nstrncat(target, a, len);\nstrncat(target, b, len);\nreturn target;\n}\n\nchar* intToString(int a) {\nint len = 100;\nchar* target = calloc(len,1);\nsnprintf(target, 99, \"%d\", a);\nreturn target;\n}\n\ntypedef int*  array;\ntypedef int bool;\n#define true 1\n#define false 0\n\n\nvoid * gc_malloc( unsigned int size ) {\nreturn malloc( size);\n}\n\nint* makeArray(int length) {\n    int * array = gc_malloc(length*sizeof(int));\n    return array;\n}\n\nint at(int* arr, int index) {\n  return arr[index];\n}\n\nvoid setAt(int* array, int index, int value) {\n    array[index] = value;\n}\n\nchar * read_file(char * filename) {\nchar * buffer = 0;\nlong length;\nFILE * f = fopen (filename, \"rb\");\n\nif (f)\n{\n  fseek (f, 0, SEEK_END);\n  length = ftell (f);\n  fseek (f, 0, SEEK_SET);\n  buffer = malloc (length);\n  if (buffer == NULL) {\n  printf(\"Malloc failed!\\n\");\n  exit(1);\n}\n  if (buffer)\n  {\n    fread (buffer, 1, length, f);\n  }\n  fclose (f);\n}\nreturn buffer;\n}\n\n\nvoid write_file (char * filename, char * data) {\nFILE *f = fopen(filename, \"w\");\nif (f == NULL)\n{\n    printf(\"Error opening file!\");\n    exit(1);\n}\n\nfprintf(f, \"%s\", data);\n\nfclose(f);\n}\n\nchar* getStringArray(int index, char** strs) {\nreturn strs[index];\n}\n\nint start();  //Forwards declare the user's main routine\nchar* caller;\nchar** globalArgs;\nint globalArgsCount;\nbool globalTrace = false;\nbool globalStepTrace = false;\n\nint main( int argc, char *argv[] )  {\n  globalArgs = argv;\n  globalArgsCount = argc;\n  caller=calloc(1024,1);\n\n  return start();\n\n}\n\n" );  
   System.out.printf("%s" , "char * character(int num) { char *string = malloc(2); if (!string) return 0; string[0] = num; string[1] = 0; return string; }" );
 if (globalTrace)
    System.out. printf("Leaving ansiIncludes\n");
@@ -2902,7 +2916,7 @@ String programStr = "" ;
 Box tree = null ;
 Box program = null ;
   
-  foundation = readSexpr(read_file("foundationlibs/ansi.qon" ), "foundationlibs/ansi.qon" );  
+  foundation = readSexpr(read_file("ansi.qon" ), "ansi.qon" );  
   foundationFuncs = cdr(third(foundation ));  
   System.out.printf("//Scanning file...%s\n" , filename );  
   programStr = read_file(filename );  
@@ -3876,6 +3890,7 @@ Box program = null ;
   nodeIncludes(cdr(assoc("includes" , program )));  
   nodeTypes(childrenof(cdr(assoc("types" , program ))));  
   System.out.printf("\nvar globalStackTrace = NULL;\n" );  
+  System.out.printf("\nvar caller = \"\";\n" );  
   System.out.printf("\nfunction isNil(p) {\n    return p == NULL;\n}\n\n" );  
   nodeFunctions(cdr(assoc("children" , cdr(cdr(assoc("functions" , program ))))));  
   System.out.printf("\n" );  
@@ -4326,6 +4341,7 @@ public void javaType(Box node ) {
     
   if ( equalBox(subnameof(node ), boxString("struct" ))) {    
     System.out.printf("\npublic class %s {\n" , stringify(first(codeof(node ))));    
+    System.out.printf("\npublic String caller =\"\";" );    
     javaStruct(cdr(codeof(node )));    
     System.out.printf("\n};\n" );
   } else {    
@@ -4341,7 +4357,7 @@ if (globalTrace)
 }
 
 
-//Building function javaTypes from line: 330
+//Building function javaTypes from line: 331
 
 public void javaTypes(Box nodes ) {
     
@@ -4357,7 +4373,7 @@ if (globalTrace)
 }
 
 
-//Building function javaCompile from line: 336
+//Building function javaCompile from line: 337
 
 public void javaCompile(String filename ) {
   String programStr = "" ;
@@ -4370,6 +4386,7 @@ Box program = null ;
   System.out.printf("%s" , "import java.io.IOException;\n" );  
   System.out.printf("%s" , "import java.io.UnsupportedEncodingException;\n" );  
   System.out.printf("class MyProgram {\n" );  
+  System.out.printf("\npublic String caller =\"\";" );  
   programStr = read_file(filename );  
   tree = readSexpr(programStr , filename );  
   program = alistCons(boxString("includes" ), astIncludes(first(tree )), alistCons(boxString("types" ), astTypes(second(tree )), alistCons(boxString("functions" ), astFunctions(third(tree )), null )));  
@@ -4570,12 +4587,14 @@ if (globalTrace)
 //Building function luaBody from line: 164
 
 public void luaBody(String local_caller ,Integer indent ,Box program ) {
-    
+  Box statement = null ;
+  
   if ( isNil(program )) {    
     return;
   } else {    
-    System.out.printf("caller=\"%s\"\n" , local_caller );    
-    luaStatement(add1(indent ), car(program ));    
+    statement = car(program );    
+    System.out.printf("caller = \"%s:%s:%d\"\n" , local_caller , unBoxString(getTagFail(statement , boxString("filename" ), boxString("Unknown file" ))), unBoxInt(getTagFail(statement , boxString("line" ), boxInt(-1 ))));    
+    luaStatement(add1(indent ), statement );    
     System.out.printf("\n" );    
     luaBody(local_caller , indent , cdr(program ));
   }
@@ -4585,7 +4604,7 @@ if (globalTrace)
 }
 
 
-//Building function luaFunctions from line: 175
+//Building function luaFunctions from line: 176
 
 public void luaFunctions(Integer indent ,Box program ) {
     
@@ -4601,7 +4620,7 @@ if (globalTrace)
 }
 
 
-//Building function luaProgram from line: 187
+//Building function luaProgram from line: 188
 
 public void luaProgram(Box program ) {
     
@@ -4613,18 +4632,18 @@ if (globalTrace)
 }
 
 
-//Building function luaIncludes from line: 194
+//Building function luaIncludes from line: 195
 
 public void luaIncludes(Box nodes ) {
     
-  System.out.printf("%s" , "\nfunction luaDump(o)\n   if type(o) == 'table' then\n      local s = '{ '\n      for k,v in pairs(o) do\n         if type(k) ~= 'number' then k = '\"'..k..'\"' end\n         s = s .. '['..k..'] = ' .. luaDump(v) .. ','\n      end\n      return s .. '} '\n   else\n      return tostring(o)\n   end\nend\nprintf = function(s,...)\nreturn io.write(s:format(...))\nend -- function\n    \nfunction stringConcatenate(a,b)\nreturn a..b\nend\n    \nfunction getStringArray(index, arr)\nreturn arr[index]\nend\n       \nfunction luaWriteFile(name, data)  \nlocal file = io.open(name, \"w\")\nfile:write(data)\nfile:close(file)\nend\n    function luaSubstring(s, start, length)\nreturn string.sub(s, start, start+length)\nend\n    \n    function luaReadFile(file)\n      local f = assert(io.open(file, \"rb\"))\n      local content = f:read(\"*all\")      f:close()\n      return content\n    end\n     \nfunction equalString(a,b)\n        return a==b;\n     end\n    \n     function new()\n        return {};\n     end\n    \n     function isNil(val)\n        return val == nil;\n     end\n    \n     function getEnv(key)\n        return os.getenv(key);\n     end\n    \n    function panic(s)\n      do return end;\n    end\n    \n    function sub(a, b) \n      return a - b; \n    end\n\n    function mult(a, b) \n      return a * b;\n    end\n    \n    function greaterthan(a, b)\n      return a > b;\n    end\n    \n    function subf(a, b) \n      return a - b;\n    end\n    \n    function multf(a, b)\n      return a * b;\n    end\n    \n    function greaterthanf(a, b)\n      return a > b;\n    end\n    \n    function equal(a, b)\n      return a == b;\n    end\n    \n    function andBool(a, b)\n      return a == b;\n    end\n    \n    function string_length(s)\n      return strlen(s);\n    end\n    \n    function setSubString(target, start, source)\n      target[start]=source[0];\n      return target;\n    end\n    \n    function sub_string(s, start, length)\n      substr = calloc(length+1, 1);\n      strncpy(substr, s+start, length);\n      return substr;\n    end\n    \n    function intToString(a)\n      return a\n    end\n\n    function gc_malloc(size)\n      return \"\"\n    end\n    \n    function makeArray(length)\n      return {}\n    end\n    \n    function at(arr, index)\n      return arr[index];\n    end\n    \n    function setAt(array, index, value)\n      array[index] = value;\n    end\n    \n    function read_file(file)\n      local f = io.open(file, \"r\")\n      local content = \"\"\n      local length = 0\n\n      while f:read(0) ~= \"\" do\n          local current = f:read(\"*all\")\n\n          print(#current, length)\n          length = length + #current\n\n          content = content .. current\n      end\n\n      return content\n    end\n    \n    function write_file(filename, data)\n      local file = io.open(filename,'w')\n      file:write(tostring(data))\n      file:close()\n    end\n    \n    caller=\"\";\n    \n    globalArgs={};\n    globalArgsCount=0;\n    globalTrace = false;\n    globalStepTrace = false;\n\n    function main()\n      globalArgs = arg;\n      globalArgsCount = #arg + 1;\n      return start();\n    end\n    \n" );
+  System.out.printf("%s" , "\nfunction luaDump(o)\n   if type(o) == 'table' then\n      local s = '{ '\n      for k,v in pairs(o) do\n         if type(k) ~= 'number' then k = '\"'..k..'\"' end\n         s = s .. '['..k..'] = ' .. luaDump(v) .. ','\n      end\n      return s .. '} '\n   else\n      return tostring(o)\n   end\nend\nprintf = function(s,...)\nreturn io.write(s:format(...))\nend -- function\n    \nfunction stringConcatenate(a,b)\nreturn a..b\nend\n    \nfunction getStringArray(index, arr)\nreturn arr[index]\nend\n       \nfunction luaWriteFile(name, data)  \nlocal file = io.open(name, \"w\")\nfile:write(data)\nfile:close(file)\nend\n    function luaSubstring(s, start, length)\nreturn string.sub(s, start, start+length)\nend\n    \n    function luaReadFile(file)\n      local f = assert(io.open(file, \"rb\"))\n      local content = f:read(\"*all\")      f:close()\n      return content\n    end\n     \nfunction equalString(a,b)\n        return a==b;\n     end\n    \n     function new()\n        return {};\n     end\n    \n     function isNil(val)\n        return val == nil;\n     end\n    \n     function getEnv(key)\n        return os.getenv(key);\n     end\n    \n    function panic(s)\n      print(s);\n    os.exit()\n    end\n    \n    function sub(a, b) \n      return a - b; \n    end\n\n    function mult(a, b) \n      return a * b;\n    end\n    \n    function greaterthan(a, b)\n      return a > b;\n    end\n    \n    function subf(a, b) \n      return a - b;\n    end\n    \n    function multf(a, b)\n      return a * b;\n    end\n    \n    function greaterthanf(a, b)\n      return a > b;\n    end\n    \n    function equal(a, b)\n      return a == b;\n    end\n    \n    function andBool(a, b)\n      return a == b;\n    end\n    \n    function string_length(s)\n      return strlen(s);\n    end\n    \n    function setSubString(target, start, source)\n      panic(\"stub\");\n      end\n    \n    function sub_string(s, start, length)\n      panic(\"stub\");\n    end\n    \n    function intToString(a)\n      panic(\"stub\")\n return a\n    end\n\n    function gc_malloc(size)\n      return \"\"\n    end\n    \n    function makeArray(length)\n      return {}\n    end\n    \n    function at(arr, index)\n      return arr[index+1];\n    end\n    \n    function setAt(array, index, value)\n      array[index+1] = value;\n    end\n    \n    function read_file(file)\n      local f = io.open(file, \"r\")\n      local content = \"\"\n      local length = 0\n\n      while f:read(0) ~= \"\" do\n          local current = f:read(\"*all\")\n\n          print(#current, length)\n          length = length + #current\n\n          content = content .. current\n      end\n\n      return content\n    end\n    \n    function write_file(filename, data)\n      local file = io.open(filename,'w')\n      file:write(tostring(data))\n      file:close()\n    end\n    \n    caller=\"main\";\n    \n    globalArgs={};\n    globalArgsCount=0;\n    globalTrace = false;\n    globalStepTrace = false;\n\n    function main()\n      globalArgs = arg;\n      globalArgsCount = #arg + 1;\n      return start();\n    end\n    \n" );
 if (globalTrace)
    System.out. printf("Leaving luaIncludes\n");
 
 }
 
 
-//Building function loadQuon from line: 201
+//Building function loadQuon from line: 202
 
 public Box loadQuon(String filename ) {
   Box foundationFuncs = null ;
@@ -4640,7 +4659,7 @@ Box tree = null ;
 }
 
 
-//Building function getIncludes from line: 214
+//Building function getIncludes from line: 215
 
 public Box getIncludes(Box program ) {
     
@@ -4648,7 +4667,7 @@ public Box getIncludes(Box program ) {
 }
 
 
-//Building function getTypes from line: 218
+//Building function getTypes from line: 219
 
 public Box getTypes(Box program ) {
     
@@ -4656,7 +4675,7 @@ public Box getTypes(Box program ) {
 }
 
 
-//Building function getFunctions from line: 222
+//Building function getFunctions from line: 223
 
 public Box getFunctions(Box program ) {
     
@@ -4664,7 +4683,7 @@ public Box getFunctions(Box program ) {
 }
 
 
-//Building function loadIncludes from line: 227
+//Building function loadIncludes from line: 228
 
 public Box loadIncludes(Box tree ) {
   Box newProg = null ;
@@ -4687,7 +4706,7 @@ Box program = null ;
 }
 
 
-//Building function buildProg from line: 250
+//Building function buildProg from line: 251
 
 public Box buildProg(Box includes ,Box types ,Box functions ) {
   Box program = null ;
@@ -4700,7 +4719,7 @@ public Box buildProg(Box includes ,Box types ,Box functions ) {
 }
 
 
-//Building function luaCompile from line: 262
+//Building function luaCompile from line: 263
 
 public void luaCompile(String filename ) {
   Box tree = null ;
