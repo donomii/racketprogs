@@ -353,7 +353,9 @@
       (then (return (assoc key aBox)))
       (else (panic onFail)))
     (panic "Inconceivable")
-    (exit 1)))
+    ;fake return because some compilers can't spot the exit above
+    (return null)
+    ))
 
 
 
