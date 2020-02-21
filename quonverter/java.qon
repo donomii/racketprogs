@@ -343,6 +343,7 @@
     (printf "%s" "import java.io.IOException;\n")
     (printf "%s" "import java.io.UnsupportedEncodingException;\n")
    (printf "class MyProgram {\n")
+   (printf "\npublic String caller =\"\";")
     (set programStr (read-file filename))
     (set tree (readSexpr programStr filename))
     (set
