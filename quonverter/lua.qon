@@ -200,66 +200,6 @@
      "\nfunction luaDump(o)\n   if type(o) == 'table' then\n      local s = '{ '\n      for k,v in pairs(o) do\n         if type(k) ~= 'number' then k = '\"'..k..'\"' end\n         s = s .. '['..k..'] = ' .. luaDump(v) .. ','\n      end\n      return s .. '} '\n   else\n      return tostring(o)\n   end\nend\nprintf = function(s,...)\nreturn io.write(s:format(...))\nend -- function\n    \nfunction stringConcatenate(a,b)\nreturn a..b\nend\n    \nfunction getStringArray(index, arr)\nreturn arr[index]\nend\n       \nfunction luaWriteFile(name, data)  \nlocal file = io.open(name, \"w\")\nfile:write(data)\nfile:close(file)\nend\n    function luaSubstring(s, start, length)\nreturn string.sub(s, start, start+length)\nend\n    \n    function luaReadFile(file)\n      local f = assert(io.open(file, \"rb\"))\n      local content = f:read(\"*all\")      f:close()\n      return content\n    end\n     \nfunction equalString(a,b)\n        return a==b;\n     end\n    \n     function new()\n        return {};\n     end\n    \n     function isNil(val)\n        return val == nil;\n     end\n    \n     function getEnv(key)\n        return os.getenv(key);\n     end\n    \n    function panic(s)\n      print(s);\n    os.exit()\n    end\n    \n    function sub(a, b) \n      return a - b; \n    end\n\n    function mult(a, b) \n      return a * b;\n    end\n    \n    function greaterthan(a, b)\n      return a > b;\n    end\n    \n    function subf(a, b) \n      return a - b;\n    end\n    \n    function multf(a, b)\n      return a * b;\n    end\n    \n    function greaterthanf(a, b)\n      return a > b;\n    end\n    \n    function equal(a, b)\n      return a == b;\n    end\n    \n    function andBool(a, b)\n      return a == b;\n    end\n    \n    function string_length(s)\n      return strlen(s);\n    end\n    \n    function setSubString(target, start, source)\n      panic(\"stub\");\n      end\n    \n    function sub_string(s, start, length)\n      panic(\"stub\");\n    end\n    \n    function intToString(a)\n      panic(\"stub\")\n return a\n    end\n\n    function gc_malloc(size)\n      return \"\"\n    end\n    \n    function makeArray(length)\n      return {}\n    end\n    \n    function at(arr, index)\n      return arr[index+1];\n    end\n    \n    function setAt(array, index, value)\n      array[index+1] = value;\n    end\n    \n    function read_file(file)\n      local f = io.open(file, \"r\")\n      local content = \"\"\n      local length = 0\n\n      while f:read(0) ~= \"\" do\n          local current = f:read(\"*all\")\n\n          print(#current, length)\n          length = length + #current\n\n          content = content .. current\n      end\n\n      return content\n    end\n    \n    function write_file(filename, data)\n      local file = io.open(filename,'w')\n      file:write(tostring(data))\n      file:close()\n    end\n    \n    caller=\"main\";\n    \n    globalArgs={};\n    globalArgsCount=0;\n    globalTrace = false;\n    globalStepTrace = false;\n\n    function main()\n      globalArgs = arg;\n      globalArgsCount = #arg + 1;\n      return start();\n    end\n    \n")
 ))
 
-(list loadQuon (string filename) (declare (list foundationFuncs nil) (list foundation nil) (string programStr "")  (list tree nil) )
-(body
-   (set foundation (readSexpr (read-file filename) filename))
-   (set foundationFuncs (cdr (third foundation)))
-
-   ;(printf "--[[Scanning file...%s--]]\n" filename)
-    (set programStr (read-file filename))
-   ;(printf "--[[Building sexpr--]]\n")
-    (set tree (readSexpr programStr filename))
-	
-  (return tree)
-))
-
-(list getIncludes (list program) (declare)
-  (body
-    (return  (cdr (first program)))))
-
-(list getTypes (list program) (declare)
-  (body
-    (return  (cdr (second program)))))
-
-(list getFunctions (list program) (declare)
-  (body
-    (return  (cdr (third program)))))
-
-
-(list loadIncludes (list tree) (declare (list newProg nil) (string includeFile "") (list functionsCombined nil) (list typesCombined nil) (list includeTree nil) (list program nil))
-(body
-
-(if ( greaterthan (listLength (getIncludes tree)) 0)
-(then
-
-  ;(printf "Includes: ")
-  ; (display tree)
-  ;(display (getIncludes tree))
-  (set includeFile (stringify (first (getIncludes tree))))
-  ;(printf "\nLoading %s\n" includeFile)
-  (set includeTree (loadQuon includeFile))
-  ;(display tree)
-  (set functionsCombined (concatLists (getFunctions includeTree) (getFunctions tree)))
-  (set typesCombined (concatLists (getTypes includeTree) (getTypes tree)))
-  ;(display typesCombined)
-  (set newProg (buildProg (cdr (getIncludes tree)) typesCombined functionsCombined)) ;FIXME check includes are recursive
-  (return (loadIncludes newProg))
-)
-(else
-  (return tree))
-)))
-
-(list buildProg (list includes list types list functions)(declare (list program nil))
-(body
-(set includes (cons (boxSymbol "includes") includes))
-(set types (cons (boxSymbol "types") types))
-(set functions (cons (boxSymbol "functions") functions))
-  (set program (cons includes
-            (cons types
-              (cons functions nil))))
-  (return program)
-)
-)
 
 (void luaCompile (string filename) (declare (list tree nil)  )
     (body
