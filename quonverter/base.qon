@@ -152,7 +152,7 @@
                   (then (return (equal (unBoxInt a) (unBoxInt b))))
                   (else (return false)))))))))))))
 
-(void displayList (list l int indent) (declare (box val nil))
+(void displayList (list l int indent bool first) (declare (box val nil))
    (body
     (if (isEmpty l)
       (then (return))
@@ -162,23 +162,26 @@
           (if (isEmpty l)
             (then (return))
             (else
+			(if first 
+			(then)
+			(else (printf " ")))
              (set val (car l))
              (if (isList val)
                (then
                 (newLine indent)
                 (printf "%s" (openBrace))
-                (displayList (car l) (add1 indent))
+                (displayList (car l) (add1 indent) true)
                 (printf "%s" (closeBrace))
-                (displayList (cdr l) indent))
+                (displayList (cdr l) indent false))
                (else
                 (if (equalString "string" (get-struct val typ))
-                  (then (printf "\"%s\" " (unBoxString val)))
-                  (else (printf "%s " (stringify val))))
-                (displayList (cdr l) indent))))))
+                  (then (printf "\"%s\"" (unBoxString val)))
+                  (else (printf "%s" (stringify val))))
+                (displayList (cdr l) indent false))))))
          (else
           (if (equalString "string" (get-struct l typ))
-            (then (printf "\"%s\" " (unBoxString l)))
-            (else (printf "%s " (stringify l))))))))))
+            (then (printf "\"%s\"" (unBoxString l)))
+            (else (printf "%s" (stringify l))))))))))
 
   (void display (list l) (declare)
    (body
@@ -186,8 +189,8 @@
       (then (printf "nil ") (return))
       (else
        (if (isList l)
-         (then (printf "[") (displayList l 0) (printf "]"))
-         (else (displayList l 0)))))))
+         (then (printf "[") (displayList l 0 true) (printf "]"))
+         (else (displayList l 0 true)))))))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Types and type converters ;;
@@ -354,7 +357,7 @@
       (else (panic onFail)))
     (panic "Inconceivable")
     ;fake return because some compilers can't spot the exit above
-    (return null)
+    (return nil)
     ))
 
 
