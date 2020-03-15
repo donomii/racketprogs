@@ -8,6 +8,8 @@
       (then (return))
       (else
        (display (second tree))
+	   (printf ": ")
+	   (display (first tree))
        (if (isNil (cddr tree)) (then (printf "")) (else (printf ", ")))
        (imaFunctionArgs indent (cddr tree))))))
 
@@ -17,7 +19,7 @@
 (set fname (stringify (second functionDefinition)))
 ;(printf "-- Chose function name %s" fname)
 ;(display functionDefinition)
-(printf "\nfunction %s(" fname)
+(printf "\nfu %s(" fname)
 (imaFunctionArgs indent (third functionDefinition))
 (printf ") ")
 (printf "-> %s" (stringify (first functionDefinition)))
@@ -43,7 +45,7 @@
 	  (set decl (first declarations))
 	  (printf "\n")
 	  (printIndent indent)
-      (printf "%s: " (stringify (second decl)) )
+      (printf "%s: *%s* " (stringify (second decl))(stringify (first decl)) )
       (imaExpressionStart indent (third decl))
       
       (imaDeclarations indent (cdr declarations))
@@ -151,8 +153,10 @@
       (else
          (if (equalString (stringify (car statement)) "set-struct")
             (then
+				(printIndent indent)
                (printf "%s.%s = " (stringify (second statement)) (stringify (third statement)))
                (imaExpressionStart indent (fourth statement))
+			   (printf "\n")
             )
             (else  
             (if (equalString (stringify (car statement)) "return")
