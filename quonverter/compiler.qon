@@ -3,7 +3,8 @@
  (functions
 
  (int start ()
- (declare (bool runTests false)
+ (declare 
+  (bool runTests false)
   (list cmdLine nil)
   (box filename nil)
   (bool runPerl false)
