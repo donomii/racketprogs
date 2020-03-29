@@ -1121,7 +1121,7 @@
           
           (if (equalString search (stringify l))
             (then
-            (printf "---Matched!: %s\n" (stringify l))
+				;(printf "---Matched!: %s\n" (stringify l))
               (set val (clone l))
               (set-struct val str replace)
               (return val))

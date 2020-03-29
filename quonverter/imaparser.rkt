@@ -14,6 +14,7 @@
                  (return (string-join (map unSep str) "\""))))
 (define $atom (<or> $string (many $alphaNum)))
 (define $whitespace  (many (or $space $newline $tab $eol)))
+(define $mustWhitespace  (many1 (or $space $newline $tab $eol)))
 (define $extraBody (parser-compose
                     $whitespace
                      (string",")
@@ -30,7 +31,7 @@
                   (return (cons body extraBody))))
 (define $expression (parser-compose
                      $whitespace
-                     (notFollowedBy $keywords)
+                     (notFollowedBy (>> $keywords $mustWhitespace))
                      (notFollowedBy $eol)
                      (head <- $atom)
                      (body <-  (<or> (try $expBody) (return '())))
@@ -85,9 +86,9 @@
 (define $statements
   (parser-compose
     
-      (notFollowedBy (string "end"))
-     (notFollowedBy (string "then"))
-     (notFollowedBy (string "else"))
+     ;(notFollowedBy (string "end"))
+     ;(notFollowedBy (string "then"))
+     ;(notFollowedBy (string "else"))
            
      (head <- (<any>     (try $if-statement)  (try $set-statement)  (try $return-statement)   (try $exp-statement )))
      
@@ -128,7 +129,8 @@
                    (try $whitespace)
                    (string "end function")
                    (return (list (list->string returnType) (list->string name) (flatten arg) (cons "declare" decl) (cons "body" s) ))))
-(define (test-expression) (parse-result $expression "cons(macrosingle(car(l), search, replace), macrosingle(cdr(l), search, replace))"))
+(define (test-expression) (parse-result $expression "cons(macrosingle(car(l), search, replace), macrosingle(cdr(l), search, replace))")
+)
 (define (test-if) (parse-result $if-statement "
 
 if la then
@@ -139,6 +141,7 @@ end
 "))
 (define (test-statements) (parse-result $statements "
 return nil;
+runTests = inList(boxString(a), cmdLine);
 "))
 
 
@@ -169,7 +172,8 @@ in
   else
       filename = boxString(\"compiler.qon\");
   end
-  runTests = inList(boxString(\"--test\"), cmdLine);
+
+runTests = inList(boxString(\"--test\"), cmdLine);
  
   if runTests then
       test0();
