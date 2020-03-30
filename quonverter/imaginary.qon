@@ -61,7 +61,7 @@
 	  (set decl (first declarations))
 	  (printf "\n")
 	  (printIndent indent)
-      (printf "%s: *%s* " (stringify (second decl))(stringify (first decl)) )
+      (printf "%s: %s " (stringify (second decl))(stringify (first decl)) )
       (imaExpressionStart indent (third decl))
       
       (imaDeclarations indent (cdr declarations))
