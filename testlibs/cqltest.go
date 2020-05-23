@@ -10,7 +10,7 @@ import (
 
 func main() {
     // connect to the cluster
-    cluster := gocql.NewCluster( "146.11.85.141", "146.11.85.145")
+    cluster := gocql.NewCluster( "xxx.xxx.xxx.xxx", "yyy.yyy.yyy.yyy")
     //cluster.Keyspace = "jtk"
     cluster.Timeout = 5 * time.Second
     //cluster.SocketKeepalive  = 6* time.Second
@@ -31,7 +31,7 @@ func main() {
      session, ok := cluster.CreateSession()
      if ok==nil {
 		defer session.Close()
-	    iter := session.Query(`select value from jtk.cellkpi`).Iter()
+	    iter := session.Query(`select value from jtk.test`).Iter()
 	    for iter.Scan(&m) {
 		fmt.Println("row:", m["id"])
 	  }
