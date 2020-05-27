@@ -1,4 +1,4 @@
-((includes base.qon astaccessors.qon perl.qon ansi.qon tests.qon node.qon java.qon lua.qon imaginary.qon)
+((includes q/base.qon q/astaccessors.qon q/perl.qon q/ansi.qon q/tests.qon q/node.qon q/java.qon q/lua.qon q/imaginary.qon)
  (types)
  (functions
 

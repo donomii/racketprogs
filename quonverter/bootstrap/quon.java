@@ -43,6 +43,23 @@ public String caller ="";  Box lis;
 };
 public class Pair extends Box {};
 public class list extends Box {};
+public class Pair extends Box {};
+public class list extends Box {};
+
+public class Box2 {
+
+public String caller ="";  Box lis;
+  String str;
+  Integer i;
+  String typ;
+  boolean voi;
+  boolean boo;
+  Integer lengt;
+  Box car;
+  Box cdr;
+  Box tag;
+
+};
 public boolean globalStackTrace = false;
 public boolean globalStepTrace = false;
 public boolean globalTrace = false;
@@ -157,7 +174,7 @@ if (globalTrace)
 
 public Box car(Box l ) {
     
-  assertType("list" , l , 65 , "base.qon" );  
+  assertType("list" , l , 65 , "q/base.qon" );  
   if ( isNil(l )) {    
     System.out.printf("Cannot call car on empty list!\n" );    
     panic("Cannot call car on empty list!\n" );    
@@ -176,7 +193,7 @@ public Box car(Box l ) {
 
 public Box cdr(Box l ) {
     
-  assertType("list" , l , 78 , "base.qon" );  
+  assertType("list" , l , 78 , "q/base.qon" );  
   if ( isEmpty(l )) {    
     System.out.printf("Attempt to cdr an empty list!!!!\n" );    
     panic("Attempt to cdr an empty list!!!!\n" );    
@@ -244,12 +261,12 @@ public Box alistCons(Box key ,Box value ,Box alist ) {
 public Box assoc(String searchTerm ,Box l ) {
   Box elem = null ;
   
-  assertType("list" , l , 116 , "base.qon" );  
+  assertType("list" , l , 116 , "q/base.qon" );  
   if ( isEmpty(l )) {    
     return(boxBool(false ));
   } else {    
     elem = car(l );    
-    assertType("list" , elem , 122 , "base.qon" );    
+    assertType("list" , elem , 122 , "q/base.qon" );    
     if ( isEmpty(elem )) {      
       return(assoc(searchTerm , cdr(l )));
     } else {      
@@ -302,7 +319,7 @@ public boolean equalBox(Box a ,Box b ) {
 
 //Building function displayList from line: 154
 
-public void displayList(Box l ,Integer indent ) {
+public void displayList(Box l ,Integer indent ,boolean first ) {
   Box val = null ;
   
   if ( isEmpty(l )) {    
@@ -312,27 +329,31 @@ public void displayList(Box l ,Integer indent ) {
       if ( isEmpty(l )) {        
         return;
       } else {        
+        if ( first ) {
+        } else {          
+          System.out.printf(" " );
+        }        
         val = car(l );        
         if ( isList(val )) {          
           newLine(indent );          
           System.out.printf("%s" , openBrace ());          
-          displayList(car(l ), add1(indent ));          
+          displayList(car(l ), add1(indent ), true );          
           System.out.printf("%s" , closeBrace ());          
-          displayList(cdr(l ), indent );
+          displayList(cdr(l ), indent , false );
         } else {          
           if ( equalString("string" , val.typ)) {            
-            System.out.printf("\"%s\" " , unBoxString(val ));
+            System.out.printf("\"%s\"" , unBoxString(val ));
           } else {            
-            System.out.printf("%s " , stringify(val ));
+            System.out.printf("%s" , stringify(val ));
           }          
-          displayList(cdr(l ), indent );
+          displayList(cdr(l ), indent , false );
         }
       }
     } else {      
       if ( equalString("string" , l.typ)) {        
-        System.out.printf("\"%s\" " , unBoxString(l ));
+        System.out.printf("\"%s\"" , unBoxString(l ));
       } else {        
-        System.out.printf("%s " , stringify(l ));
+        System.out.printf("%s" , stringify(l ));
       }
     }
   }
@@ -342,7 +363,7 @@ if (globalTrace)
 }
 
 
-//Building function display from line: 182
+//Building function display from line: 185
 
 public void display(Box l ) {
     
@@ -352,10 +373,10 @@ public void display(Box l ) {
   } else {    
     if ( isList(l )) {      
       System.out.printf("[" );      
-      displayList(l , 0 );      
+      displayList(l , 0 , true );      
       System.out.printf("]" );
     } else {      
-      displayList(l , 0 );
+      displayList(l , 0 , true );
     }
   }
 if (globalTrace)
@@ -364,7 +385,7 @@ if (globalTrace)
 }
 
 
-//Building function boxType from line: 194
+//Building function boxType from line: 197
 
 public String boxType(Box b ) {
     
@@ -372,7 +393,7 @@ public String boxType(Box b ) {
 }
 
 
-//Building function makeBox from line: 195
+//Building function makeBox from line: 198
 
 public Box makeBox() {
   Box b = null ;
@@ -387,7 +408,7 @@ public Box makeBox() {
 }
 
 
-//Building function makePair from line: 206
+//Building function makePair from line: 209
 
 public Box makePair() {
     
@@ -395,7 +416,7 @@ public Box makePair() {
 }
 
 
-//Building function boxString from line: 212
+//Building function boxString from line: 215
 
 public Box boxString(String s ) {
   Box b = null ;
@@ -408,7 +429,7 @@ public Box boxString(String s ) {
 }
 
 
-//Building function boxSymbol from line: 222
+//Building function boxSymbol from line: 225
 
 public Box boxSymbol(String s ) {
   Box b = null ;
@@ -419,7 +440,7 @@ public Box boxSymbol(String s ) {
 }
 
 
-//Building function boxBool from line: 231
+//Building function boxBool from line: 234
 
 public Box boxBool(boolean boo ) {
   Box b = null ;
@@ -431,7 +452,7 @@ public Box boxBool(boolean boo ) {
 }
 
 
-//Building function boxInt from line: 240
+//Building function boxInt from line: 243
 
 public Box boxInt(Integer val ) {
   Box b = null ;
@@ -443,7 +464,7 @@ public Box boxInt(Integer val ) {
 }
 
 
-//Building function assertType from line: 249
+//Building function assertType from line: 252
 
 public void assertType(String atype ,Box abox ,Integer line ,String file ) {
     
@@ -465,16 +486,16 @@ public void assertType(String atype ,Box abox ,Integer line ,String file ) {
 }
 
 
-//Building function unBoxString from line: 261
+//Building function unBoxString from line: 264
 
 public String unBoxString(Box b ) {
     
-  assertType("string" , b , 262 , "base.qon" );  
+  assertType("string" , b , 265 , "q/base.qon" );  
   return(b.str);
 }
 
 
-//Building function unBoxSymbol from line: 264
+//Building function unBoxSymbol from line: 267
 
 public String unBoxSymbol(Box b ) {
     
@@ -482,7 +503,7 @@ public String unBoxSymbol(Box b ) {
 }
 
 
-//Building function unBoxBool from line: 265
+//Building function unBoxBool from line: 268
 
 public boolean unBoxBool(Box b ) {
     
@@ -490,7 +511,7 @@ public boolean unBoxBool(Box b ) {
 }
 
 
-//Building function unBoxInt from line: 266
+//Building function unBoxInt from line: 269
 
 public Integer unBoxInt(Box b ) {
     
@@ -498,7 +519,7 @@ public Integer unBoxInt(Box b ) {
 }
 
 
-//Building function stringify_rec from line: 268
+//Building function stringify_rec from line: 271
 
 public String stringify_rec(Box b ) {
     
@@ -510,7 +531,7 @@ public String stringify_rec(Box b ) {
 }
 
 
-//Building function stringify from line: 280
+//Building function stringify from line: 283
 
 public String stringify(Box b ) {
     
@@ -546,7 +567,7 @@ public String stringify(Box b ) {
 }
 
 
-//Building function hasTag from line: 311
+//Building function hasTag from line: 314
 
 public boolean hasTag(Box aBox ,Box key ) {
     
@@ -558,7 +579,7 @@ public boolean hasTag(Box aBox ,Box key ) {
 }
 
 
-//Building function getTag from line: 317
+//Building function getTag from line: 320
 
 public Box getTag(Box aBox ,Box key ) {
     
@@ -573,7 +594,7 @@ public Box getTag(Box aBox ,Box key ) {
 }
 
 
-//Building function getTagFail from line: 329
+//Building function getTagFail from line: 332
 
 public Box getTagFail(Box aBox ,Box key ,Box onFail ) {
     
@@ -585,7 +606,7 @@ public Box getTagFail(Box aBox ,Box key ,Box onFail ) {
 }
 
 
-//Building function assocExists from line: 335
+//Building function assocExists from line: 338
 
 public boolean assocExists(String key ,Box aBox ) {
     
@@ -597,7 +618,7 @@ public boolean assocExists(String key ,Box aBox ) {
 }
 
 
-//Building function assocFail from line: 343
+//Building function assocFail from line: 346
 
 public Box assocFail(String key ,Box aBox ,Box onFail ) {
     
@@ -609,7 +630,7 @@ public Box assocFail(String key ,Box aBox ,Box onFail ) {
 }
 
 
-//Building function assocPanic from line: 349
+//Building function assocPanic from line: 352
 
 public Box assocPanic(String key ,Box aBox ,String onFail ) {
     
@@ -623,7 +644,7 @@ public Box assocPanic(String key ,Box aBox ,String onFail ) {
 }
 
 
-//Building function setTag from line: 362
+//Building function setTag from line: 365
 
 public Box setTag(Box key ,Box val ,Box aStruct ) {
     
@@ -632,7 +653,7 @@ public Box setTag(Box key ,Box val ,Box aStruct ) {
 }
 
 
-//Building function filterVoid from line: 372
+//Building function filterVoid from line: 375
 
 public Box filterVoid(Box l ) {
   Box token = null ;
@@ -650,7 +671,7 @@ public Box filterVoid(Box l ) {
 }
 
 
-//Building function filterTokens from line: 384
+//Building function filterTokens from line: 387
 
 public Box filterTokens(Box l ) {
   Box token = null ;
@@ -680,7 +701,7 @@ public Box filterTokens(Box l ) {
 }
 
 
-//Building function finish_token from line: 418
+//Building function finish_token from line: 421
 
 public Box finish_token(String prog ,Integer start ,Integer len ,Integer line ,Integer column ,String filename ) {
   Box token = null ;
@@ -695,7 +716,7 @@ public Box finish_token(String prog ,Integer start ,Integer len ,Integer line ,I
 }
 
 
-//Building function readString from line: 433
+//Building function readString from line: 436
 
 public String readString(String prog ,Integer start ,Integer len ) {
   String token = "" ;
@@ -713,7 +734,7 @@ public String readString(String prog ,Integer start ,Integer len ) {
 }
 
 
-//Building function readComment from line: 444
+//Building function readComment from line: 447
 
 public String readComment(String prog ,Integer start ,Integer len ) {
   String token = "" ;
@@ -727,7 +748,7 @@ public String readComment(String prog ,Integer start ,Integer len ) {
 }
 
 
-//Building function isWhiteSpace from line: 452
+//Building function isWhiteSpace from line: 455
 
 public boolean isWhiteSpace(String s ) {
     
@@ -751,7 +772,7 @@ public boolean isWhiteSpace(String s ) {
 }
 
 
-//Building function isLineBreak from line: 469
+//Building function isLineBreak from line: 472
 
 public boolean isLineBreak(String s ) {
     
@@ -767,7 +788,7 @@ public boolean isLineBreak(String s ) {
 }
 
 
-//Building function incForNewLine from line: 476
+//Building function incForNewLine from line: 479
 
 public Integer incForNewLine(Box token ,Integer val ) {
     
@@ -779,7 +800,7 @@ public Integer incForNewLine(Box token ,Integer val ) {
 }
 
 
-//Building function annotateReadPosition from line: 483
+//Building function annotateReadPosition from line: 486
 
 public Box annotateReadPosition(String filename ,Integer linecount ,Integer column ,Integer start ,Box newBox ) {
     
@@ -787,7 +808,7 @@ public Box annotateReadPosition(String filename ,Integer linecount ,Integer colu
 }
 
 
-//Building function scan from line: 495
+//Building function scan from line: 498
 
 public Box scan(String prog ,Integer start ,Integer len ,Integer linecount ,Integer column ,String filename ) {
   Box token = null ;
@@ -831,7 +852,7 @@ Box newBox = null ;
 }
 
 
-//Building function isOpenBrace from line: 535
+//Building function isOpenBrace from line: 538
 
 public boolean isOpenBrace(Box b ) {
     
@@ -847,7 +868,7 @@ public boolean isOpenBrace(Box b ) {
 }
 
 
-//Building function openBrace from line: 543
+//Building function openBrace from line: 546
 
 public String openBrace() {
     
@@ -855,7 +876,7 @@ public String openBrace() {
 }
 
 
-//Building function isCloseBrace from line: 545
+//Building function isCloseBrace from line: 548
 
 public boolean isCloseBrace(Box b ) {
     
@@ -871,7 +892,7 @@ public boolean isCloseBrace(Box b ) {
 }
 
 
-//Building function closeBrace from line: 555
+//Building function closeBrace from line: 558
 
 public String closeBrace() {
     
@@ -879,7 +900,7 @@ public String closeBrace() {
 }
 
 
-//Building function sexprTree from line: 557
+//Building function sexprTree from line: 560
 
 public Box sexprTree(Box l ) {
   Box b = null ;
@@ -901,7 +922,7 @@ public Box sexprTree(Box l ) {
 }
 
 
-//Building function skipList from line: 576
+//Building function skipList from line: 579
 
 public Box skipList(Box l ) {
   Box b = null ;
@@ -923,7 +944,7 @@ public Box skipList(Box l ) {
 }
 
 
-//Building function readSexpr from line: 591
+//Building function readSexpr from line: 594
 
 public Box readSexpr(String aStr ,String filename ) {
   Box tokens = null ;
@@ -936,7 +957,7 @@ Box as = null ;
 }
 
 
-//Building function caar from line: 601
+//Building function caar from line: 604
 
 public Box caar(Box l ) {
     
@@ -944,7 +965,7 @@ public Box caar(Box l ) {
 }
 
 
-//Building function cadr from line: 602
+//Building function cadr from line: 605
 
 public Box cadr(Box l ) {
     
@@ -952,7 +973,7 @@ public Box cadr(Box l ) {
 }
 
 
-//Building function caddr from line: 603
+//Building function caddr from line: 606
 
 public Box caddr(Box l ) {
     
@@ -960,7 +981,7 @@ public Box caddr(Box l ) {
 }
 
 
-//Building function cadddr from line: 604
+//Building function cadddr from line: 607
 
 public Box cadddr(Box l ) {
     
@@ -968,7 +989,7 @@ public Box cadddr(Box l ) {
 }
 
 
-//Building function caddddr from line: 605
+//Building function caddddr from line: 608
 
 public Box caddddr(Box l ) {
     
@@ -976,7 +997,7 @@ public Box caddddr(Box l ) {
 }
 
 
-//Building function cddr from line: 606
+//Building function cddr from line: 609
 
 public Box cddr(Box l ) {
     
@@ -984,7 +1005,7 @@ public Box cddr(Box l ) {
 }
 
 
-//Building function first from line: 607
+//Building function first from line: 610
 
 public Box first(Box l ) {
     
@@ -992,7 +1013,7 @@ public Box first(Box l ) {
 }
 
 
-//Building function second from line: 608
+//Building function second from line: 611
 
 public Box second(Box l ) {
     
@@ -1000,7 +1021,7 @@ public Box second(Box l ) {
 }
 
 
-//Building function third from line: 609
+//Building function third from line: 612
 
 public Box third(Box l ) {
     
@@ -1008,7 +1029,7 @@ public Box third(Box l ) {
 }
 
 
-//Building function fourth from line: 610
+//Building function fourth from line: 613
 
 public Box fourth(Box l ) {
     
@@ -1016,7 +1037,7 @@ public Box fourth(Box l ) {
 }
 
 
-//Building function fifth from line: 611
+//Building function fifth from line: 614
 
 public Box fifth(Box l ) {
     
@@ -1024,7 +1045,7 @@ public Box fifth(Box l ) {
 }
 
 
-//Building function makeNode from line: 617
+//Building function makeNode from line: 620
 
 public Box makeNode(String name ,String subname ,Box code ,Box children ) {
     
@@ -1032,7 +1053,7 @@ public Box makeNode(String name ,String subname ,Box code ,Box children ) {
 }
 
 
-//Building function addToNode from line: 633
+//Building function addToNode from line: 636
 
 public Box addToNode(Box key ,Box val ,Box node ) {
     
@@ -1040,7 +1061,7 @@ public Box addToNode(Box key ,Box val ,Box node ) {
 }
 
 
-//Building function makeStatementNode from line: 638
+//Building function makeStatementNode from line: 641
 
 public Box makeStatementNode(String name ,String subname ,Box code ,Box children ,Box functionName ) {
     
@@ -1048,7 +1069,7 @@ public Box makeStatementNode(String name ,String subname ,Box code ,Box children
 }
 
 
-//Building function astExpression from line: 643
+//Building function astExpression from line: 646
 
 public Box astExpression(Box tree ) {
     
@@ -1060,7 +1081,7 @@ public Box astExpression(Box tree ) {
 }
 
 
-//Building function astSubExpression from line: 651
+//Building function astSubExpression from line: 654
 
 public Box astSubExpression(Box tree ) {
     
@@ -1076,7 +1097,7 @@ public Box astSubExpression(Box tree ) {
 }
 
 
-//Building function astIf from line: 662
+//Building function astIf from line: 665
 
 public Box astIf(Box tree ,Box fname ) {
     
@@ -1096,7 +1117,7 @@ public Box astIf(Box tree ,Box fname ) {
 }
 
 
-//Building function astSetStruct from line: 683
+//Building function astSetStruct from line: 686
 
 public Box astSetStruct(Box tree ) {
     
@@ -1104,7 +1125,7 @@ public Box astSetStruct(Box tree ) {
 }
 
 
-//Building function astSet from line: 688
+//Building function astSet from line: 691
 
 public Box astSet(Box tree ) {
     
@@ -1112,7 +1133,7 @@ public Box astSet(Box tree ) {
 }
 
 
-//Building function astGetStruct from line: 693
+//Building function astGetStruct from line: 696
 
 public Box astGetStruct(Box tree ) {
     
@@ -1120,7 +1141,7 @@ public Box astGetStruct(Box tree ) {
 }
 
 
-//Building function astReturnVoid from line: 696
+//Building function astReturnVoid from line: 699
 
 public Box astReturnVoid(Box fname ) {
     
@@ -1128,7 +1149,7 @@ public Box astReturnVoid(Box fname ) {
 }
 
 
-//Building function astStatement from line: 700
+//Building function astStatement from line: 703
 
 public Box astStatement(Box tree ,Box fname ) {
     
@@ -1161,7 +1182,7 @@ public Box astStatement(Box tree ,Box fname ) {
 }
 
 
-//Building function astBody from line: 730
+//Building function astBody from line: 733
 
 public Box astBody(Box tree ,Box fname ) {
     
@@ -1173,7 +1194,7 @@ public Box astBody(Box tree ,Box fname ) {
 }
 
 
-//Building function linePanic from line: 736
+//Building function linePanic from line: 739
 
 public void linePanic(String line ,String message ) {
     
@@ -1185,7 +1206,7 @@ if (globalTrace)
 }
 
 
-//Building function astFunction from line: 742
+//Building function astFunction from line: 745
 
 public Box astFunction(Box tree ) {
   String line = "" ;
@@ -1219,7 +1240,7 @@ Box fname = null ;
 }
 
 
-//Building function astFunctionList from line: 772
+//Building function astFunctionList from line: 775
 
 public Box astFunctionList(Box tree ) {
     
@@ -1231,7 +1252,7 @@ public Box astFunctionList(Box tree ) {
 }
 
 
-//Building function astFunctions from line: 780
+//Building function astFunctions from line: 783
 
 public Box astFunctions(Box tree ) {
     
@@ -1244,7 +1265,7 @@ public Box astFunctions(Box tree ) {
 }
 
 
-//Building function loadLib from line: 788
+//Building function loadLib from line: 791
 
 public Box loadLib(String path ) {
   String programStr = "" ;
@@ -1259,7 +1280,7 @@ Box library = null ;
 }
 
 
-//Building function astInclude from line: 804
+//Building function astInclude from line: 807
 
 public Box astInclude(Box tree ) {
     
@@ -1267,7 +1288,7 @@ public Box astInclude(Box tree ) {
 }
 
 
-//Building function astIncludeList from line: 807
+//Building function astIncludeList from line: 810
 
 public Box astIncludeList(Box tree ) {
     
@@ -1279,7 +1300,7 @@ public Box astIncludeList(Box tree ) {
 }
 
 
-//Building function astIncludes from line: 814
+//Building function astIncludes from line: 817
 
 public Box astIncludes(Box tree ) {
     
@@ -1292,7 +1313,7 @@ public Box astIncludes(Box tree ) {
 }
 
 
-//Building function astStruct from line: 822
+//Building function astStruct from line: 825
 
 public Box astStruct(Box tree ) {
     
@@ -1300,7 +1321,7 @@ public Box astStruct(Box tree ) {
 }
 
 
-//Building function astType from line: 825
+//Building function astType from line: 828
 
 public Box astType(Box tree ) {
     
@@ -1312,7 +1333,7 @@ public Box astType(Box tree ) {
 }
 
 
-//Building function astTypeList from line: 831
+//Building function astTypeList from line: 834
 
 public Box astTypeList(Box tree ) {
     
@@ -1324,7 +1345,7 @@ public Box astTypeList(Box tree ) {
 }
 
 
-//Building function astTypes from line: 837
+//Building function astTypes from line: 840
 
 public Box astTypes(Box tree ) {
     
@@ -1338,7 +1359,7 @@ public Box astTypes(Box tree ) {
 }
 
 
-//Building function declarationsof from line: 849
+//Building function declarationsof from line: 852
 
 public Box declarationsof(Box ass ) {
     
@@ -1346,7 +1367,7 @@ public Box declarationsof(Box ass ) {
 }
 
 
-//Building function codeof from line: 852
+//Building function codeof from line: 855
 
 public Box codeof(Box ass ) {
     
@@ -1354,7 +1375,7 @@ public Box codeof(Box ass ) {
 }
 
 
-//Building function functionNameof from line: 855
+//Building function functionNameof from line: 858
 
 public Box functionNameof(Box ass ) {
     
@@ -1362,7 +1383,7 @@ public Box functionNameof(Box ass ) {
 }
 
 
-//Building function nodeof from line: 858
+//Building function nodeof from line: 861
 
 public Box nodeof(Box ass ) {
     
@@ -1375,7 +1396,7 @@ public Box nodeof(Box ass ) {
 }
 
 
-//Building function lineof from line: 866
+//Building function lineof from line: 869
 
 public Box lineof(Box ass ) {
     
@@ -1383,7 +1404,7 @@ public Box lineof(Box ass ) {
 }
 
 
-//Building function subnameof from line: 871
+//Building function subnameof from line: 874
 
 public Box subnameof(Box ass ) {
     
@@ -1391,7 +1412,7 @@ public Box subnameof(Box ass ) {
 }
 
 
-//Building function nameof from line: 874
+//Building function nameof from line: 877
 
 public Box nameof(Box ass ) {
     
@@ -1399,7 +1420,7 @@ public Box nameof(Box ass ) {
 }
 
 
-//Building function childrenof from line: 877
+//Building function childrenof from line: 880
 
 public Box childrenof(Box ass ) {
     
@@ -1407,7 +1428,7 @@ public Box childrenof(Box ass ) {
 }
 
 
-//Building function isNode from line: 881
+//Building function isNode from line: 884
 
 public boolean isNode(Box val ) {
     
@@ -1427,7 +1448,7 @@ public boolean isNode(Box val ) {
 }
 
 
-//Building function truthy from line: 895
+//Building function truthy from line: 898
 
 public boolean truthy(Box aVal ) {
     
@@ -1435,7 +1456,7 @@ public boolean truthy(Box aVal ) {
 }
 
 
-//Building function isNotFalse from line: 899
+//Building function isNotFalse from line: 902
 
 public boolean isNotFalse(Box aVal ) {
     
@@ -1451,7 +1472,7 @@ public boolean isNotFalse(Box aVal ) {
 }
 
 
-//Building function isLeaf from line: 906
+//Building function isLeaf from line: 909
 
 public boolean isLeaf(Box n ) {
     
@@ -1459,7 +1480,7 @@ public boolean isLeaf(Box n ) {
 }
 
 
-//Building function printIndent from line: 911
+//Building function printIndent from line: 914
 
 public void printIndent(Integer ii ) {
     
@@ -1475,7 +1496,7 @@ if (globalTrace)
 }
 
 
-//Building function newLine from line: 919
+//Building function newLine from line: 922
 
 public void newLine(Integer indent ) {
     
@@ -1487,7 +1508,7 @@ if (globalTrace)
 }
 
 
-//Building function noStackTrace from line: 923
+//Building function noStackTrace from line: 926
 
 public Box noStackTrace() {
     
@@ -1495,7 +1516,7 @@ public Box noStackTrace() {
 }
 
 
-//Building function toStr from line: 952
+//Building function toStr from line: 955
 
 public Box toStr(Box thing ) {
     
@@ -1503,7 +1524,7 @@ public Box toStr(Box thing ) {
 }
 
 
-//Building function listLast from line: 955
+//Building function listLast from line: 958
 
 public Box listLast(Box alist ) {
     
@@ -1515,7 +1536,7 @@ public Box listLast(Box alist ) {
 }
 
 
-//Building function treeCompile from line: 962
+//Building function treeCompile from line: 965
 
 public Box treeCompile(String filename ) {
   String programStr = "" ;
@@ -1528,7 +1549,7 @@ Box program = null ;
 }
 
 
-//Building function astBuild from line: 968
+//Building function astBuild from line: 971
 
 public Box astBuild(String filename ) {
   String programStr = "" ;
@@ -1543,7 +1564,7 @@ Box program = null ;
 }
 
 
-//Building function astCompile from line: 985
+//Building function astCompile from line: 988
 
 public void astCompile(String filename ) {
   String programStr = "" ;
@@ -1559,7 +1580,7 @@ if (globalTrace)
 }
 
 
-//Building function concatLists from line: 992
+//Building function concatLists from line: 995
 
 public Box concatLists(Box seq1 ,Box seq2 ) {
     
@@ -1571,7 +1592,7 @@ public Box concatLists(Box seq1 ,Box seq2 ) {
 }
 
 
-//Building function alistKeys from line: 998
+//Building function alistKeys from line: 1001
 
 public Box alistKeys(Box alist ) {
     
@@ -1583,7 +1604,7 @@ public Box alistKeys(Box alist ) {
 }
 
 
-//Building function mergeIncludes from line: 1004
+//Building function mergeIncludes from line: 1007
 
 public Box mergeIncludes(Box program ) {
     
@@ -1591,7 +1612,7 @@ public Box mergeIncludes(Box program ) {
 }
 
 
-//Building function merge_recur from line: 1011
+//Building function merge_recur from line: 1014
 
 public Box merge_recur(Box incs ,Box program ) {
     
@@ -1603,7 +1624,7 @@ public Box merge_recur(Box incs ,Box program ) {
 }
 
 
-//Building function mergeInclude from line: 1019
+//Building function mergeInclude from line: 1022
 
 public Box mergeInclude(Box inc ,Box program ) {
   Box newProgram = null ;
@@ -1637,7 +1658,7 @@ Box types = null ;
 }
 
 
-//Building function macrowalk from line: 1073
+//Building function macrowalk from line: 1076
 
 public Box macrowalk(Box l ) {
   Box val = null ;
@@ -1662,7 +1683,7 @@ public Box macrowalk(Box l ) {
 }
 
 
-//Building function macrosingle from line: 1105
+//Building function macrosingle from line: 1108
 
 public Box macrosingle(Box l ,String search ,String replace ) {
   Box val = null ;
@@ -1674,7 +1695,6 @@ public Box macrosingle(Box l ,String search ,String replace ) {
       return(cons(macrosingle(car(l ), search , replace ), macrosingle(cdr(l ), search , replace )));
     } else {      
       if ( equalString(search , stringify(l ))) {        
-        System.out.printf("---Matched!: %s\n" , stringify(l ));        
         val = clone(l );        
         val.str = replace ;        
         return(val );
@@ -1686,7 +1706,7 @@ public Box macrosingle(Box l ,String search ,String replace ) {
 }
 
 
-//Building function doBoxList from line: 1128
+//Building function doBoxList from line: 1131
 
 public Box doBoxList(Box l ) {
     
@@ -1698,7 +1718,7 @@ public Box doBoxList(Box l ) {
 }
 
 
-//Building function doStringList from line: 1144
+//Building function doStringList from line: 1147
 
 public Box doStringList(Box l ) {
   Box newlist = null ;
@@ -1714,7 +1734,7 @@ Box ret = null ;
 }
 
 
-//Building function argList from line: 1168
+//Building function argList from line: 1171
 
 public Box argList(Integer count ,Integer pos ,String[] args ) {
     
@@ -1726,7 +1746,7 @@ public Box argList(Integer count ,Integer pos ,String[] args ) {
 }
 
 
-//Building function listReverse from line: 1180
+//Building function listReverse from line: 1183
 
 public Box listReverse(Box l ) {
     
@@ -1738,7 +1758,7 @@ public Box listReverse(Box l ) {
 }
 
 
-//Building function inList from line: 1186
+//Building function inList from line: 1189
 
 public boolean inList(Box item ,Box l ) {
     
@@ -1754,7 +1774,7 @@ public boolean inList(Box item ,Box l ) {
 }
 
 
-//Building function equalList from line: 1196
+//Building function equalList from line: 1199
 
 public boolean equalList(Box a ,Box b ) {
     
@@ -1774,7 +1794,7 @@ public boolean equalList(Box a ,Box b ) {
 }
 
 
-//Building function reverseRec from line: 1210
+//Building function reverseRec from line: 1213
 
 public Box reverseRec(Box oldL ,Box newL ) {
     
@@ -1786,7 +1806,7 @@ public Box reverseRec(Box oldL ,Box newL ) {
 }
 
 
-//Building function reverseList from line: 1217
+//Building function reverseList from line: 1220
 
 public Box reverseList(Box l ) {
     
@@ -1794,7 +1814,7 @@ public Box reverseList(Box l ) {
 }
 
 
-//Building function tron from line: 1224
+//Building function tron from line: 1227
 
 public void tron() {
     
@@ -1802,7 +1822,7 @@ public void tron() {
 }
 
 
-//Building function troff from line: 1225
+//Building function troff from line: 1228
 
 public void troff() {
     
@@ -1810,7 +1830,7 @@ public void troff() {
 }
 
 
-//Building function stron from line: 1226
+//Building function stron from line: 1229
 
 public void stron() {
     
@@ -1818,11 +1838,87 @@ public void stron() {
 }
 
 
-//Building function stroff from line: 1227
+//Building function stroff from line: 1230
 
 public void stroff() {
     
   globalStepTrace = false ;
+}
+
+
+//Building function loadQuon from line: 3
+
+public Box loadQuon(String filename ) {
+  Box foundationFuncs = null ;
+Box foundation = null ;
+String programStr = "" ;
+Box tree = null ;
+  
+  foundation = readSexpr(read_file(filename ), filename );  
+  foundationFuncs = cdr(third(foundation ));  
+  programStr = read_file(filename );  
+  tree = readSexpr(programStr , filename );  
+  return(tree );
+}
+
+
+//Building function getIncludes from line: 18
+
+public Box getIncludes(Box program ) {
+    
+  return(cdr(first(program )));
+}
+
+
+//Building function getTypes from line: 22
+
+public Box getTypes(Box program ) {
+    
+  return(cdr(second(program )));
+}
+
+
+//Building function getFunctions from line: 26
+
+public Box getFunctions(Box program ) {
+    
+  return(cdr(third(program )));
+}
+
+
+//Building function loadIncludes from line: 31
+
+public Box loadIncludes(Box tree ) {
+  Box newProg = null ;
+String includeFile = "" ;
+Box functionsCombined = null ;
+Box typesCombined = null ;
+Box includeTree = null ;
+Box program = null ;
+  
+  if ( greaterthan(listLength(getIncludes(tree )), 0 )) {    
+    includeFile = stringify(first(getIncludes(tree )));    
+    includeTree = loadQuon(includeFile );    
+    functionsCombined = concatLists(getFunctions(includeTree ), getFunctions(tree ));    
+    typesCombined = concatLists(getTypes(includeTree ), getTypes(tree ));    
+    newProg = buildProg(cdr(getIncludes(tree )), typesCombined , functionsCombined );    
+    return(loadIncludes(newProg ));
+  } else {    
+    return(tree );
+  }
+}
+
+
+//Building function buildProg from line: 61
+
+public Box buildProg(Box includes ,Box types ,Box functions ) {
+  Box program = null ;
+  
+  includes = cons(boxSymbol("includes" ), includes );  
+  types = cons(boxSymbol("types" ), types );  
+  functions = cons(boxSymbol("functions" ), functions );  
+  program = cons(includes , cons(types , cons(functions , null )));  
+  return(program );
 }
 
 
@@ -2433,6 +2529,7 @@ public void ansiFunctionArgs(Box tree ) {
     return;
   } else {    
     display(ansiTypeMap(first(tree )));    
+    System.out.printf(" " );    
     display(second(tree ));    
     if ( isNil(cddr(tree ))) {      
       System.out.printf("" );
@@ -2447,7 +2544,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiLeaf from line: 13
+//Building function ansiLeaf from line: 14
 
 public void ansiLeaf(Box thisNode ,Integer indent ) {
     
@@ -2458,7 +2555,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiStructGetterExpression from line: 16
+//Building function ansiStructGetterExpression from line: 17
 
 public void ansiStructGetterExpression(Box thisNode ,Integer indent ) {
     
@@ -2473,7 +2570,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiExpression from line: 22
+//Building function ansiExpression from line: 23
 
 public void ansiExpression(Box node ,Integer indent ) {
     
@@ -2488,7 +2585,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiRecurList from line: 28
+//Building function ansiRecurList from line: 29
 
 public void ansiRecurList(Box expr ,Integer indent ) {
     
@@ -2509,7 +2606,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiSubExpression from line: 40
+//Building function ansiSubExpression from line: 41
 
 public void ansiSubExpression(Box tree ,Integer indent ) {
   Box thing = null ;
@@ -2553,7 +2650,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiIf from line: 80
+//Building function ansiIf from line: 81
 
 public void ansiIf(Box node ,Integer indent ) {
     
@@ -2573,7 +2670,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiSetStruct from line: 93
+//Building function ansiSetStruct from line: 94
 
 public void ansiSetStruct(Box node ,Integer indent ) {
     
@@ -2586,7 +2683,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiGetStruct from line: 102
+//Building function ansiGetStruct from line: 103
 
 public void ansiGetStruct(Box node ,Integer indent ) {
     
@@ -2598,7 +2695,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiSet from line: 110
+//Building function ansiSet from line: 111
 
 public void ansiSet(Box node ,Integer indent ) {
     
@@ -2611,7 +2708,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiStatement from line: 116
+//Building function ansiStatement from line: 117
 
 public void ansiStatement(Box node ,Integer indent ) {
     
@@ -2641,7 +2738,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiBody from line: 134
+//Building function ansiBody from line: 135
 
 public void ansiBody(Box tree ,Integer indent ) {
   Box code = null ;
@@ -2666,7 +2763,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiDeclarations from line: 153
+//Building function ansiDeclarations from line: 154
 
 public void ansiDeclarations(Box decls ,Integer indent ) {
   Box decl = null ;
@@ -2686,7 +2783,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiFunction from line: 167
+//Building function ansiFunction from line: 168
 
 public void ansiFunction(Box node ) {
   Box name = null ;
@@ -2726,7 +2823,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiForwardDeclaration from line: 201
+//Building function ansiForwardDeclaration from line: 202
 
 public void ansiForwardDeclaration(Box node ) {
     
@@ -2743,7 +2840,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiForwardDeclarations from line: 213
+//Building function ansiForwardDeclarations from line: 214
 
 public void ansiForwardDeclarations(Box tree ) {
     
@@ -2759,7 +2856,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiFunctions from line: 221
+//Building function ansiFunctions from line: 222
 
 public void ansiFunctions(Box tree ) {
     
@@ -2775,7 +2872,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiIncludes from line: 226
+//Building function ansiIncludes from line: 227
 
 public void ansiIncludes(Box nodes ) {
     
@@ -2787,7 +2884,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiTypeDecl from line: 234
+//Building function ansiTypeDecl from line: 235
 
 public void ansiTypeDecl(Box l ) {
     
@@ -2804,7 +2901,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiStructComponents from line: 251
+//Building function ansiStructComponents from line: 252
 
 public void ansiStructComponents(Box node ) {
     
@@ -2820,7 +2917,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiStruct from line: 257
+//Building function ansiStruct from line: 258
 
 public void ansiStruct(Box node ) {
     
@@ -2831,7 +2928,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiTypeMap from line: 260
+//Building function ansiTypeMap from line: 261
 
 public Box ansiTypeMap(Box aSym ) {
   Box symMap = null ;
@@ -2845,7 +2942,7 @@ public Box ansiTypeMap(Box aSym ) {
 }
 
 
-//Building function ansiFuncMap from line: 272
+//Building function ansiFuncMap from line: 273
 
 public Box ansiFuncMap(Box aSym ) {
   Box symMap = null ;
@@ -2863,7 +2960,7 @@ public Box ansiFuncMap(Box aSym ) {
 }
 
 
-//Building function ansiType from line: 303
+//Building function ansiType from line: 304
 
 public void ansiType(Box node ) {
     
@@ -2881,7 +2978,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiTypes from line: 313
+//Building function ansiTypes from line: 314
 
 public void ansiTypes(Box nodes ) {
     
@@ -2897,7 +2994,7 @@ if (globalTrace)
 }
 
 
-//Building function uniqueTarget from line: 321
+//Building function uniqueTarget from line: 322
 
 public void uniqueTarget(String a ,String b ) {
   
@@ -2907,7 +3004,7 @@ if (globalTrace)
 }
 
 
-//Building function ansiCompile from line: 324
+//Building function ansiCompile from line: 325
 
 public void ansiCompile(String filename ) {
   Box foundationFuncs = null ;
@@ -2916,7 +3013,7 @@ String programStr = "" ;
 Box tree = null ;
 Box program = null ;
   
-  foundation = readSexpr(read_file("ansi.qon" ), "ansi.qon" );  
+  foundation = readSexpr(read_file("q/ansi.qon" ), "q/ansi.qon" );  
   foundationFuncs = cdr(third(foundation ));  
   System.out.printf("//Scanning file...%s\n" , filename );  
   programStr = read_file(filename );  
@@ -3912,6 +4009,7 @@ public void javaFunctionArgs(Box tree ) {
     return;
   } else {    
     display(javaTypeMap(first(tree )));    
+    System.out.printf(" " );    
     display(second(tree ));    
     if ( isNil(cddr(tree ))) {      
       System.out.printf("" );
@@ -3926,7 +4024,7 @@ if (globalTrace)
 }
 
 
-//Building function javaLeaf from line: 13
+//Building function javaLeaf from line: 14
 
 public void javaLeaf(Box thisNode ,Integer indent ) {
     
@@ -3937,7 +4035,7 @@ if (globalTrace)
 }
 
 
-//Building function javaStructGetterExpression from line: 16
+//Building function javaStructGetterExpression from line: 17
 
 public void javaStructGetterExpression(Box thisNode ,Integer indent ) {
     
@@ -3952,7 +4050,7 @@ if (globalTrace)
 }
 
 
-//Building function javaExpression from line: 22
+//Building function javaExpression from line: 23
 
 public void javaExpression(Box node ,Integer indent ) {
     
@@ -3967,7 +4065,7 @@ if (globalTrace)
 }
 
 
-//Building function javaRecurList from line: 28
+//Building function javaRecurList from line: 29
 
 public void javaRecurList(Box expr ,Integer indent ) {
     
@@ -3988,7 +4086,7 @@ if (globalTrace)
 }
 
 
-//Building function javaSubExpression from line: 40
+//Building function javaSubExpression from line: 41
 
 public void javaSubExpression(Box tree ,Integer indent ) {
   Box thing = null ;
@@ -4032,7 +4130,7 @@ if (globalTrace)
 }
 
 
-//Building function javaIf from line: 80
+//Building function javaIf from line: 81
 
 public void javaIf(Box node ,Integer indent ) {
     
@@ -4052,7 +4150,7 @@ if (globalTrace)
 }
 
 
-//Building function javaSetStruct from line: 93
+//Building function javaSetStruct from line: 94
 
 public void javaSetStruct(Box node ,Integer indent ) {
     
@@ -4066,7 +4164,7 @@ if (globalTrace)
 }
 
 
-//Building function javaGetStruct from line: 104
+//Building function javaGetStruct from line: 105
 
 public void javaGetStruct(Box node ,Integer indent ) {
     
@@ -4078,7 +4176,7 @@ if (globalTrace)
 }
 
 
-//Building function javaSet from line: 112
+//Building function javaSet from line: 113
 
 public void javaSet(Box node ,Integer indent ) {
     
@@ -4092,7 +4190,7 @@ if (globalTrace)
 }
 
 
-//Building function javaStatement from line: 120
+//Building function javaStatement from line: 121
 
 public void javaStatement(Box node ,Integer indent ) {
     
@@ -4122,7 +4220,7 @@ if (globalTrace)
 }
 
 
-//Building function javaBody from line: 140
+//Building function javaBody from line: 141
 
 public void javaBody(Box tree ,Integer indent ) {
     
@@ -4140,7 +4238,7 @@ if (globalTrace)
 }
 
 
-//Building function javaDeclarations from line: 150
+//Building function javaDeclarations from line: 151
 
 public void javaDeclarations(Box decls ,Integer indent ) {
   Box decl = null ;
@@ -4160,7 +4258,7 @@ if (globalTrace)
 }
 
 
-//Building function javaFunction from line: 164
+//Building function javaFunction from line: 165
 
 public void javaFunction(Box node ) {
   Box name = null ;
@@ -4204,7 +4302,7 @@ if (globalTrace)
 }
 
 
-//Building function javaFunctions from line: 203
+//Building function javaFunctions from line: 204
 
 public void javaFunctions(Box tree ) {
     
@@ -4220,7 +4318,7 @@ if (globalTrace)
 }
 
 
-//Building function javaIncludes from line: 209
+//Building function javaIncludes from line: 210
 
 public void javaIncludes(Box nodes ) {
     
@@ -4249,7 +4347,7 @@ if (globalTrace)
 }
 
 
-//Building function javaTypeDecl from line: 232
+//Building function javaTypeDecl from line: 233
 
 public void javaTypeDecl(Box l ) {
     
@@ -4266,7 +4364,7 @@ if (globalTrace)
 }
 
 
-//Building function javaStructComponents from line: 249
+//Building function javaStructComponents from line: 250
 
 public void javaStructComponents(Box node ) {
     
@@ -4282,7 +4380,7 @@ if (globalTrace)
 }
 
 
-//Building function javaStruct from line: 255
+//Building function javaStruct from line: 256
 
 public void javaStruct(Box node ) {
     
@@ -4293,7 +4391,7 @@ if (globalTrace)
 }
 
 
-//Building function javaTypeMap from line: 258
+//Building function javaTypeMap from line: 259
 
 public Box javaTypeMap(Box aSym ) {
   Box symMap = null ;
@@ -4307,7 +4405,7 @@ public Box javaTypeMap(Box aSym ) {
 }
 
 
-//Building function javaTypesNoDeclare from line: 276
+//Building function javaTypesNoDeclare from line: 277
 
 public Box javaTypesNoDeclare() {
   Box syms = null ;
@@ -4317,7 +4415,7 @@ public Box javaTypesNoDeclare() {
 }
 
 
-//Building function javaFuncMap from line: 285
+//Building function javaFuncMap from line: 286
 
 public Box javaFuncMap(Box aSym ) {
   Box symMap = null ;
@@ -4335,7 +4433,7 @@ public Box javaFuncMap(Box aSym ) {
 }
 
 
-//Building function javaType from line: 315
+//Building function javaType from line: 316
 
 public void javaType(Box node ) {
     
@@ -4357,7 +4455,7 @@ if (globalTrace)
 }
 
 
-//Building function javaTypes from line: 331
+//Building function javaTypes from line: 332
 
 public void javaTypes(Box nodes ) {
     
@@ -4373,7 +4471,7 @@ if (globalTrace)
 }
 
 
-//Building function javaCompile from line: 337
+//Building function javaCompile from line: 338
 
 public void javaCompile(String filename ) {
   String programStr = "" ;
@@ -4643,83 +4741,7 @@ if (globalTrace)
 }
 
 
-//Building function loadQuon from line: 202
-
-public Box loadQuon(String filename ) {
-  Box foundationFuncs = null ;
-Box foundation = null ;
-String programStr = "" ;
-Box tree = null ;
-  
-  foundation = readSexpr(read_file(filename ), filename );  
-  foundationFuncs = cdr(third(foundation ));  
-  programStr = read_file(filename );  
-  tree = readSexpr(programStr , filename );  
-  return(tree );
-}
-
-
-//Building function getIncludes from line: 215
-
-public Box getIncludes(Box program ) {
-    
-  return(cdr(first(program )));
-}
-
-
-//Building function getTypes from line: 219
-
-public Box getTypes(Box program ) {
-    
-  return(cdr(second(program )));
-}
-
-
-//Building function getFunctions from line: 223
-
-public Box getFunctions(Box program ) {
-    
-  return(cdr(third(program )));
-}
-
-
-//Building function loadIncludes from line: 228
-
-public Box loadIncludes(Box tree ) {
-  Box newProg = null ;
-String includeFile = "" ;
-Box functionsCombined = null ;
-Box typesCombined = null ;
-Box includeTree = null ;
-Box program = null ;
-  
-  if ( greaterthan(listLength(getIncludes(tree )), 0 )) {    
-    includeFile = stringify(first(getIncludes(tree )));    
-    includeTree = loadQuon(includeFile );    
-    functionsCombined = concatLists(getFunctions(includeTree ), getFunctions(tree ));    
-    typesCombined = concatLists(getTypes(includeTree ), getTypes(tree ));    
-    newProg = buildProg(cdr(getIncludes(tree )), typesCombined , functionsCombined );    
-    return(loadIncludes(newProg ));
-  } else {    
-    return(tree );
-  }
-}
-
-
-//Building function buildProg from line: 251
-
-public Box buildProg(Box includes ,Box types ,Box functions ) {
-  Box program = null ;
-  
-  includes = cons(boxSymbol("includes" ), includes );  
-  types = cons(boxSymbol("types" ), types );  
-  functions = cons(boxSymbol("functions" ), functions );  
-  program = cons(includes , cons(types , cons(functions , null )));  
-  return(program );
-}
-
-
-//Building function luaCompile from line: 263
+//Building function luaCompile from line: 203
 
 public void luaCompile(String filename ) {
   Box tree = null ;
@@ -4742,6 +4764,378 @@ if (globalTrace)
 }
 
 
+//Building function imaFunctionArgs from line: 20
+
+public void imaFunctionArgs(Integer indent ,Box tree ) {
+    
+  if ( isEmpty(tree )) {    
+    return;
+  } else {    
+    display(second(tree ));    
+    System.out.printf(": " );    
+    display(first(tree ));    
+    if ( isNil(cddr(tree ))) {      
+      System.out.printf("" );
+    } else {      
+      System.out.printf(", " );
+    }    
+    imaFunctionArgs(indent , cddr(tree ));
+  }
+if (globalTrace)
+   System.out. printf("Leaving imaFunctionArgs\n");
+
+}
+
+
+//Building function imaFunction from line: 32
+
+public void imaFunction(Integer indent ,Box functionDefinition ) {
+  String fname = "" ;
+  
+  fname = stringify(second(functionDefinition ));  
+  System.out.printf("\nfu %s(" , fname );  
+  imaFunctionArgs(indent , third(functionDefinition ));  
+  System.out.printf(") " );  
+  System.out.printf("-> %s" , stringify(first(functionDefinition )));  
+  imaDeclarations(add1(indent ), cdr(fourth(functionDefinition )));  
+  if ( greaterthan(listLength(cdr(fourth(functionDefinition ))), 0 )) {    
+    System.out.printf("\n" );
+  } else {    
+    System.out.printf(" " );
+  }  
+  printIndent(indent );  
+  System.out.printf("in\n" );  
+  imaBody(fname , indent , cdr(fifth(functionDefinition )));  
+  System.out.printf("end function\n" );
+if (globalTrace)
+   System.out. printf("Leaving imaFunction\n");
+
+}
+
+
+//Building function imaDeclarations from line: 53
+
+public void imaDeclarations(Integer indent ,Box declarations ) {
+  Box decl = null ;
+  
+  if ( isNil(declarations )) {    
+    return;
+  } else {    
+    decl = first(declarations );    
+    System.out.printf("\n" );    
+    printIndent(indent );    
+    System.out.printf("%s: %s " , stringify(second(decl )), stringify(first(decl )));    
+    imaExpressionStart(indent , third(decl ));    
+    imaDeclarations(indent , cdr(declarations ));
+  }
+if (globalTrace)
+   System.out. printf("Leaving imaDeclarations\n");
+
+}
+
+
+//Building function imaExpressionStart from line: 72
+
+public void imaExpressionStart(Integer indent ,Box program ) {
+    
+  if ( isNil(program )) {    
+    return;
+  } else {    
+    if ( isList(program )) {      
+      if ( equalString(stringify(car(program )), "get-struct" )) {        
+        System.out.printf("%s.%s" , stringify(second(program )), stringify(third(program )));
+      } else {        
+        if ( equalString(stringify(car(program )), ">" )) {          
+          System.out.printf("greaterthan(" );          
+          imaExpression(indent , cdr(program ));          
+          System.out.printf(")" );
+        } else {          
+          if ( equalString(stringify(car(program )), "=" )) {            
+            System.out.printf("equal(" );            
+            imaExpression(indent , cdr(program ));            
+            System.out.printf(")" );
+          } else {            
+            System.out.printf("%s(" , stringify(car(program )));            
+            imaExpression(indent , cdr(program ));            
+            System.out.printf(")" );
+          }
+        }
+      }
+    } else {      
+      imaExpression(indent , program );
+    }
+  }
+if (globalTrace)
+   System.out. printf("Leaving imaExpressionStart\n");
+
+}
+
+
+//Building function imaExpression from line: 114
+
+public void imaExpression(Integer indent ,Box program ) {
+    
+  if ( isNil(program )) {    
+    return;
+  } else {    
+    if ( isList(program )) {      
+      if ( isList(car(program ))) {        
+        imaExpressionStart(indent , car(program ));
+      } else {        
+        display(car(program ));
+      }      
+      if ( greaterthan(listLength(program ), 1 )) {        
+        System.out.printf(", " );
+      } else {
+      }      
+      imaExpression(indent , cdr(program ));
+    } else {      
+      display(program );
+    }
+  }
+if (globalTrace)
+   System.out. printf("Leaving imaExpression\n");
+
+}
+
+
+//Building function imaStatement from line: 142
+
+public void imaStatement(Integer indent ,Box statement ) {
+    
+  if ( equalString(stringify(car(statement )), "if" )) {    
+    printIndent(indent );    
+    System.out.printf("if " );    
+    add1(indent );    
+    imaExpressionStart(add1(indent ), second(statement ));    
+    System.out.printf(" then\n" );    
+    imaBody(caller , add1(indent ), cdr(third(statement )));    
+    printIndent(indent );    
+    System.out.printf("else\n" );    
+    imaBody(caller , add1(indent ), cdr(fourth(statement )));    
+    printIndent(indent );    
+    System.out.printf("end\n" );
+  } else {    
+    if ( equalString(stringify(car(statement )), "set" )) {      
+      printIndent(indent );      
+      System.out.printf("%s = " , stringify(second(statement )));      
+      imaExpressionStart(add1(indent ), third(statement ));      
+      System.out.printf(";\n" );
+    } else {      
+      if ( equalString(stringify(car(statement )), "set-struct" )) {        
+        printIndent(indent );        
+        System.out.printf("%s.%s = " , stringify(second(statement )), stringify(third(statement )));        
+        imaExpressionStart(indent , fourth(statement ));        
+        System.out.printf(";\n" );
+      } else {        
+        if ( equalString(stringify(car(statement )), "return" )) {          
+          printIndent(indent );          
+          System.out.printf("return; " );          
+          if ( greaterthan(listLength(statement ), 1 )) {            
+            imaExpressionStart(indent , second(statement ));
+          } else {
+          }          
+          System.out.printf("\n" );
+        } else {          
+          printIndent(indent );          
+          imaExpressionStart(indent , statement );          
+          System.out.printf(";\n" );
+        }
+      }
+    }
+  }
+if (globalTrace)
+   System.out. printf("Leaving imaStatement\n");
+
+}
+
+
+//Building function imaBody from line: 197
+
+public void imaBody(String local_caller ,Integer indent ,Box program ) {
+  Box statement = null ;
+  
+  if ( isNil(program )) {    
+    return;
+  } else {    
+    statement = car(program );    
+    imaStatement(add1(indent ), statement );    
+    imaBody(local_caller , indent , cdr(program ));
+  }
+if (globalTrace)
+   System.out. printf("Leaving imaBody\n");
+
+}
+
+
+//Building function imaFunctions from line: 208
+
+public void imaFunctions(Integer indent ,Box program ) {
+    
+  if ( isNil(program )) {    
+    return;
+  } else {    
+    imaFunction(indent , car(program ));    
+    imaFunctions(indent , cdr(program ));
+  }
+if (globalTrace)
+   System.out. printf("Leaving imaFunctions\n");
+
+}
+
+
+//Building function imaTypeDecl from line: 218
+
+public void imaTypeDecl(Box l ) {
+  String name = "" ;
+Box body = null ;
+  
+  name = stringify(first(l ));  
+  body = cdr(l );  
+  if ( greaterthan(listLength(l ), 2 )) {    
+    printIndent(1 );    
+    System.out.printf("%s is " , name );    
+    displayList(body , 0 , true );    
+    System.out.printf(";\n" );
+  } else {    
+    printIndent(1 );    
+    System.out.printf("%s is %s;\n" , name , stringify(second(l )));
+  }
+if (globalTrace)
+   System.out. printf("Leaving imaTypeDecl\n");
+
+}
+
+
+//Building function imaStructComponents from line: 243
+
+public void imaStructComponents(Box node ) {
+    
+  if ( isEmpty(node )) {    
+    return;
+  } else {    
+    imaTypeDecl(car(node ));    
+    imaStructComponents(cdr(node ));
+  }
+if (globalTrace)
+   System.out. printf("Leaving imaStructComponents\n");
+
+}
+
+
+//Building function imaStruct from line: 249
+
+public void imaStruct(Box node ) {
+    
+  imaStructComponents(cdr(car(node )));
+if (globalTrace)
+   System.out. printf("Leaving imaStruct\n");
+
+}
+
+
+//Building function imaTypeMap from line: 252
+
+public Box imaTypeMap(Box aSym ) {
+  Box symMap = null ;
+  
+  symMap = alistCons(boxSymbol("stringArray" ), boxSymbol("char**" ), alistCons(boxSymbol("string" ), boxSymbol("char*" ), null ));  
+  if ( truthy(assoc(stringify(aSym ), symMap ))) {    
+    return(cdr(assoc(stringify(aSym ), symMap )));
+  } else {    
+    return(aSym );
+  }
+}
+
+
+//Building function imaType from line: 264
+
+public void imaType(Box node ) {
+  String name = "" ;
+Box body = null ;
+  
+  name = stringify(first(node ));  
+  body = cdr(node );  
+  if ( isList(first(body ))) {    
+    System.out.printf("\ntype %s is struct (\n" , name );    
+    imaStruct(body );    
+    System.out.printf("\n);\n" , name );
+  } else {    
+    System.out.printf("type" );    
+    imaTypeDecl(node );
+  }
+if (globalTrace)
+   System.out. printf("Leaving imaType\n");
+
+}
+
+
+//Building function imaTypes from line: 279
+
+public void imaTypes(Integer indent ,Box nodes ) {
+    
+  if ( isEmpty(nodes )) {    
+    return;
+  } else {    
+    imaType(car(nodes ));    
+    imaTypes(indent , cdr(nodes ));
+  }
+if (globalTrace)
+   System.out. printf("Leaving imaTypes\n");
+
+}
+
+
+//Building function imaProgram from line: 288
+
+public void imaProgram(Box program ) {
+    
+  imaIncludes(0 , cdr(first(program )));  
+  System.out.printf("\nTypes:\n" );  
+  imaTypes(0 , cdr(second(program )));  
+  System.out.printf("\nFunctions:\n" );  
+  imaFunctions(0 , cdr(third(program )));
+if (globalTrace)
+   System.out. printf("Leaving imaProgram\n");
+
+}
+
+
+//Building function imaIncludes from line: 298
+
+public void imaIncludes(Integer indent ,Box nodes ) {
+    
+  System.out.printf("Includes: \n" );  
+  displayList(nodes , 0 , true );
+if (globalTrace)
+   System.out. printf("Leaving imaIncludes\n");
+
+}
+
+
+//Building function imaCompile from line: 305
+
+public void imaCompile(String filename ) {
+  Box tree = null ;
+  
+  tree = loadQuon("compiler.qon" );  
+  tree = loadIncludes(tree );  
+  tree = macrowalk(tree );  
+  tree = macrosingle(tree , "write-file" , "imaWriteFile" );  
+  tree = macrosingle(tree , "read-file" , "imaReadFile" );  
+  tree = macrosingle(tree , "string-length" , "string.len" );  
+  tree = macrosingle(tree , "sub-string" , "imaSubstring" );  
+  tree = macrosingle(tree , "stringLength" , "string.len" );  
+  imaProgram(tree );  
+  System.out.printf("\n" );  
+  System.out.printf("function main()\nglobalArgs = arg\nglobalArgsCount = #arg\nstart()\nend\n" );  
+  System.out.printf("main()" );
+if (globalTrace)
+   System.out. printf("Leaving imaCompile\n");
+
+}
+
+
 //Building function start from line: 4
 
 public Integer start() {
@@ -4753,6 +5147,7 @@ boolean runJava = false ;
 boolean runAst = false ;
 boolean runNode = false ;
 boolean runLua = false ;
+boolean runIma = false ;
 boolean runTree = false ;
   
   cmdLine = listReverse(argList(globalArgsCount , 0 , globalArgs ));  
@@ -4768,6 +5163,7 @@ boolean runTree = false ;
   runTree = inList(boxString("--tree" ), cmdLine );  
   runNode = inList(boxString("--node" ), cmdLine );  
   runLua = inList(boxString("--lua" ), cmdLine );  
+  runIma = inList(boxString("--ima" ), cmdLine );  
   globalTrace = inList(boxString("--trace" ), cmdLine );  
   globalStepTrace = inList(boxString("--steptrace" ), cmdLine );  
   if ( runTests ) {    
@@ -4816,8 +5212,13 @@ boolean runTree = false ;
                 luaCompile(unBoxString(filename ));                
                 System.out.printf("\n" );
               } else {                
-                ansiCompile(unBoxString(filename ));                
-                System.out.printf("\n" );
+                if ( runIma ) {                  
+                  imaCompile(unBoxString(filename ));                  
+                  System.out.printf("\n" );
+                } else {                  
+                  ansiCompile(unBoxString(filename ));                  
+                  System.out.printf("\n" );
+                }
               }
             }
           }

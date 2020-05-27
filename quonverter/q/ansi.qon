@@ -325,7 +325,7 @@
 
 (void ansiCompile (string filename) (declare (list foundationFuncs nil) (list foundation nil) (string programStr "") (list tree nil) (list program nil))
     (body
-   (set foundation (readSexpr (read-file "ansi.qon") "ansi.qon"))
+   (set foundation (readSexpr (read-file "q/ansi.qon") "q/ansi.qon"))
    ;(printf "Read file: %s" (read-file "ansi.qon"))
    ;(printf "Built s-expression: ")
    ;(display foundation)
