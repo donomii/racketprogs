@@ -8,7 +8,7 @@ sub multf { $_[0] * $_[1] };
 sub greaterthanf { $_[0] > $_[1] };
 sub equalString { $_[0] eq $_[1] };
 sub read_file { my $file = shift; $file || die "Empty file name!!!"; open my $fh, '<', $file or die; local $/ = undef; my $cont = <$fh>; close $fh; return $cont; }; 
-sub write_file {my $file = shift; my $data = shift; $file || die "Empty file name!!!"; open my $fh, '<', $file or die; print $fh $data; close $fh; } 
+sub write_file {my $file = shift; my $data = shift; $file || die "Empty file name!!!"; open my $fh, '>', $file or die; print $fh $data; close $fh; } 
 sub stringConcatenate { $_[0] . $_[1]}
 sub subtract { $_[0] - $_[1]}
 sub subf { $_[0] - $_[1]}
@@ -5904,7 +5904,7 @@ if ($globalTrace) { printf("perlIncludes at q/perl.qon:265\n") }
 
 #standard expression
 
-  printf("%s\n", "my $caller;")
+  printf("%s%s%s", "my ", dollar(), "caller;\n")
   ;
   if ($globalStepTrace) {printf("StepTrace %s:%d\n", __FILE__, __LINE__)}
 
