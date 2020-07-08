@@ -234,7 +234,7 @@
     (printf "%s" "var util = require('util');\n")
     (printf "%s" "function printf() {process.stdout.write(util.format.apply(this, arguments));}\n")
     (printf "%s" "var fs = require('fs');\n")
-    (printf "%s" "function equalString(a,b) {return a.toString()===b.toString() }\n")
+    (printf "%s" "function equalString(a,b) {if (a==null) {return false;}if (b==null) {return false;}return a.toString()===b.toString() }\n")
     (printf "%s" "function panic(s){console.trace(s);process.exit(1);}\n")
     (printf "%s" "function dump(s){console.log(s)}")
     (printf "%s" "function sub(a, b) { return a - b; }\n")
