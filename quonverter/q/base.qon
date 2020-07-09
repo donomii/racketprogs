@@ -45,13 +45,6 @@
     (set-struct newb typ "void")
     (return newb)))
 
-  (list cons (box data list l) (declare (pair p nil))
-   (body
-    (set p (makePair))
-    (set-struct p cdr l)
-    (set-struct p car data)
-    (set-struct p typ "list")
-    (return p)))
 
   (void stackDump () (declare) (body
  (printf "")
@@ -872,8 +865,22 @@
 
     (void astCompile (string filename) (declare (string programStr "") (list tree nil) (list program nil))
     (body
-      (set program (astBuild filename))
-      (display program)
+      (set tree (loadQuon filename))
+
+      (printf "Final program: \n")
+      (set tree (loadIncludes tree))
+      (set tree (macrowalk tree))
+      (set tree (macrosingle tree "write-file" "luaWriteFile"))
+      (set tree (macrosingle tree "read-file" "luaReadFile"))
+      (set tree (macrosingle tree "string-length" "string.len"))
+      
+      (set tree (macrosingle tree "sub-string" "luaSubstring"))
+      (set tree (macrosingle tree "stringLength" "string.len"))
+      (displayList tree 0 true)
+      ;(printf "Transformed tree")
+      
+      ;(set program (astBuild filename))
+      ;(display program)
       (printf "\n")
     ))
 
