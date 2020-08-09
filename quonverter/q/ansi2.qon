@@ -1,47 +1,47 @@
 ((includes)
 (types)
  (functions
-  (void ansiFunctionArgs (list tree) (declare)
+  (void ansi2FunctionArgs (list tree) (declare)
    (body
     (if (isEmpty tree)
       (then (return))
       (else
-       (display (ansiTypeMap (first tree)))
+       (display (ansi2TypeMap (first tree)))
        (printf " ")
        (display (second tree))
        (if (isNil (cddr tree)) (then (printf "")) (else (printf ",")))
-       (ansiFunctionArgs (cddr tree))))))
+       (ansi2FunctionArgs (cddr tree))))))
 
  
 
-  (void ansiExpression (list node int indent) (declare)
+  (void ansi2Expression (list node int indent) (declare)
    (body
     (if (isLeaf node)
-      (then (display (ansiFuncMap (codeof node))))
-      (else (ansiSubExpression node indent)))))
+      (then (display (ansi2FuncMap (codeof node))))
+      (else (ansi2SubExpression node indent)))))
   (void
-   ansiRecurList
+   ansi2RecurList
    (list expr int indent)
    (declare)
    (body
     (if (isEmpty expr)
       (then (return))
       (else
-       (ansiExpression (car expr) indent)
+       (ansi2Expression (car expr) indent)
        (if (isNil (cdr expr))
          (then (printf ""))
-         (else (printf ", ") (ansiRecurList (cdr expr) indent)))))
+         (else (printf ", ") (ansi2RecurList (cdr expr) indent)))))
     ))
-  (void ansiSubExpression (list tree int indent) (declare (box thing nil))
+  (void ansi2SubExpression (list tree int indent) (declare (box thing nil))
    (body
     (if (isEmpty tree)
       (then (return))
       (else
        (if (isList (first tree))
-         (then (ansiSubExpression (childrenof tree) indent))
+         (then (ansi2SubExpression (childrenof tree) indent))
          (else
           (if (isLeaf tree)
-            (then (display (ansiFuncMap  tree)))
+            (then (display (ansi2FuncMap  tree)))
             (else
              (if (equal 1 (listLength (childrenof tree)))
                (then
@@ -69,32 +69,32 @@
                       (printf
                        "%s("
                        (stringify
-                        (ansiFuncMap (car tree))))
-                      (ansiRecurList (cdr  tree) indent)
+                        (ansi2FuncMap (car tree))))
+                      (ansi2RecurList (cdr  tree) indent)
                       (printf ")")))))))))))))))
-  (void ansiIf (list node int indent) (declare)
+  (void ansi2If (list node int indent) (declare)
    (body
     (newLine indent)
     (printf "if ( ")
-    (ansiExpression (second node) 0)
+    (ansi2Expression (second node) 0)
     (printf ") {")
-    (ansiBody (third node) (add1 indent))
+    (ansi2Body (third node) (add1 indent))
     (newLine indent)
     (printf "} else {")
-    (ansiBody (fourth node) (add1 indent))
+    (ansi2Body (fourth node) (add1 indent))
     (newLine indent)
     (printf "}")))
 
-  (void ansiSetStruct (list node int indent) (declare)
+  (void ansi2SetStruct (list node int indent) (declare)
    (body
     (newLine indent)
     (printf
      "%s->%s = "
      (stringify (first  node))
      (stringify (second  node)))
-    (ansiExpression (third node) indent)))
+    (ansi2Expression (third node) indent)))
 
-  (void ansiGetStruct (list node int indent) (declare)
+  (void ansi2GetStruct (list node int indent) (declare)
    (body
     (newLine indent)
     (printf
@@ -102,42 +102,42 @@
      (stringify (first  node))
      (stringify (second  node)))))
 
-  (void ansiSet (list node int indent) (declare)
+  (void ansi2Set (list node int indent) (declare)
    (body
     (newLine indent)
     (printf "%s = " (stringify (first  node)))
-    (ansiExpression (cdr node) indent)))
+    (ansi2Expression (cdr node) indent)))
 	
-  (void ansiReturn (list node int indent) (declare)
+  (void ansi2Return (list node int indent) (declare)
    (body
     (newLine indent)
 	(if (equal (listLength node) 1) 
 	(then (printf "return;"))
 	(else 
     (printf "return ")
-    (ansiExpression (cadr node) indent)
+    (ansi2Expression (cadr node) indent)
 	(printf ";")
 	))))
 
-  (void ansiStatement (list node int indent) (declare)
+  (void ansi2Statement (list node int indent) (declare)
    (body
     (if (equalBox (boxString "set") (first node))
-      (then (ansiSet node indent))
+      (then (ansi2Set node indent))
       (else
        (if (equalBox (boxString "set-struct") (first node))
-         (then (ansiSetStruct node indent))
+         (then (ansi2SetStruct node indent))
          (else
           (if (equalBox (boxString "if") (first node))
-            (then (ansiIf node indent))
+            (then (ansi2If node indent))
             (else
              (if (equalBox (boxString "return") (first node))
-               (then (ansiReturn node indent))
+               (then (ansi2Return node indent))
                (else
                 (newLine indent)
-                (ansiExpression  node indent)))))))))
+                (ansi2Expression  node indent)))))))))
     (printf ";\n")))
 
-  (void ansiBody (list tree int indent) (declare (list code nil))
+  (void ansi2Body (list tree int indent) (declare (list code nil))
    (body
     (if (isEmpty tree)
       (then (return))
@@ -152,10 +152,10 @@
        (printf
         "%s"
         "if (globalStepTrace) printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__);\n")
-       (ansiStatement (car tree) indent)
-       (ansiBody (cdr tree) indent)))))
+       (ansi2Statement (car tree) indent)
+       (ansi2Body (cdr tree) indent)))))
 
-  (void ansiDeclarations (list decls int indent) (declare (box decl nil))
+  (void ansi2Declarations (list decls int indent) (declare (box decl nil))
    (body
     (if (isEmpty decls)
       (then (return))
@@ -163,13 +163,13 @@
        (set decl (car decls))
        (printf
         "%s %s = "
-        (stringify (ansiTypeMap (first decl)))
+        (stringify (ansi2TypeMap (first decl)))
         (stringify (second decl)))
-       (display (ansiFuncMap (third decl)))
+       (display (ansi2FuncMap (third decl)))
        (printf ";\n")
-       (ansiDeclarations (cdr decls) indent)))))
+       (ansi2Declarations (cdr decls) indent)))))
 
-  (void ansiFunction (list node) (declare (box name nil))
+  (void ansi2Function (list node) (declare (box name nil))
    (body
     (set name  (second node))
     (printf "\n\n//Building function %s from line: %s" (stringify name) (stringify (getTag name (boxString "line"))))
@@ -180,12 +180,12 @@
        (newLine 0)
        (printf
         "%s %s("
-        (stringify (ansiTypeMap (first node)))
+        (stringify (ansi2TypeMap (first node)))
         (stringify (second node)))
-       (ansiFunctionArgs (third node))
+       (ansi2FunctionArgs (third node))
        (printf ") {")
        (newLine 1)
-       (ansiDeclarations (cdr (fourth node)) 1)
+       (ansi2Declarations (cdr (fourth node)) 1)
        (if (inList (toStr name) (noStackTrace))
        (then (printf ""))
        (else
@@ -195,7 +195,7 @@
          (else
           ;;(printf "\n  stackTracePush(\"%s\", \"%s\", %s, %d );\n" (stringify (getTag name (boxString "filename"))) (stringify name) (stringify (getTag name (boxString "line"))) 0)
           ))
-       (ansiBody (fifth node) 1)
+       (ansi2Body (fifth node) 1)
        (if (inList (toStr name) (noStackTrace))
          (then (printf ""))
          (else
@@ -203,34 +203,34 @@
             ))
        (printf "\n}\n")))))
 
-  (void ansiForwardDeclaration (list node) (declare)
+  (void ansi2ForwardDeclaration (list node) (declare)
    (body
     (if (isNil node)
       (then (return))
       (else
        (printf
         "\n%s %s("
-        (stringify (ansiTypeMap (first node)))
+        (stringify (ansi2TypeMap (first node)))
         (stringify (second node)))
-       (ansiFunctionArgs (third node))
+       (ansi2FunctionArgs (third node))
        (printf ");")))))
 
-  (void ansiForwardDeclarations (list tree) (declare)
+  (void ansi2ForwardDeclarations (list tree) (declare)
    (body
     (if (isEmpty tree)
       (then (return))
       (else
-       (ansiForwardDeclaration (car tree))
-       (ansiForwardDeclarations (cdr tree))))))
+       (ansi2ForwardDeclaration (car tree))
+       (ansi2ForwardDeclarations (cdr tree))))))
 
-  (void ansiFunctions (list tree) (declare)
+  (void ansi2Functions (list tree) (declare)
    (body
     (if (isEmpty tree)
       (then (return))
-      (else (ansiFunction (car tree)) (ansiFunctions (cdr tree))))))
+      (else (ansi2Function (car tree)) (ansi2Functions (cdr tree))))))
 	  
 	  
-  (void ansiIncludes (list nodes) (declare)
+  (void ansi2Includes (list nodes) (declare)
    (body
     (printf
      "%s"
@@ -238,7 +238,7 @@
     (printf "%s" "char * character(int num) { char *string = malloc(2); if (!string) return 0; string[0] = num; string[1] = 0; return string; }") (printf "%s" "void qlog(const char* format, ...) { va_list args; va_start (args, format); vfprintf (stderr, format, args); va_end (args); }")
 ))
 
-  (void ansiTypeDecl (list l) (declare)
+  (void ansi2TypeDecl (list l) (declare)
    (body
     (if (> (listLength l) 2)
       (then
@@ -246,25 +246,25 @@
        (printf
         "%s %s %s;\n"
         (stringify (second l))
-        (stringify (ansiTypeMap (listLast l)))
+        (stringify (ansi2TypeMap (listLast l)))
         (stringify (first l))))
       (else
        (printIndent 1)
        (printf
         "%s %s;\n"
-        (stringify (ansiTypeMap (listLast l)))
+        (stringify (ansi2TypeMap (listLast l)))
         (stringify (car l)))))))
 
-  (void ansiStructComponents (list node) (declare)
+  (void ansi2StructComponents (list node) (declare)
    (body
     (if (isEmpty node)
       (then (return))
-      (else (ansiTypeDecl (car node)) (ansiStructComponents (cdr node))))))
+      (else (ansi2TypeDecl (car node)) (ansi2StructComponents (cdr node))))))
 
-  (void ansiStruct (list node) (declare)
-   (body (ansiStructComponents (cdr (car node))) ))
+  (void ansi2Struct (list node) (declare)
+   (body (ansi2StructComponents (cdr (car node))) ))
 
-  (box ansiTypeMap (box aSym) (declare (list symMap nil))
+  (box ansi2TypeMap (box aSym) (declare (list symMap nil))
    (body
     (set
      symMap
@@ -276,7 +276,7 @@
       (then (return (cdr (assoc (stringify aSym) symMap))))
       (else (return aSym)))))
 
-  (box ansiFuncMap (box aSym) (declare (list symMap nil))
+  (box ansi2FuncMap (box aSym) (declare (list symMap nil))
    (body
     (if (equalString "symbol" (boxType aSym))
       (then
@@ -307,28 +307,27 @@
          (else (return aSym))))
       (else (return aSym)))))
 
-  (void ansiType (list node) (declare)
+  (void ansi2Type (list node) (declare)
    (body
     (if (equalBox (first (cdr node)) (boxString "struct"))
       (then
        (printf "\ntypedef struct %s {\n" (stringify (first (codeof node))))
-       (ansiStruct (cdr (cdr node)))
+       (ansi2Struct (cdr (cdr node)))
        (printf "\n} %s;\n" (stringify (first  node))))
-      (else (printf "typedef ") (ansiTypeDecl (cdr node))))
+      (else (printf "typedef ") (ansi2TypeDecl (cdr node))))
     ))
 
-  (void ansiTypes (list nodes) (declare)
+  (void ansi2Types (list nodes) (declare)
    (body
     (if (isEmpty nodes)
       (then (return))
-      (else (ansiType (car nodes)) (ansiTypes (cdr nodes))))))
+      (else (ansi2Type (car nodes)) (ansi2Types (cdr nodes))))))
 
 
 
-	  (void uniqueTarget (string a string b) (declare) (body))
 
 
-(void ansiCompile (string filename) (declare  (string programStr "") (list tree nil) (list program nil))
+(void ansi2Compile (string filename) (declare  (string programStr "") (list tree nil) (list program nil))
     (body
   
 
@@ -346,21 +345,21 @@
      program
      (alistCons
       (boxString "includes")
-      (astIncludes (first tree))
+      (astIncludes (cdr (first tree)))
       (alistCons
        (boxString "types")
-       (astTypes (second tree))
+       (astTypes (cdr (second tree)))
        (alistCons (boxString "functions") (astFunctions (third tree)) nil))))
 
 
    (printf "//Printing program\n")
-    (ansiIncludes (first tree))
-    (ansiTypes (second tree))
+    (ansi2Includes (cdr (first tree)))
+    (ansi2Types (cdr (second tree)))
     (printf "Box* globalStackTrace = NULL;\n")
     (printf
      "\nbool isNil(list p) {\n    return p == NULL;\n}\n\n\n//Forward declarations\n")
-    (ansiForwardDeclarations (third tree))
+    (ansi2ForwardDeclarations (cdr (third tree)))
     (printf "\n\n//End forward declarations\n\n")
-    (ansiFunctions (third tree))
+    (ansi2Functions (cdr (third tree)))
     (printf "\n")))
   ))
