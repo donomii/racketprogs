@@ -204,7 +204,7 @@
 (void luaCompile (string filename) (declare (list tree nil)  )
     (body
   
-      (set tree (loadQuon "compiler.qon"))
+      (set tree (loadQuon filename))
 
       ;(printf "Final program: \n")
       (set tree (loadIncludes tree))
