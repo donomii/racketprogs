@@ -390,7 +390,7 @@
 
   (list scan (string prog int start int len int linecount int column string filename) (declare (box token nil) (string newString "") (box newBox nil))
    (body
-   (if false (then (printf "Scanning: line %d:%d\n" linecount column)) (else (printf "")))
+   (qlog "%s %d:%d\n" filename linecount column)
     (if (> (string-length prog) (sub start (sub 0 len)))
       (then
        (set token (boxSymbol (sub-string prog (sub1 (add start len)) 1)))
