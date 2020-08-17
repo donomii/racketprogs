@@ -1,4 +1,4 @@
-((includes q/tests.qon)
+((includes q/tests.qon q/macros.qon q/lists.qon)
  (types
   (Box
    (struct
@@ -45,13 +45,6 @@
     (set-struct newb typ "void")
     (return newb)))
 
-  (list cons (box data list l) (declare (pair p nil))
-   (body
-    (set p (makePair))
-    (set-struct p cdr l)
-    (set-struct p car data)
-    (set-struct p typ "list")
-    (return p)))
 
   (void stackDump () (declare) (body
  (printf "")
@@ -60,76 +53,6 @@
 
 (void nop () (declare)
 (body (printf "")))
-
-  (box car (list l) (declare)
-   (body
-    (assertType "list" l __LINE__ __FILE__)
-    (if (isNil l)
-      (then
-       (printf "Cannot call car on empty list!\n")
-       (panic "Cannot call car on empty list!\n")
-       (return nil))
-      (else
-       (if (isNil (get-struct l car))
-         (then (return nil))
-         (else (return (get-struct l car))))))))
-
-  (list cdr (list l) (declare)
-   (body
-    (assertType "list" l __LINE__ __FILE__)
-    (if (isEmpty l)
-      (then
-       (printf "Attempt to cdr an empty list!!!!\n")
-       (panic "Attempt to cdr an empty list!!!!\n")
-       (return nil))
-      (else (return (get-struct l cdr))))))
-
-  (bool isList (box b) (declare)
-   (body
-
-    (if (isNil b)
-      (then (return true))
-      (else (return (equalString "list" (get-struct b typ)))))))
-
-  (list emptyList () (declare) (body (return nil)))
-
-  (bool isEmpty (box b) (declare)
-   (body
-    (if (isNil b)
-      (then (return true))
-      (else 
-       (return false)))))
-
-  (int listLength
-   (list l)
-   (declare)
-   (body
-    (if (isEmpty l)
-      (then (return 0))
-      (else (return (add1 (listLength (cdr l))))))))
-
-
-  (list alistCons (box key box value list alist) (declare)
-   (body (return (cons (cons key value) alist))))
-
-  (list assoc (string searchTerm list l) (declare (list elem nil))
-   (body
-    (assertType "list" l __LINE__ __FILE__)
-
-    (if (isEmpty l)
-      (then (return (boxBool false)))
-      (else
-       (set elem (car l))
-       (assertType "list" elem __LINE__ __FILE__)
-       (if (isEmpty elem)
-         (then (return (assoc searchTerm (cdr l))))
-         (else
-         (if false (then (printf "Comparing %s and %s\n" searchTerm (stringify (car elem)))) (else (printf "")))
-          (if (equalString
-               searchTerm
-               (stringify (car elem)))
-            (then (return elem))
-            (else (return (assoc searchTerm (cdr l)))))))))))
 
   (bool equalBox (box a box b) (declare)
    (body
@@ -152,37 +75,6 @@
                   (then (return (equal (unBoxInt a) (unBoxInt b))))
                   (else (return false)))))))))))))
 
-(void displayList (list l int indent bool first) (declare (box val nil))
-   (body
-    (if (isEmpty l)
-      (then (return))
-      (else
-       (if (isList l)
-         (then
-          (if (isEmpty l)
-            (then (return))
-            (else
-			(if first 
-			(then)
-			(else (printf " ")))
-             (set val (car l))
-             (if (isList val)
-               (then
-                (newLine indent)
-                (printf "%s" (openBrace))
-                (displayList (car l) (add1 indent) true)
-                (printf "%s" (closeBrace))
-                (displayList (cdr l) indent false))
-               (else
-                (if (equalString "string" (get-struct val typ))
-                  (then (printf "\"%s\"" (unBoxString val)))
-                  (else (printf "%s" (stringify val))))
-                (displayList (cdr l) indent false))))))
-         (else
-          (if (equalString "string" (get-struct l typ))
-            (then (printf "\"%s\"" (unBoxString l)))
-            (else (printf "%s" (stringify l))))))))))
-
   (void display (list l) (declare)
    (body
     (if (isEmpty l)
@@ -195,16 +87,22 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Types and type converters ;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  (string boxType (box b) (declare) (body (return (get-struct b typ))))
-  (box makeBox () (declare (box b nil))
-  (body
-  (set b (new box Box))
-  (set-struct b tag nil)
-  (set-struct b car nil)
-  (set-struct b cdr nil)
-  (set-struct b lis nil)
-  (set-struct b typ "None - error!")
-  (return b)
+  (string boxType (box b) (declare) 
+  (body 
+	  (return (get-struct b typ))))
+  (box makeBox () 
+  	(declare (box b nil))
+	  (body
+		  (set b (new box Box))
+		    (if (isNil b) 
+		    	(then (panic "failed to create box!"))
+			(else ))
+		  (set-struct b tag nil)
+		  (set-struct b car nil)
+		  (set-struct b cdr nil)
+		  (set-struct b lis nil)
+		  (set-struct b typ "None - error!")
+		  (return b)
   ))
 
   (pair makePair () (declare)
@@ -498,7 +396,7 @@
 
   (list scan (string prog int start int len int linecount int column string filename) (declare (box token nil) (string newString "") (box newBox nil))
    (body
-   (if false (then (printf "Scanning: line %d:%d\n" linecount column)) (else (printf "")))
+   ;(qlog "Input: %s %d:%d\n" filename linecount column)
     (if (> (string-length prog) (sub start (sub 0 len)))
       (then
        (set token (boxSymbol (sub-string prog (sub1 (add start len)) 1)))
@@ -598,21 +496,6 @@
     (set tokens (filterTokens (filterVoid (scan aStr 0 1 0 0 filename))))
     (set as (sexprTree tokens))
     (return (car as))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; List access functions ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  (box caar (list l) (declare) (body (return (car (car l)))))
-  (box cadr (list l) (declare) (body (return (car (cdr l)))))
-  (box caddr (list l) (declare) (body (return (car (cdr (cdr l))))))
-  (box cadddr (list l) (declare) (body (return (car (cdr (cdr (cdr l)))))))
-  (box caddddr (list l) (declare) (body (return (car (cdr (cdr (cdr (cdr l))))))))
-  (box cddr (list l) (declare) (body (return (cdr (cdr l)))))
-  (box first (list l) (declare) (body (return (car l))))
-  (box second (list l) (declare) (body (return (cadr l))))
-  (box third (list l) (declare) (body (return (caddr l))))
-  (box fourth (list l) (declare) (body (return (cadddr l))))
-  (box fifth (list l) (declare) (body (return (caddddr l))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Parser functions ;;
@@ -791,7 +674,7 @@
 
   (list loadLib (string path) (declare (string programStr "") (list tree nil) (list library nil))
    (body
-    ;(printf "//Loading library %s\n" path)
+    (qlog "Loading library %s\n" path)
     (set programStr (read-file path))
     (set tree (readSexpr programStr path))
     (set tree (macrowalk tree))
@@ -840,13 +723,18 @@
 
   (list astTypes (list tree) (declare)
    (body
+   (if (isNil tree)
+   (then (panic "Empty or absent types declaration section"))
+   (else 
      (if (equalBox  (boxString "types")(car tree))
        (then (return (makeNode "types" "types" tree (astTypeList (cdr tree)))))
        (else
          (panic "Types section not found!  Every program must have a types section, even if you don't define any types")
          (printf "Types section not found!  Every program must have a types section, even if you don't define any types")
          (return (boxString "!!!Fuck java"))
+	 )
        )
+     )
      )
  ))
 
@@ -988,22 +876,25 @@
 
     (void astCompile (string filename) (declare (string programStr "") (list tree nil) (list program nil))
     (body
-      (set program (astBuild filename))
-      (display program)
+      (set tree (loadQuon filename))
+
+      (printf "Final program: \n")
+      (set tree (loadIncludes tree))
+      (set tree (macrowalk tree))
+      (set tree (macrosingle tree "write-file" "luaWriteFile"))
+      (set tree (macrosingle tree "read-file" "luaReadFile"))
+      (set tree (macrosingle tree "string-length" "string.len"))
+      
+      (set tree (macrosingle tree "sub-string" "luaSubstring"))
+      (set tree (macrosingle tree "stringLength" "string.len"))
+      (displayList tree 0 true)
+      ;(printf "Transformed tree")
+      
+      ;(set program (astBuild filename))
+      ;(display program)
       (printf "\n")
     ))
 
-  (list concatLists (list seq1 list seq2) (declare)
-   (body
-    (if (isNil seq1)
-      (then (return seq2))
-      (else (return (cons (car seq1) (concatLists (cdr seq1) seq2)))))))
-
-  (list alistKeys (list alist) (declare)
-   (body
-    (if (isNil alist)
-      (then (return nil))
-      (else (return (cons (car (car alist)) (alistKeys (cdr alist))))))))
 
   (list mergeIncludes (list program) (declare)
    (body
@@ -1074,95 +965,6 @@
        (return newProgram)))))
 
 
-  (list macrowalk (list l ) (declare (box val nil)) (body
-    (if (isEmpty l)
-      (then (return nil))
-      (else
-
-	  ;(printf "//type: %s\n" (get-struct l typ))
-       (if (isList l)
-         (then
-		 ;(printf "//Processing list\n")
-		;	(printf "//Listlength: %d\n" (listLength l))
-			;(display l)
-
-        ;Handle boxList
-          (if (equalString (stringConcatenate "box" "List") (stringify (car l)))
-          (then
-            ;(display (doBoxList (cdr l)))
-          (return (car (doBoxList (cdr l)))))
-          (else))
-
-        ;Handle stringList
-          (if (equalString (stringConcatenate "string" "List") (stringify (car l)))
-          (then
-            ;(display (doStringList (cdr l)))
-          (return (car (doStringList (cdr l)))))
-          (else))
-            (return   (cons (macrowalk (car l) ) (macrowalk (cdr l) ))))
-         (else
-         (return l)
-			))))))
-
-
-
-  (list macrosingle (list l string search string replace ) (declare (box val nil)) (body
-    (if (isEmpty l)
-      (then (return nil))
-      (else
-
-	  ;(printf "//type: %s\n" (get-struct l typ))
-       (if (isList l)
-         (then
-            (return   (cons (macrosingle (car l) search replace) (macrosingle (cdr l) search replace ))))
-         (else
-                      ;(printf "---Processing non list: %s\n" (stringify l))
-          ;(printf "--Comparing %s and %s at %s,%s\n" search (stringify l) (stringify (getTagFail l (boxString "line")(boxString "no tag"))) (stringify (getTagFail l (boxString "filename" )(boxString "no tag"))))
-          
-          (if (equalString search (stringify l))
-            (then
-				;(printf "---Matched!: %s\n" (stringify l))
-              (set val (clone l))
-              (set-struct val str replace)
-              (return val))
-            (else))
-         (return l)
-			))))))
-
- (list doBoxList (list l) (declare)
- (body
- ;(printf "doBoxList\n")
- (if (isNil l)
- (then (return (cons (boxSymbol "nil") nil)))
- (else
- (return
-    (cons
-            (cons
-                (boxSymbol "cons")
-                (cons
-                    (first l)
-                    (doBoxList (cdr l)))
-            ) nil)))) ))
-
-
- (list doStringList (list l) (declare (list newlist nil) (list ret nil))
- (body
- ;(printf "doStringList\n")
- (if (isNil l)
- (then (return (cons (boxSymbol "nil") nil)))
- (else
- (set newlist (cons (boxSymbol "boxString")(cons (first l) newlist)))
- (set ret
-    (cons
-            (cons
-                (boxSymbol "cons")
-                (cons
-                   newlist 
-                    (doStringList (cdr l)))
-            ) nil)
-    )
- ;(display ret)
- (return ret))) ))
 
 
 
@@ -1180,51 +982,6 @@
          (boxString (getStringArray pos args))
          (argList count (add1 pos) args))))
       (else (return nil)))))
-
-  (list listReverse (list l) (declare)
-   (body
-    (if (isNil l)
-      (then (return nil))
-      (else (return (cons (car l) (listReverse (cdr l))))))))
-
-  (bool inList (box item list l) (declare)
-   (body
-    (if (isNil l)
-      (then (return false))
-      (else
-       ;(printf "Comparing %s and %s\n" (stringify item) (stringify (car l)))
-       (if (equalBox (car l) item)
-         (then (return true))
-         (else (return (inList item (cdr l)))))))))
-
- (bool equalList (list a list b) (declare)
-   (body
-      (if (isNil a)
-       (then (if (isNil b)
-          (then 
-            (return true))
-          (else
-            (return true))))
-       (else))
-      (if (equalBox (car a) (car b))
-       (then (return (equalList (cdr a)(cdr b))))
-       (else (return false)))
-    ))
-
-  (list reverseRec (list oldL list newL) (declare)
-    (body
-      (if (isEmpty oldL)
-      (then (return newL))
-      (else (return (reverseRec (cdr oldL) (cons (first oldL) newL)))))
-    ))
-
-  (list reverseList (list l) (declare)
-  (body
-    (return (reverseRec l nil))
-  ))
-
-
-
   (void tron  () (declare) (body (set globalTrace true)))
   (void troff () (declare) (body (set globalTrace false)))
   (void stron  () (declare) (body (set globalStepTrace true)))

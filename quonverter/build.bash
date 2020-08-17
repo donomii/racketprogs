@@ -1,6 +1,6 @@
 #!/bin/bash
 ./quon compiler.qon   > working/quon.c
-gcc -O2 -flto   quon.c -Wl,-stack_size,4000000 -o build/quon_new
+gcc -O2 -flto   working/quon.c -Wl,-stack_size,4000000 -o build/quon_new
 build/quon_new --test
 build/quon_new compiler.qon
 

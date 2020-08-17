@@ -1,7 +1,7 @@
 mkdir working
 mkdir working\quonverter
 quon.exe compiler.qon   > working\quon.c
-gcc -O3 -Wl,--stack=99999999 working\quon.c -o quon_new
+gcc -O3 -Wl,--stack=999999999 working\quon.c -o quon_new
 quon_new.exe --test
 quon_new compiler.qon --perl  > test.pl
 perl test.pl --test
