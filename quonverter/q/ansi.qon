@@ -186,7 +186,7 @@
        (if (inList (toStr name) (noStackTrace))
        (then (printf ""))
        (else
-           (printf "\nif (globalTrace)\n    printf(\"%s at %s:%s (%%s)\\n\", caller);\n" (stringify name) (stringify (getTag name (boxString "filename"))) (stringify (getTag name (boxString "line")))   )))
+           (printf "\nif (globalTrace)\n    fprintf(stderr, \"%s at %s:%s (%%s)\\n\", caller);\n" (stringify name) (stringify (getTag name (boxString "filename"))) (stringify (getTag name (boxString "line")))   )))
        (if (inList (toStr name) (noStackTrace))
          (then (printf ""))
          (else
@@ -196,7 +196,7 @@
        (if (inList (toStr name) (noStackTrace))
          (then (printf ""))
          (else
-            (printf "\nif (globalTrace)\n    printf(\"Leaving %s\\n\");\n" (stringify name))
+            (printf "\nif (globalTrace)\n    fprintf(stderr, \"Leaving %s\\n\");\n" (stringify name))
             ))
        (printf "\n}\n")))))
 

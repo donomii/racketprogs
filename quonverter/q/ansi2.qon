@@ -1,6 +1,8 @@
 ((includes)
-(types)
+ (types)
+
  (functions
+
   (void ansi2FunctionArgs (list tree) (declare)
    (body
     (if (isEmpty tree)
@@ -146,13 +148,13 @@
        (if (isNil code)
        (then)
        (else
-		(set code (car (codeof (car tree))))
+		(set code (car tree))
         (printf "\nif (globalTrace)\n    snprintf(caller, 1024, \"from %s:%s\");\n"  (stringify (getTagFail code  (boxString "filename")  (boxString "Unknown"))) (stringify (getTagFail code (boxString "line") (boxString "Unknown") )))))
        (printIndent indent)
        (printf
         "%s"
         "if (globalStepTrace) printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__);\n")
-       (ansi2Statement (car tree) indent)
+       (ansi2Statement code indent)
        (ansi2Body (cdr tree) indent)))))
 
   (void ansi2Declarations (list decls int indent) (declare (box decl nil))
@@ -321,7 +323,7 @@
    (body
     (if (isEmpty nodes)
       (then (return))
-      (else (ansi2Type (car nodes)) (ansi2Types (cdr nodes))))))
+      (else (display nodes) (ansi2Type (car nodes)) (ansi2Types (cdr nodes))))))
 
 
 
@@ -345,10 +347,10 @@
      program
      (alistCons
       (boxString "includes")
-      (astIncludes (cdr (first tree)))
+      (astIncludes (first tree))
       (alistCons
        (boxString "types")
-       (astTypes (cdr (second tree)))
+       (astTypes (second tree))
        (alistCons (boxString "functions") (astFunctions (third tree)) nil))))
 
 

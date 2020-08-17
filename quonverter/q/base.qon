@@ -87,16 +87,22 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Types and type converters ;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  (string boxType (box b) (declare) (body (return (get-struct b typ))))
-  (box makeBox () (declare (box b nil))
-  (body
-  (set b (new box Box))
-  (set-struct b tag nil)
-  (set-struct b car nil)
-  (set-struct b cdr nil)
-  (set-struct b lis nil)
-  (set-struct b typ "None - error!")
-  (return b)
+  (string boxType (box b) (declare) 
+  (body 
+	  (return (get-struct b typ))))
+  (box makeBox () 
+  	(declare (box b nil))
+	  (body
+		  (set b (new box Box))
+		    (if (isNil b) 
+		    	(then (panic "failed to create box!"))
+			(else ))
+		  (set-struct b tag nil)
+		  (set-struct b car nil)
+		  (set-struct b cdr nil)
+		  (set-struct b lis nil)
+		  (set-struct b typ "None - error!")
+		  (return b)
   ))
 
   (pair makePair () (declare)
@@ -390,7 +396,7 @@
 
   (list scan (string prog int start int len int linecount int column string filename) (declare (box token nil) (string newString "") (box newBox nil))
    (body
-   (qlog "%s %d:%d\n" filename linecount column)
+   ;(qlog "Input: %s %d:%d\n" filename linecount column)
     (if (> (string-length prog) (sub start (sub 0 len)))
       (then
        (set token (boxSymbol (sub-string prog (sub1 (add start len)) 1)))
@@ -668,7 +674,7 @@
 
   (list loadLib (string path) (declare (string programStr "") (list tree nil) (list library nil))
    (body
-    ;(printf "//Loading library %s\n" path)
+    (qlog "Loading library %s\n" path)
     (set programStr (read-file path))
     (set tree (readSexpr programStr path))
     (set tree (macrowalk tree))
@@ -717,13 +723,18 @@
 
   (list astTypes (list tree) (declare)
    (body
+   (if (isNil tree)
+   (then (panic "Empty or absent types declaration section"))
+   (else 
      (if (equalBox  (boxString "types")(car tree))
        (then (return (makeNode "types" "types" tree (astTypeList (cdr tree)))))
        (else
          (panic "Types section not found!  Every program must have a types section, even if you don't define any types")
          (printf "Types section not found!  Every program must have a types section, even if you don't define any types")
          (return (boxString "!!!Fuck java"))
+	 )
        )
+     )
      )
  ))
 
