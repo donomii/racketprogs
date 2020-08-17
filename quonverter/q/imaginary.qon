@@ -273,7 +273,7 @@
       (then
        (printf "\ntype %s is struct (\n"  name)
        (imaStruct body)
-       (printf "\n);\n" name))
+       (printf ");\n" ))
       (else (printf "type" ) (imaTypeDecl node)))
     ))
 
