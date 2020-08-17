@@ -724,7 +724,7 @@
   (list astTypes (list tree) (declare)
    (body
    (if (isNil tree)
-   (then (panic "Empty or absent types declaration section"))
+   (then (panic "Empty or absent types section"))
    (else 
      (if (equalBox  (boxString "types")(car tree))
        (then (return (makeNode "types" "types" tree (astTypeList (cdr tree)))))
@@ -794,11 +794,9 @@
        (then (if (unBoxBool aVal) (then (return true))(else (return false))))
        (else (return true)))))
 
-    (bool
-   isLeaf
-   (list n)
-   (declare)
-   (body (return (equalBox (boxString "leaf") (subnameof n)))))
+    (bool isLeaf (list n) (declare)
+       (body (return (equalBox (boxString "leaf") (subnameof n)))))
+
     (void
    printIndent
    (int ii)
