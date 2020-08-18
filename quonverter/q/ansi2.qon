@@ -3,15 +3,21 @@
 
  (functions
 
+(void displays (string s) (declare)
+	(body
+		(printf "%s" s)
+	)
+)
+
   (void ansi2FunctionArgs (list tree) (declare)
    (body
     (if (isEmpty tree)
       (then (return))
       (else
        (display (ansi2TypeMap (first tree)))
-       (printf " ")
+       (displays " ")
        (display (second tree))
-       (if (isNil (cddr tree)) (then (printf "")) (else (printf ",")))
+       (if (isNil (cddr tree)) (then ) (else (displays ",")))
        (ansi2FunctionArgs (cddr tree))))))
 
  
@@ -25,13 +31,13 @@
 	  (if (equal 1 (listLength  tree))
 				;A function call with no args
                (then
-                (printf "%s"  (stringify (car  tree)))
+                (display (car  tree))
 				;C does not allow "return();"
                 (if (equalBox
                      (boxString "return")
                       (car  tree))
-                  (then (printf ""))
-                  (else (printf "()"))))
+                  (then )
+                  (else (displays "()"))))
                (else
 			   ;Handle special functions
                 (set thing (first   tree))
@@ -76,8 +82,8 @@
       (else
        (ansi2Expression (car expr) indent)
        (if (isNil (cdr expr))
-         (then (printf ""))
-         (else (printf ", ") (ansi2RecurList (cdr expr) indent)))))
+         (then (displays ""))
+         (else (displays ", ") (ansi2RecurList (cdr expr) indent)))))
     ))
 	
 	
@@ -87,15 +93,15 @@
   (void ansi2If (list node int indent) (declare)
    (body
     (newLine indent)
-    (printf "if ( ")
+    (displays "if ( ")
     (ansi2Expression (second node) 0)
-    (printf ") {")
+    (displays ") {")
     (ansi2Body (cdr (third node)) (add1 indent))
     (newLine indent)
-    (printf "} else {")
+    (displays "} else {")
     (ansi2Body (cdr (fourth node)) (add1 indent))
     (newLine indent)
-    (printf "}")))
+    (displays "}")))
 
   (void ansi2SetStruct (list node int indent) (declare)
    (body
@@ -124,11 +130,11 @@
    (body
     (newLine indent)
 	(if (equal (listLength node) 1) 
-	(then (printf "return;"))
+	(then (displays "return;"))
 	(else 
-    (printf "return ")
+    (displays "return ")
     (ansi2Expression (cadr node) indent)
-	(printf ";")
+	(displays ";")
 	))))
 
   (void ansi2Statement (list node int indent) (declare)
@@ -327,7 +333,7 @@
        (printf "\ntypedef struct %s {\n" (stringify (first  node)))
        (ansi2Struct  (second node))
        (printf "\n} %s;\n" (stringify (first  node))))
-      (else (printf "typedef ") (ansi2TypeDecl  node)))
+      (else (displays "typedef ") (ansi2TypeDecl  node)))
     ))
 
   (void ansi2Types (list nodes) (declare)
@@ -360,11 +366,11 @@
     (ansi2Includes (cdr (first tree)))
     (ansi2Types (cdr (second tree)))
 	;(display (cdr (second tree)))(exit 1)
-    (printf "Box* globalStackTrace = NULL;\n")
-    (printf
+    (displays "Box* globalStackTrace = NULL;\n")
+    (displays
      "\nbool isNil(list p) {\n    return p == NULL;\n}\n\n\n//Forward declarations\n")
     (ansi2ForwardDeclarations (cdr (third tree)))
-    (printf "\n\n//End forward declarations\n\n")
+    (displays "\n\n//End forward declarations\n\n")
     (ansi2Functions (cdr (third tree)))
-    (printf "\n")))
+    (displays "\n")))
   ))
