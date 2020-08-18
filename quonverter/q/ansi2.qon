@@ -153,7 +153,7 @@
                (else
                 (newLine indent)
                 (ansi2Expression  node indent)))))))))
-    (printf ";\n")))
+    (displays ";\n")))
 
   (void ansi2Body (list tree int indent) (declare (list code nil))
    (body
@@ -224,29 +224,24 @@
 
   (void ansi2ForwardDeclaration (list node) (declare)
    (body
-    (if (isNil node)
-      (then (return))
-      (else
+    (if (isNil node) (then (return)) (else
        (printf
         "\n%s %s("
         (stringify (ansi2TypeMap (first node)))
         (stringify (second node)))
        (ansi2FunctionArgs (third node))
-       (printf ");")))))
+       (displays ");")))))
 
   (void ansi2ForwardDeclarations (list tree) (declare)
    (body
-    (if (isEmpty tree)
-      (then (return))
-      (else
+    (if (isEmpty tree) (then (return)) (else
        (ansi2ForwardDeclaration (car tree))
        (ansi2ForwardDeclarations (cdr tree))))))
 
   (void ansi2Functions (list tree) (declare)
    (body
-    (if (isEmpty tree)
-      (then (return))
-      (else (ansi2Function (car tree)) (ansi2Functions (cdr tree))))))
+    (if (isEmpty tree) (then (return))(else 
+		(ansi2Function (car tree)) (ansi2Functions (cdr tree))))))
 	  
 	  
   (void ansi2Includes (list nodes) (declare)
@@ -339,7 +334,7 @@
   (void ansi2Types (list nodes) (declare)
    (body
     (if (isEmpty nodes)
-      (then (qlog "Warning: No type declarations\n")(return))
+      (then (return))
       (else  (ansi2Type (car nodes)) (ansi2Types (cdr nodes))))))
 
 
