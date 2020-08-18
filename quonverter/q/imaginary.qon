@@ -1,21 +1,5 @@
 ((includes)
-(types
-(Pair Box)
-  (pair Box*)
-  (box Box*)
-  (list Box*)
-(Box2
-   (struct
-    (lis struct Box*)
-    (str string)
-    (i int)
-    (typ string)
-    (voi bool)
-    (boo bool)
-    (lengt int)
-    (car struct Box*)
-    (cdr struct Box*)
-    (tag struct Box*))))
+(types)
  (functions
 
 (void imaFunctionArgs (int indent list tree) (declare)
