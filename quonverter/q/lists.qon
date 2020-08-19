@@ -115,7 +115,8 @@
 	(then (return "boxInt"))
 	(else (if (equalString "float" aType)
 	(then (return "boxFloat"))
-	(else (panic "Invalid type")))))))))))))
+	(else (panic "Invalid type")))))))))))
+	(return "")))
 	
 	
   (box mlistLiteral (box b) (declare)

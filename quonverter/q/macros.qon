@@ -5,7 +5,7 @@
   
  (functions
  
-  (list macrowalk (list l ) (declare (box val nil)) (body
+  (list macrowalk (list l ) (declare) (body
     (if (isEmpty l)
       (then (return nil))
       (else

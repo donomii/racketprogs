@@ -626,7 +626,7 @@
         (panic message)))
 
 
-  (list astFunction (list tree) (declare (string line "")(string file "")(box fname nil))
+  (list astFunction (list tree) (declare (string line "")(box fname nil))
    (body
     (set fname (second tree))
     ;(printf "//ast building function %s\n" (stringify fname))
@@ -724,14 +724,15 @@
   (list astTypes (list tree) (declare)
    (body
    (if (isNil tree)
-   (then (panic "Empty or absent types section"))
+   (then (panic "Empty or absent types section")
+         (return (boxString "!!!Fuck")))
    (else 
      (if (equalBox  (boxString "types")(car tree))
        (then (return (makeNode "types" "types" tree (astTypeList (cdr tree)))))
        (else
          (panic "Types section not found!  Every program must have a types section, even if you don't define any types")
          (printf "Types section not found!  Every program must have a types section, even if you don't define any types")
-         (return (boxString "!!!Fuck java"))
+         (return (boxString "!!!Fuck"))
 	 )
        )
      )
@@ -849,7 +850,7 @@
       (else (return (listLast (cdr alist)))))))
 
 
-    (list treeCompile (string filename) (declare (string programStr "") (list tree nil) (list program nil))
+    (list treeCompile (string filename) (declare (string programStr "") (list tree nil) )
      (body
       (set programStr (read-file filename))
       (set tree (readSexpr programStr filename))
@@ -872,7 +873,7 @@
       (return program)
       ))
 
-    (void astCompile (string filename) (declare (string programStr "") (list tree nil) (list program nil))
+    (void astCompile (string filename) (declare  (list tree nil) )
     (body
       (set tree (loadQuon filename))
 

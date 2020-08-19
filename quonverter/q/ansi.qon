@@ -144,7 +144,9 @@
        (then)
        (else
        (set code (car (codeof (car tree))))
-           (printf "\nif (globalTrace)\n    snprintf(caller, 1024, \"from %s:%s\");\n"  (stringify (getTagFail code  (boxString "filename")  (boxString "Unknown"))) (stringify (getTagFail code (boxString "line") (boxString "Unknown") )))))
+       (printf "\n")
+       (printIndent indent)
+       (printf "if (globalTrace)   snprintf(caller, 1024, \"from %s:%s\");\n"  (stringify (getTagFail code  (boxString "filename")  (boxString "Unknown"))) (stringify (getTagFail code (boxString "line") (boxString "Unknown") )))))
        (printIndent indent)
        (printf
         "%s"
@@ -323,7 +325,7 @@
 
 
 
-(void ansiCompile (string filename) (declare (list foundationFuncs nil) (list foundation nil) (string programStr "") (list tree nil) (list program nil))
+(void ansiCompile (string filename) (declare  (list foundation nil) (string programStr "") (list tree nil) (list program nil))
     (body
    (set foundation (readSexpr (read-file "q/ansi.qon") "q/ansi.qon"))
    ;(printf "Read file: %s" (read-file "ansi.qon"))

@@ -341,15 +341,15 @@
 
 
 
-(void ansi2Compile (string filename) (declare  (string programStr "") (list tree nil) (list program nil))
+(void ansi2Compile (string filename) (declare (list tree nil))
     (body
   
 
 
-   (qlog "//Scanning file...%s\n" filename)
+   	(qlog "//Scanning file...%s\n" filename)
     
 	(set tree (loadQuon filename))
-   (qlog "//Building sexpr\n")
+   	(qlog "//Building sexpr\n")
     
 	(set tree (loadIncludes tree))
 	(set tree (macrowalk tree))
