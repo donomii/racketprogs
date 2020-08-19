@@ -271,6 +271,7 @@
          (dollar)
          (printf "%s\n" "use Carp::Always;")
          (printf "%s%s%s%s%s\n" "sub greaterthan { " (dollar) "_[0] > " (dollar) "_[1] };" )
+         (printf "%s%s%s\n" "sub qlog { warn " "@" "_ };" )
          (printf "%s%s%s%s%s\n" "sub mult { " (dollar) "_[0] * " (dollar) "_[1] };" )
          (printf "%s%s%s%s%s\n" "sub multf { " (dollar) "_[0] * " (dollar) "_[1] };" )
          (printf "%s%s%s%s%s\n" "sub greaterthanf { " (dollar) "_[0] > " (dollar) "_[1] };" )
