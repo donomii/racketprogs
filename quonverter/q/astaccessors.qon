@@ -3,11 +3,8 @@
  (functions
 (list loadQuon (string filename) (declare  (list foundation nil) (string programStr "")  (list tree nil) )
 (body
-   (set foundation (readSexpr (read-file filename) filename))
 
-   ;(printf "--[[Scanning file...%s--]]\n" filename)
     (set programStr (read-file filename))
-   ;(printf "--[[Building sexpr--]]\n")
     (set tree (readSexpr programStr filename))
 	
   (return tree)
