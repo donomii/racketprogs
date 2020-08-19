@@ -2,8 +2,9 @@ function read_file(filename) {return fs.readFileSync(filename);}
 function write_file(filename, data) {fs.writeFileSync(filename, data);}
 var util = require('util');
 function printf() {process.stdout.write(util.format.apply(this, arguments));}
+function qlog() {process.stderr.write(util.format.apply(this, arguments));}
 var fs = require('fs');
-function equalString(a,b) {return a.toString()===b.toString() }
+function equalString(a,b) {if (a==null) {return false;}if (b==null) {return false;}return a.toString()===b.toString() }
 function panic(s){console.trace(s);process.exit(1);}
 function dump(s){console.log(s)}function sub(a, b) { return a - b; }
 function mult(a, b) { return a * b; }
@@ -55,13 +56,13 @@ function isNil(p) {
 
 //Building function add from line: 19
 
-function add(a ,b ) {
+function add(a,b) {
   
 if (globalTrace)
     {printf("add at q/base.qon:19\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(sub(a , sub(0 , b )));
+  return(sub(a, sub(0, b)));
 
 if (globalTrace)
     {printf("Leaving add\n");}
@@ -71,13 +72,13 @@ if (globalTrace)
 
 //Building function addf from line: 20
 
-function addf(a ,b ) {
+function addf(a,b) {
   
 if (globalTrace)
     {printf("addf at q/base.qon:20\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(subf(a , subf(0 , b )));
+  return(subf(a, subf(0, b)));
 
 if (globalTrace)
     {printf("Leaving addf\n");}
@@ -87,13 +88,13 @@ if (globalTrace)
 
 //Building function sub1 from line: 21
 
-function sub1(a ) {
+function sub1(a) {
   
 if (globalTrace)
     {printf("sub1 at q/base.qon:21\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(sub(a , 1 ));
+  return(sub(a, 1));
 
 if (globalTrace)
     {printf("Leaving sub1\n");}
@@ -103,13 +104,13 @@ if (globalTrace)
 
 //Building function add1 from line: 22
 
-function add1(a ) {
+function add1(a) {
   
 if (globalTrace)
     {printf("add1 at q/base.qon:22\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(add(a , 1 ));
+  return(add(a, 1));
 
 if (globalTrace)
     {printf("Leaving add1\n");}
@@ -119,14 +120,14 @@ if (globalTrace)
 
 //Building function clone from line: 24
 
-function clone(b ) {
-  var newb = NULL ;
+function clone(b) {
+  var newb = NULL;
 
 if (globalTrace)
     {printf("clone at q/base.qon:24\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newb = makeBox ();
+  newb = makeBox();
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
   newb.typ = b.typ;
@@ -147,7 +148,7 @@ if (globalTrace)
   newb.lengt = b.lengt;
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(newb );
+  return(newb);
 
 if (globalTrace)
     {printf("Leaving clone\n");}
@@ -158,22 +159,22 @@ if (globalTrace)
 //Building function newVoid from line: 38
 
 function newVoid() {
-  var newb = NULL ;
+  var newb = NULL;
 
 if (globalTrace)
     {printf("newVoid at q/base.qon:38\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newb = makeBox ();
+  newb = makeBox();
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newb.voi = true ;
+  newb.voi = true;
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newb.typ = "void" ;
+  newb.typ = "void";
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(newb );
+  return(newb);
 
 if (globalTrace)
     {printf("Leaving newVoid\n");}
@@ -181,38 +182,15 @@ if (globalTrace)
 }
 
 
-//Building function cons from line: 47
-
-function cons(data ,l ) {
-  var p = NULL ;
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  p = makePair ();
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  p.cdr = l ;
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  p.car = data ;
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  p.typ = "list" ;
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  return(p );
-
-}
-
-
-//Building function stackDump from line: 55
+//Building function stackDump from line: 48
 
 function stackDump() {
   
 if (globalTrace)
-    {printf("stackDump at q/base.qon:55\n");}
+    {printf("stackDump at q/base.qon:48\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("" );
+  printf("");
 
 if (globalTrace)
     {printf("Leaving stackDump\n");}
@@ -220,15 +198,15 @@ if (globalTrace)
 }
 
 
-//Building function nop from line: 60
+//Building function nop from line: 53
 
 function nop() {
   
 if (globalTrace)
-    {printf("nop at q/base.qon:60\n");}
+    {printf("nop at q/base.qon:53\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("" );
+  printf("");
 
 if (globalTrace)
     {printf("Leaving nop\n");}
@@ -236,253 +214,50 @@ if (globalTrace)
 }
 
 
-//Building function car from line: 63
+//Building function equalBox from line: 56
 
-function car(l ) {
+function equalBox(a,b) {
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  assertType("list" , l , 65 , "q/base.qon" );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isList(b)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(l )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    printf("Cannot call car on empty list!\n" );
-    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    panic("Cannot call car on empty list!\n" );
-    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    return(NULL );
+    return(false);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isNil(l.car)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalString("string", boxType(a))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(NULL );
+      return(equalString(unBoxString(a), stringify(b)));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(l.car);
+      if ( equalString("bool", boxType(a))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    };
-
-  };
-
-}
-
-
-//Building function cdr from line: 76
-
-function cdr(l ) {
-    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  assertType("list" , l , 78 , "q/base.qon" );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  if ( isEmpty(l )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    printf("Attempt to cdr an empty list!!!!\n" );
-    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    panic("Attempt to cdr an empty list!!!!\n" );
-    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    return(NULL );
-
-  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    return(l.cdr);
-
-  };
-
-}
-
-
-//Building function isList from line: 86
-
-function isList(b ) {
-    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  if ( isNil(b )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    return(true );
-
-  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    return(equalString("list" , b.typ));
-
-  };
-
-}
-
-
-//Building function emptyList from line: 93
-
-function emptyList() {
-  
-if (globalTrace)
-    {printf("emptyList at q/base.qon:93\n");}
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  return(NULL );
-
-if (globalTrace)
-    {printf("Leaving emptyList\n");}
-
-}
-
-
-//Building function isEmpty from line: 95
-
-function isEmpty(b ) {
-    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  if ( isNil(b )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    return(true );
-
-  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    return(false );
-
-  };
-
-}
-
-
-//Building function listLength from line: 102
-
-function listLength(l ) {
-    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  if ( isEmpty(l )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    return(0 );
-
-  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    return(add1(listLength(cdr(l ))));
-
-  };
-
-}
-
-
-//Building function alistCons from line: 111
-
-function alistCons(key ,value ,alist ) {
-  
-if (globalTrace)
-    {printf("alistCons at q/base.qon:111\n");}
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  return(cons(cons(key , value ), alist ));
-
-if (globalTrace)
-    {printf("Leaving alistCons\n");}
-
-}
-
-
-//Building function assoc from line: 114
-
-function assoc(searchTerm ,l ) {
-  var elem = NULL ;
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  assertType("list" , l , 116 , "q/base.qon" );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  if ( isEmpty(l )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    return(boxBool(false ));
-
-  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    elem = car(l );
-    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    assertType("list" , elem , 122 , "q/base.qon" );
-    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    if ( isEmpty(elem )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-      return(assoc(searchTerm , cdr(l )));
-
-    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-      if ( false ) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-        printf("Comparing %s and %s\n" , searchTerm , stringify(car(elem )));
+        return(andBool(unBoxBool(a), unBoxBool(b)));
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        printf("" );
+        if ( equalString("symbol", boxType(a))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      };
-      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( equalString("symbol", boxType(b))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( equalString(searchTerm , stringify(car(elem )))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-        return(elem );
-
-      } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-        return(assoc(searchTerm , cdr(l )));
-
-      };
-
-    };
-
-  };
-
-}
-
-
-//Building function equalBox from line: 133
-
-function equalBox(a ,b ) {
-    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  if ( isList(b )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    return(false );
-
-  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    if ( equalString("string" , boxType(a ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-      return(equalString(unBoxString(a ), stringify(b )));
-
-    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-      if ( equalString("bool" , boxType(a ))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-        return(andBool(unBoxBool(a ), unBoxBool(b )));
-
-      } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-        if ( equalString("symbol" , boxType(a ))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-          if ( equalString("symbol" , boxType(b ))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-            return(equalString(unBoxSymbol(a ), unBoxSymbol(b )));
+            return(equalString(unBoxSymbol(a), unBoxSymbol(b)));
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            return(false );
+            return(false);
 
           };
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( equalString("int" , boxType(a ))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( equalString("int", boxType(a))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            return(equal(unBoxInt(a ), unBoxInt(b )));
+            return(equal(unBoxInt(a), unBoxInt(b)));
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            return(false );
+            return(false);
 
           };
 
@@ -497,127 +272,36 @@ function equalBox(a ,b ) {
 }
 
 
-//Building function displayList from line: 154
+//Building function display from line: 77
 
-function displayList(l ,indent ,first ) {
-  var val = NULL ;
-
-if (globalTrace)
-    {printf("displayList at q/base.qon:154\n");}
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  if ( isEmpty(l )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    return;
-
-  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    if ( isList(l )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-      if ( isEmpty(l )) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-        return;
-
-      } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-        if ( first ) {
-        } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-          printf(" " );
-
-        };
-        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-        val = car(l );
-        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-        if ( isList(val )) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-          newLine(indent );
-          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-          printf("%s" , openBrace ());
-          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-          displayList(car(l ), add1(indent ), true );
-          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-          printf("%s" , closeBrace ());
-          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-          displayList(cdr(l ), indent , false );
-
-        } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-          if ( equalString("string" , val.typ)) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-            printf("\"%s\"" , unBoxString(val ));
-
-          } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-            printf("%s" , stringify(val ));
-
-          };
-          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-          displayList(cdr(l ), indent , false );
-
-        };
-
-      };
-
-    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-      if ( equalString("string" , l.typ)) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-        printf("\"%s\"" , unBoxString(l ));
-
-      } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-        printf("%s" , stringify(l ));
-
-      };
-
-    };
-
-  };
-
-if (globalTrace)
-    {printf("Leaving displayList\n");}
-
-}
-
-
-//Building function display from line: 185
-
-function display(l ) {
+function display(l) {
   
 if (globalTrace)
-    {printf("display at q/base.qon:185\n");}
+    {printf("display at q/base.qon:77\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(l )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(l)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("nil " );
+    printf("nil ");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isList(l )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isList(l)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("[" );
+      printf("[");
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      displayList(l , 0 , true );
+      displayList(l, 0, true);
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("]" );
+      printf("]");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      displayList(l , 0 , true );
+      displayList(l, 0, true);
 
     };
 
@@ -629,9 +313,9 @@ if (globalTrace)
 }
 
 
-//Building function boxType from line: 197
+//Building function boxType from line: 89
 
-function boxType(b ) {
+function boxType(b) {
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
   return(b.typ);
@@ -639,34 +323,42 @@ function boxType(b ) {
 }
 
 
-//Building function makeBox from line: 198
+//Building function makeBox from line: 92
 
 function makeBox() {
-  var b = NULL ;
+  var b = NULL;
 
 if (globalTrace)
-    {printf("makeBox at q/base.qon:198\n");}
+    {printf("makeBox at q/base.qon:92\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
   b = {};
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b.tag = NULL ;
+  if ( isNil(b)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    panic("failed to create box!");
+
+  } else {
+  };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b.car = NULL ;
+  b.tag = NULL;
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b.cdr = NULL ;
+  b.car = NULL;
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b.lis = NULL ;
+  b.cdr = NULL;
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b.typ = "None - error!" ;
+  b.lis = NULL;
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(b );
+  b.typ = "None - error!";
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return(b);
 
 if (globalTrace)
     {printf("Leaving makeBox\n");}
@@ -674,15 +366,15 @@ if (globalTrace)
 }
 
 
-//Building function makePair from line: 209
+//Building function makePair from line: 107
 
 function makePair() {
   
 if (globalTrace)
-    {printf("makePair at q/base.qon:209\n");}
+    {printf("makePair at q/base.qon:107\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(makeBox ());
+  return(makeBox());
 
 if (globalTrace)
     {printf("Leaving makePair\n");}
@@ -690,65 +382,65 @@ if (globalTrace)
 }
 
 
-//Building function boxString from line: 215
+//Building function boxString from line: 113
 
-function boxString(s ) {
-  var b = NULL ;
+function boxString(s) {
+  var b = NULL;
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b = makeBox ();
+  b = makeBox();
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b.str = s ;
+  b.str = s;
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b.lengt = string_length(s );
+  b.lengt = string_length(s);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b.typ = "string" ;
+  b.typ = "string";
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(b );
+  return(b);
 
 }
 
 
-//Building function boxSymbol from line: 225
+//Building function boxSymbol from line: 123
 
-function boxSymbol(s ) {
-  var b = NULL ;
+function boxSymbol(s) {
+  var b = NULL;
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b = boxString(s );
+  b = boxString(s);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b.typ = "symbol" ;
+  b.typ = "symbol";
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(b );
+  return(b);
 
 }
 
 
-//Building function boxBool from line: 234
+//Building function boxBool from line: 132
 
-function boxBool(boo ) {
-  var b = NULL ;
+function boxBool(boo) {
+  var b = NULL;
 
 if (globalTrace)
-    {printf("boxBool at q/base.qon:234\n");}
+    {printf("boxBool at q/base.qon:132\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b = makeBox ();
+  b = makeBox();
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b.boo = boo ;
+  b.boo = boo;
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b.typ = "bool" ;
+  b.typ = "bool";
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(b );
+  return(b);
 
 if (globalTrace)
     {printf("Leaving boxBool\n");}
@@ -756,34 +448,34 @@ if (globalTrace)
 }
 
 
-//Building function boxInt from line: 243
+//Building function boxInt from line: 141
 
-function boxInt(val ) {
-  var b = NULL ;
+function boxInt(val) {
+  var b = NULL;
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b = makeBox ();
+  b = makeBox();
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b.i = val ;
+  b.i = val;
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b.typ = "int" ;
+  b.typ = "int";
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(b );
+  return(b);
 
 }
 
 
-//Building function assertType from line: 252
+//Building function assertType from line: 150
 
-function assertType(atype ,abox ,line ,file ) {
+function assertType(atype,abox,line,file) {
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(abox )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(abox)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalString(atype , "nil" )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalString(atype, "nil")) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
       return;
 
@@ -795,19 +487,19 @@ function assertType(atype ,abox ,line ,file ) {
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalString(atype , boxType(abox ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalString(atype, boxType(abox))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
       return;
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("Assertion failure at line %d, in file %s: provided value is not a '%s'!  It was actually (%s):" , line , file , atype , abox.typ);
+      printf("Assertion failure at line %d, in file %s: provided value is not a '%s'!  It was actually (%s):", line, file, atype, abox.typ);
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      display(abox );
+      display(abox);
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      panic("Invalid type!" );
+      panic("Invalid type!");
 
     };
 
@@ -816,12 +508,12 @@ function assertType(atype ,abox ,line ,file ) {
 }
 
 
-//Building function unBoxString from line: 264
+//Building function unBoxString from line: 162
 
-function unBoxString(b ) {
+function unBoxString(b) {
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  assertType("string" , b , 265 , "q/base.qon" );
+  assertType("string", b, 163, "q/base.qon");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
   return(b.str);
@@ -829,9 +521,9 @@ function unBoxString(b ) {
 }
 
 
-//Building function unBoxSymbol from line: 267
+//Building function unBoxSymbol from line: 165
 
-function unBoxSymbol(b ) {
+function unBoxSymbol(b) {
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
   return(b.str);
@@ -839,9 +531,9 @@ function unBoxSymbol(b ) {
 }
 
 
-//Building function unBoxBool from line: 268
+//Building function unBoxBool from line: 166
 
-function unBoxBool(b ) {
+function unBoxBool(b) {
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
   return(b.boo);
@@ -849,9 +541,9 @@ function unBoxBool(b ) {
 }
 
 
-//Building function unBoxInt from line: 269
+//Building function unBoxInt from line: 167
 
-function unBoxInt(b ) {
+function unBoxInt(b) {
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
   return(b.i);
@@ -859,21 +551,21 @@ function unBoxInt(b ) {
 }
 
 
-//Building function stringify_rec from line: 271
+//Building function stringify_rec from line: 169
 
-function stringify_rec(b ) {
+function stringify_rec(b) {
   
 if (globalTrace)
-    {printf("stringify_rec at q/base.qon:271\n");}
+    {printf("stringify_rec at q/base.qon:169\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(b )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(b)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return("" );
+    return("");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(stringConcatenate(stringify(car(b )), stringConcatenate(" " , stringify_rec(cdr(b )))));
+    return(stringConcatenate(stringify(car(b)), stringConcatenate(" ", stringify_rec(cdr(b)))));
 
   };
 
@@ -883,56 +575,56 @@ if (globalTrace)
 }
 
 
-//Building function stringify from line: 283
+//Building function stringify from line: 181
 
-function stringify(b ) {
+function stringify(b) {
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(b )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(b)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return("()" );
+    return("()");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalString("string" , boxType(b ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalString("string", boxType(b))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(unBoxString(b ));
+      return(unBoxString(b));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( equalString("bool" , boxType(b ))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( equalString("bool", boxType(b))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( unBoxBool(b )) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( unBoxBool(b)) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          return("true" );
+          return("true");
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          return("false" );
+          return("false");
 
         };
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( equalString("int" , boxType(b ))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( equalString("int", boxType(b))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          return(intToString(unBoxInt(b )));
+          return(intToString(unBoxInt(b)));
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( equalString("symbol" , boxType(b ))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( equalString("symbol", boxType(b))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            return(unBoxSymbol(b ));
+            return(unBoxSymbol(b));
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            if ( equalString("list" , boxType(b ))) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+            if ( equalString("list", boxType(b))) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              return(stringConcatenate("(" , stringConcatenate(stringify(car(b )), stringConcatenate(" " , stringConcatenate(stringify_rec(cdr(b )), ")" )))));
+              return(stringConcatenate("(", stringConcatenate(stringify(car(b)), stringConcatenate(" ", stringConcatenate(stringify_rec(cdr(b)), ")")))));
 
             } else {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              return(stringConcatenate("Unsupported type: " , boxType(b )));
+              return(stringConcatenate("Unsupported type: ", boxType(b)));
 
             };
 
@@ -949,21 +641,21 @@ function stringify(b ) {
 }
 
 
-//Building function hasTag from line: 314
+//Building function hasTag from line: 212
 
-function hasTag(aBox ,key ) {
+function hasTag(aBox,key) {
   
 if (globalTrace)
-    {printf("hasTag at q/base.qon:314\n");}
+    {printf("hasTag at q/base.qon:212\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(aBox )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(aBox)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(false );
+    return(false);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(isNotFalse(assoc(stringify(key ), aBox.tag)));
+    return(isNotFalse(assoc(stringify(key), aBox.tag)));
 
   };
 
@@ -973,32 +665,32 @@ if (globalTrace)
 }
 
 
-//Building function getTag from line: 320
+//Building function getTag from line: 218
 
-function getTag(aBox ,key ) {
+function getTag(aBox,key) {
   
 if (globalTrace)
-    {printf("getTag at q/base.qon:320\n");}
+    {printf("getTag at q/base.qon:218\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( false ) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( false) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("Getting %s from: " , stringify(key ));
+    printf("Getting %s from: ", stringify(key));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     display(alistKeys(aBox.tag));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\n" );
+    printf("\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("" );
+    printf("");
 
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(cdr(assoc(stringify(key ), aBox.tag)));
+  return(cdr(assoc(stringify(key), aBox.tag)));
 
 if (globalTrace)
     {printf("Leaving getTag\n");}
@@ -1006,21 +698,21 @@ if (globalTrace)
 }
 
 
-//Building function getTagFail from line: 332
+//Building function getTagFail from line: 230
 
-function getTagFail(aBox ,key ,onFail ) {
+function getTagFail(aBox,key,onFail) {
   
 if (globalTrace)
-    {printf("getTagFail at q/base.qon:332\n");}
+    {printf("getTagFail at q/base.qon:230\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( hasTag(aBox , key )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( hasTag(aBox, key)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(getTag(aBox , key ));
+    return(getTag(aBox, key));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(onFail );
+    return(onFail);
 
   };
 
@@ -1030,21 +722,21 @@ if (globalTrace)
 }
 
 
-//Building function assocExists from line: 338
+//Building function assocExists from line: 236
 
-function assocExists(key ,aBox ) {
+function assocExists(key,aBox) {
   
 if (globalTrace)
-    {printf("assocExists at q/base.qon:338\n");}
+    {printf("assocExists at q/base.qon:236\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(aBox )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(aBox)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(false );
+    return(false);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(isNotFalse(assoc(key , aBox )));
+    return(isNotFalse(assoc(key, aBox)));
 
   };
 
@@ -1054,21 +746,21 @@ if (globalTrace)
 }
 
 
-//Building function assocFail from line: 346
+//Building function assocFail from line: 244
 
-function assocFail(key ,aBox ,onFail ) {
+function assocFail(key,aBox,onFail) {
   
 if (globalTrace)
-    {printf("assocFail at q/base.qon:346\n");}
+    {printf("assocFail at q/base.qon:244\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( assocExists(key , aBox )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( assocExists(key, aBox)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(assoc(key , aBox ));
+    return(assoc(key, aBox));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cons(boxString(key ), onFail ));
+    return(cons(boxString(key), onFail));
 
   };
 
@@ -1078,29 +770,29 @@ if (globalTrace)
 }
 
 
-//Building function assocPanic from line: 352
+//Building function assocPanic from line: 250
 
-function assocPanic(key ,aBox ,onFail ) {
+function assocPanic(key,aBox,onFail) {
   
 if (globalTrace)
-    {printf("assocPanic at q/base.qon:352\n");}
+    {printf("assocPanic at q/base.qon:250\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( assocExists(key , aBox )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( assocExists(key, aBox)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(assoc(key , aBox ));
+    return(assoc(key, aBox));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    panic(onFail );
+    panic(onFail);
 
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  panic("Inconceivable" );
+  panic("Inconceivable");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(NULL );
+  return(NULL);
 
 if (globalTrace)
     {printf("Leaving assocPanic\n");}
@@ -1108,18 +800,18 @@ if (globalTrace)
 }
 
 
-//Building function setTag from line: 365
+//Building function setTag from line: 263
 
-function setTag(key ,val ,aStruct ) {
+function setTag(key,val,aStruct) {
   
 if (globalTrace)
-    {printf("setTag at q/base.qon:365\n");}
+    {printf("setTag at q/base.qon:263\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  aStruct.tag = alistCons(key , val , aStruct.tag);
+  aStruct.tag = alistCons(key, val, aStruct.tag);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(aStruct );
+  return(aStruct);
 
 if (globalTrace)
     {printf("Leaving setTag\n");}
@@ -1127,31 +819,31 @@ if (globalTrace)
 }
 
 
-//Building function filterVoid from line: 375
+//Building function filterVoid from line: 273
 
-function filterVoid(l ) {
-  var token = NULL ;
+function filterVoid(l) {
+  var token = NULL;
 
 if (globalTrace)
-    {printf("filterVoid at q/base.qon:375\n");}
+    {printf("filterVoid at q/base.qon:273\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(l )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(l)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(emptyList ());
+    return(emptyList());
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    token = car(l );
+    token = car(l);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalString("void" , token.typ)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalString("void", token.typ)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(filterVoid(cdr(l )));
+      return(filterVoid(cdr(l)));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(cons(token , filterVoid(cdr(l ))));
+      return(cons(token, filterVoid(cdr(l))));
 
     };
 
@@ -1163,45 +855,45 @@ if (globalTrace)
 }
 
 
-//Building function filterTokens from line: 387
+//Building function filterTokens from line: 285
 
-function filterTokens(l ) {
-  var token = NULL ;
+function filterTokens(l) {
+  var token = NULL;
 
 if (globalTrace)
-    {printf("filterTokens at q/base.qon:387\n");}
+    {printf("filterTokens at q/base.qon:285\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(l )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(l)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(emptyList ());
+    return(emptyList());
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    token = car(l );
+    token = car(l);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalString(boxType(token ), "symbol" )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalString(boxType(token), "symbol")) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( equalString("__LINE__" , stringify(token ))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( equalString("__LINE__", stringify(token))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        return(cons(getTagFail(token , boxString("line" ), boxInt(-1 )), filterTokens(cdr(l ))));
+        return(cons(getTagFail(token, boxString("line"), boxInt(-1)), filterTokens(cdr(l))));
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( equalString("__COLUMN__" , stringify(token ))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( equalString("__COLUMN__", stringify(token))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          return(cons(getTagFail(token , boxString("column" ), boxInt(-1 )), filterTokens(cdr(l ))));
+          return(cons(getTagFail(token, boxString("column"), boxInt(-1)), filterTokens(cdr(l))));
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( equalString("__FILE__" , stringify(token ))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( equalString("__FILE__", stringify(token))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            return(cons(getTagFail(token , boxString("filename" ), boxString("Unknown file" )), filterTokens(cdr(l ))));
+            return(cons(getTagFail(token, boxString("filename"), boxString("Unknown file")), filterTokens(cdr(l))));
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            return(cons(token , filterTokens(cdr(l ))));
+            return(cons(token, filterTokens(cdr(l))));
 
           };
 
@@ -1211,7 +903,7 @@ if (globalTrace)
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(cons(token , filterTokens(cdr(l ))));
+      return(cons(token, filterTokens(cdr(l))));
 
     };
 
@@ -1223,28 +915,28 @@ if (globalTrace)
 }
 
 
-//Building function finish_token from line: 421
+//Building function finish_token from line: 319
 
-function finish_token(prog ,start ,len ,line ,column ,filename ) {
-  var token = NULL ;
+function finish_token(prog,start,len,line,column,filename) {
+  var token = NULL;
 
 if (globalTrace)
-    {printf("finish_token at q/base.qon:421\n");}
+    {printf("finish_token at q/base.qon:319\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( greaterthan(len , 0 )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(len, 0)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    token = boxSymbol(sub_string(prog , start , len ));
+    token = boxSymbol(sub_string(prog, start, len));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    token.tag = alistCons(boxString("filename" ), boxString(filename ), alistCons(boxString("column" ), boxInt(column ), alistCons(boxString("line" ), boxInt(line ), alistCons(boxString("totalCharPos" ), boxInt(start ), NULL ))));
+    token.tag = alistCons(boxString("filename"), boxString(filename), alistCons(boxString("column"), boxInt(column), alistCons(boxString("line"), boxInt(line), alistCons(boxString("totalCharPos"), boxInt(start), NULL))));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(token );
+    return(token);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(newVoid ());
+    return(newVoid());
 
   };
 
@@ -1254,31 +946,31 @@ if (globalTrace)
 }
 
 
-//Building function readString from line: 436
+//Building function readString from line: 334
 
-function readString(prog ,start ,len ) {
-  var token = "" ;
+function readString(prog,start,len) {
+  var token = "";
 
 if (globalTrace)
-    {printf("readString at q/base.qon:436\n");}
+    {printf("readString at q/base.qon:334\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  token = sub_string(prog , sub1(add(start , len )), 1 );
+  token = sub_string(prog, sub1(add(start, len)), 1);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString("\"" , token )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString("\"", token)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(sub_string(prog , start , sub1(len )));
+    return(sub_string(prog, start, sub1(len)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalString("\\" , token )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalString("\\", token)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(readString(prog , start , add(2 , len )));
+      return(readString(prog, start, add(2, len)));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(readString(prog , start , add1(len )));
+      return(readString(prog, start, add1(len)));
 
     };
 
@@ -1290,25 +982,25 @@ if (globalTrace)
 }
 
 
-//Building function readComment from line: 447
+//Building function readComment from line: 345
 
-function readComment(prog ,start ,len ) {
-  var token = "" ;
+function readComment(prog,start,len) {
+  var token = "";
 
 if (globalTrace)
-    {printf("readComment at q/base.qon:447\n");}
+    {printf("readComment at q/base.qon:345\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  token = sub_string(prog , sub1(add(start , len )), 1 );
+  token = sub_string(prog, sub1(add(start, len)), 1);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isLineBreak(token )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isLineBreak(token)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(sub_string(prog , start , sub1(len )));
+    return(sub_string(prog, start, sub1(len)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(readComment(prog , start , add1(len )));
+    return(readComment(prog, start, add1(len)));
 
   };
 
@@ -1318,39 +1010,39 @@ if (globalTrace)
 }
 
 
-//Building function isWhiteSpace from line: 455
+//Building function isWhiteSpace from line: 353
 
-function isWhiteSpace(s ) {
+function isWhiteSpace(s) {
   
 if (globalTrace)
-    {printf("isWhiteSpace at q/base.qon:455\n");}
+    {printf("isWhiteSpace at q/base.qon:353\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString(" " , s )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString(" ", s)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(true );
+    return(true);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalString("\t" , s )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalString("\t", s)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(true );
+      return(true);
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( equalString("\n" , s )) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( equalString("\n", s)) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        return(true );
+        return(true);
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( equalString("\r" , s )) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( equalString("\r", s)) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          return(true );
+          return(true);
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          return(false );
+          return(false);
 
         };
 
@@ -1366,27 +1058,27 @@ if (globalTrace)
 }
 
 
-//Building function isLineBreak from line: 472
+//Building function isLineBreak from line: 370
 
-function isLineBreak(s ) {
+function isLineBreak(s) {
   
 if (globalTrace)
-    {printf("isLineBreak at q/base.qon:472\n");}
+    {printf("isLineBreak at q/base.qon:370\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString("\n" , s )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString("\n", s)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(true );
+    return(true);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalString("\r" , s )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalString("\r", s)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(true );
+      return(true);
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(false );
+      return(false);
 
     };
 
@@ -1398,21 +1090,21 @@ if (globalTrace)
 }
 
 
-//Building function incForNewLine from line: 479
+//Building function incForNewLine from line: 377
 
-function incForNewLine(token ,val ) {
+function incForNewLine(token,val) {
   
 if (globalTrace)
-    {printf("incForNewLine at q/base.qon:479\n");}
+    {printf("incForNewLine at q/base.qon:377\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString("\n" , stringify(token ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString("\n", stringify(token))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(add1(val ));
+    return(add1(val));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(val );
+    return(val);
 
   };
 
@@ -1422,15 +1114,15 @@ if (globalTrace)
 }
 
 
-//Building function annotateReadPosition from line: 486
+//Building function annotateReadPosition from line: 384
 
-function annotateReadPosition(filename ,linecount ,column ,start ,newBox ) {
+function annotateReadPosition(filename,linecount,column,start,newBox) {
   
 if (globalTrace)
-    {printf("annotateReadPosition at q/base.qon:486\n");}
+    {printf("annotateReadPosition at q/base.qon:384\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(setTag(boxString("filename" ), boxString(filename ), setTag(boxString("column" ), boxInt(column ), setTag(boxString("line" ), boxInt(linecount ), setTag(boxString("totalCharPos" ), boxInt(start ), newBox )))));
+  return(setTag(boxString("filename"), boxString(filename), setTag(boxString("column"), boxInt(column), setTag(boxString("line"), boxInt(linecount), setTag(boxString("totalCharPos"), boxInt(start), newBox)))));
 
 if (globalTrace)
     {printf("Leaving annotateReadPosition\n");}
@@ -1438,73 +1130,62 @@ if (globalTrace)
 }
 
 
-//Building function scan from line: 498
+//Building function scan from line: 396
 
-function scan(prog ,start ,len ,linecount ,column ,filename ) {
-  var token = NULL ;
-var newString = "" ;
-var newBox = NULL ;
+function scan(prog,start,len,linecount,column,filename) {
+  var token = NULL;
+var newString = "";
+var newBox = NULL;
 
 if (globalTrace)
-    {printf("scan at q/base.qon:498\n");}
+    {printf("scan at q/base.qon:396\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( false ) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(string_length(prog), sub(start, sub(0, len)))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("Scanning: line %d:%d\n" , linecount , column );
-
-  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    printf("" );
-
-  };
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  if ( greaterthan(string_length(prog ), sub(start , sub(0 , len )))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    token = boxSymbol(sub_string(prog , sub1(add(start , len )), 1 ));
+    token = boxSymbol(sub_string(prog, sub1(add(start, len)), 1));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    token.tag = alistCons(boxString("totalCharPos" ), boxInt(start ), NULL );
+    token.tag = alistCons(boxString("totalCharPos"), boxInt(start), NULL);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isOpenBrace(token )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isOpenBrace(token)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(cons(finish_token(prog , start , sub1(len ), linecount , column , filename ), cons(boxSymbol(openBrace ()), scan(prog , add1(start ), 1 , linecount , add1(column ), filename ))));
+      return(cons(finish_token(prog, start, sub1(len), linecount, column, filename), cons(boxSymbol(openBrace()), scan(prog, add1(start), 1, linecount, add1(column), filename))));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( isCloseBrace(token )) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( isCloseBrace(token)) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        return(cons(finish_token(prog , start , sub1(len ), linecount , column , filename ), cons(annotateReadPosition(filename , linecount , column , start , boxSymbol(closeBrace ())), scan(prog , add(start , len ), 1 , linecount , add1(column ), filename ))));
+        return(cons(finish_token(prog, start, sub1(len), linecount, column, filename), cons(annotateReadPosition(filename, linecount, column, start, boxSymbol(closeBrace())), scan(prog, add(start, len), 1, linecount, add1(column), filename))));
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( isWhiteSpace(stringify(token ))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( isWhiteSpace(stringify(token))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          return(cons(finish_token(prog , start , sub1(len ), linecount , column , filename ), scan(prog , add(start , len ), 1 , incForNewLine(token , linecount ), 0 , filename )));
+          return(cons(finish_token(prog, start, sub1(len), linecount, column, filename), scan(prog, add(start, len), 1, incForNewLine(token, linecount), 0, filename)));
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( equalBox(boxSymbol(";" ), token )) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( equalBox(boxSymbol(";"), token)) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            return(scan(prog , add(start , add1(add1(string_length(readComment(prog , add1(start ), len ))))), 1 , add1(linecount ), 0 , filename ));
+            return(scan(prog, add(start, add1(add1(string_length(readComment(prog, add1(start), len))))), 1, add1(linecount), 0, filename));
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            if ( equalBox(boxSymbol("\"" ), token )) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+            if ( equalBox(boxSymbol("\""), token)) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              newString = readString(prog , add1(start ), len );
+              newString = readString(prog, add1(start), len);
               if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              newBox = annotateReadPosition(filename , linecount , column , start , boxString(newString ));
+              newBox = annotateReadPosition(filename, linecount, column, start, boxString(newString));
               if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              return(cons(newBox , scan(prog , add(start , add1(add1(string_length(newString )))), 1 , linecount , add1(column ), filename )));
+              return(cons(newBox, scan(prog, add(start, add1(add1(string_length(newString)))), 1, linecount, add1(column), filename)));
 
             } else {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              return(scan(prog , start , sub(len , -1 ), linecount , add1(column ), filename ));
+              return(scan(prog, start, sub(len, -1), linecount, add1(column), filename));
 
             };
 
@@ -1518,7 +1199,7 @@ if (globalTrace)
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(emptyList ());
+    return(emptyList());
 
   };
 
@@ -1528,27 +1209,27 @@ if (globalTrace)
 }
 
 
-//Building function isOpenBrace from line: 538
+//Building function isOpenBrace from line: 436
 
-function isOpenBrace(b ) {
+function isOpenBrace(b) {
   
 if (globalTrace)
-    {printf("isOpenBrace at q/base.qon:538\n");}
+    {printf("isOpenBrace at q/base.qon:436\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(boxSymbol(openBrace ()), b )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(boxSymbol(openBrace()), b)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(true );
+    return(true);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalBox(boxSymbol("[" ), b )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalBox(boxSymbol("["), b)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(true );
+      return(true);
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(false );
+      return(false);
 
     };
 
@@ -1560,15 +1241,15 @@ if (globalTrace)
 }
 
 
-//Building function openBrace from line: 546
+//Building function openBrace from line: 444
 
 function openBrace() {
   
 if (globalTrace)
-    {printf("openBrace at q/base.qon:546\n");}
+    {printf("openBrace at q/base.qon:444\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return("(" );
+  return("(");
 
 if (globalTrace)
     {printf("Leaving openBrace\n");}
@@ -1576,27 +1257,27 @@ if (globalTrace)
 }
 
 
-//Building function isCloseBrace from line: 548
+//Building function isCloseBrace from line: 446
 
-function isCloseBrace(b ) {
+function isCloseBrace(b) {
   
 if (globalTrace)
-    {printf("isCloseBrace at q/base.qon:548\n");}
+    {printf("isCloseBrace at q/base.qon:446\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(boxSymbol(closeBrace ()), b )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(boxSymbol(closeBrace()), b)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(true );
+    return(true);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalBox(boxSymbol("]" ), b )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalBox(boxSymbol("]"), b)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(true );
+      return(true);
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(false );
+      return(false);
 
     };
 
@@ -1608,15 +1289,15 @@ if (globalTrace)
 }
 
 
-//Building function closeBrace from line: 558
+//Building function closeBrace from line: 456
 
 function closeBrace() {
   
 if (globalTrace)
-    {printf("closeBrace at q/base.qon:558\n");}
+    {printf("closeBrace at q/base.qon:456\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(")" );
+  return(")");
 
 if (globalTrace)
     {printf("Leaving closeBrace\n");}
@@ -1624,37 +1305,37 @@ if (globalTrace)
 }
 
 
-//Building function sexprTree from line: 560
+//Building function sexprTree from line: 458
 
-function sexprTree(l ) {
-  var b = NULL ;
+function sexprTree(l) {
+  var b = NULL;
 
 if (globalTrace)
-    {printf("sexprTree at q/base.qon:560\n");}
+    {printf("sexprTree at q/base.qon:458\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(l )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(l)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(emptyList ());
+    return(emptyList());
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    b = car(l );
+    b = car(l);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isOpenBrace(b )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isOpenBrace(b)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(cons(sexprTree(cdr(l )), sexprTree(skipList(cdr(l )))));
+      return(cons(sexprTree(cdr(l)), sexprTree(skipList(cdr(l)))));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( isCloseBrace(b )) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( isCloseBrace(b)) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        return(emptyList ());
+        return(emptyList());
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        return(setTag(boxString("line" ), getTagFail(b , boxString("line" ), boxInt(-1 )), cons(b , sexprTree(cdr(l )))));
+        return(setTag(boxString("line"), getTagFail(b, boxString("line"), boxInt(-1)), cons(b, sexprTree(cdr(l)))));
 
       };
 
@@ -1668,37 +1349,37 @@ if (globalTrace)
 }
 
 
-//Building function skipList from line: 579
+//Building function skipList from line: 477
 
-function skipList(l ) {
-  var b = NULL ;
+function skipList(l) {
+  var b = NULL;
 
 if (globalTrace)
-    {printf("skipList at q/base.qon:579\n");}
+    {printf("skipList at q/base.qon:477\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(l )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(l)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(emptyList ());
+    return(emptyList());
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    b = car(l );
+    b = car(l);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isOpenBrace(b )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isOpenBrace(b)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(skipList(skipList(cdr(l ))));
+      return(skipList(skipList(cdr(l))));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( isCloseBrace(b )) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( isCloseBrace(b)) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        return(cdr(l ));
+        return(cdr(l));
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        return(skipList(cdr(l )));
+        return(skipList(cdr(l)));
 
       };
 
@@ -1712,26 +1393,26 @@ if (globalTrace)
 }
 
 
-//Building function readSexpr from line: 594
+//Building function readSexpr from line: 492
 
-function readSexpr(aStr ,filename ) {
-  var tokens = NULL ;
-var as = NULL ;
+function readSexpr(aStr,filename) {
+  var tokens = NULL;
+var as = NULL;
 
 if (globalTrace)
-    {printf("readSexpr at q/base.qon:594\n");}
+    {printf("readSexpr at q/base.qon:492\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tokens = emptyList ();
+  tokens = emptyList();
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tokens = filterTokens(filterVoid(scan(aStr , 0 , 1 , 0 , 0 , filename )));
+  tokens = filterTokens(filterVoid(scan(aStr, 0, 1, 0, 0, filename)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  as = sexprTree(tokens );
+  as = sexprTree(tokens);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(car(as ));
+  return(car(as));
 
 if (globalTrace)
     {printf("Leaving readSexpr\n");}
@@ -1739,191 +1420,15 @@ if (globalTrace)
 }
 
 
-//Building function caar from line: 604
+//Building function makeNode from line: 503
 
-function caar(l ) {
+function makeNode(name,subname,code,children) {
   
 if (globalTrace)
-    {printf("caar at q/base.qon:604\n");}
+    {printf("makeNode at q/base.qon:503\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(car(car(l )));
-
-if (globalTrace)
-    {printf("Leaving caar\n");}
-
-}
-
-
-//Building function cadr from line: 605
-
-function cadr(l ) {
-  
-if (globalTrace)
-    {printf("cadr at q/base.qon:605\n");}
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  return(car(cdr(l )));
-
-if (globalTrace)
-    {printf("Leaving cadr\n");}
-
-}
-
-
-//Building function caddr from line: 606
-
-function caddr(l ) {
-  
-if (globalTrace)
-    {printf("caddr at q/base.qon:606\n");}
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  return(car(cdr(cdr(l ))));
-
-if (globalTrace)
-    {printf("Leaving caddr\n");}
-
-}
-
-
-//Building function cadddr from line: 607
-
-function cadddr(l ) {
-  
-if (globalTrace)
-    {printf("cadddr at q/base.qon:607\n");}
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  return(car(cdr(cdr(cdr(l )))));
-
-if (globalTrace)
-    {printf("Leaving cadddr\n");}
-
-}
-
-
-//Building function caddddr from line: 608
-
-function caddddr(l ) {
-  
-if (globalTrace)
-    {printf("caddddr at q/base.qon:608\n");}
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  return(car(cdr(cdr(cdr(cdr(l ))))));
-
-if (globalTrace)
-    {printf("Leaving caddddr\n");}
-
-}
-
-
-//Building function cddr from line: 609
-
-function cddr(l ) {
-  
-if (globalTrace)
-    {printf("cddr at q/base.qon:609\n");}
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  return(cdr(cdr(l )));
-
-if (globalTrace)
-    {printf("Leaving cddr\n");}
-
-}
-
-
-//Building function first from line: 610
-
-function first(l ) {
-  
-if (globalTrace)
-    {printf("first at q/base.qon:610\n");}
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  return(car(l ));
-
-if (globalTrace)
-    {printf("Leaving first\n");}
-
-}
-
-
-//Building function second from line: 611
-
-function second(l ) {
-  
-if (globalTrace)
-    {printf("second at q/base.qon:611\n");}
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  return(cadr(l ));
-
-if (globalTrace)
-    {printf("Leaving second\n");}
-
-}
-
-
-//Building function third from line: 612
-
-function third(l ) {
-  
-if (globalTrace)
-    {printf("third at q/base.qon:612\n");}
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  return(caddr(l ));
-
-if (globalTrace)
-    {printf("Leaving third\n");}
-
-}
-
-
-//Building function fourth from line: 613
-
-function fourth(l ) {
-  
-if (globalTrace)
-    {printf("fourth at q/base.qon:613\n");}
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  return(cadddr(l ));
-
-if (globalTrace)
-    {printf("Leaving fourth\n");}
-
-}
-
-
-//Building function fifth from line: 614
-
-function fifth(l ) {
-  
-if (globalTrace)
-    {printf("fifth at q/base.qon:614\n");}
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  return(caddddr(l ));
-
-if (globalTrace)
-    {printf("Leaving fifth\n");}
-
-}
-
-
-//Building function makeNode from line: 620
-
-function makeNode(name ,subname ,code ,children ) {
-  
-if (globalTrace)
-    {printf("makeNode at q/base.qon:620\n");}
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  return(cons(boxSymbol("node" ), alistCons(boxSymbol("line" ), getTagFail(code , boxString("line" ), boxInt(-1 )), cons(cons(boxSymbol("name" ), boxString(name )), cons(cons(boxSymbol("subname" ), boxString(subname )), cons(cons(boxSymbol("code" ), code ), alistCons(boxSymbol("children" ), children , emptyList ())))))));
+  return(cons(boxSymbol("node"), alistCons(boxSymbol("line"), getTagFail(code, boxString("line"), boxInt(-1)), cons(cons(boxSymbol("name"), boxString(name)), cons(cons(boxSymbol("subname"), boxString(subname)), cons(cons(boxSymbol("code"), code), alistCons(boxSymbol("children"), children, emptyList())))))));
 
 if (globalTrace)
     {printf("Leaving makeNode\n");}
@@ -1931,15 +1436,15 @@ if (globalTrace)
 }
 
 
-//Building function addToNode from line: 636
+//Building function addToNode from line: 519
 
-function addToNode(key ,val ,node ) {
+function addToNode(key,val,node) {
   
 if (globalTrace)
-    {printf("addToNode at q/base.qon:636\n");}
+    {printf("addToNode at q/base.qon:519\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(cons(boxSymbol("node" ), alistCons(key , val , cdr(node ))));
+  return(cons(boxSymbol("node"), alistCons(key, val, cdr(node))));
 
 if (globalTrace)
     {printf("Leaving addToNode\n");}
@@ -1947,15 +1452,15 @@ if (globalTrace)
 }
 
 
-//Building function makeStatementNode from line: 641
+//Building function makeStatementNode from line: 524
 
-function makeStatementNode(name ,subname ,code ,children ,functionName ) {
+function makeStatementNode(name,subname,code,children,functionName) {
   
 if (globalTrace)
-    {printf("makeStatementNode at q/base.qon:641\n");}
+    {printf("makeStatementNode at q/base.qon:524\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(addToNode(boxSymbol("functionName" ), functionName , makeNode(name , subname , code , children )));
+  return(addToNode(boxSymbol("functionName"), functionName, makeNode(name, subname, code, children)));
 
 if (globalTrace)
     {printf("Leaving makeStatementNode\n");}
@@ -1963,21 +1468,21 @@ if (globalTrace)
 }
 
 
-//Building function astExpression from line: 646
+//Building function astExpression from line: 529
 
-function astExpression(tree ) {
+function astExpression(tree) {
   
 if (globalTrace)
-    {printf("astExpression at q/base.qon:646\n");}
+    {printf("astExpression at q/base.qon:529\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isList(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isList(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(makeNode("expression" , "expression" , NULL , astSubExpression(tree )));
+    return(makeNode("expression", "expression", NULL, astSubExpression(tree)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(astSubExpression(tree ));
+    return(astSubExpression(tree));
 
   };
 
@@ -1987,27 +1492,27 @@ if (globalTrace)
 }
 
 
-//Building function astSubExpression from line: 654
+//Building function astSubExpression from line: 537
 
-function astSubExpression(tree ) {
+function astSubExpression(tree) {
   
 if (globalTrace)
-    {printf("astSubExpression at q/base.qon:654\n");}
+    {printf("astSubExpression at q/base.qon:537\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(emptyList ());
+    return(emptyList());
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isList(tree )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isList(tree)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(cons(astExpression(car(tree )), astSubExpression(cdr(tree ))));
+      return(cons(astExpression(car(tree)), astSubExpression(cdr(tree))));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(makeNode("expression" , "leaf" , tree , NULL ));
+      return(makeNode("expression", "leaf", tree, NULL));
 
     };
 
@@ -2019,43 +1524,43 @@ if (globalTrace)
 }
 
 
-//Building function astIf from line: 665
+//Building function astIf from line: 548
 
-function astIf(tree ,fname ) {
+function astIf(tree,fname) {
   
 if (globalTrace)
-    {printf("astIf at q/base.qon:665\n");}
+    {printf("astIf at q/base.qon:548\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(boxString("then" ), car(second(tree )))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(boxString("then"), car(second(tree)))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nop ();
+    nop();
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("Error at %s:%s!  If statement is missing the true branch.\n\n" , stringify(getTag(car(first(tree )), boxString("filename" ))), stringify(getTag(car(first(tree )), boxString("line" ))));
+    printf("Error at %s:%s!  If statement is missing the true branch.\n\n", stringify(getTag(car(first(tree)), boxString("filename"))), stringify(getTag(car(first(tree)), boxString("line"))));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    panic("Missing true branch in if statement!  All if statements must have a true and false branch, like this:\n\n(if hungryForApples\n(then (printf \"yes!\"))\n(else (printf \"no!\")))\n\n\n" );
+    panic("Missing true branch in if statement!  All if statements must have a true and false branch, like this:\n\n(if hungryForApples\n(then (printf \"yes!\"))\n(else (printf \"no!\")))\n\n\n");
 
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(boxString("else" ), car(third(tree )))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(boxString("else"), car(third(tree)))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nop ();
+    nop();
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("Error at %s:%s!  If statement is missing the false branch.\n\n" , stringify(getTag(car(first(tree )), boxString("filename" ))), stringify(getTag(car(first(tree )), boxString("line" ))));
+    printf("Error at %s:%s!  If statement is missing the false branch.\n\n", stringify(getTag(car(first(tree)), boxString("filename"))), stringify(getTag(car(first(tree)), boxString("line"))));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    panic("Missing false branch in if statement!  All if statements must have a true and false branch, like this:\n\n(if hungryForApples\n(then (printf \"yes!\"))\n(else (printf \"no!\")))\n\n\n" );
+    panic("Missing false branch in if statement!  All if statements must have a true and false branch, like this:\n\n(if hungryForApples\n(then (printf \"yes!\"))\n(else (printf \"no!\")))\n\n\n");
 
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(makeNode("statement" , "if" , tree , cons(cons(astExpression(first(tree )), NULL ), cons(astBody(cdr(second(tree )), fname ), cons(astBody(cdr(third(tree )), fname ), NULL )))));
+  return(makeNode("statement", "if", tree, cons(cons(astExpression(first(tree)), NULL), cons(astBody(cdr(second(tree)), fname), cons(astBody(cdr(third(tree)), fname), NULL)))));
 
 if (globalTrace)
     {printf("Leaving astIf\n");}
@@ -2063,15 +1568,15 @@ if (globalTrace)
 }
 
 
-//Building function astSetStruct from line: 686
+//Building function astSetStruct from line: 569
 
-function astSetStruct(tree ) {
+function astSetStruct(tree) {
   
 if (globalTrace)
-    {printf("astSetStruct at q/base.qon:686\n");}
+    {printf("astSetStruct at q/base.qon:569\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(makeNode("statement" , "structSetter" , tree , astExpression(third(tree ))));
+  return(makeNode("statement", "structSetter", tree, astExpression(third(tree))));
 
 if (globalTrace)
     {printf("Leaving astSetStruct\n");}
@@ -2079,15 +1584,15 @@ if (globalTrace)
 }
 
 
-//Building function astSet from line: 691
+//Building function astSet from line: 574
 
-function astSet(tree ) {
+function astSet(tree) {
   
 if (globalTrace)
-    {printf("astSet at q/base.qon:691\n");}
+    {printf("astSet at q/base.qon:574\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(makeNode("statement" , "setter" , tree , astExpression(second(tree ))));
+  return(makeNode("statement", "setter", tree, astExpression(second(tree))));
 
 if (globalTrace)
     {printf("Leaving astSet\n");}
@@ -2095,15 +1600,15 @@ if (globalTrace)
 }
 
 
-//Building function astGetStruct from line: 696
+//Building function astGetStruct from line: 579
 
-function astGetStruct(tree ) {
+function astGetStruct(tree) {
   
 if (globalTrace)
-    {printf("astGetStruct at q/base.qon:696\n");}
+    {printf("astGetStruct at q/base.qon:579\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(makeNode("expression" , "structGetter" , tree , NULL ));
+  return(makeNode("expression", "structGetter", tree, NULL));
 
 if (globalTrace)
     {printf("Leaving astGetStruct\n");}
@@ -2111,15 +1616,15 @@ if (globalTrace)
 }
 
 
-//Building function astReturnVoid from line: 699
+//Building function astReturnVoid from line: 582
 
-function astReturnVoid(fname ) {
+function astReturnVoid(fname) {
   
 if (globalTrace)
-    {printf("astReturnVoid at q/base.qon:699\n");}
+    {printf("astReturnVoid at q/base.qon:582\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(makeStatementNode("statement" , "returnvoid" , NULL , NULL , fname ));
+  return(makeStatementNode("statement", "returnvoid", NULL, NULL, fname));
 
 if (globalTrace)
     {printf("Leaving astReturnVoid\n");}
@@ -2127,56 +1632,56 @@ if (globalTrace)
 }
 
 
-//Building function astStatement from line: 703
+//Building function astStatement from line: 586
 
-function astStatement(tree ,fname ) {
+function astStatement(tree,fname) {
   
 if (globalTrace)
-    {printf("astStatement at q/base.qon:703\n");}
+    {printf("astStatement at q/base.qon:586\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(boxString("if" ), car(tree ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(boxString("if"), car(tree))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(astIf(cdr(tree ), fname ));
+    return(astIf(cdr(tree), fname));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalBox(boxString("set" ), car(tree ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalBox(boxString("set"), car(tree))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(astSet(cdr(tree )));
+      return(astSet(cdr(tree)));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( equalBox(boxString("get-struct" ), car(tree ))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( equalBox(boxString("get-struct"), car(tree))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        printf("Choosing get-struct statement\n" );
+        printf("Choosing get-struct statement\n");
         if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        return(astGetStruct(cdr(tree )));
+        return(astGetStruct(cdr(tree)));
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( equalBox(boxString("set-struct" ), car(tree ))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( equalBox(boxString("set-struct"), car(tree))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          return(astSetStruct(cdr(tree )));
+          return(astSetStruct(cdr(tree)));
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( equalBox(boxString("return" ), car(tree ))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( equalBox(boxString("return"), car(tree))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            if ( equal(listLength(tree ), 1 )) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+            if ( equal(listLength(tree), 1)) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              return(astReturnVoid(fname ));
+              return(astReturnVoid(fname));
 
             } else {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              return(makeStatementNode("statement" , "return" , tree , makeNode("expression" , "expression" , tree , astExpression(tree )), fname ));
+              return(makeStatementNode("statement", "return", tree, makeNode("expression", "expression", tree, astExpression(tree)), fname));
 
             };
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            return(makeStatementNode("statement" , "statement" , tree , makeNode("expression" , "expression" , tree , astExpression(tree )), fname ));
+            return(makeStatementNode("statement", "statement", tree, makeNode("expression", "expression", tree, astExpression(tree)), fname));
 
           };
 
@@ -2194,21 +1699,21 @@ if (globalTrace)
 }
 
 
-//Building function astBody from line: 733
+//Building function astBody from line: 616
 
-function astBody(tree ,fname ) {
+function astBody(tree,fname) {
   
 if (globalTrace)
-    {printf("astBody at q/base.qon:733\n");}
+    {printf("astBody at q/base.qon:616\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(emptyList ());
+    return(emptyList());
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cons(astStatement(car(tree ), fname ), astBody(cdr(tree ), fname )));
+    return(cons(astStatement(car(tree), fname), astBody(cdr(tree), fname)));
 
   };
 
@@ -2218,86 +1723,86 @@ if (globalTrace)
 }
 
 
-//Building function linePanic from line: 739
+//Building function locPanic from line: 622
 
-function linePanic(line ,message ) {
+function locPanic(file,line,message) {
   
 if (globalTrace)
-    {printf("linePanic at q/base.qon:739\n");}
+    {printf("locPanic at q/base.qon:622\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("line %s: %s\n" , line , message );
+  printf("%s %s:%s\n", file, line, message);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  panic(message );
+  panic(message);
 
 if (globalTrace)
-    {printf("Leaving linePanic\n");}
+    {printf("Leaving locPanic\n");}
 
 }
 
 
-//Building function astFunction from line: 745
+//Building function astFunction from line: 628
 
-function astFunction(tree ) {
-  var line = "" ;
-var file = "" ;
-var fname = NULL ;
+function astFunction(tree) {
+  var file = "";
+var line = "";
+var fname = NULL;
 
 if (globalTrace)
-    {printf("astFunction at q/base.qon:745\n");}
+    {printf("astFunction at q/base.qon:628\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  fname = second(tree );
+  fname = second(tree);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  line = stringify(getTag(fname , boxString("line" )));
+  line = stringify(getTag(fname, boxString("line")));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  file = stringify(getTag(fname , boxString("filename" )));
+  file = stringify(getTag(fname, boxString("filename")));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( greaterthan(1 , listLength(tree ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(1, listLength(tree))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    linePanic(line , "Malformed function, seems to be empty" );
+    locPanic(file, line, "Malformed function, seems to be empty");
 
   } else {
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( greaterthan(2 , listLength(tree ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(2, listLength(tree))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    linePanic(line , "Malformed function, expected function name" );
-
-  } else {
-  };
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  if ( greaterthan(3 , listLength(tree ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    linePanic(line , "Malformed function, expected argument list" );
+    locPanic(file, line, "Malformed function, expected function name");
 
   } else {
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( greaterthan(4 , listLength(tree ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(3, listLength(tree))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    linePanic(line , "Malformed function, expected variable declarations" );
-
-  } else {
-  };
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  if ( greaterthan(5 , listLength(tree ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    linePanic(line , "Malformed function, expected body" );
+    locPanic(file, line, "Malformed function, expected argument list");
 
   } else {
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(alistCons(boxSymbol("line" ), getTag(fname , boxString("line" )), cons(cons(boxSymbol("name" ), boxString("function" )), cons(cons(boxSymbol("subname" ), second(tree )), cons(cons(boxSymbol("declarations" ), cdr(fourth(tree ))), cons(cons(boxSymbol("intype" ), third(tree )), cons(cons(boxSymbol("outtype" ), car(tree )), cons(cons(boxSymbol("children" ), astBody(cdr(fifth(tree )), fname )), emptyList ()))))))));
+  if ( greaterthan(4, listLength(tree))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    locPanic(file, line, "Malformed function, expected variable declarations");
+
+  } else {
+  };
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( greaterthan(5, listLength(tree))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    locPanic(file, line, "Malformed function, expected body");
+
+  } else {
+  };
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return(alistCons(boxSymbol("file"), getTag(fname, boxString("filename")), alistCons(boxSymbol("line"), getTag(fname, boxString("line")), cons(cons(boxSymbol("name"), boxString("function")), cons(cons(boxSymbol("subname"), second(tree)), cons(cons(boxSymbol("declarations"), cdr(fourth(tree))), cons(cons(boxSymbol("intype"), third(tree)), cons(cons(boxSymbol("outtype"), car(tree)), cons(cons(boxSymbol("children"), astBody(cdr(fifth(tree)), fname)), emptyList())))))))));
 
 if (globalTrace)
     {printf("Leaving astFunction\n");}
@@ -2305,21 +1810,21 @@ if (globalTrace)
 }
 
 
-//Building function astFunctionList from line: 775
+//Building function astFunctionList from line: 661
 
-function astFunctionList(tree ) {
+function astFunctionList(tree) {
   
 if (globalTrace)
-    {printf("astFunctionList at q/base.qon:775\n");}
+    {printf("astFunctionList at q/base.qon:661\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(emptyList ());
+    return(emptyList());
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cons(astFunction(car(tree )), astFunctionList(cdr(tree ))));
+    return(cons(astFunction(car(tree)), astFunctionList(cdr(tree))));
 
   };
 
@@ -2329,24 +1834,24 @@ if (globalTrace)
 }
 
 
-//Building function astFunctions from line: 783
+//Building function astFunctions from line: 669
 
-function astFunctions(tree ) {
+function astFunctions(tree) {
   
 if (globalTrace)
-    {printf("astFunctions at q/base.qon:783\n");}
+    {printf("astFunctions at q/base.qon:669\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(boxString("functions" ), car(tree ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(boxString("functions"), car(tree))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(makeNode("functions" , "functions" , tree , astFunctionList(cdr(tree ))));
+    return(makeNode("functions", "functions", tree, astFunctionList(cdr(tree))));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    panic("Functions section not found!  Every program must have a function section, even if you don't define any functions, although that is a rather pointless program.  Your function section should look like:'\n\n(return_type function_name (arg1 arg2 arg3 ...) (declare types) (body (statement)(statement)))\n\n\nThe function section must be directly after the types section." );
+    panic("Functions section not found!  Every program must have a function section, even if you don't define any functions, although that is a rather pointless program.  Your function section should look like:'\n\n(return_type function_name (arg1 arg2 arg3 ...) (declare types) (body (statement)(statement)))\n\n\nThe function section must be directly after the types section.");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(NULL );
+    return(NULL);
 
   };
 
@@ -2356,30 +1861,33 @@ if (globalTrace)
 }
 
 
-//Building function loadLib from line: 791
+//Building function loadLib from line: 677
 
-function loadLib(path ) {
-  var programStr = "" ;
-var tree = NULL ;
-var library = NULL ;
+function loadLib(path) {
+  var programStr = "";
+var tree = NULL;
+var library = NULL;
 
 if (globalTrace)
-    {printf("loadLib at q/base.qon:791\n");}
+    {printf("loadLib at q/base.qon:677\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  programStr = read_file(path );
+  qlog("Loading library %s\n", path);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = readSexpr(programStr , path );
+  programStr = read_file(path);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = macrowalk(tree );
+  tree = readSexpr(programStr, path);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  library = alistCons(boxString("includes" ), astIncludes(first(tree )), alistCons(boxString("types" ), astTypes(second(tree )), alistCons(boxString("functions" ), astFunctions(third(tree )), NULL )));
+  tree = macrowalk(tree);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(library );
+  library = alistCons(boxString("includes"), astIncludes(first(tree)), alistCons(boxString("types"), astTypes(second(tree)), alistCons(boxString("functions"), astFunctions(third(tree)), NULL)));
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return(library);
 
 if (globalTrace)
     {printf("Leaving loadLib\n");}
@@ -2387,15 +1895,15 @@ if (globalTrace)
 }
 
 
-//Building function astInclude from line: 807
+//Building function astInclude from line: 693
 
-function astInclude(tree ) {
+function astInclude(tree) {
   
 if (globalTrace)
-    {printf("astInclude at q/base.qon:807\n");}
+    {printf("astInclude at q/base.qon:693\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(loadLib(stringify(tree )));
+  return(loadLib(stringify(tree)));
 
 if (globalTrace)
     {printf("Leaving astInclude\n");}
@@ -2403,21 +1911,21 @@ if (globalTrace)
 }
 
 
-//Building function astIncludeList from line: 810
+//Building function astIncludeList from line: 696
 
-function astIncludeList(tree ) {
+function astIncludeList(tree) {
   
 if (globalTrace)
-    {printf("astIncludeList at q/base.qon:810\n");}
+    {printf("astIncludeList at q/base.qon:696\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(emptyList ());
+    return(emptyList());
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cons(astInclude(car(tree )), astIncludeList(cdr(tree ))));
+    return(cons(astInclude(car(tree)), astIncludeList(cdr(tree))));
 
   };
 
@@ -2427,24 +1935,24 @@ if (globalTrace)
 }
 
 
-//Building function astIncludes from line: 817
+//Building function astIncludes from line: 703
 
-function astIncludes(tree ) {
+function astIncludes(tree) {
   
 if (globalTrace)
-    {printf("astIncludes at q/base.qon:817\n");}
+    {printf("astIncludes at q/base.qon:703\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(boxString("includes" ), car(tree ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(boxString("includes"), car(tree))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(makeNode("includes" , "includes" , tree , astIncludeList(cdr(tree ))));
+    return(makeNode("includes", "includes", tree, astIncludeList(cdr(tree))));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    panic("Includes section not found!  Every program must have an include section, even if you don't import any libraries.  Your include section should look like:'\n\n(includes file1.qon file.qon)\n\n\nThe includes section must be the first section of the file." );
+    panic("Includes section not found!  Every program must have an include section, even if you don't import any libraries.  Your include section should look like:'\n\n(includes file1.qon file.qon)\n\n\nThe includes section must be the first section of the file.");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(NULL );
+    return(NULL);
 
   };
 
@@ -2454,15 +1962,15 @@ if (globalTrace)
 }
 
 
-//Building function astStruct from line: 825
+//Building function astStruct from line: 711
 
-function astStruct(tree ) {
+function astStruct(tree) {
   
 if (globalTrace)
-    {printf("astStruct at q/base.qon:825\n");}
+    {printf("astStruct at q/base.qon:711\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(makeNode("type" , "struct" , tree , NULL ));
+  return(makeNode("type", "struct", tree, NULL));
 
 if (globalTrace)
     {printf("Leaving astStruct\n");}
@@ -2470,21 +1978,21 @@ if (globalTrace)
 }
 
 
-//Building function astType from line: 828
+//Building function astType from line: 714
 
-function astType(tree ) {
+function astType(tree) {
   
 if (globalTrace)
-    {printf("astType at q/base.qon:828\n");}
+    {printf("astType at q/base.qon:714\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isList(cadr(tree ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isList(cadr(tree))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(astStruct(tree ));
+    return(astStruct(tree));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(makeNode("type" , "type" , tree , NULL ));
+    return(makeNode("type", "type", tree, NULL));
 
   };
 
@@ -2494,21 +2002,21 @@ if (globalTrace)
 }
 
 
-//Building function astTypeList from line: 834
+//Building function astTypeList from line: 720
 
-function astTypeList(tree ) {
+function astTypeList(tree) {
   
 if (globalTrace)
-    {printf("astTypeList at q/base.qon:834\n");}
+    {printf("astTypeList at q/base.qon:720\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(emptyList ());
+    return(emptyList());
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cons(astType(car(tree )), astTypeList(cdr(tree ))));
+    return(cons(astType(car(tree)), astTypeList(cdr(tree))));
 
   };
 
@@ -2518,27 +2026,38 @@ if (globalTrace)
 }
 
 
-//Building function astTypes from line: 840
+//Building function astTypes from line: 726
 
-function astTypes(tree ) {
+function astTypes(tree) {
   
 if (globalTrace)
-    {printf("astTypes at q/base.qon:840\n");}
+    {printf("astTypes at q/base.qon:726\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(boxString("types" ), car(tree ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(makeNode("types" , "types" , tree , astTypeList(cdr(tree ))));
+    panic("Empty or absent types section");
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(boxString("!!!Fuck"));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    panic("Types section not found!  Every program must have a types section, even if you don't define any types" );
-    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalBox(boxString("types"), car(tree))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("Types section not found!  Every program must have a types section, even if you don't define any types" );
-    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      return(makeNode("types", "types", tree, astTypeList(cdr(tree))));
 
-    return(boxString("!!!Fuck java" ));
+    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      panic("Types section not found!  Every program must have a types section, even if you don't define any types");
+      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      printf("Types section not found!  Every program must have a types section, even if you don't define any types");
+      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      return(boxString("!!!Fuck"));
+
+    };
 
   };
 
@@ -2548,15 +2067,15 @@ if (globalTrace)
 }
 
 
-//Building function declarationsof from line: 852
+//Building function declarationsof from line: 744
 
-function declarationsof(ass ) {
+function declarationsof(ass) {
   
 if (globalTrace)
-    {printf("declarationsof at q/base.qon:852\n");}
+    {printf("declarationsof at q/base.qon:744\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(cdr(assocPanic("declarations" , cdr(ass ), "Cons list has no declarations key" )));
+  return(cdr(assocPanic("declarations", cdr(ass), "Cons list has no declarations key")));
 
 if (globalTrace)
     {printf("Leaving declarationsof\n");}
@@ -2564,15 +2083,15 @@ if (globalTrace)
 }
 
 
-//Building function codeof from line: 855
+//Building function codeof from line: 747
 
-function codeof(ass ) {
+function codeof(ass) {
   
 if (globalTrace)
-    {printf("codeof at q/base.qon:855\n");}
+    {printf("codeof at q/base.qon:747\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(cdr(assocPanic("code" , cdr(ass ), "Given cons list does not contain a code key" )));
+  return(cdr(assocPanic("code", cdr(ass), "Given cons list does not contain a code key")));
 
 if (globalTrace)
     {printf("Leaving codeof\n");}
@@ -2580,15 +2099,15 @@ if (globalTrace)
 }
 
 
-//Building function functionNameof from line: 858
+//Building function functionNameof from line: 750
 
-function functionNameof(ass ) {
+function functionNameof(ass) {
   
 if (globalTrace)
-    {printf("functionNameof at q/base.qon:858\n");}
+    {printf("functionNameof at q/base.qon:750\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(cdr(assoc("functionName" , cdr(ass ))));
+  return(cdr(assoc("functionName", cdr(ass))));
 
 if (globalTrace)
     {printf("Leaving functionNameof\n");}
@@ -2596,24 +2115,24 @@ if (globalTrace)
 }
 
 
-//Building function nodeof from line: 861
+//Building function nodeof from line: 753
 
-function nodeof(ass ) {
+function nodeof(ass) {
   
 if (globalTrace)
-    {printf("nodeof at q/base.qon:861\n");}
+    {printf("nodeof at q/base.qon:753\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(boxBool(false ), assoc("node" , cdr(ass )))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(boxBool(false), assoc("node", cdr(ass)))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("Given list does not contain nodes" );
+    printf("Given list does not contain nodes");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(boxBool(false ));
+    return(boxBool(false));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cdr(assoc("node" , cdr(ass ))));
+    return(cdr(assoc("node", cdr(ass))));
 
   };
 
@@ -2623,15 +2142,15 @@ if (globalTrace)
 }
 
 
-//Building function lineof from line: 869
+//Building function lineof from line: 761
 
-function lineof(ass ) {
+function lineof(ass) {
   
 if (globalTrace)
-    {printf("lineof at q/base.qon:869\n");}
+    {printf("lineof at q/base.qon:761\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(cdr(assocFail("line" , cdr(ass ), boxInt(-1 ))));
+  return(cdr(assocFail("line", cdr(ass), boxInt(-1))));
 
 if (globalTrace)
     {printf("Leaving lineof\n");}
@@ -2639,15 +2158,15 @@ if (globalTrace)
 }
 
 
-//Building function subnameof from line: 874
+//Building function subnameof from line: 766
 
-function subnameof(ass ) {
+function subnameof(ass) {
   
 if (globalTrace)
-    {printf("subnameof at q/base.qon:874\n");}
+    {printf("subnameof at q/base.qon:766\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(cdr(assoc("subname" , cdr(ass ))));
+  return(cdr(assoc("subname", cdr(ass))));
 
 if (globalTrace)
     {printf("Leaving subnameof\n");}
@@ -2655,15 +2174,15 @@ if (globalTrace)
 }
 
 
-//Building function nameof from line: 877
+//Building function nameof from line: 769
 
-function nameof(ass ) {
+function nameof(ass) {
   
 if (globalTrace)
-    {printf("nameof at q/base.qon:877\n");}
+    {printf("nameof at q/base.qon:769\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(cdr(assoc("name" , cdr(ass ))));
+  return(cdr(assoc("name", cdr(ass))));
 
 if (globalTrace)
     {printf("Leaving nameof\n");}
@@ -2671,15 +2190,15 @@ if (globalTrace)
 }
 
 
-//Building function childrenof from line: 880
+//Building function childrenof from line: 772
 
-function childrenof(ass ) {
+function childrenof(ass) {
   
 if (globalTrace)
-    {printf("childrenof at q/base.qon:880\n");}
+    {printf("childrenof at q/base.qon:772\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(cdr(assoc("children" , cdr(ass ))));
+  return(cdr(assoc("children", cdr(ass))));
 
 if (globalTrace)
     {printf("Leaving childrenof\n");}
@@ -2687,35 +2206,35 @@ if (globalTrace)
 }
 
 
-//Building function isNode from line: 884
+//Building function isNode from line: 776
 
-function isNode(val ) {
+function isNode(val) {
   
 if (globalTrace)
-    {printf("isNode at q/base.qon:884\n");}
+    {printf("isNode at q/base.qon:776\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(val )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(val)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(false );
+    return(false);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isList(val )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isList(val)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( equalBox(boxSymbol("node" ), car(val ))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( equalBox(boxSymbol("node"), car(val))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        return(true );
+        return(true);
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        return(false );
+        return(false);
 
       };
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(false );
+      return(false);
 
     };
 
@@ -2727,15 +2246,15 @@ if (globalTrace)
 }
 
 
-//Building function truthy from line: 898
+//Building function truthy from line: 790
 
-function truthy(aVal ) {
+function truthy(aVal) {
   
 if (globalTrace)
-    {printf("truthy at q/base.qon:898\n");}
+    {printf("truthy at q/base.qon:790\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(isNotFalse(aVal ));
+  return(isNotFalse(aVal));
 
 if (globalTrace)
     {printf("Leaving truthy\n");}
@@ -2743,29 +2262,29 @@ if (globalTrace)
 }
 
 
-//Building function isNotFalse from line: 902
+//Building function isNotFalse from line: 794
 
-function isNotFalse(aVal ) {
+function isNotFalse(aVal) {
   
 if (globalTrace)
-    {printf("isNotFalse at q/base.qon:902\n");}
+    {printf("isNotFalse at q/base.qon:794\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString(boxType(aVal ), "bool" )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString(boxType(aVal), "bool")) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( unBoxBool(aVal )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( unBoxBool(aVal)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(true );
+      return(true);
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(false );
+      return(false);
 
     };
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(true );
+    return(true);
 
   };
 
@@ -2775,15 +2294,15 @@ if (globalTrace)
 }
 
 
-//Building function isLeaf from line: 909
+//Building function isLeaf from line: 800
 
-function isLeaf(n ) {
+function isLeaf(n) {
   
 if (globalTrace)
-    {printf("isLeaf at q/base.qon:909\n");}
+    {printf("isLeaf at q/base.qon:800\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(equalBox(boxString("leaf" ), subnameof(n )));
+  return(equalBox(boxString("leaf"), subnameof(n)));
 
 if (globalTrace)
     {printf("Leaving isLeaf\n");}
@@ -2791,20 +2310,20 @@ if (globalTrace)
 }
 
 
-//Building function printIndent from line: 914
+//Building function printIndent from line: 804
 
-function printIndent(ii ) {
+function printIndent(ii) {
   
 if (globalTrace)
-    {printf("printIndent at q/base.qon:914\n");}
+    {printf("printIndent at q/base.qon:804\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( greaterthan(ii , 0 )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(ii, 0)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("  " );
+    printf("  ");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(sub1(ii ));
+    printIndent(sub1(ii));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
@@ -2818,18 +2337,18 @@ if (globalTrace)
 }
 
 
-//Building function newLine from line: 922
+//Building function newLine from line: 812
 
-function newLine(indent ) {
+function newLine(indent) {
   
 if (globalTrace)
-    {printf("newLine at q/base.qon:922\n");}
+    {printf("newLine at q/base.qon:812\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\n" );
+  printf("\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printIndent(indent );
+  printIndent(indent);
 
 if (globalTrace)
     {printf("Leaving newLine\n");}
@@ -2837,15 +2356,15 @@ if (globalTrace)
 }
 
 
-//Building function noStackTrace from line: 926
+//Building function noStackTrace from line: 816
 
 function noStackTrace() {
   
 if (globalTrace)
-    {printf("noStackTrace at q/base.qon:926\n");}
+    {printf("noStackTrace at q/base.qon:816\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(cons(boxString("boxType" ), cons(boxString("stringify" ), cons(boxString("isEmpty" ), cons(boxString("unBoxString" ), cons(boxString("isList" ), cons(boxString("unBoxBool" ), cons(boxString("unBoxSymbol" ), cons(boxString("equalBox" ), cons(boxString("assoc" ), cons(boxString("inList" ), cons(boxString("unBoxInt" ), cons(boxString("listLength" ), cons(boxString("stroff" ), cons(boxString("troff" ), cons(boxString("tron" ), cons(boxString("stron" ), cons(boxString("car" ), cons(boxString("cdr" ), cons(boxString("cons" ), cons(boxString("stackTracePush" ), cons(boxString("stackTracePop" ), cons(boxString("assertType" ), cons(boxString("boxString" ), cons(boxString("boxSymbol" ), cons(boxString("boxInt" ), NULL ))))))))))))))))))))))))));
+  return(cons(boxString("boxType"), cons(boxString("stringify"), cons(boxString("isEmpty"), cons(boxString("unBoxString"), cons(boxString("isList"), cons(boxString("unBoxBool"), cons(boxString("unBoxSymbol"), cons(boxString("equalBox"), cons(boxString("assoc"), cons(boxString("inList"), cons(boxString("unBoxInt"), cons(boxString("listLength"), cons(boxString("stroff"), cons(boxString("troff"), cons(boxString("tron"), cons(boxString("stron"), cons(boxString("car"), cons(boxString("cdr"), cons(boxString("cons"), cons(boxString("stackTracePush"), cons(boxString("stackTracePop"), cons(boxString("assertType"), cons(boxString("boxString"), cons(boxString("boxSymbol"), cons(boxString("boxInt"), NULL))))))))))))))))))))))))));
 
 if (globalTrace)
     {printf("Leaving noStackTrace\n");}
@@ -2853,15 +2372,15 @@ if (globalTrace)
 }
 
 
-//Building function toStr from line: 955
+//Building function toStr from line: 845
 
-function toStr(thing ) {
+function toStr(thing) {
   
 if (globalTrace)
-    {printf("toStr at q/base.qon:955\n");}
+    {printf("toStr at q/base.qon:845\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(boxString(stringify(thing )));
+  return(boxString(stringify(thing)));
 
 if (globalTrace)
     {printf("Leaving toStr\n");}
@@ -2869,21 +2388,21 @@ if (globalTrace)
 }
 
 
-//Building function listLast from line: 958
+//Building function listLast from line: 848
 
-function listLast(alist ) {
+function listLast(alist) {
   
 if (globalTrace)
-    {printf("listLast at q/base.qon:958\n");}
+    {printf("listLast at q/base.qon:848\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(cdr(alist ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(cdr(alist))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(car(alist ));
+    return(car(alist));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(listLast(cdr(alist )));
+    return(listLast(cdr(alist)));
 
   };
 
@@ -2893,24 +2412,23 @@ if (globalTrace)
 }
 
 
-//Building function treeCompile from line: 965
+//Building function treeCompile from line: 855
 
-function treeCompile(filename ) {
-  var programStr = "" ;
-var tree = NULL ;
-var program = NULL ;
+function treeCompile(filename) {
+  var programStr = "";
+var tree = NULL;
 
 if (globalTrace)
-    {printf("treeCompile at q/base.qon:965\n");}
+    {printf("treeCompile at q/base.qon:855\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  programStr = read_file(filename );
+  programStr = read_file(filename);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = readSexpr(programStr , filename );
+  tree = readSexpr(programStr, filename);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(tree );
+  return(tree);
 
 if (globalTrace)
     {printf("Leaving treeCompile\n");}
@@ -2918,30 +2436,30 @@ if (globalTrace)
 }
 
 
-//Building function astBuild from line: 971
+//Building function astBuild from line: 861
 
-function astBuild(filename ) {
-  var programStr = "" ;
-var tree = NULL ;
-var program = NULL ;
+function astBuild(filename) {
+  var programStr = "";
+var tree = NULL;
+var program = NULL;
 
 if (globalTrace)
-    {printf("astBuild at q/base.qon:971\n");}
+    {printf("astBuild at q/base.qon:861\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  programStr = read_file(filename );
+  programStr = read_file(filename);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = readSexpr(programStr , filename );
+  tree = readSexpr(programStr, filename);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  program = alistCons(boxString("includes" ), astIncludes(first(tree )), alistCons(boxString("types" ), astTypes(second(tree )), alistCons(boxString("functions" ), astFunctions(third(tree )), NULL )));
+  program = alistCons(boxString("includes"), astIncludes(first(tree)), alistCons(boxString("types"), astTypes(second(tree)), alistCons(boxString("functions"), astFunctions(third(tree)), NULL)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  program = mergeIncludes(program );
+  program = mergeIncludes(program);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(program );
+  return(program);
 
 if (globalTrace)
     {printf("Leaving astBuild\n");}
@@ -2949,24 +2467,46 @@ if (globalTrace)
 }
 
 
-//Building function astCompile from line: 988
+//Building function astCompile from line: 878
 
-function astCompile(filename ) {
-  var programStr = "" ;
-var tree = NULL ;
-var program = NULL ;
+function astCompile(filename) {
+  var tree = NULL;
 
 if (globalTrace)
-    {printf("astCompile at q/base.qon:988\n");}
+    {printf("astCompile at q/base.qon:878\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  program = astBuild(filename );
+  tree = loadQuon(filename);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  display(program );
+  printf("Final program: \n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\n" );
+  tree = loadIncludes(tree);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  tree = macrowalk(tree);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  tree = macrosingle(tree, "write-file", "luaWriteFile");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  tree = macrosingle(tree, "read-file", "luaReadFile");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  tree = macrosingle(tree, "string-length", "string.len");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  tree = macrosingle(tree, "sub-string", "luaSubstring");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  tree = macrosingle(tree, "stringLength", "string.len");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  displayList(tree, 0, true);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("\n");
 
 if (globalTrace)
     {printf("Leaving astCompile\n");}
@@ -2974,63 +2514,15 @@ if (globalTrace)
 }
 
 
-//Building function concatLists from line: 995
+//Building function mergeIncludes from line: 900
 
-function concatLists(seq1 ,seq2 ) {
+function mergeIncludes(program) {
   
 if (globalTrace)
-    {printf("concatLists at q/base.qon:995\n");}
+    {printf("mergeIncludes at q/base.qon:900\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(seq1 )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    return(seq2 );
-
-  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    return(cons(car(seq1 ), concatLists(cdr(seq1 ), seq2 )));
-
-  };
-
-if (globalTrace)
-    {printf("Leaving concatLists\n");}
-
-}
-
-
-//Building function alistKeys from line: 1001
-
-function alistKeys(alist ) {
-  
-if (globalTrace)
-    {printf("alistKeys at q/base.qon:1001\n");}
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  if ( isNil(alist )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    return(NULL );
-
-  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-    return(cons(car(car(alist )), alistKeys(cdr(alist ))));
-
-  };
-
-if (globalTrace)
-    {printf("Leaving alistKeys\n");}
-
-}
-
-
-//Building function mergeIncludes from line: 1007
-
-function mergeIncludes(program ) {
-  
-if (globalTrace)
-    {printf("mergeIncludes at q/base.qon:1007\n");}
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  return(merge_recur(childrenof(cdr(cdr(assocPanic("includes" , program , "Program lacks include section" )))), program ));
+  return(merge_recur(childrenof(cdr(cdr(assocPanic("includes", program, "Program lacks include section")))), program));
 
 if (globalTrace)
     {printf("Leaving mergeIncludes\n");}
@@ -3038,21 +2530,21 @@ if (globalTrace)
 }
 
 
-//Building function merge_recur from line: 1014
+//Building function merge_recur from line: 907
 
-function merge_recur(incs ,program ) {
+function merge_recur(incs,program) {
   
 if (globalTrace)
-    {printf("merge_recur at q/base.qon:1014\n");}
+    {printf("merge_recur at q/base.qon:907\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( greaterthan(listLength(incs ), 0 )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(listLength(incs), 0)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(mergeInclude(car(incs ), merge_recur(cdr(incs ), program )));
+    return(mergeInclude(car(incs), merge_recur(cdr(incs), program)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(program );
+    return(program);
 
   };
 
@@ -3062,65 +2554,65 @@ if (globalTrace)
 }
 
 
-//Building function mergeInclude from line: 1022
+//Building function mergeInclude from line: 915
 
-function mergeInclude(inc ,program ) {
-  var newProgram = NULL ;
-var oldfunctionsnode = NULL ;
-var oldfunctions = NULL ;
-var newfunctions = NULL ;
-var newFunctionNode = NULL ;
-var functions = NULL ;
-var oldtypesnode = NULL ;
-var oldtypes = NULL ;
-var newtypes = NULL ;
-var newTypeNode = NULL ;
-var types = NULL ;
+function mergeInclude(inc,program) {
+  var newProgram = NULL;
+var oldfunctionsnode = NULL;
+var oldfunctions = NULL;
+var newfunctions = NULL;
+var newFunctionNode = NULL;
+var functions = NULL;
+var oldtypesnode = NULL;
+var oldtypes = NULL;
+var newtypes = NULL;
+var newTypeNode = NULL;
+var types = NULL;
 
 if (globalTrace)
-    {printf("mergeInclude at q/base.qon:1022\n");}
+    {printf("mergeInclude at q/base.qon:915\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(inc )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(inc)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(program );
+    return(program);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    functions = childrenof(cdr(assocPanic("functions" , inc , "Included file has no functions section" )));
+    functions = childrenof(cdr(assocPanic("functions", inc, "Included file has no functions section")));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    oldfunctionsnode = cdr(assocPanic("functions" , program , "Current module has no functions section" ));
+    oldfunctionsnode = cdr(assocPanic("functions", program, "Current module has no functions section"));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    oldfunctions = childrenof(oldfunctionsnode );
+    oldfunctions = childrenof(oldfunctionsnode);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    newfunctions = concatLists(functions , oldfunctions );
+    newfunctions = concatLists(functions, oldfunctions);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    newFunctionNode = cons(boxSymbol("node" ), alistCons(boxSymbol("children" ), newfunctions , cdr(oldfunctionsnode )));
+    newFunctionNode = cons(boxSymbol("node"), alistCons(boxSymbol("children"), newfunctions, cdr(oldfunctionsnode)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    types = childrenof(cdr(assocPanic("types" , inc , "Included file has no types section" )));
+    types = childrenof(cdr(assocPanic("types", inc, "Included file has no types section")));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    oldtypesnode = cdr(assocPanic("types" , program , "Current module has no types section" ));
+    oldtypesnode = cdr(assocPanic("types", program, "Current module has no types section"));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    oldtypes = childrenof(oldtypesnode );
+    oldtypes = childrenof(oldtypesnode);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    newtypes = concatLists(types , oldtypes );
+    newtypes = concatLists(types, oldtypes);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    newTypeNode = cons(boxSymbol("node" ), alistCons(boxSymbol("children" ), newtypes , cdr(oldtypesnode )));
+    newTypeNode = cons(boxSymbol("node"), alistCons(boxSymbol("children"), newtypes, cdr(oldtypesnode)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    newProgram = alistCons(boxString("functions" ), newFunctionNode , alistCons(boxString("types" ), newTypeNode , alistCons(boxString("includes" ), cons(boxSymbol("includes" ), NULL ), newProgram )));
+    newProgram = alistCons(boxString("functions"), newFunctionNode, alistCons(boxString("types"), newTypeNode, alistCons(boxString("includes"), cons(boxSymbol("includes"), NULL), newProgram)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(newProgram );
+    return(newProgram);
 
   };
 
@@ -3130,44 +2622,115 @@ if (globalTrace)
 }
 
 
-//Building function macrowalk from line: 1076
+//Building function argList from line: 975
 
-function macrowalk(l ) {
-  var val = NULL ;
-
+function argList(count,pos,args) {
+  
 if (globalTrace)
-    {printf("macrowalk at q/base.qon:1076\n");}
+    {printf("argList at q/base.qon:975\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(l )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(count, pos)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(NULL );
+    return(cons(boxString(getStringArray(pos, args)), argList(count, add1(pos), args)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isList(l )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    return(NULL);
 
-      if ( equalString(stringConcatenate("box" , "List" ), stringify(car(l )))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  };
 
-        return(car(doBoxList(cdr(l ))));
+if (globalTrace)
+    {printf("Leaving argList\n");}
+
+}
+
+
+//Building function tron from line: 986
+
+function tron() {
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  globalTrace = true;
+
+}
+
+
+//Building function troff from line: 987
+
+function troff() {
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  globalTrace = false;
+
+}
+
+
+//Building function stron from line: 988
+
+function stron() {
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  globalStepTrace = true;
+
+}
+
+
+//Building function stroff from line: 989
+
+function stroff() {
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  globalStepTrace = false;
+
+}
+
+
+//Building function macrowalk from line: 7
+
+function macrowalk(l) {
+  
+if (globalTrace)
+    {printf("macrowalk at q/macros.qon:7\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isEmpty(l)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(NULL);
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    if ( isList(l)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      if ( equalString(stringConcatenate("box", "List"), stringify(car(l)))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        return(car(doBoxList(cdr(l))));
 
       } else {
       };
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( equalString(stringConcatenate("string" , "List" ), stringify(car(l )))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( equalString(stringConcatenate("string", "List"), stringify(car(l)))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        return(car(doStringList(cdr(l ))));
+        return(car(doStringList(cdr(l))));
 
       } else {
       };
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(cons(macrowalk(car(l )), macrowalk(cdr(l ))));
+      if ( equalString(stringConcatenate("multi", "List"), stringify(car(l)))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        return(car(doMultiList(cdr(l))));
+
+      } else {
+      };
+      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      return(cons(macrowalk(car(l)), macrowalk(cdr(l))));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(l );
+      return(l);
 
     };
 
@@ -3179,42 +2742,42 @@ if (globalTrace)
 }
 
 
-//Building function macrosingle from line: 1108
+//Building function macrosingle from line: 45
 
-function macrosingle(l ,search ,replace ) {
-  var val = NULL ;
+function macrosingle(l,search,replace) {
+  var val = NULL;
 
 if (globalTrace)
-    {printf("macrosingle at q/base.qon:1108\n");}
+    {printf("macrosingle at q/macros.qon:45\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(l )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(l)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(NULL );
+    return(NULL);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isList(l )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isList(l)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(cons(macrosingle(car(l ), search , replace ), macrosingle(cdr(l ), search , replace )));
+      return(cons(macrosingle(car(l), search, replace), macrosingle(cdr(l), search, replace)));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( equalString(search , stringify(l ))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( equalString(search, stringify(l))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        val = clone(l );
+        val = clone(l);
         if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        val.str = replace ;
+        val.str = replace;
         if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        return(val );
+        return(val);
 
       } else {
       };
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(l );
+      return(l);
 
     };
 
@@ -3226,53 +2789,590 @@ if (globalTrace)
 }
 
 
-//Building function doBoxList from line: 1131
+//Building function car from line: 9
 
-function doBoxList(l ) {
-  
-if (globalTrace)
-    {printf("doBoxList at q/base.qon:1131\n");}
+function car(l) {
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  assertType("list", l, 11, "q/lists.qon");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(l )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(l)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cons(boxSymbol("nil" ), NULL ));
+    printf("Cannot call car on empty list!\n");
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    panic("Cannot call car on empty list!\n");
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(NULL);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cons(cons(boxSymbol("cons" ), cons(first(l ), doBoxList(cdr(l )))), NULL ));
+    if ( isNil(l.car)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      return(NULL);
+
+    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      return(l.car);
+
+    };
 
   };
-
-if (globalTrace)
-    {printf("Leaving doBoxList\n");}
 
 }
 
 
-//Building function doStringList from line: 1147
+//Building function cdr from line: 22
 
-function doStringList(l ) {
-  var newlist = NULL ;
-var ret = NULL ;
+function cdr(l) {
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-if (globalTrace)
-    {printf("doStringList at q/base.qon:1147\n");}
+  assertType("list", l, 24, "q/lists.qon");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(l )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(l)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cons(boxSymbol("nil" ), NULL ));
+    printf("Attempt to cdr an empty list!!!!\n");
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    panic("Attempt to cdr an empty list!!!!\n");
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(NULL);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    newlist = cons(boxSymbol("boxString" ), cons(first(l ), newlist ));
+    return(l.cdr);
+
+  };
+
+}
+
+
+//Building function cons from line: 32
+
+function cons(data,l) {
+  var p = NULL;
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  p = makePair();
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  p.cdr = l;
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  p.car = data;
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  p.typ = "list";
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return(p);
+
+}
+
+
+//Building function caar from line: 44
+
+function caar(l) {
+  
+if (globalTrace)
+    {printf("caar at q/lists.qon:44\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return(car(car(l)));
+
+if (globalTrace)
+    {printf("Leaving caar\n");}
+
+}
+
+
+//Building function cadr from line: 45
+
+function cadr(l) {
+  
+if (globalTrace)
+    {printf("cadr at q/lists.qon:45\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return(car(cdr(l)));
+
+if (globalTrace)
+    {printf("Leaving cadr\n");}
+
+}
+
+
+//Building function caddr from line: 46
+
+function caddr(l) {
+  
+if (globalTrace)
+    {printf("caddr at q/lists.qon:46\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return(car(cdr(cdr(l))));
+
+if (globalTrace)
+    {printf("Leaving caddr\n");}
+
+}
+
+
+//Building function cadddr from line: 47
+
+function cadddr(l) {
+  
+if (globalTrace)
+    {printf("cadddr at q/lists.qon:47\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return(car(cdr(cdr(cdr(l)))));
+
+if (globalTrace)
+    {printf("Leaving cadddr\n");}
+
+}
+
+
+//Building function caddddr from line: 48
+
+function caddddr(l) {
+  
+if (globalTrace)
+    {printf("caddddr at q/lists.qon:48\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return(car(cdr(cdr(cdr(cdr(l))))));
+
+if (globalTrace)
+    {printf("Leaving caddddr\n");}
+
+}
+
+
+//Building function cddr from line: 49
+
+function cddr(l) {
+  
+if (globalTrace)
+    {printf("cddr at q/lists.qon:49\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return(cdr(cdr(l)));
+
+if (globalTrace)
+    {printf("Leaving cddr\n");}
+
+}
+
+
+//Building function first from line: 50
+
+function first(l) {
+  
+if (globalTrace)
+    {printf("first at q/lists.qon:50\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return(car(l));
+
+if (globalTrace)
+    {printf("Leaving first\n");}
+
+}
+
+
+//Building function second from line: 51
+
+function second(l) {
+  
+if (globalTrace)
+    {printf("second at q/lists.qon:51\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return(cadr(l));
+
+if (globalTrace)
+    {printf("Leaving second\n");}
+
+}
+
+
+//Building function third from line: 52
+
+function third(l) {
+  
+if (globalTrace)
+    {printf("third at q/lists.qon:52\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return(caddr(l));
+
+if (globalTrace)
+    {printf("Leaving third\n");}
+
+}
+
+
+//Building function fourth from line: 53
+
+function fourth(l) {
+  
+if (globalTrace)
+    {printf("fourth at q/lists.qon:53\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return(cadddr(l));
+
+if (globalTrace)
+    {printf("Leaving fourth\n");}
+
+}
+
+
+//Building function fifth from line: 54
+
+function fifth(l) {
+  
+if (globalTrace)
+    {printf("fifth at q/lists.qon:54\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return(caddddr(l));
+
+if (globalTrace)
+    {printf("Leaving fifth\n");}
+
+}
+
+
+//Building function isList from line: 57
+
+function isList(b) {
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ret = cons(cons(boxSymbol("cons" ), cons(newlist , doStringList(cdr(l )))), NULL );
+  if ( isNil(b)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(true);
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(equalString("list", b.typ));
+
+  };
+
+}
+
+
+//Building function emptyList from line: 64
+
+function emptyList() {
+  
+if (globalTrace)
+    {printf("emptyList at q/lists.qon:64\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return(NULL);
+
+if (globalTrace)
+    {printf("Leaving emptyList\n");}
+
+}
+
+
+//Building function isEmpty from line: 66
+
+function isEmpty(b) {
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(ret );
+  if ( isNil(b)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(true);
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(false);
+
+  };
+
+}
+
+
+//Building function listLength from line: 73
+
+function listLength(l) {
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isEmpty(l)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(0);
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(add1(listLength(cdr(l))));
+
+  };
+
+}
+
+
+//Building function alistCons from line: 82
+
+function alistCons(key,value,alist) {
+  
+if (globalTrace)
+    {printf("alistCons at q/lists.qon:82\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return(cons(cons(key, value), alist));
+
+if (globalTrace)
+    {printf("Leaving alistCons\n");}
+
+}
+
+
+//Building function assoc from line: 85
+
+function assoc(searchTerm,l) {
+  var elem = NULL;
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  assertType("list", l, 87, "q/lists.qon");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isEmpty(l)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(boxBool(false));
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    elem = car(l);
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    assertType("list", elem, 93, "q/lists.qon");
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    if ( isEmpty(elem)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      return(assoc(searchTerm, cdr(l)));
+
+    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      if ( false) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        printf("Comparing %s and %s\n", searchTerm, stringify(car(elem)));
+
+      } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        printf("");
+
+      };
+      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      if ( equalString(searchTerm, stringify(car(elem)))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        return(elem);
+
+      } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        return(assoc(searchTerm, cdr(l)));
+
+      };
+
+    };
+
+  };
+
+}
+
+
+//Building function chooseBox from line: 105
+
+function chooseBox(aType) {
+  
+if (globalTrace)
+    {printf("chooseBox at q/lists.qon:105\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( equalString("string", aType)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return("boxString");
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    if ( equalString("symbol", aType)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      return("boxSymbol");
+
+    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      if ( equalString("bool", aType)) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        return("boxBool");
+
+      } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        if ( equalString("int", aType)) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          return("boxInt");
+
+        } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          if ( equalString("float", aType)) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+            return("boxFloat");
+
+          } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+            panic("Invalid type");
+
+          };
+
+        };
+
+      };
+
+    };
+
+  };
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  return("");
+
+if (globalTrace)
+    {printf("Leaving chooseBox\n");}
+
+}
+
+
+//Building function mlistLiteral from line: 121
+
+function mlistLiteral(b) {
+  
+if (globalTrace)
+    {printf("mlistLiteral at q/lists.qon:121\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isNil(b)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(NULL);
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    if ( equalString("string", boxType(b))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      return(b);
+
+    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      if ( equalString("bool", boxType(b))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        return(b);
+
+      } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        if ( equalString("int", boxType(b))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          return(b);
+
+        } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          if ( equalString("symbol", boxType(b))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+            return(boxString(unBoxSymbol(b)));
+
+          } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+            return(boxString(stringConcatenate("Unsupported type: ", boxType(b))));
+
+          };
+
+        };
+
+      };
+
+    };
+
+  };
+
+if (globalTrace)
+    {printf("Leaving mlistLiteral\n");}
+
+}
+
+
+//Building function doMultiList from line: 143
+
+function doMultiList(l) {
+  var newlist = NULL;
+var ret = NULL;
+var elem = NULL;
+
+if (globalTrace)
+    {printf("doMultiList at q/lists.qon:143\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isNil(l)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(cons(boxSymbol("nil"), NULL));
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    if ( isEmpty(l)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      return(NULL);
+
+    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      elem = first(l);
+      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      newlist = cons(boxString(chooseBox(elem.typ)), cons(mlistLiteral(first(l)), newlist));
+      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      ret = cons(cons(boxSymbol("cons"), cons(newlist, doMultiList(cdr(l)))), NULL);
+      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      return(ret);
+
+    };
+
+  };
+
+if (globalTrace)
+    {printf("Leaving doMultiList\n");}
+
+}
+
+
+//Building function doStringList from line: 166
+
+function doStringList(l) {
+  var newlist = NULL;
+var ret = NULL;
+
+if (globalTrace)
+    {printf("doStringList at q/lists.qon:166\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isNil(l)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(cons(boxSymbol("nil"), NULL));
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    newlist = cons(boxSymbol("boxString"), cons(first(l), newlist));
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ret = cons(cons(boxSymbol("cons"), cons(newlist, doStringList(cdr(l)))), NULL);
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(ret);
 
   };
 
@@ -3282,45 +3382,184 @@ if (globalTrace)
 }
 
 
-//Building function argList from line: 1171
+//Building function doBoxList from line: 184
 
-function argList(count ,pos ,args ) {
+function doBoxList(l) {
   
 if (globalTrace)
-    {printf("argList at q/base.qon:1171\n");}
+    {printf("doBoxList at q/lists.qon:184\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( greaterthan(count , pos )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(l)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cons(boxString(getStringArray(pos , args )), argList(count , add1(pos ), args )));
+    return(cons(boxSymbol("nil"), NULL));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(NULL );
+    return(cons(cons(boxSymbol("cons"), cons(first(l), doBoxList(cdr(l)))), NULL));
 
   };
 
 if (globalTrace)
-    {printf("Leaving argList\n");}
+    {printf("Leaving doBoxList\n");}
 
 }
 
 
-//Building function listReverse from line: 1183
+//Building function concatLists from line: 203
 
-function listReverse(l ) {
+function concatLists(seq1,seq2) {
   
 if (globalTrace)
-    {printf("listReverse at q/base.qon:1183\n");}
+    {printf("concatLists at q/lists.qon:203\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(l )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(seq1)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(NULL );
+    return(seq2);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cons(car(l ), listReverse(cdr(l ))));
+    return(cons(car(seq1), concatLists(cdr(seq1), seq2)));
+
+  };
+
+if (globalTrace)
+    {printf("Leaving concatLists\n");}
+
+}
+
+
+//Building function alistKeys from line: 209
+
+function alistKeys(alist) {
+  
+if (globalTrace)
+    {printf("alistKeys at q/lists.qon:209\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isNil(alist)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(NULL);
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(cons(car(car(alist)), alistKeys(cdr(alist))));
+
+  };
+
+if (globalTrace)
+    {printf("Leaving alistKeys\n");}
+
+}
+
+
+//Building function displayList from line: 215
+
+function displayList(l,indent,first) {
+  var val = NULL;
+
+if (globalTrace)
+    {printf("displayList at q/lists.qon:215\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isEmpty(l)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return;
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    if ( isList(l)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      if ( isEmpty(l)) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        return;
+
+      } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        if ( first) {
+        } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          printf(" ");
+
+        };
+        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        val = car(l);
+        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        if ( isList(val)) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          newLine(indent);
+          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          printf("%s", openBrace());
+          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          displayList(car(l), add1(indent), true);
+          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          printf("%s", closeBrace());
+          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          displayList(cdr(l), indent, false);
+
+        } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          if ( equalString("string", val.typ)) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+            printf("\"%s\"", unBoxString(val));
+
+          } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+            printf("%s", stringify(val));
+
+          };
+          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          displayList(cdr(l), indent, false);
+
+        };
+
+      };
+
+    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      if ( equalString("string", l.typ)) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        printf("\"%s\"", unBoxString(l));
+
+      } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        printf("%s", stringify(l));
+
+      };
+
+    };
+
+  };
+
+if (globalTrace)
+    {printf("Leaving displayList\n");}
+
+}
+
+
+//Building function listReverse from line: 247
+
+function listReverse(l) {
+  
+if (globalTrace)
+    {printf("listReverse at q/lists.qon:247\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isNil(l)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(NULL);
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(cons(car(l), listReverse(cdr(l))));
 
   };
 
@@ -3330,24 +3569,24 @@ if (globalTrace)
 }
 
 
-//Building function inList from line: 1189
+//Building function inList from line: 253
 
-function inList(item ,l ) {
+function inList(item,l) {
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(l )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(l)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(false );
+    return(false);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalBox(car(l ), item )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalBox(car(l), item)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(true );
+      return(true);
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(inList(item , cdr(l )));
+      return(inList(item, cdr(l)));
 
     };
 
@@ -3356,23 +3595,23 @@ function inList(item ,l ) {
 }
 
 
-//Building function equalList from line: 1199
+//Building function equalList from line: 263
 
-function equalList(a ,b ) {
+function equalList(a,b) {
   
 if (globalTrace)
-    {printf("equalList at q/base.qon:1199\n");}
+    {printf("equalList at q/lists.qon:263\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(a )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(a)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isNil(b )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isNil(b)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(true );
+      return(true);
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(true );
+      return(false);
 
     };
 
@@ -3380,13 +3619,29 @@ if (globalTrace)
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(car(a ), car(b ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(b)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(equalList(cdr(a ), cdr(b )));
+    if ( isNil(a)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      return(true);
+
+    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      return(false);
+
+    };
+
+  } else {
+  };
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( equalBox(car(a), car(b))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(equalList(cdr(a), cdr(b)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(false );
+    return(false);
 
   };
 
@@ -3396,21 +3651,21 @@ if (globalTrace)
 }
 
 
-//Building function reverseRec from line: 1213
+//Building function reverseRec from line: 286
 
-function reverseRec(oldL ,newL ) {
+function reverseRec(oldL,newL) {
   
 if (globalTrace)
-    {printf("reverseRec at q/base.qon:1213\n");}
+    {printf("reverseRec at q/lists.qon:286\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(oldL )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(oldL)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(newL );
+    return(newL);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(reverseRec(cdr(oldL ), cons(first(oldL ), newL )));
+    return(reverseRec(cdr(oldL), cons(first(oldL), newL)));
 
   };
 
@@ -3420,15 +3675,15 @@ if (globalTrace)
 }
 
 
-//Building function reverseList from line: 1220
+//Building function reverseList from line: 293
 
-function reverseList(l ) {
+function reverseList(l) {
   
 if (globalTrace)
-    {printf("reverseList at q/base.qon:1220\n");}
+    {printf("reverseList at q/lists.qon:293\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(reverseRec(l , NULL ));
+  return(reverseRec(l, NULL));
 
 if (globalTrace)
     {printf("Leaving reverseList\n");}
@@ -3436,71 +3691,23 @@ if (globalTrace)
 }
 
 
-//Building function tron from line: 1227
-
-function tron() {
-    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  globalTrace = true ;
-
-}
-
-
-//Building function troff from line: 1228
-
-function troff() {
-    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  globalTrace = false ;
-
-}
-
-
-//Building function stron from line: 1229
-
-function stron() {
-    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  globalStepTrace = true ;
-
-}
-
-
-//Building function stroff from line: 1230
-
-function stroff() {
-    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  globalStepTrace = false ;
-
-}
-
-
 //Building function loadQuon from line: 3
 
-function loadQuon(filename ) {
-  var foundationFuncs = NULL ;
-var foundation = NULL ;
-var programStr = "" ;
-var tree = NULL ;
+function loadQuon(filename) {
+  var programStr = "";
+var tree = NULL;
 
 if (globalTrace)
     {printf("loadQuon at q/astaccessors.qon:3\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  foundation = readSexpr(read_file(filename ), filename );
+  programStr = read_file(filename);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  foundationFuncs = cdr(third(foundation ));
+  tree = readSexpr(programStr, filename);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  programStr = read_file(filename );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  tree = readSexpr(programStr , filename );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  return(tree );
+  return(tree);
 
 if (globalTrace)
     {printf("Leaving loadQuon\n");}
@@ -3508,15 +3715,15 @@ if (globalTrace)
 }
 
 
-//Building function getIncludes from line: 18
+//Building function getIncludes from line: 12
 
-function getIncludes(program ) {
+function getIncludes(program) {
   
 if (globalTrace)
-    {printf("getIncludes at q/astaccessors.qon:18\n");}
+    {printf("getIncludes at q/astaccessors.qon:12\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(cdr(first(program )));
+  return(cdr(first(program)));
 
 if (globalTrace)
     {printf("Leaving getIncludes\n");}
@@ -3524,15 +3731,15 @@ if (globalTrace)
 }
 
 
-//Building function getTypes from line: 22
+//Building function getTypes from line: 16
 
-function getTypes(program ) {
+function getTypes(program) {
   
 if (globalTrace)
-    {printf("getTypes at q/astaccessors.qon:22\n");}
+    {printf("getTypes at q/astaccessors.qon:16\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(cdr(second(program )));
+  return(cdr(second(program)));
 
 if (globalTrace)
     {printf("Leaving getTypes\n");}
@@ -3540,15 +3747,15 @@ if (globalTrace)
 }
 
 
-//Building function getFunctions from line: 26
+//Building function getFunctions from line: 20
 
-function getFunctions(program ) {
+function getFunctions(program) {
   
 if (globalTrace)
-    {printf("getFunctions at q/astaccessors.qon:26\n");}
+    {printf("getFunctions at q/astaccessors.qon:20\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(cdr(third(program )));
+  return(cdr(third(program)));
 
 if (globalTrace)
     {printf("Leaving getFunctions\n");}
@@ -3556,42 +3763,41 @@ if (globalTrace)
 }
 
 
-//Building function loadIncludes from line: 31
+//Building function loadIncludes from line: 25
 
-function loadIncludes(tree ) {
-  var newProg = NULL ;
-var includeFile = "" ;
-var functionsCombined = NULL ;
-var typesCombined = NULL ;
-var includeTree = NULL ;
-var program = NULL ;
+function loadIncludes(tree) {
+  var newProg = NULL;
+var includeFile = "";
+var functionsCombined = NULL;
+var typesCombined = NULL;
+var includeTree = NULL;
 
 if (globalTrace)
-    {printf("loadIncludes at q/astaccessors.qon:31\n");}
+    {printf("loadIncludes at q/astaccessors.qon:25\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( greaterthan(listLength(getIncludes(tree )), 0 )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(listLength(getIncludes(tree)), 0)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    includeFile = stringify(first(getIncludes(tree )));
+    includeFile = stringify(first(getIncludes(tree)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    includeTree = loadQuon(includeFile );
+    includeTree = loadQuon(includeFile);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    functionsCombined = concatLists(getFunctions(includeTree ), getFunctions(tree ));
+    functionsCombined = concatLists(getFunctions(includeTree), getFunctions(tree));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    typesCombined = concatLists(getTypes(includeTree ), getTypes(tree ));
+    typesCombined = concatLists(getTypes(includeTree), getTypes(tree));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    newProg = buildProg(cdr(getIncludes(tree )), typesCombined , functionsCombined );
+    newProg = buildProg(cdr(getIncludes(tree)), typesCombined, functionsCombined);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(loadIncludes(newProg ));
+    return(loadIncludes(newProg));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(tree );
+    return(tree);
 
   };
 
@@ -3601,28 +3807,28 @@ if (globalTrace)
 }
 
 
-//Building function buildProg from line: 61
+//Building function buildProg from line: 55
 
-function buildProg(includes ,types ,functions ) {
-  var program = NULL ;
+function buildProg(includes,types,functions) {
+  var program = NULL;
 
 if (globalTrace)
-    {printf("buildProg at q/astaccessors.qon:61\n");}
+    {printf("buildProg at q/astaccessors.qon:55\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  includes = cons(boxSymbol("includes" ), includes );
+  includes = cons(boxSymbol("includes"), includes);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  types = cons(boxSymbol("types" ), types );
+  types = cons(boxSymbol("types"), types);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  functions = cons(boxSymbol("functions" ), functions );
+  functions = cons(boxSymbol("functions"), functions);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  program = cons(includes , cons(types , cons(functions , NULL )));
+  program = cons(includes, cons(types, cons(functions, NULL)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(program );
+  return(program);
 
 if (globalTrace)
     {printf("Leaving buildProg\n");}
@@ -3632,19 +3838,19 @@ if (globalTrace)
 
 //Building function numbers from line: 4
 
-function numbers(num ) {
+function numbers(num) {
   
 if (globalTrace)
     {printf("numbers at q/perl.qon:4\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( greaterthan(0 , num )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(0, num)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cons(boxString("-" ), NULL ));
+    return(cons(boxString("-"), NULL));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cons(boxString(stringify(boxInt(num ))), numbers(sub1(num ))));
+    return(cons(boxString(stringify(boxInt(num))), numbers(sub1(num))));
 
   };
 
@@ -3656,25 +3862,25 @@ if (globalTrace)
 
 //Building function lexType from line: 11
 
-function lexType(abox ) {
+function lexType(abox) {
   
 if (globalTrace)
     {printf("lexType at q/perl.qon:11\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString("string" , boxType(abox ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString("string", boxType(abox))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return("string" );
+    return("string");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( inList(boxString(sub_string(stringify(abox ), 0 , 1 )), numbers(9 ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( inList(boxString(sub_string(stringify(abox), 0, 1)), numbers(9))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return("number" );
+      return("number");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return("symbol" );
+      return("symbol");
 
     };
 
@@ -3688,24 +3894,24 @@ if (globalTrace)
 
 //Building function perlLeaf from line: 23
 
-function perlLeaf(thisNode ,indent ) {
+function perlLeaf(thisNode,indent) {
   
 if (globalTrace)
     {printf("perlLeaf at q/perl.qon:23\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString("symbol" , lexType(codeof(thisNode )))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString("symbol", lexType(codeof(thisNode)))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("%s" , dollar ());
+    printf("%s", dollar());
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("" );
+    printf("");
 
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  display(perlFuncMap(codeof(thisNode )));
+  display(perlFuncMap(codeof(thisNode)));
 
 if (globalTrace)
     {printf("Leaving perlLeaf\n");}
@@ -3715,19 +3921,19 @@ if (globalTrace)
 
 //Building function perlStructGetterExpression from line: 32
 
-function perlStructGetterExpression(thisNode ,indent ) {
+function perlStructGetterExpression(thisNode,indent) {
   
 if (globalTrace)
     {printf("perlStructGetterExpression at q/perl.qon:32\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(boxString("structGetter" ), subnameof(thisNode ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(boxString("structGetter"), subnameof(thisNode))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlGetStruct(thisNode , indent );
+    perlGetStruct(thisNode, indent);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlLeaf(thisNode , indent );
+    perlLeaf(thisNode, indent);
 
   };
 
@@ -3739,19 +3945,19 @@ if (globalTrace)
 
 //Building function perlExpression from line: 38
 
-function perlExpression(node ,indent ) {
+function perlExpression(node,indent) {
   
 if (globalTrace)
     {printf("perlExpression at q/perl.qon:38\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isLeaf(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isLeaf(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlLeaf(node , indent );
+    perlLeaf(node, indent);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlSubExpression(node , indent );
+    perlSubExpression(node, indent);
 
   };
 
@@ -3763,31 +3969,31 @@ if (globalTrace)
 
 //Building function perlRecurList from line: 44
 
-function perlRecurList(expr ,indent ) {
+function perlRecurList(expr,indent) {
   
 if (globalTrace)
     {printf("perlRecurList at q/perl.qon:44\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(expr )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(expr)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlExpression(car(expr ), indent );
+    perlExpression(car(expr), indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isNil(cdr(expr ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isNil(cdr(expr))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf(", " );
+      printf(", ");
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      perlRecurList(cdr(expr ), indent );
+      perlRecurList(cdr(expr), indent);
 
     };
 
@@ -3801,73 +4007,73 @@ if (globalTrace)
 
 //Building function perlSubExpression from line: 55
 
-function perlSubExpression(tree ,indent ) {
-  var thing = NULL ;
+function perlSubExpression(tree,indent) {
+  var thing = NULL;
 
 if (globalTrace)
     {printf("perlSubExpression at q/perl.qon:55\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isNode(childrenof(tree ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isNode(childrenof(tree))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      perlSubExpression(childrenof(tree ), indent );
+      perlSubExpression(childrenof(tree), indent);
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( isLeaf(tree )) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( isLeaf(tree)) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        printf("%s" , dollar ());
+        printf("%s", dollar());
         if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        display(perlFuncMap(codeof(tree )));
+        display(perlFuncMap(codeof(tree)));
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( equal(1 , listLength(childrenof(tree )))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( equal(1, listLength(childrenof(tree)))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          display(codeof(car(childrenof(tree ))));
+          display(codeof(car(childrenof(tree))));
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( equalBox(boxString("return" ), codeof(car(childrenof(tree ))))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( equalBox(boxString("return"), codeof(car(childrenof(tree))))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf("" );
+            printf("");
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf("()" );
+            printf("()");
 
           };
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          thing = codeof(car(childrenof(tree )));
+          thing = codeof(car(childrenof(tree)));
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( equalBox(boxSymbol("get-struct" ), thing )) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( equalBox(boxSymbol("get-struct"), thing)) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf("%s%s->{%s}" , dollar (), stringify(codeof(second(childrenof(tree )))), stringify(codeof(third(childrenof(tree )))));
+            printf("%s%s->{%s}", dollar(), stringify(codeof(second(childrenof(tree)))), stringify(codeof(third(childrenof(tree)))));
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            if ( equalBox(boxSymbol("new" ), thing )) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+            if ( equalBox(boxSymbol("new"), thing)) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf("{}" );
+              printf("{}");
 
             } else {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf("%s(" , stringify(perlFuncMap(codeof(car(childrenof(tree ))))));
+              printf("%s(", stringify(perlFuncMap(codeof(car(childrenof(tree))))));
               if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              perlRecurList(cdr(childrenof(tree )), indent );
+              perlRecurList(cdr(childrenof(tree)), indent);
               if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf(")" );
+              printf(")");
 
             };
 
@@ -3889,40 +4095,40 @@ if (globalTrace)
 
 //Building function perlIf from line: 93
 
-function perlIf(node ,indent ) {
+function perlIf(node,indent) {
   
 if (globalTrace)
     {printf("perlIf at q/perl.qon:93\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("if ( " );
+  printf("if ( ");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  perlExpression(car(first(childrenof(node ))), 0 );
+  perlExpression(car(first(childrenof(node))), 0);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf(") {" );
+  printf(") {");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  perlBody(second(childrenof(node )), add1(indent ));
+  perlBody(second(childrenof(node)), add1(indent));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("} else {" );
+  printf("} else {");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  perlBody(third(childrenof(node )), add1(indent ));
+  perlBody(third(childrenof(node)), add1(indent));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("}" );
+  printf("}");
 
 if (globalTrace)
     {printf("Leaving perlIf\n");}
@@ -3932,19 +4138,19 @@ if (globalTrace)
 
 //Building function perlSetStruct from line: 106
 
-function perlSetStruct(node ,indent ) {
+function perlSetStruct(node,indent) {
   
 if (globalTrace)
     {printf("perlSetStruct at q/perl.qon:106\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s->{%s} = " , dollar (), stringify(first(codeof(node ))), stringify(second(codeof(node ))));
+  printf("%s%s->{%s} = ", dollar(), stringify(first(codeof(node))), stringify(second(codeof(node))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  perlExpression(childrenof(node ), indent );
+  perlExpression(childrenof(node), indent);
 
 if (globalTrace)
     {printf("Leaving perlSetStruct\n");}
@@ -3954,16 +4160,16 @@ if (globalTrace)
 
 //Building function perlGetStruct from line: 113
 
-function perlGetStruct(node ,indent ) {
+function perlGetStruct(node,indent) {
   
 if (globalTrace)
     {printf("perlGetStruct at q/perl.qon:113\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s->{%s}" , dollar (), stringify(first(codeof(node ))), stringify(second(codeof(node ))));
+  printf("%s%s->{%s}", dollar(), stringify(first(codeof(node))), stringify(second(codeof(node))));
 
 if (globalTrace)
     {printf("Leaving perlGetStruct\n");}
@@ -3973,19 +4179,19 @@ if (globalTrace)
 
 //Building function perlSet from line: 118
 
-function perlSet(node ,indent ) {
+function perlSet(node,indent) {
   
 if (globalTrace)
     {printf("perlSet at q/perl.qon:118\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s = " , dollar (), stringify(first(codeof(node ))));
+  printf("%s%s = ", dollar(), stringify(first(codeof(node))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  perlExpression(childrenof(node ), indent );
+  perlExpression(childrenof(node), indent);
 
 if (globalTrace)
     {printf("Leaving perlSet\n");}
@@ -3995,19 +4201,19 @@ if (globalTrace)
 
 //Building function assertNode from line: 124
 
-function assertNode(node ) {
+function assertNode(node) {
   
 if (globalTrace)
     {printf("assertNode at q/perl.qon:124\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNode(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNode(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    panic("Not a node!" );
+    panic("Not a node!");
 
   };
 
@@ -4019,99 +4225,99 @@ if (globalTrace)
 
 //Building function perlStatement from line: 131
 
-function perlStatement(node ,indent ) {
-  var functionName = NULL ;
+function perlStatement(node,indent) {
+  var functionName = NULL;
 
 if (globalTrace)
     {printf("perlStatement at q/perl.qon:131\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  assertNode(node );
+  assertNode(node);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(boxString("setter" ), subnameof(node ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(boxString("setter"), subnameof(node))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlSet(node , indent );
+    perlSet(node, indent);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalBox(boxString("structSetter" ), subnameof(node ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalBox(boxString("structSetter"), subnameof(node))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      perlSetStruct(node , indent );
+      perlSetStruct(node, indent);
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( equalBox(boxString("if" ), subnameof(node ))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( equalBox(boxString("if"), subnameof(node))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        perlIf(node , indent );
+        perlIf(node, indent);
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( equalBox(boxString("returnvoid" ), subnameof(node ))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( equalBox(boxString("returnvoid"), subnameof(node))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          functionName = functionNameof(node );
+          functionName = functionNameof(node);
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printf("\n#Returnvoid\n" );
+          printf("\n#Returnvoid\n");
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          newLine(indent );
+          newLine(indent);
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          newLine(indent );
+          newLine(indent);
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printf("return" );
+          printf("return");
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( equalBox(boxString("return" ), subnameof(node ))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( equalBox(boxString("return"), subnameof(node))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            functionName = functionNameof(node );
+            functionName = functionNameof(node);
             if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            if ( inList(functionName , noStackTrace ())) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+            if ( inList(functionName, noStackTrace())) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf("" );
+              printf("");
 
             } else {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf("\n#standard return: %s\n" , stringify(functionName ));
+              printf("\n#standard return: %s\n", stringify(functionName));
               if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              newLine(indent );
+              newLine(indent);
               if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf("%s%s%s" , "if (" , dollar (), "globalTrace) {printf(\"Leaving \\n\")}\n" );
+              printf("%s%s%s", "if (", dollar(), "globalTrace) {printf(\"Leaving \\n\")}\n");
 
             };
             if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            newLine(indent );
+            newLine(indent);
             if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            perlExpression(childrenof(node ), indent );
+            perlExpression(childrenof(node), indent);
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            if ( inList(functionName , noStackTrace ())) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+            if ( inList(functionName, noStackTrace())) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf("" );
+              printf("");
 
             } else {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf("\n#standard expression\n" );
+              printf("\n#standard expression\n");
 
             };
             if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            newLine(indent );
+            newLine(indent);
             if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            perlExpression(childrenof(node ), indent );
+            perlExpression(childrenof(node), indent);
             if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            newLine(indent );
+            newLine(indent);
 
           };
 
@@ -4124,7 +4330,7 @@ if (globalTrace)
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf(";\n" );
+  printf(";\n");
 
 if (globalTrace)
     {printf("Leaving perlStatement\n");}
@@ -4134,28 +4340,28 @@ if (globalTrace)
 
 //Building function perlBody from line: 180
 
-function perlBody(tree ,indent ) {
+function perlBody(tree,indent) {
   
 if (globalTrace)
     {printf("perlBody at q/perl.qon:180\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(indent );
+    printIndent(indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("%s%s%s" , "if (" , dollar (), "globalStepTrace) {printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__)}\n" );
+    printf("%s%s%s", "if (", dollar(), "globalStepTrace) {printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__)}\n");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlStatement(car(tree ), indent );
+    perlStatement(car(tree), indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlBody(cdr(tree ), indent );
+    perlBody(cdr(tree), indent);
 
   };
 
@@ -4167,32 +4373,32 @@ if (globalTrace)
 
 //Building function perlDeclarations from line: 190
 
-function perlDeclarations(decls ,indent ) {
-  var decl = NULL ;
+function perlDeclarations(decls,indent) {
+  var decl = NULL;
 
 if (globalTrace)
     {printf("perlDeclarations at q/perl.qon:190\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(decls )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(decls)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    decl = car(decls );
+    decl = car(decls);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("my %s%s = " , dollar (), stringify(second(decl )));
+    printf("my %s%s = ", dollar(), stringify(second(decl)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    display(perlConstMap(third(decl )));
+    display(perlConstMap(third(decl)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(";\n" );
+    printf(";\n");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlDeclarations(cdr(decls ), indent );
+    perlDeclarations(cdr(decls), indent);
 
   };
 
@@ -4204,78 +4410,78 @@ if (globalTrace)
 
 //Building function perlFunction from line: 201
 
-function perlFunction(node ) {
-  var name = NULL ;
+function perlFunction(node) {
+  var name = NULL;
 
 if (globalTrace)
     {printf("perlFunction at q/perl.qon:201\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  name = subnameof(node );
+  name = subnameof(node);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\n\n#Building function %s from line: %s" , stringify(name ), stringify(getTag(name , boxString("line" ))));
+  printf("\n\n#Building function %s from line: %s", stringify(name), stringify(getTag(name, boxString("line"))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(0 );
+  newLine(0);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    newLine(0 );
+    newLine(0);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("sub %s" , stringify(subnameof(node )));
+    printf("sub %s", stringify(subnameof(node)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(" {" );
+    printf(" {");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    newLine(1 );
+    newLine(1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlFunctionArgs(cdr(assoc("intype" , cdr(node ))));
+    perlFunctionArgs(cdr(assoc("intype", cdr(node))));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    newLine(1 );
+    newLine(1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlDeclarations(declarationsof(node ), 1 );
+    perlDeclarations(declarationsof(node), 1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\nif (%sglobalTrace) { printf(\"%s at %s:%s\\n\") }\n" , dollar (), stringify(subnameof(node )), stringify(getTag(name , boxString("filename" ))), stringify(getTag(name , boxString("line" ))));
+    printf("\nif (%sglobalTrace) { printf(\"%s at %s:%s\\n\") }\n", dollar(), stringify(subnameof(node)), stringify(getTag(name, boxString("filename"))), stringify(getTag(name, boxString("line"))));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( inList(name , noStackTrace ())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( inList(name, noStackTrace())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     };
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlBody(childrenof(node ), 1 );
+    perlBody(childrenof(node), 1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( inList(name , noStackTrace ())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( inList(name, noStackTrace())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     };
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\n}\n" );
+    printf("\n}\n");
 
   };
 
@@ -4287,22 +4493,22 @@ if (globalTrace)
 
 //Building function perlForwardDeclaration from line: 233
 
-function perlForwardDeclaration(node ) {
+function perlForwardDeclaration(node) {
   
 if (globalTrace)
     {printf("perlForwardDeclaration at q/perl.qon:233\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\nsub %s" , stringify(subnameof(node )));
+    printf("\nsub %s", stringify(subnameof(node)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(";" );
+    printf(";");
 
   };
 
@@ -4314,22 +4520,22 @@ if (globalTrace)
 
 //Building function perlForwardDeclarations from line: 243
 
-function perlForwardDeclarations(tree ) {
+function perlForwardDeclarations(tree) {
   
 if (globalTrace)
     {printf("perlForwardDeclarations at q/perl.qon:243\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlForwardDeclaration(car(tree ));
+    perlForwardDeclaration(car(tree));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlForwardDeclarations(cdr(tree ));
+    perlForwardDeclarations(cdr(tree));
 
   };
 
@@ -4341,22 +4547,22 @@ if (globalTrace)
 
 //Building function perlFunctions from line: 251
 
-function perlFunctions(tree ) {
+function perlFunctions(tree) {
   
 if (globalTrace)
     {printf("perlFunctions at q/perl.qon:251\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlFunction(car(tree ));
+    perlFunction(car(tree));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlFunctions(cdr(tree ));
+    perlFunctions(cdr(tree));
 
   };
 
@@ -4374,7 +4580,7 @@ if (globalTrace)
     {printf("dollar at q/perl.qon:258\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(character(36 ));
+  return(character(36));
 
 if (globalTrace)
     {printf("Leaving dollar\n");}
@@ -4390,7 +4596,7 @@ if (globalTrace)
     {printf("atSym at q/perl.qon:261\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(character(64 ));
+  return(character(64));
 
 if (globalTrace)
     {printf("Leaving atSym\n");}
@@ -4400,73 +4606,76 @@ if (globalTrace)
 
 //Building function perlIncludes from line: 265
 
-function perlIncludes(nodes ) {
+function perlIncludes(nodes) {
   
 if (globalTrace)
     {printf("perlIncludes at q/perl.qon:265\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s\n" , "use strict;" );
+  printf("%s\n", "use strict;");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s\n" , "my $caller;" );
+  printf("%s%s%s", "my ", dollar(), "caller;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s\n" , "use Carp;" );
+  printf("%s\n", "use Carp;");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  dollar ();
+  dollar();
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s\n" , "use Carp::Always;" );
+  printf("%s\n", "use Carp::Always;");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s%s%s\n" , "sub greaterthan { " , dollar (), "_[0] > " , dollar (), "_[1] };" );
+  printf("%s%s%s%s%s\n", "sub greaterthan { ", dollar(), "_[0] > ", dollar(), "_[1] };");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s%s%s\n" , "sub mult { " , dollar (), "_[0] * " , dollar (), "_[1] };" );
+  printf("%s%s%s\n", "sub qlog { warn ", "@", "_ };");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s%s%s\n" , "sub multf { " , dollar (), "_[0] * " , dollar (), "_[1] };" );
+  printf("%s%s%s%s%s\n", "sub mult { ", dollar(), "_[0] * ", dollar(), "_[1] };");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s%s%s\n" , "sub greaterthanf { " , dollar (), "_[0] > " , dollar (), "_[1] };" );
+  printf("%s%s%s%s%s\n", "sub multf { ", dollar(), "_[0] * ", dollar(), "_[1] };");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s%s%s\n" , "sub equalString { " , dollar (), "_[0] eq " , dollar (), "_[1] };" );
+  printf("%s%s%s%s%s\n", "sub greaterthanf { ", dollar(), "_[0] > ", dollar(), "_[1] };");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("sub read_file { my %sfile = shift; %sfile || die \"Empty file name!!!\"; open my %sfh, '<', %sfile or die; local %s/ = undef; my %scont = <%sfh>; close %sfh; return %scont; }; \n" , dollar (), dollar (), dollar (), dollar (), dollar (), dollar (), dollar (), dollar (), dollar ());
+  printf("%s%s%s%s%s\n", "sub equalString { ", dollar(), "_[0] eq ", dollar(), "_[1] };");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("sub write_file {my %sfile = shift; my %sdata = shift; %sfile || die \"Empty file name!!!\"; open my %sfh, '<', %sfile or die; print %sfh %sdata; close %sfh; } \n" , dollar (), dollar (), dollar (), dollar (), dollar (), dollar (), dollar (), dollar ());
+  printf("sub read_file { my %sfile = shift; %sfile || die \"Empty file name!!!\"; open my %sfh, '<', %sfile or die; local %s/ = undef; my %scont = <%sfh>; close %sfh; return %scont; }; \n", dollar(), dollar(), dollar(), dollar(), dollar(), dollar(), dollar(), dollar(), dollar());
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s%s%s\n" , "sub stringConcatenate { " , dollar (), "_[0] . " , dollar (), "_[1]}" );
+  printf("sub write_file {my %sfile = shift; my %sdata = shift; %sfile || die \"Empty file name!!!\"; open my %sfh, '>', %sfile or die; print %sfh %sdata; close %sfh; } \n", dollar(), dollar(), dollar(), dollar(), dollar(), dollar(), dollar(), dollar());
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s%s%s\n" , "sub subtract { " , dollar (), "_[0] - " , dollar (), "_[1]}" );
+  printf("%s%s%s%s%s\n", "sub stringConcatenate { ", dollar(), "_[0] . ", dollar(), "_[1]}");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s%s%s\n" , "sub subf { " , dollar (), "_[0] - " , dollar (), "_[1]}" );
+  printf("%s%s%s%s%s\n", "sub subtract { ", dollar(), "_[0] - ", dollar(), "_[1]}");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s%s%s\n" , "sub andBool { " , dollar (), "_[0] && " , dollar (), "_[1]}" );
+  printf("%s%s%s%s%s\n", "sub subf { ", dollar(), "_[0] - ", dollar(), "_[1]}");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s%s%s\n" , "sub equal { " , dollar (), "_[0] == " , dollar (), "_[1]}" );
+  printf("%s%s%s%s%s\n", "sub andBool { ", dollar(), "_[0] && ", dollar(), "_[1]}");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s%s%s\n" , "sub panic { carp " , atSym (), "_; die \"" , atSym (), "_\"}" );
+  printf("%s%s%s%s%s\n", "sub equal { ", dollar(), "_[0] == ", dollar(), "_[1]}");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("sub intToString { return %s_[0]}\n" , dollar ());
+  printf("%s%s%s%s%s\n", "sub panic { carp ", atSym(), "_; die \"", atSym(), "_\"}");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("sub character { return chr(%s_[0])}\n" , dollar ());
+  printf("sub intToString { return %s_[0]}\n", dollar());
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s%s%s%s%s%s%s\n" , "sub getStringArray { my " , dollar (), "index = shift; my " , dollar (), "arr = shift; return " , dollar (), "arr->[" , dollar (), "index]}" );
+  printf("sub character { return chr(%s_[0])}\n", dollar());
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("%s%s%s%s%s%s%s%s%s\n", "sub getStringArray { my ", dollar(), "index = shift; my ", dollar(), "arr = shift; return ", dollar(), "arr->[", dollar(), "index]}");
 
 if (globalTrace)
     {printf("Leaving perlIncludes\n");}
@@ -4474,12 +4683,12 @@ if (globalTrace)
 }
 
 
-//Building function perlTypeDecl from line: 299
+//Building function perlTypeDecl from line: 300
 
-function perlTypeDecl(l ) {
+function perlTypeDecl(l) {
   
 if (globalTrace)
-    {printf("perlTypeDecl at q/perl.qon:299\n");}
+    {printf("perlTypeDecl at q/perl.qon:300\n");}
 
 if (globalTrace)
     {printf("Leaving perlTypeDecl\n");}
@@ -4487,24 +4696,24 @@ if (globalTrace)
 }
 
 
-//Building function perlStructComponents from line: 304
+//Building function perlStructComponents from line: 305
 
-function perlStructComponents(node ) {
+function perlStructComponents(node) {
   
 if (globalTrace)
-    {printf("perlStructComponents at q/perl.qon:304\n");}
+    {printf("perlStructComponents at q/perl.qon:305\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlTypeDecl(car(node ));
+    perlTypeDecl(car(node));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlStructComponents(cdr(node ));
+    perlStructComponents(cdr(node));
 
   };
 
@@ -4514,15 +4723,15 @@ if (globalTrace)
 }
 
 
-//Building function perlStruct from line: 310
+//Building function perlStruct from line: 311
 
-function perlStruct(node ) {
+function perlStruct(node) {
   
 if (globalTrace)
-    {printf("perlStruct at q/perl.qon:310\n");}
+    {printf("perlStruct at q/perl.qon:311\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  perlStructComponents(cdr(car(node )));
+  perlStructComponents(cdr(car(node)));
 
 if (globalTrace)
     {printf("Leaving perlStruct\n");}
@@ -4530,25 +4739,25 @@ if (globalTrace)
 }
 
 
-//Building function perlTypeMap from line: 313
+//Building function perlTypeMap from line: 314
 
-function perlTypeMap(aSym ) {
-  var symMap = NULL ;
+function perlTypeMap(aSym) {
+  var symMap = NULL;
 
 if (globalTrace)
-    {printf("perlTypeMap at q/perl.qon:313\n");}
+    {printf("perlTypeMap at q/perl.qon:314\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  symMap = alistCons(boxSymbol("stringArray" ), boxSymbol("char**" ), alistCons(boxSymbol("string" ), boxSymbol("char*" ), NULL ));
+  symMap = alistCons(boxSymbol("stringArray"), boxSymbol("char**"), alistCons(boxSymbol("string"), boxSymbol("char*"), NULL));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( truthy(assoc(stringify(aSym ), symMap ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( truthy(assoc(stringify(aSym), symMap))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cdr(assoc(stringify(aSym ), symMap )));
+    return(cdr(assoc(stringify(aSym), symMap)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(aSym );
+    return(aSym);
 
   };
 
@@ -4558,25 +4767,25 @@ if (globalTrace)
 }
 
 
-//Building function perlConstMap from line: 325
+//Building function perlConstMap from line: 326
 
-function perlConstMap(aSym ) {
-  var symMap = NULL ;
+function perlConstMap(aSym) {
+  var symMap = NULL;
 
 if (globalTrace)
-    {printf("perlConstMap at q/perl.qon:325\n");}
+    {printf("perlConstMap at q/perl.qon:326\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString("symbol" , boxType(aSym ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString("symbol", boxType(aSym))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    symMap = alistCons(boxSymbol("false" ), boxSymbol("0" ), alistCons(boxSymbol("nil" ), boxSymbol("undef" ), NULL ));
+    symMap = alistCons(boxSymbol("false"), boxSymbol("0"), alistCons(boxSymbol("nil"), boxSymbol("undef"), NULL));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cdr(assocFail(stringify(aSym ), symMap , aSym )));
+    return(cdr(assocFail(stringify(aSym), symMap, aSym)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(aSym );
+    return(aSym);
 
   };
 
@@ -4586,25 +4795,25 @@ if (globalTrace)
 }
 
 
-//Building function perlFuncMap from line: 335
+//Building function perlFuncMap from line: 336
 
-function perlFuncMap(aSym ) {
-  var symMap = NULL ;
+function perlFuncMap(aSym) {
+  var symMap = NULL;
 
 if (globalTrace)
-    {printf("perlFuncMap at q/perl.qon:335\n");}
+    {printf("perlFuncMap at q/perl.qon:336\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString("symbol" , boxType(aSym ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString("symbol", boxType(aSym))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    symMap = alistCons(boxSymbol("sub" ), boxSymbol("subtract" ), alistCons(boxSymbol("=" ), boxSymbol("equal" ), alistCons(boxSymbol("sub-string" ), boxSymbol("substr" ), alistCons(boxSymbol("read-file" ), boxSymbol("read_file" ), alistCons(boxSymbol("write-file" ), boxSymbol("write_file" ), alistCons(boxSymbol(">" ), boxSymbol("greaterthan" ), alistCons(boxSymbol("string-length" ), boxSymbol("length" ), alistCons(boxSymbol("nil" ), boxSymbol("undef" ), NULL ))))))));
+    symMap = alistCons(boxSymbol("sub"), boxSymbol("subtract"), alistCons(boxSymbol("="), boxSymbol("equal"), alistCons(boxSymbol("sub-string"), boxSymbol("substr"), alistCons(boxSymbol("read-file"), boxSymbol("read_file"), alistCons(boxSymbol("write-file"), boxSymbol("write_file"), alistCons(boxSymbol(">"), boxSymbol("greaterthan"), alistCons(boxSymbol("string-length"), boxSymbol("length"), alistCons(boxSymbol("nil"), boxSymbol("undef"), NULL))))))));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cdr(assocFail(stringify(aSym ), symMap , aSym )));
+    return(cdr(assocFail(stringify(aSym), symMap, aSym)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(aSym );
+    return(aSym);
 
   };
 
@@ -4614,12 +4823,12 @@ if (globalTrace)
 }
 
 
-//Building function perlType from line: 352
+//Building function perlType from line: 353
 
-function perlType(node ) {
+function perlType(node) {
   
 if (globalTrace)
-    {printf("perlType at q/perl.qon:352\n");}
+    {printf("perlType at q/perl.qon:353\n");}
 
 if (globalTrace)
     {printf("Leaving perlType\n");}
@@ -4627,24 +4836,24 @@ if (globalTrace)
 }
 
 
-//Building function perlTypes from line: 357
+//Building function perlTypes from line: 358
 
-function perlTypes(nodes ) {
+function perlTypes(nodes) {
   
 if (globalTrace)
-    {printf("perlTypes at q/perl.qon:357\n");}
+    {printf("perlTypes at q/perl.qon:358\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(nodes )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(nodes)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlType(car(nodes ));
+    perlType(car(nodes));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlTypes(cdr(nodes ));
+    perlTypes(cdr(nodes));
 
   };
 
@@ -4654,30 +4863,30 @@ if (globalTrace)
 }
 
 
-//Building function perlFunctionArgs from line: 363
+//Building function perlFunctionArgs from line: 364
 
-function perlFunctionArgs(tree ) {
+function perlFunctionArgs(tree) {
   
 if (globalTrace)
-    {printf("perlFunctionArgs at q/perl.qon:363\n");}
+    {printf("perlFunctionArgs at q/perl.qon:364\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("%s%s" , "my " , dollar ());
+    printf("%s%s", "my ", dollar());
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    display(second(tree ));
+    display(second(tree));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(" = shift;\n" );
+    printf(" = shift;\n");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    perlFunctionArgs(cddr(tree ));
+    perlFunctionArgs(cddr(tree));
 
   };
 
@@ -4687,90 +4896,90 @@ if (globalTrace)
 }
 
 
-//Building function perlCompile from line: 373
+//Building function perlCompile from line: 374
 
-function perlCompile(filename ) {
-  var programStr = "" ;
-var tree = NULL ;
-var program = NULL ;
+function perlCompile(filename) {
+  var programStr = "";
+var tree = NULL;
+var program = NULL;
 
 if (globalTrace)
-    {printf("perlCompile at q/perl.qon:373\n");}
+    {printf("perlCompile at q/perl.qon:374\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  programStr = read_file(filename );
+  programStr = read_file(filename);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = readSexpr(programStr , filename );
+  tree = readSexpr(programStr, filename);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  program = alistCons(boxString("includes" ), astIncludes(first(tree )), alistCons(boxString("types" ), astTypes(second(tree )), alistCons(boxString("functions" ), astFunctions(third(tree )), NULL )));
+  program = alistCons(boxString("includes"), astIncludes(first(tree)), alistCons(boxString("types"), astTypes(second(tree)), alistCons(boxString("functions"), astFunctions(third(tree)), NULL)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  program = mergeIncludes(program );
+  program = mergeIncludes(program);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  perlIncludes(cdr(assoc("includes" , program )));
+  perlIncludes(cdr(assoc("includes", program)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  perlTypes(childrenof(cdr(assoc("types" , program ))));
+  perlTypes(childrenof(cdr(assoc("types", program))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("use strict;\n" );
+  printf("use strict;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("use Carp;\n" );
+  printf("use Carp;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("use Data::Dumper;\n" );
+  printf("use Data::Dumper;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s" , "my " , dollar (), "globalStackTrace = undef;\n" );
+  printf("%s%s%s", "my ", dollar(), "globalStackTrace = undef;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s" , "my " , dollar (), "globalTrace = undef;\n" );
+  printf("%s%s%s", "my ", dollar(), "globalTrace = undef;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s" , "my " , dollar (), "globalStepTrace = undef;\n" );
+  printf("%s%s%s", "my ", dollar(), "globalStepTrace = undef;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s" , "my " , dollar (), "globalArgs = undef;\n" );
+  printf("%s%s%s", "my ", dollar(), "globalArgs = undef;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s" , "my " , dollar (), "globalArgsCount = undef;\n" );
+  printf("%s%s%s", "my ", dollar(), "globalArgsCount = undef;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s\n" , "my " , dollar (), "true = 1;\n" );
+  printf("%s%s%s\n", "my ", dollar(), "true = 1;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s" , "my " , dollar (), "false = 0;\n" );
+  printf("%s%s%s", "my ", dollar(), "false = 0;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s" , "my " , dollar (), "undef;\n" );
+  printf("%s%s%s", "my ", dollar(), "undef;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s" , "\nsub isNil {\n    return !defined(" , dollar (), "_[0]);\n}\n\n\n#Forward declarations\n" );
+  printf("%s%s%s", "\nsub isNil {\n    return !defined(", dollar(), "_[0]);\n}\n\n\n#Forward declarations\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  perlForwardDeclarations(cdr(assoc("children" , cdr(cdr(assoc("functions" , program ))))));
+  perlForwardDeclarations(cdr(assoc("children", cdr(cdr(assoc("functions", program))))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\n\n#End forward declarations\n\n" );
+  printf("\n\n#End forward declarations\n\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  perlFunctions(cdr(assoc("children" , cdr(cdr(assoc("functions" , program ))))));
+  perlFunctions(cdr(assoc("children", cdr(cdr(assoc("functions", program))))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf(";\n" );
+  printf(";\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s%s" , dollar (), "globalArgs = [ 1, " , atSym (), "ARGV];" );
+  printf("%s%s%s%s", dollar(), "globalArgs = [ 1, ", atSym(), "ARGV];");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s%s%s%s" , dollar (), "globalArgsCount = scalar(" , atSym (), "ARGV)+1;\n" );
+  printf("%s%s%s%s", dollar(), "globalArgsCount = scalar(", atSym(), "ARGV)+1;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("start();" );
+  printf("start();");
 
 if (globalTrace)
     {printf("Leaving perlCompile\n");}
@@ -4780,39 +4989,39 @@ if (globalTrace)
 
 //Building function ansiFunctionArgs from line: 3
 
-function ansiFunctionArgs(tree ) {
+function ansiFunctionArgs(tree) {
   
 if (globalTrace)
     {printf("ansiFunctionArgs at q/ansi.qon:3\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    display(ansiTypeMap(first(tree )));
+    display(ansiTypeMap(first(tree)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(" " );
+    printf(" ");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    display(second(tree ));
+    display(second(tree));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isNil(cddr(tree ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isNil(cddr(tree))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("," );
+      printf(",");
 
     };
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiFunctionArgs(cddr(tree ));
+    ansiFunctionArgs(cddr(tree));
 
   };
 
@@ -4824,13 +5033,13 @@ if (globalTrace)
 
 //Building function ansiLeaf from line: 14
 
-function ansiLeaf(thisNode ,indent ) {
+function ansiLeaf(thisNode,indent) {
   
 if (globalTrace)
     {printf("ansiLeaf at q/ansi.qon:14\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  display(ansiFuncMap(codeof(thisNode )));
+  display(ansiFuncMap(codeof(thisNode)));
 
 if (globalTrace)
     {printf("Leaving ansiLeaf\n");}
@@ -4840,19 +5049,19 @@ if (globalTrace)
 
 //Building function ansiStructGetterExpression from line: 17
 
-function ansiStructGetterExpression(thisNode ,indent ) {
+function ansiStructGetterExpression(thisNode,indent) {
   
 if (globalTrace)
     {printf("ansiStructGetterExpression at q/ansi.qon:17\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(boxString("structGetter" ), subnameof(thisNode ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(boxString("structGetter"), subnameof(thisNode))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiGetStruct(thisNode , indent );
+    ansiGetStruct(thisNode, indent);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiLeaf(thisNode , indent );
+    ansiLeaf(thisNode, indent);
 
   };
 
@@ -4864,19 +5073,19 @@ if (globalTrace)
 
 //Building function ansiExpression from line: 23
 
-function ansiExpression(node ,indent ) {
+function ansiExpression(node,indent) {
   
 if (globalTrace)
     {printf("ansiExpression at q/ansi.qon:23\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isLeaf(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isLeaf(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    display(ansiFuncMap(codeof(node )));
+    display(ansiFuncMap(codeof(node)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiSubExpression(node , indent );
+    ansiSubExpression(node, indent);
 
   };
 
@@ -4888,31 +5097,31 @@ if (globalTrace)
 
 //Building function ansiRecurList from line: 29
 
-function ansiRecurList(expr ,indent ) {
+function ansiRecurList(expr,indent) {
   
 if (globalTrace)
     {printf("ansiRecurList at q/ansi.qon:29\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(expr )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(expr)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiExpression(car(expr ), indent );
+    ansiExpression(car(expr), indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isNil(cdr(expr ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isNil(cdr(expr))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf(", " );
+      printf(", ");
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      ansiRecurList(cdr(expr ), indent );
+      ansiRecurList(cdr(expr), indent);
 
     };
 
@@ -4926,70 +5135,70 @@ if (globalTrace)
 
 //Building function ansiSubExpression from line: 41
 
-function ansiSubExpression(tree ,indent ) {
-  var thing = NULL ;
+function ansiSubExpression(tree,indent) {
+  var thing = NULL;
 
 if (globalTrace)
     {printf("ansiSubExpression at q/ansi.qon:41\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isNode(childrenof(tree ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isNode(childrenof(tree))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      ansiSubExpression(childrenof(tree ), indent );
+      ansiSubExpression(childrenof(tree), indent);
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( isLeaf(tree )) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( isLeaf(tree)) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        display(ansiFuncMap(codeof(tree )));
+        display(ansiFuncMap(codeof(tree)));
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( equal(1 , listLength(childrenof(tree )))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( equal(1, listLength(childrenof(tree)))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          display(codeof(car(childrenof(tree ))));
+          display(codeof(car(childrenof(tree))));
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( equalBox(boxString("return" ), codeof(car(childrenof(tree ))))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( equalBox(boxString("return"), codeof(car(childrenof(tree))))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf("" );
+            printf("");
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf("()" );
+            printf("()");
 
           };
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          thing = codeof(car(childrenof(tree )));
+          thing = codeof(car(childrenof(tree)));
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( equalBox(boxSymbol("get-struct" ), thing )) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( equalBox(boxSymbol("get-struct"), thing)) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf("%s->%s" , stringify(codeof(second(childrenof(tree )))), stringify(codeof(third(childrenof(tree )))));
+            printf("%s->%s", stringify(codeof(second(childrenof(tree)))), stringify(codeof(third(childrenof(tree)))));
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            if ( equalBox(boxSymbol("new" ), thing )) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+            if ( equalBox(boxSymbol("new"), thing)) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf("malloc(sizeof(%s))" , stringify(codeof(third(childrenof(tree )))));
+              printf("malloc(sizeof(%s))", stringify(codeof(third(childrenof(tree)))));
 
             } else {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf("%s(" , stringify(ansiFuncMap(codeof(car(childrenof(tree ))))));
+              printf("%s(", stringify(ansiFuncMap(codeof(car(childrenof(tree))))));
               if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              ansiRecurList(cdr(childrenof(tree )), indent );
+              ansiRecurList(cdr(childrenof(tree)), indent);
               if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf(")" );
+              printf(")");
 
             };
 
@@ -5011,40 +5220,40 @@ if (globalTrace)
 
 //Building function ansiIf from line: 81
 
-function ansiIf(node ,indent ) {
+function ansiIf(node,indent) {
   
 if (globalTrace)
     {printf("ansiIf at q/ansi.qon:81\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("if ( " );
+  printf("if ( ");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  ansiExpression(car(first(childrenof(node ))), 0 );
+  ansiExpression(car(first(childrenof(node))), 0);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf(") {" );
+  printf(") {");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  ansiBody(second(childrenof(node )), add1(indent ));
+  ansiBody(second(childrenof(node)), add1(indent));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("} else {" );
+  printf("} else {");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  ansiBody(third(childrenof(node )), add1(indent ));
+  ansiBody(third(childrenof(node)), add1(indent));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("}" );
+  printf("}");
 
 if (globalTrace)
     {printf("Leaving ansiIf\n");}
@@ -5054,19 +5263,19 @@ if (globalTrace)
 
 //Building function ansiSetStruct from line: 94
 
-function ansiSetStruct(node ,indent ) {
+function ansiSetStruct(node,indent) {
   
 if (globalTrace)
     {printf("ansiSetStruct at q/ansi.qon:94\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s->%s = " , stringify(first(codeof(node ))), stringify(second(codeof(node ))));
+  printf("%s->%s = ", stringify(first(codeof(node))), stringify(second(codeof(node))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  ansiExpression(childrenof(node ), indent );
+  ansiExpression(childrenof(node), indent);
 
 if (globalTrace)
     {printf("Leaving ansiSetStruct\n");}
@@ -5076,16 +5285,16 @@ if (globalTrace)
 
 //Building function ansiGetStruct from line: 103
 
-function ansiGetStruct(node ,indent ) {
+function ansiGetStruct(node,indent) {
   
 if (globalTrace)
     {printf("ansiGetStruct at q/ansi.qon:103\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s->%s" , stringify(first(codeof(node ))), stringify(second(codeof(node ))));
+  printf("%s->%s", stringify(first(codeof(node))), stringify(second(codeof(node))));
 
 if (globalTrace)
     {printf("Leaving ansiGetStruct\n");}
@@ -5095,19 +5304,19 @@ if (globalTrace)
 
 //Building function ansiSet from line: 111
 
-function ansiSet(node ,indent ) {
+function ansiSet(node,indent) {
   
 if (globalTrace)
     {printf("ansiSet at q/ansi.qon:111\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s = " , stringify(first(codeof(node ))));
+  printf("%s = ", stringify(first(codeof(node))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  ansiExpression(childrenof(node ), indent );
+  ansiExpression(childrenof(node), indent);
 
 if (globalTrace)
     {printf("Leaving ansiSet\n");}
@@ -5117,43 +5326,43 @@ if (globalTrace)
 
 //Building function ansiStatement from line: 117
 
-function ansiStatement(node ,indent ) {
+function ansiStatement(node,indent) {
   
 if (globalTrace)
     {printf("ansiStatement at q/ansi.qon:117\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(boxString("setter" ), subnameof(node ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(boxString("setter"), subnameof(node))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiSet(node , indent );
+    ansiSet(node, indent);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalBox(boxString("structSetter" ), subnameof(node ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalBox(boxString("structSetter"), subnameof(node))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      ansiSetStruct(node , indent );
+      ansiSetStruct(node, indent);
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( equalBox(boxString("if" ), subnameof(node ))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( equalBox(boxString("if"), subnameof(node))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        ansiIf(node , indent );
+        ansiIf(node, indent);
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( equalBox(boxString("returnvoid" ), subnameof(node ))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( equalBox(boxString("returnvoid"), subnameof(node))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          newLine(indent );
+          newLine(indent);
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printf("return" );
+          printf("return");
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          newLine(indent );
+          newLine(indent);
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          ansiExpression(childrenof(node ), indent );
+          ansiExpression(childrenof(node), indent);
 
         };
 
@@ -5164,7 +5373,7 @@ if (globalTrace)
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf(";\n" );
+  printf(";\n");
 
 if (globalTrace)
     {printf("Leaving ansiStatement\n");}
@@ -5174,43 +5383,49 @@ if (globalTrace)
 
 //Building function ansiBody from line: 135
 
-function ansiBody(tree ,indent ) {
-  var code = NULL ;
+function ansiBody(tree,indent) {
+  var code = NULL;
 
 if (globalTrace)
     {printf("ansiBody at q/ansi.qon:135\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    code = codeof(car(tree ));
+    code = codeof(car(tree));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isNil(code )) {
+    if ( isNil(code)) {
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      code = car(codeof(car(tree )));
+      code = car(codeof(car(tree)));
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("\nif (globalTrace)\n    snprintf(caller, 1024, \"from %s:%s\");\n" , stringify(getTagFail(code , boxString("filename" ), boxString("Unknown" ))), stringify(getTagFail(code , boxString("line" ), boxString("Unknown" ))));
+      printf("\n");
+      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      printIndent(indent);
+      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      printf("if (globalTrace)   snprintf(caller, 1024, \"from %s:%s\");\n", stringify(getTagFail(code, boxString("filename"), boxString("Unknown"))), stringify(getTagFail(code, boxString("line"), boxString("Unknown"))));
 
     };
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(indent );
+    printIndent(indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("%s" , "if (globalStepTrace) printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__);\n" );
+    printf("%s", "if (globalStepTrace) printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__);\n");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiStatement(car(tree ), indent );
+    ansiStatement(car(tree), indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiBody(cdr(tree ), indent );
+    ansiBody(cdr(tree), indent);
 
   };
 
@@ -5220,34 +5435,34 @@ if (globalTrace)
 }
 
 
-//Building function ansiDeclarations from line: 154
+//Building function ansiDeclarations from line: 156
 
-function ansiDeclarations(decls ,indent ) {
-  var decl = NULL ;
+function ansiDeclarations(decls,indent) {
+  var decl = NULL;
 
 if (globalTrace)
-    {printf("ansiDeclarations at q/ansi.qon:154\n");}
+    {printf("ansiDeclarations at q/ansi.qon:156\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(decls )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(decls)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    decl = car(decls );
+    decl = car(decls);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("%s %s = " , stringify(ansiTypeMap(first(decl ))), stringify(second(decl )));
+    printf("%s %s = ", stringify(ansiTypeMap(first(decl))), stringify(second(decl)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    display(ansiFuncMap(third(decl )));
+    display(ansiFuncMap(third(decl)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(";\n" );
+    printf(";\n");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiDeclarations(cdr(decls ), indent );
+    ansiDeclarations(cdr(decls), indent);
 
   };
 
@@ -5257,82 +5472,82 @@ if (globalTrace)
 }
 
 
-//Building function ansiFunction from line: 168
+//Building function ansiFunction from line: 170
 
-function ansiFunction(node ) {
-  var name = NULL ;
+function ansiFunction(node) {
+  var name = NULL;
 
 if (globalTrace)
-    {printf("ansiFunction at q/ansi.qon:168\n");}
+    {printf("ansiFunction at q/ansi.qon:170\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  name = subnameof(node );
+  name = subnameof(node);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\n\n//Building function %s from line: %s" , stringify(name ), stringify(getTag(name , boxString("line" ))));
+  printf("\n\n//Building function %s from line: %s", stringify(name), stringify(getTag(name, boxString("line"))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(0 );
+  newLine(0);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    newLine(0 );
+    newLine(0);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("%s %s(" , stringify(ansiTypeMap(cdr(assoc("outtype" , cdr(node ))))), stringify(subnameof(node )));
+    printf("%s %s(", stringify(ansiTypeMap(cdr(assoc("outtype", cdr(node))))), stringify(subnameof(node)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiFunctionArgs(cdr(assoc("intype" , cdr(node ))));
+    ansiFunctionArgs(cdr(assoc("intype", cdr(node))));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(") {" );
+    printf(") {");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    newLine(1 );
+    newLine(1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiDeclarations(declarationsof(node ), 1 );
+    ansiDeclarations(declarationsof(node), 1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( inList(toStr(name ), noStackTrace ())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( inList(toStr(name), noStackTrace())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("\nif (globalTrace)\n    printf(\"%s at %s:%s (%%s)\\n\", caller);\n" , stringify(name ), stringify(getTag(name , boxString("filename" ))), stringify(getTag(name , boxString("line" ))));
+      printf("\nif (globalTrace)\n    fprintf(stderr, \"%s at %s:%s (%%s)\\n\", caller);\n", stringify(name), stringify(getTag(name, boxString("filename"))), stringify(getTag(name, boxString("line"))));
 
     };
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( inList(toStr(name ), noStackTrace ())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( inList(toStr(name), noStackTrace())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {
     };
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiBody(childrenof(node ), 1 );
+    ansiBody(childrenof(node), 1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( inList(toStr(name ), noStackTrace ())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( inList(toStr(name), noStackTrace())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("\nif (globalTrace)\n    printf(\"Leaving %s\\n\");\n" , stringify(name ));
+      printf("\nif (globalTrace)\n    fprintf(stderr, \"Leaving %s\\n\");\n", stringify(name));
 
     };
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\n}\n" );
+    printf("\n}\n");
 
   };
 
@@ -5342,27 +5557,27 @@ if (globalTrace)
 }
 
 
-//Building function ansiForwardDeclaration from line: 202
+//Building function ansiForwardDeclaration from line: 204
 
-function ansiForwardDeclaration(node ) {
+function ansiForwardDeclaration(node) {
   
 if (globalTrace)
-    {printf("ansiForwardDeclaration at q/ansi.qon:202\n");}
+    {printf("ansiForwardDeclaration at q/ansi.qon:204\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\n%s %s(" , stringify(ansiTypeMap(cdr(assoc("outtype" , cdr(node ))))), stringify(subnameof(node )));
+    printf("\n%s %s(", stringify(ansiTypeMap(cdr(assoc("outtype", cdr(node))))), stringify(subnameof(node)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiFunctionArgs(cdr(assoc("intype" , cdr(node ))));
+    ansiFunctionArgs(cdr(assoc("intype", cdr(node))));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(");" );
+    printf(");");
 
   };
 
@@ -5372,24 +5587,24 @@ if (globalTrace)
 }
 
 
-//Building function ansiForwardDeclarations from line: 214
+//Building function ansiForwardDeclarations from line: 216
 
-function ansiForwardDeclarations(tree ) {
+function ansiForwardDeclarations(tree) {
   
 if (globalTrace)
-    {printf("ansiForwardDeclarations at q/ansi.qon:214\n");}
+    {printf("ansiForwardDeclarations at q/ansi.qon:216\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiForwardDeclaration(car(tree ));
+    ansiForwardDeclaration(car(tree));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiForwardDeclarations(cdr(tree ));
+    ansiForwardDeclarations(cdr(tree));
 
   };
 
@@ -5399,24 +5614,24 @@ if (globalTrace)
 }
 
 
-//Building function ansiFunctions from line: 222
+//Building function ansiFunctions from line: 224
 
-function ansiFunctions(tree ) {
+function ansiFunctions(tree) {
   
 if (globalTrace)
-    {printf("ansiFunctions at q/ansi.qon:222\n");}
+    {printf("ansiFunctions at q/ansi.qon:224\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiFunction(car(tree ));
+    ansiFunction(car(tree));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiFunctions(cdr(tree ));
+    ansiFunctions(cdr(tree));
 
   };
 
@@ -5426,18 +5641,21 @@ if (globalTrace)
 }
 
 
-//Building function ansiIncludes from line: 227
+//Building function ansiIncludes from line: 229
 
-function ansiIncludes(nodes ) {
+function ansiIncludes(nodes) {
   
 if (globalTrace)
-    {printf("ansiIncludes at q/ansi.qon:227\n");}
+    {printf("ansiIncludes at q/ansi.qon:229\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nconst char* getEnv(char* key){return getenv(key);}\n void panic(char* s){abort();exit(1);}\nint sub(int a, int b) { return a - b; }\nfloat mult(int a, int b) { return a * b; }\nint greaterthan(int a, int b) { return a > b; }\nfloat subf(float a, float b) { return a - b; }\nfloat multf(float a, float b) { return a * b; }\nint greaterthanf(float a, float b) { return a > b; }\nint equal(int a, int b) { return a == b; }\nint equalString(char* a, char* b) { return !strcmp(a,b); }\nint andBool(int a, int b) { return a == b;}\nint string_length(char* s) { return strlen(s);}\nchar* setSubString(char* target, int start,char *source){target[start]=source[0]; return target;}\nchar* sub_string(char* s, int start, int length) {\nchar* substr = calloc(length+1, 1);\nstrncpy(substr, s+start, length);\nreturn substr;\n}\n\n\n\nchar* stringConcatenate(char* a, char* b) {\nint len = strlen(a) + strlen(b) + 1;\nchar* target = calloc(len,1);\nstrncat(target, a, len);\nstrncat(target, b, len);\nreturn target;\n}\n\nchar* intToString(int a) {\nint len = 100;\nchar* target = calloc(len,1);\nsnprintf(target, 99, \"%d\", a);\nreturn target;\n}\n\ntypedef int*  array;\ntypedef int bool;\n#define true 1\n#define false 0\n\n\nvoid * gc_malloc( unsigned int size ) {\nreturn malloc( size);\n}\n\nint* makeArray(int length) {\n    int * array = gc_malloc(length*sizeof(int));\n    return array;\n}\n\nint at(int* arr, int index) {\n  return arr[index];\n}\n\nvoid setAt(int* array, int index, int value) {\n    array[index] = value;\n}\n\nchar * read_file(char * filename) {\nchar * buffer = 0;\nlong length;\nFILE * f = fopen (filename, \"rb\");\n\nif (f)\n{\n  fseek (f, 0, SEEK_END);\n  length = ftell (f);\n  fseek (f, 0, SEEK_SET);\n  buffer = malloc (length);\n  if (buffer == NULL) {\n  printf(\"Malloc failed!\\n\");\n  exit(1);\n}\n  if (buffer)\n  {\n    fread (buffer, 1, length, f);\n  }\n  fclose (f);\n}\nreturn buffer;\n}\n\n\nvoid write_file (char * filename, char * data) {\nFILE *f = fopen(filename, \"w\");\nif (f == NULL)\n{\n    printf(\"Error opening file!\");\n    exit(1);\n}\n\nfprintf(f, \"%s\", data);\n\nfclose(f);\n}\n\nchar* getStringArray(int index, char** strs) {\nreturn strs[index];\n}\n\nint start();  //Forwards declare the user's main routine\nchar* caller;\nchar** globalArgs;\nint globalArgsCount;\nbool globalTrace = false;\nbool globalStepTrace = false;\n\nint main( int argc, char *argv[] )  {\n  globalArgs = argv;\n  globalArgsCount = argc;\n  caller=calloc(1024,1);\n\n  return start();\n\n}\n\n" );
+  printf("%s", "\n#include <stdarg.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nconst char* getEnv(char* key){return getenv(key);}\n void panic(char* s){abort();exit(1);}\nint sub(int a, int b) { return a - b; }\nfloat mult(int a, int b) { return a * b; }\nint greaterthan(int a, int b) { return a > b; }\nfloat subf(float a, float b) { return a - b; }\nfloat multf(float a, float b) { return a * b; }\nint greaterthanf(float a, float b) { return a > b; }\nint equal(int a, int b) { return a == b; }\nint equalString(char* a, char* b) { return !strcmp(a,b); }\nint andBool(int a, int b) { return a == b;}\nint string_length(char* s) { return strlen(s);}\nchar* setSubString(char* target, int start,char *source){target[start]=source[0]; return target;}\nchar* sub_string(char* s, int start, int length) {\nchar* substr = calloc(length+1, 1);\nstrncpy(substr, s+start, length);\nreturn substr;\n}\n\n\n\nchar* stringConcatenate(char* a, char* b) {\nint len = strlen(a) + strlen(b) + 1;\nchar* target = calloc(len,1);\nstrncat(target, a, len);\nstrncat(target, b, len);\nreturn target;\n}\n\nchar* intToString(int a) {\nint len = 100;\nchar* target = calloc(len,1);\nsnprintf(target, 99, \"%d\", a);\nreturn target;\n}\n\ntypedef int*  array;\ntypedef int bool;\n#define true 1\n#define false 0\n\n\nvoid * gc_malloc( unsigned int size ) {\nreturn malloc( size);\n}\n\nint* makeArray(int length) {\n    int * array = gc_malloc(length*sizeof(int));\n    return array;\n}\n\nint at(int* arr, int index) {\n  return arr[index];\n}\n\nvoid setAt(int* array, int index, int value) {\n    array[index] = value;\n}\n\nchar * read_file(char * filename) {\nchar * buffer = 0;\nlong length;\nFILE * f = fopen (filename, \"rb\");\n\nif (f)\n{\n  fseek (f, 0, SEEK_END);\n  length = ftell (f);\n  fseek (f, 0, SEEK_SET);\n  buffer = malloc (length);\n  if (buffer == NULL) {\n  printf(\"Malloc failed!\\n\");\n  exit(1);\n}\n  if (buffer)\n  {\n    fread (buffer, 1, length, f);\n  }\n  fclose (f);\n}\nreturn buffer;\n}\n\n\nvoid write_file (char * filename, char * data) {\nFILE *f = fopen(filename, \"w\");\nif (f == NULL)\n{\n    printf(\"Error opening file!\");\n    exit(1);\n}\n\nfprintf(f, \"%s\", data);\n\nfclose(f);\n}\n\nchar* getStringArray(int index, char** strs) {\nreturn strs[index];\n}\n\nint start();  //Forwards declare the user's main routine\nchar* caller;\nchar** globalArgs;\nint globalArgsCount;\nbool globalTrace = false;\nbool globalStepTrace = false;\n\nint main( int argc, char *argv[] )  {\n  globalArgs = argv;\n  globalArgsCount = argc;\n  caller=calloc(1024,1);\n\n  return start();\n\n}\n\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "char * character(int num) { char *string = malloc(2); if (!string) return 0; string[0] = num; string[1] = 0; return string; }" );
+  printf("%s", "char * character(int num) { char *string = malloc(2); if (!string) return 0; string[0] = num; string[1] = 0; return string; }");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("%s", "void qlog(const char* format, ...) { va_list args; va_start (args, format); vfprintf (stderr, format, args); va_end (args); }");
 
 if (globalTrace)
     {printf("Leaving ansiIncludes\n");}
@@ -5445,27 +5663,27 @@ if (globalTrace)
 }
 
 
-//Building function ansiTypeDecl from line: 235
+//Building function ansiTypeDecl from line: 238
 
-function ansiTypeDecl(l ) {
+function ansiTypeDecl(l) {
   
 if (globalTrace)
-    {printf("ansiTypeDecl at q/ansi.qon:235\n");}
+    {printf("ansiTypeDecl at q/ansi.qon:238\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( greaterthan(listLength(l ), 2 )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(listLength(l), 2)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(1 );
+    printIndent(1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("%s %s %s;\n" , stringify(second(l )), stringify(ansiTypeMap(listLast(l ))), stringify(first(l )));
+    printf("%s %s %s;\n", stringify(second(l)), stringify(ansiTypeMap(listLast(l))), stringify(first(l)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(1 );
+    printIndent(1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("%s %s;\n" , stringify(ansiTypeMap(listLast(l ))), stringify(car(l )));
+    printf("%s %s;\n", stringify(ansiTypeMap(listLast(l))), stringify(car(l)));
 
   };
 
@@ -5475,24 +5693,24 @@ if (globalTrace)
 }
 
 
-//Building function ansiStructComponents from line: 252
+//Building function ansiStructComponents from line: 255
 
-function ansiStructComponents(node ) {
+function ansiStructComponents(node) {
   
 if (globalTrace)
-    {printf("ansiStructComponents at q/ansi.qon:252\n");}
+    {printf("ansiStructComponents at q/ansi.qon:255\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiTypeDecl(car(node ));
+    ansiTypeDecl(car(node));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiStructComponents(cdr(node ));
+    ansiStructComponents(cdr(node));
 
   };
 
@@ -5502,15 +5720,15 @@ if (globalTrace)
 }
 
 
-//Building function ansiStruct from line: 258
+//Building function ansiStruct from line: 261
 
-function ansiStruct(node ) {
+function ansiStruct(node) {
   
 if (globalTrace)
-    {printf("ansiStruct at q/ansi.qon:258\n");}
+    {printf("ansiStruct at q/ansi.qon:261\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  ansiStructComponents(cdr(car(node )));
+  ansiStructComponents(cdr(car(node)));
 
 if (globalTrace)
     {printf("Leaving ansiStruct\n");}
@@ -5518,25 +5736,25 @@ if (globalTrace)
 }
 
 
-//Building function ansiTypeMap from line: 261
+//Building function ansiTypeMap from line: 264
 
-function ansiTypeMap(aSym ) {
-  var symMap = NULL ;
+function ansiTypeMap(aSym) {
+  var symMap = NULL;
 
 if (globalTrace)
-    {printf("ansiTypeMap at q/ansi.qon:261\n");}
+    {printf("ansiTypeMap at q/ansi.qon:264\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  symMap = alistCons(boxSymbol("stringArray" ), boxSymbol("char**" ), alistCons(boxSymbol("string" ), boxSymbol("char*" ), NULL ));
+  symMap = alistCons(boxSymbol("stringArray"), boxSymbol("char**"), alistCons(boxSymbol("string"), boxSymbol("char*"), NULL));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( truthy(assoc(stringify(aSym ), symMap ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( truthy(assoc(stringify(aSym), symMap))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cdr(assoc(stringify(aSym ), symMap )));
+    return(cdr(assoc(stringify(aSym), symMap)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(aSym );
+    return(aSym);
 
   };
 
@@ -5546,33 +5764,33 @@ if (globalTrace)
 }
 
 
-//Building function ansiFuncMap from line: 273
+//Building function ansiFuncMap from line: 276
 
-function ansiFuncMap(aSym ) {
-  var symMap = NULL ;
+function ansiFuncMap(aSym) {
+  var symMap = NULL;
 
 if (globalTrace)
-    {printf("ansiFuncMap at q/ansi.qon:273\n");}
+    {printf("ansiFuncMap at q/ansi.qon:276\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString("symbol" , boxType(aSym ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString("symbol", boxType(aSym))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    symMap = alistCons(boxSymbol("=" ), boxSymbol("equal" ), alistCons(boxSymbol("sub-string" ), boxSymbol("sub_string" ), alistCons(boxSymbol("read-file" ), boxSymbol("read_file" ), alistCons(boxSymbol("write-file" ), boxSymbol("write_file" ), alistCons(boxSymbol(">" ), boxSymbol("greaterthan" ), alistCons(boxSymbol("string-length" ), boxSymbol("string_length" ), alistCons(boxSymbol("nil" ), boxSymbol("NULL" ), NULL )))))));
+    symMap = alistCons(boxSymbol("="), boxSymbol("equal"), alistCons(boxSymbol("sub-string"), boxSymbol("sub_string"), alistCons(boxSymbol("read-file"), boxSymbol("read_file"), alistCons(boxSymbol("write-file"), boxSymbol("write_file"), alistCons(boxSymbol(">"), boxSymbol("greaterthan"), alistCons(boxSymbol("string-length"), boxSymbol("string_length"), alistCons(boxSymbol("nil"), boxSymbol("NULL"), NULL)))))));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( truthy(assoc(stringify(aSym ), symMap ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( truthy(assoc(stringify(aSym), symMap))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(cdr(assoc(stringify(aSym ), symMap )));
+      return(cdr(assoc(stringify(aSym), symMap)));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(aSym );
+      return(aSym);
 
     };
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(aSym );
+    return(aSym);
 
   };
 
@@ -5582,30 +5800,30 @@ if (globalTrace)
 }
 
 
-//Building function ansiType from line: 304
+//Building function ansiType from line: 307
 
-function ansiType(node ) {
+function ansiType(node) {
   
 if (globalTrace)
-    {printf("ansiType at q/ansi.qon:304\n");}
+    {printf("ansiType at q/ansi.qon:307\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(subnameof(node ), boxString("struct" ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(subnameof(node), boxString("struct"))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\ntypedef struct %s {\n" , stringify(first(codeof(node ))));
+    printf("\ntypedef struct %s {\n", stringify(first(codeof(node))));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiStruct(cdr(codeof(node )));
+    ansiStruct(cdr(codeof(node)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\n} %s;\n" , stringify(first(codeof(node ))));
+    printf("\n} %s;\n", stringify(first(codeof(node))));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("typedef " );
+    printf("typedef ");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiTypeDecl(codeof(node ));
+    ansiTypeDecl(codeof(node));
 
   };
 
@@ -5615,24 +5833,24 @@ if (globalTrace)
 }
 
 
-//Building function ansiTypes from line: 314
+//Building function ansiTypes from line: 317
 
-function ansiTypes(nodes ) {
+function ansiTypes(nodes) {
   
 if (globalTrace)
-    {printf("ansiTypes at q/ansi.qon:314\n");}
+    {printf("ansiTypes at q/ansi.qon:317\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(nodes )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(nodes)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiType(car(nodes ));
+    ansiType(car(nodes));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    ansiTypes(cdr(nodes ));
+    ansiTypes(cdr(nodes));
 
   };
 
@@ -5642,96 +5860,958 @@ if (globalTrace)
 }
 
 
-//Building function uniqueTarget from line: 322
+//Building function ansiCompile from line: 327
 
-function uniqueTarget(a ,b ) {
-  
-if (globalTrace)
-    {printf("uniqueTarget at q/ansi.qon:322\n");}
+function ansiCompile(filename) {
+  var programStr = "";
+var tree = NULL;
+var program = NULL;
 
 if (globalTrace)
-    {printf("Leaving uniqueTarget\n");}
+    {printf("ansiCompile at q/ansi.qon:327\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("//Scanning file...%s\n", filename);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  programStr = read_file(filename);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("//Building sexpr\n");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  tree = readSexpr(programStr, filename);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  tree = macrowalk(tree);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  cons(boxString("a"), cons(boxString("b"), cons(boxString("c"), NULL)));
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("//Building AST\n");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  program = alistCons(boxString("includes"), astIncludes(first(tree)), alistCons(boxString("types"), astTypes(second(tree)), alistCons(boxString("functions"), astFunctions(third(tree)), NULL)));
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("//Merging ASTs\n");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  program = mergeIncludes(program);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("//Printing program\n");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  ansiIncludes(cdr(assoc("includes", program)));
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  ansiTypes(childrenof(cdr(assoc("types", program))));
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("Box* globalStackTrace = NULL;\n");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("\nbool isNil(list p) {\n    return p == NULL;\n}\n\n\n//Forward declarations\n");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  ansiForwardDeclarations(cdr(assoc("children", cdr(cdr(assoc("functions", program))))));
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("\n\n//End forward declarations\n\n");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  ansiFunctions(cdr(assoc("children", cdr(cdr(assoc("functions", program))))));
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("\n");
+
+if (globalTrace)
+    {printf("Leaving ansiCompile\n");}
 
 }
 
 
-//Building function ansiCompile from line: 325
+//Building function displays from line: 5
 
-function ansiCompile(filename ) {
-  var foundationFuncs = NULL ;
-var foundation = NULL ;
-var programStr = "" ;
-var tree = NULL ;
-var program = NULL ;
+function displays(s) {
+  
+if (globalTrace)
+    {printf("displays at q/ansi2.qon:5\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("%s", s);
 
 if (globalTrace)
-    {printf("ansiCompile at q/ansi.qon:325\n");}
+    {printf("Leaving displays\n");}
+
+}
+
+
+//Building function ansi2FunctionArgs from line: 11
+
+function ansi2FunctionArgs(tree) {
+  
+if (globalTrace)
+    {printf("ansi2FunctionArgs at q/ansi2.qon:11\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  foundation = readSexpr(read_file("q/ansi.qon" ), "q/ansi.qon" );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  foundationFuncs = cdr(third(foundation ));
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    return;
 
-  printf("//Scanning file...%s\n" , filename );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  programStr = read_file(filename );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    display(ansi2TypeMap(first(tree)));
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("//Building sexpr\n" );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    displays(" ");
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = readSexpr(programStr , filename );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    display(second(tree));
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = macrowalk(tree );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isNil(cddr(tree))) {
+    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  cons(boxString("a" ), cons(boxString("b" ), cons(boxString("c" ), NULL )));
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      displays(",");
 
-  printf("//Building AST\n" );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    };
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  program = alistCons(boxString("includes" ), astIncludes(first(tree )), alistCons(boxString("types" ), astTypes(second(tree )), alistCons(boxString("functions" ), astFunctions(third(tree )), NULL )));
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    ansi2FunctionArgs(cddr(tree));
 
-  printf("//Merging ASTs\n" );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  program = mergeIncludes(program );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  printf("//Printing program\n" );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  ansiIncludes(cdr(assoc("includes" , program )));
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  ansiTypes(childrenof(cdr(assoc("types" , program ))));
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  printf("Box* globalStackTrace = NULL;\n" );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  printf("\nbool isNil(list p) {\n    return p == NULL;\n}\n\n\n//Forward declarations\n" );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  ansiForwardDeclarations(cdr(assoc("children" , cdr(cdr(assoc("functions" , program ))))));
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  printf("\n\n//End forward declarations\n\n" );
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  ansiFunctions(cdr(assoc("children" , cdr(cdr(assoc("functions" , program ))))));
-  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
-
-  printf("\n" );
+  };
 
 if (globalTrace)
-    {printf("Leaving ansiCompile\n");}
+    {printf("Leaving ansi2FunctionArgs\n");}
+
+}
+
+
+//Building function ansi2Expression from line: 24
+
+function ansi2Expression(tree,indent) {
+  var thing = NULL;
+
+if (globalTrace)
+    {printf("ansi2Expression at q/ansi2.qon:24\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isList(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    if ( equal(1, listLength(tree))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      display(car(tree));
+      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      if ( equalBox(boxString("return"), car(tree))) {
+      } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        displays("()");
+
+      };
+
+    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      thing = first(tree);
+      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      if ( equalBox(boxSymbol("get-struct"), thing)) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        printf("%s->%s", stringify(second(tree)), stringify(third(tree)));
+
+      } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        if ( equalBox(boxSymbol("new"), thing)) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          printf("malloc(sizeof(%s))", stringify(third(tree)));
+
+        } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          printf("%s(", stringify(ansi2FuncMap(car(tree))));
+          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          ansi2RecurList(cdr(tree), indent);
+          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          printf(")");
+
+        };
+
+      };
+
+    };
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    display(ansi2FuncMap(tree));
+
+  };
+
+if (globalTrace)
+    {printf("Leaving ansi2Expression\n");}
+
+}
+
+
+//Building function ansi2RecurList from line: 75
+
+function ansi2RecurList(expr,indent) {
+  
+if (globalTrace)
+    {printf("ansi2RecurList at q/ansi2.qon:75\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isEmpty(expr)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return;
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2Expression(car(expr), indent);
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    if ( isNil(cdr(expr))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      displays("");
+
+    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      displays(", ");
+      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      ansi2RecurList(cdr(expr), indent);
+
+    };
+
+  };
+
+if (globalTrace)
+    {printf("Leaving ansi2RecurList\n");}
+
+}
+
+
+//Building function ansi2If from line: 92
+
+function ansi2If(node,indent) {
+  
+if (globalTrace)
+    {printf("ansi2If at q/ansi2.qon:92\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  newLine(indent);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  displays("if ( ");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  ansi2Expression(second(node), 0);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  displays(") {");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  ansi2Body(cdr(third(node)), add1(indent));
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  newLine(indent);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  displays("} else {");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  ansi2Body(cdr(fourth(node)), add1(indent));
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  newLine(indent);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  displays("}");
+
+if (globalTrace)
+    {printf("Leaving ansi2If\n");}
+
+}
+
+
+//Building function ansi2SetStruct from line: 105
+
+function ansi2SetStruct(node,indent) {
+  
+if (globalTrace)
+    {printf("ansi2SetStruct at q/ansi2.qon:105\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  newLine(indent);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("%s->%s = ", stringify(second(node)), stringify(third(node)));
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  ansi2Expression(fourth(node), indent);
+
+if (globalTrace)
+    {printf("Leaving ansi2SetStruct\n");}
+
+}
+
+
+//Building function ansi2GetStruct from line: 114
+
+function ansi2GetStruct(node,indent) {
+  
+if (globalTrace)
+    {printf("ansi2GetStruct at q/ansi2.qon:114\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  newLine(indent);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("%s->%s", stringify(first(node)), stringify(second(node)));
+
+if (globalTrace)
+    {printf("Leaving ansi2GetStruct\n");}
+
+}
+
+
+//Building function ansi2Set from line: 122
+
+function ansi2Set(node,indent) {
+  
+if (globalTrace)
+    {printf("ansi2Set at q/ansi2.qon:122\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  newLine(indent);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("%s = ", stringify(first(cdr(node))));
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  ansi2Expression(third(node), indent);
+
+if (globalTrace)
+    {printf("Leaving ansi2Set\n");}
+
+}
+
+
+//Building function ansi2Return from line: 128
+
+function ansi2Return(node,indent) {
+  
+if (globalTrace)
+    {printf("ansi2Return at q/ansi2.qon:128\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  newLine(indent);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( equal(listLength(node), 1)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    displays("return;");
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    displays("return ");
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2Expression(cadr(node), indent);
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    displays(";");
+
+  };
+
+if (globalTrace)
+    {printf("Leaving ansi2Return\n");}
+
+}
+
+
+//Building function ansi2Statement from line: 139
+
+function ansi2Statement(node,indent) {
+  
+if (globalTrace)
+    {printf("ansi2Statement at q/ansi2.qon:139\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( equalBox(boxString("set"), first(node))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2Set(node, indent);
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    if ( equalBox(boxString("set-struct"), first(node))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      ansi2SetStruct(node, indent);
+
+    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      if ( equalBox(boxString("if"), first(node))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        ansi2If(node, indent);
+
+      } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+        if ( equalBox(boxString("return"), first(node))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          ansi2Return(node, indent);
+
+        } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          newLine(indent);
+          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+          ansi2Expression(node, indent);
+
+        };
+
+      };
+
+    };
+
+  };
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  displays(";\n");
+
+if (globalTrace)
+    {printf("Leaving ansi2Statement\n");}
+
+}
+
+
+//Building function ansi2Body from line: 157
+
+function ansi2Body(tree,indent) {
+  var code = NULL;
+
+if (globalTrace)
+    {printf("ansi2Body at q/ansi2.qon:157\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return;
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    code = tree;
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    if ( isNil(code)) {
+    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      code = car(tree);
+      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      printf("\nif (globalTrace)\n    snprintf(caller, 1024, \"from %s:%s\");\n", stringify(getTagFail(code, boxString("filename"), boxString("Unknown"))), stringify(getTagFail(code, boxString("line"), boxString("Unknown"))));
+
+    };
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    printIndent(indent);
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    printf("%s", "if (globalStepTrace) printf(\"StepTrace %s:%d\\n\", __FILE__, __LINE__);\n");
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2Statement(code, indent);
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2Body(cdr(tree), indent);
+
+  };
+
+if (globalTrace)
+    {printf("Leaving ansi2Body\n");}
+
+}
+
+
+//Building function ansi2Declarations from line: 175
+
+function ansi2Declarations(decls,indent) {
+  var decl = NULL;
+
+if (globalTrace)
+    {printf("ansi2Declarations at q/ansi2.qon:175\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isEmpty(decls)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return;
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    decl = car(decls);
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    printf("%s %s = ", stringify(ansi2TypeMap(first(decl))), stringify(second(decl)));
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2Expression(third(decl), indent);
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    printf(";\n");
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2Declarations(cdr(decls), indent);
+
+  };
+
+if (globalTrace)
+    {printf("Leaving ansi2Declarations\n");}
+
+}
+
+
+//Building function ansi2Function from line: 189
+
+function ansi2Function(node) {
+  var name = NULL;
+
+if (globalTrace)
+    {printf("ansi2Function at q/ansi2.qon:189\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  name = second(node);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("\n\n//Building function %s from line: %s", stringify(name), stringify(getTag(name, boxString("line"))));
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  newLine(0);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isNil(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return;
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    newLine(0);
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    printf("%s %s(", stringify(ansi2TypeMap(first(node))), stringify(second(node)));
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2FunctionArgs(third(node));
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    printf(") {");
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    newLine(1);
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2Declarations(cdr(fourth(node)), 1);
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    if ( inList(toStr(name), noStackTrace())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      printf("");
+
+    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      printf("\nif (globalTrace)\n    printf(\"%s at %s:%s (%%s)\\n\", caller);\n", stringify(name), stringify(getTag(name, boxString("filename"))), stringify(getTag(name, boxString("line"))));
+
+    };
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    if ( inList(toStr(name), noStackTrace())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      printf("");
+
+    } else {
+    };
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2Body(cdr(fifth(node)), 1);
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    if ( inList(toStr(name), noStackTrace())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      printf("");
+
+    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      printf("\nif (globalTrace)\n    printf(\"Leaving %s\\n\");\n", stringify(name));
+
+    };
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    printf("\n}\n");
+
+  };
+
+if (globalTrace)
+    {printf("Leaving ansi2Function\n");}
+
+}
+
+
+//Building function ansi2ForwardDeclaration from line: 224
+
+function ansi2ForwardDeclaration(node) {
+  
+if (globalTrace)
+    {printf("ansi2ForwardDeclaration at q/ansi2.qon:224\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isNil(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return;
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    printf("\n%s %s(", stringify(ansi2TypeMap(first(node))), stringify(second(node)));
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2FunctionArgs(third(node));
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    displays(");");
+
+  };
+
+if (globalTrace)
+    {printf("Leaving ansi2ForwardDeclaration\n");}
+
+}
+
+
+//Building function ansi2ForwardDeclarations from line: 234
+
+function ansi2ForwardDeclarations(tree) {
+  
+if (globalTrace)
+    {printf("ansi2ForwardDeclarations at q/ansi2.qon:234\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return;
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2ForwardDeclaration(car(tree));
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2ForwardDeclarations(cdr(tree));
+
+  };
+
+if (globalTrace)
+    {printf("Leaving ansi2ForwardDeclarations\n");}
+
+}
+
+
+//Building function ansi2Functions from line: 240
+
+function ansi2Functions(tree) {
+  
+if (globalTrace)
+    {printf("ansi2Functions at q/ansi2.qon:240\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return;
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2Function(car(tree));
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2Functions(cdr(tree));
+
+  };
+
+if (globalTrace)
+    {printf("Leaving ansi2Functions\n");}
+
+}
+
+
+//Building function ansi2Includes from line: 246
+
+function ansi2Includes(nodes) {
+  
+if (globalTrace)
+    {printf("ansi2Includes at q/ansi2.qon:246\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("%s", "\n#include <stdarg.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\nconst char* getEnv(char* key){return getenv(key);}\n void panic(char* s){abort();exit(1);}\nint sub(int a, int b) { return a - b; }\nfloat mult(int a, int b) { return a * b; }\nint greaterthan(int a, int b) { return a > b; }\nfloat subf(float a, float b) { return a - b; }\nfloat multf(float a, float b) { return a * b; }\nint greaterthanf(float a, float b) { return a > b; }\nint equal(int a, int b) { return a == b; }\nint equalString(char* a, char* b) { return !strcmp(a,b); }\nint andBool(int a, int b) { return a == b;}\nint string_length(char* s) { return strlen(s);}\nchar* setSubString(char* target, int start,char *source){target[start]=source[0]; return target;}\nchar* sub_string(char* s, int start, int length) {\nchar* substr = calloc(length+1, 1);\nstrncpy(substr, s+start, length);\nreturn substr;\n}\n\n\n\nchar* stringConcatenate(char* a, char* b) {\nint len = strlen(a) + strlen(b) + 1;\nchar* target = calloc(len,1);\nstrncat(target, a, len);\nstrncat(target, b, len);\nreturn target;\n}\n\nchar* intToString(int a) {\nint len = 100;\nchar* target = calloc(len,1);\nsnprintf(target, 99, \"%d\", a);\nreturn target;\n}\n\ntypedef int*  array;\ntypedef int bool;\n#define true 1\n#define false 0\n\n\nvoid * gc_malloc( unsigned int size ) {\nreturn malloc( size);\n}\n\nint* makeArray(int length) {\n    int * array = gc_malloc(length*sizeof(int));\n    return array;\n}\n\nint at(int* arr, int index) {\n  return arr[index];\n}\n\nvoid setAt(int* array, int index, int value) {\n    array[index] = value;\n}\n\nchar * read_file(char * filename) {\nchar * buffer = 0;\nlong length;\nFILE * f = fopen (filename, \"rb\");\n\nif (f)\n{\n  fseek (f, 0, SEEK_END);\n  length = ftell (f);\n  fseek (f, 0, SEEK_SET);\n  buffer = malloc (length);\n  if (buffer == NULL) {\n  printf(\"Malloc failed!\\n\");\n  exit(1);\n}\n  if (buffer)\n  {\n    fread (buffer, 1, length, f);\n  }\n  fclose (f);\n}\nreturn buffer;\n}\n\n\nvoid write_file (char * filename, char * data) {\nFILE *f = fopen(filename, \"w\");\nif (f == NULL)\n{\n    printf(\"Error opening file!\");\n    exit(1);\n}\n\nfprintf(f, \"%s\", data);\n\nfclose(f);\n}\n\nchar* getStringArray(int index, char** strs) {\nreturn strs[index];\n}\n\nint start();  //Forwards declare the user's main routine\nchar* caller;\nchar** globalArgs;\nint globalArgsCount;\nbool globalTrace = false;\nbool globalStepTrace = false;\n\nint main( int argc, char *argv[] )  {\n  globalArgs = argv;\n  globalArgsCount = argc;\n  caller=calloc(1024,1);\n\n  return start();\n\n}\n\n");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("%s", "char * character(int num) { char *string = malloc(2); if (!string) return 0; string[0] = num; string[1] = 0; return string; }");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  printf("%s", "void qlog(const char* format, ...) { va_list args; va_start (args, format); vfprintf (stderr, format, args); va_end (args); }");
+
+if (globalTrace)
+    {printf("Leaving ansi2Includes\n");}
+
+}
+
+
+//Building function ansi2TypeDecl from line: 254
+
+function ansi2TypeDecl(l) {
+  
+if (globalTrace)
+    {printf("ansi2TypeDecl at q/ansi2.qon:254\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( greaterthan(listLength(l), 2)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    printIndent(1);
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    printf("%s %s %s;\n", stringify(second(l)), stringify(ansi2TypeMap(listLast(l))), stringify(first(l)));
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    printIndent(1);
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    printf("%s %s;\n", stringify(ansi2TypeMap(listLast(l))), stringify(car(l)));
+
+  };
+
+if (globalTrace)
+    {printf("Leaving ansi2TypeDecl\n");}
+
+}
+
+
+//Building function ansi2StructComponents from line: 271
+
+function ansi2StructComponents(node) {
+  
+if (globalTrace)
+    {printf("ansi2StructComponents at q/ansi2.qon:271\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isEmpty(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return;
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2TypeDecl(car(node));
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2StructComponents(cdr(node));
+
+  };
+
+if (globalTrace)
+    {printf("Leaving ansi2StructComponents\n");}
+
+}
+
+
+//Building function ansi2Struct from line: 277
+
+function ansi2Struct(node) {
+  
+if (globalTrace)
+    {printf("ansi2Struct at q/ansi2.qon:277\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  ansi2StructComponents(cdr(node));
+
+if (globalTrace)
+    {printf("Leaving ansi2Struct\n");}
+
+}
+
+
+//Building function ansi2TypeMap from line: 280
+
+function ansi2TypeMap(aSym) {
+  var symMap = NULL;
+
+if (globalTrace)
+    {printf("ansi2TypeMap at q/ansi2.qon:280\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  symMap = alistCons(boxSymbol("stringArray"), boxSymbol("char**"), alistCons(boxSymbol("string"), boxSymbol("char*"), NULL));
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( truthy(assoc(stringify(aSym), symMap))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(cdr(assoc(stringify(aSym), symMap)));
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(aSym);
+
+  };
+
+if (globalTrace)
+    {printf("Leaving ansi2TypeMap\n");}
+
+}
+
+
+//Building function ansi2FuncMap from line: 292
+
+function ansi2FuncMap(aSym) {
+  var symMap = NULL;
+
+if (globalTrace)
+    {printf("ansi2FuncMap at q/ansi2.qon:292\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( equalString("symbol", boxType(aSym))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    symMap = alistCons(boxSymbol("="), boxSymbol("equal"), alistCons(boxSymbol("sub-string"), boxSymbol("sub_string"), alistCons(boxSymbol("read-file"), boxSymbol("read_file"), alistCons(boxSymbol("write-file"), boxSymbol("write_file"), alistCons(boxSymbol(">"), boxSymbol("greaterthan"), alistCons(boxSymbol("string-length"), boxSymbol("string_length"), alistCons(boxSymbol("nil"), boxSymbol("NULL"), NULL)))))));
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    if ( truthy(assoc(stringify(aSym), symMap))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      return(cdr(assoc(stringify(aSym), symMap)));
+
+    } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+      return(aSym);
+
+    };
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return(aSym);
+
+  };
+
+if (globalTrace)
+    {printf("Leaving ansi2FuncMap\n");}
+
+}
+
+
+//Building function ansi2Type from line: 323
+
+function ansi2Type(node) {
+  
+if (globalTrace)
+    {printf("ansi2Type at q/ansi2.qon:323\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isList(second(node))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    printf("\ntypedef struct %s {\n", stringify(first(node)));
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2Struct(second(node));
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    printf("\n} %s;\n", stringify(first(node)));
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    displays("typedef ");
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2TypeDecl(node);
+
+  };
+
+if (globalTrace)
+    {printf("Leaving ansi2Type\n");}
+
+}
+
+
+//Building function ansi2Types from line: 333
+
+function ansi2Types(nodes) {
+  
+if (globalTrace)
+    {printf("ansi2Types at q/ansi2.qon:333\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  if ( isEmpty(nodes)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    return;
+
+  } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2Type(car(nodes));
+    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    ansi2Types(cdr(nodes));
+
+  };
+
+if (globalTrace)
+    {printf("Leaving ansi2Types\n");}
+
+}
+
+
+//Building function ansi2Compile from line: 343
+
+function ansi2Compile(filename) {
+  var tree = NULL;
+
+if (globalTrace)
+    {printf("ansi2Compile at q/ansi2.qon:343\n");}
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  qlog("//Scanning file...%s\n", filename);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  tree = loadQuon(filename);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  qlog("//Building sexpr\n");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  tree = loadIncludes(tree);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  tree = macrowalk(tree);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  qlog("//Printing program\n");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  ansi2Includes(cdr(first(tree)));
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  ansi2Types(cdr(second(tree)));
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  displays("Box* globalStackTrace = NULL;\n");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  displays("\nbool isNil(list p) {\n    return p == NULL;\n}\n\n\n//Forward declarations\n");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  ansi2ForwardDeclarations(cdr(third(tree)));
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  displays("\n\n//End forward declarations\n\n");
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  ansi2Functions(cdr(third(tree)));
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+  displays("\n");
+
+if (globalTrace)
+    {printf("Leaving ansi2Compile\n");}
 
 }
 
@@ -5744,24 +6824,24 @@ if (globalTrace)
     {printf("test0 at q/tests.qon:7\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString(stringify(boxString("hello" )), stringify(boxString("hello" )))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString(stringify(boxString("hello")), stringify(boxString("hello")))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("0.  pass string compare works\n" );
+    printf("0.  pass string compare works\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("0.  pass string compare fails\n" );
+    printf("0.  pass string compare fails\n");
 
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString(stringify(boxString("hello" )), stringify(boxSymbol("hello" )))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString(stringify(boxString("hello")), stringify(boxSymbol("hello")))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("0.  pass string compare works\n" );
+    printf("0.  pass string compare works\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("0.  pass string compare fails\n" );
+    printf("0.  pass string compare fails\n");
 
   };
 
@@ -5779,7 +6859,7 @@ if (globalTrace)
     {printf("test1 at q/tests.qon:20\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("1.  pass Function call and print work\n" );
+  printf("1.  pass Function call and print work\n");
 
 if (globalTrace)
     {printf("Leaving test1\n");}
@@ -5789,13 +6869,13 @@ if (globalTrace)
 
 //Building function test2_do from line: 24
 
-function test2_do(message ) {
+function test2_do(message) {
   
 if (globalTrace)
     {printf("test2_do at q/tests.qon:24\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("2.  pass Function call with arg works: %s\n" , message );
+  printf("2.  pass Function call with arg works: %s\n", message);
 
 if (globalTrace)
     {printf("Leaving test2_do\n");}
@@ -5811,7 +6891,7 @@ if (globalTrace)
     {printf("test2 at q/tests.qon:28\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  test2_do("This is the argument" );
+  test2_do("This is the argument");
 
 if (globalTrace)
     {printf("Leaving test2\n");}
@@ -5821,16 +6901,16 @@ if (globalTrace)
 
 //Building function test3_do from line: 30
 
-function test3_do(b ,c ) {
+function test3_do(b,c) {
   
 if (globalTrace)
     {printf("test3_do at q/tests.qon:30\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("3.1 pass Two arg call, first arg: %d\n" , b );
+  printf("3.1 pass Two arg call, first arg: %d\n", b);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("3.2 pass Two arg call, second arg: %s\n" , c );
+  printf("3.2 pass Two arg call, second arg: %s\n", c);
 
 if (globalTrace)
     {printf("Leaving test3_do\n");}
@@ -5846,7 +6926,7 @@ if (globalTrace)
     {printf("test3 at q/tests.qon:36\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  test3_do(42 , "Fourty-two" );
+  test3_do(42, "Fourty-two");
 
 if (globalTrace)
     {printf("Leaving test3\n");}
@@ -5862,7 +6942,7 @@ if (globalTrace)
     {printf("test4_do at q/tests.qon:37\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return("pass Return works" );
+  return("pass Return works");
 
 if (globalTrace)
     {printf("Leaving test4_do\n");}
@@ -5872,13 +6952,13 @@ if (globalTrace)
 
 //Building function returnThis from line: 39
 
-function returnThis(returnMessage ) {
+function returnThis(returnMessage) {
   
 if (globalTrace)
     {printf("returnThis at q/tests.qon:39\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(returnMessage );
+  return(returnMessage);
 
 if (globalTrace)
     {printf("Leaving returnThis\n");}
@@ -5889,16 +6969,16 @@ if (globalTrace)
 //Building function test4 from line: 44
 
 function test4() {
-  var message = "fail" ;
+  var message = "fail";
 
 if (globalTrace)
     {printf("test4 at q/tests.qon:44\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  message = test4_do ();
+  message = test4_do();
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("4.  %s\n" , message );
+  printf("4.  %s\n", message);
 
 if (globalTrace)
     {printf("Leaving test4\n");}
@@ -5909,16 +6989,16 @@ if (globalTrace)
 //Building function test5 from line: 49
 
 function test5() {
-  var message = "fail" ;
+  var message = "fail";
 
 if (globalTrace)
     {printf("test5 at q/tests.qon:49\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  message = returnThis("pass return passthrough string" );
+  message = returnThis("pass return passthrough string");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("5.  %s\n" , message );
+  printf("5.  %s\n", message);
 
 if (globalTrace)
     {printf("Leaving test5\n");}
@@ -5934,13 +7014,13 @@ if (globalTrace)
     {printf("test6 at q/tests.qon:56\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( true ) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( true) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("6.  pass If statement works\n" );
+    printf("6.  pass If statement works\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("6.  fail If statement works\n" );
+    printf("6.  fail If statement works\n");
 
   };
 
@@ -5952,27 +7032,27 @@ if (globalTrace)
 
 //Building function test7_do from line: 64
 
-function test7_do(count ) {
+function test7_do(count) {
   
 if (globalTrace)
     {printf("test7_do at q/tests.qon:64\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  count = sub(count , 1 );
+  count = sub(count, 1);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( greaterthan(count , 0 )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(count, 0)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    count = test7_do(count );
+    count = test7_do(count);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(count );
+    return(count);
 
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(count );
+  return(count);
 
 if (globalTrace)
     {printf("Leaving test7_do\n");}
@@ -5988,13 +7068,13 @@ if (globalTrace)
     {printf("test7 at q/tests.qon:72\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equal(0 , test7_do(10 ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equal(0, test7_do(10))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("7.  pass count works\n" );
+    printf("7.  pass count works\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("7.  fail count fails\n" );
+    printf("7.  fail count fails\n");
 
   };
 
@@ -6012,7 +7092,7 @@ if (globalTrace)
     {printf("beer at q/tests.qon:80\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%d bottle of beer on the wall, %d bottle of beer.  Take one down, pass it round, no bottles of beer on the wall\n" , 1 , 1 );
+  printf("%d bottle of beer on the wall, %d bottle of beer.  Take one down, pass it round, no bottles of beer on the wall\n", 1, 1);
 
 if (globalTrace)
     {printf("Leaving beer\n");}
@@ -6022,19 +7102,19 @@ if (globalTrace)
 
 //Building function plural from line: 89
 
-function plural(num ) {
+function plural(num) {
   
 if (globalTrace)
     {printf("plural at q/tests.qon:89\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equal(num , 1 )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equal(num, 1)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return("" );
+    return("");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return("s" );
+    return("s");
 
   };
 
@@ -6046,31 +7126,31 @@ if (globalTrace)
 
 //Building function beers from line: 94
 
-function beers(count ) {
-  var newcount = 0 ;
+function beers(count) {
+  var newcount = 0;
 
 if (globalTrace)
     {printf("beers at q/tests.qon:94\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newcount = sub(count , 1 );
+  newcount = sub(count, 1);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%d bottle%s of beer on the wall, %d bottle%s of beer.  Take one down, pass it round, %d bottle%s of beer on the wall\n" , count , plural(count ), count , plural(count ), newcount , plural(newcount ));
+  printf("%d bottle%s of beer on the wall, %d bottle%s of beer.  Take one down, pass it round, %d bottle%s of beer on the wall\n", count, plural(count), count, plural(count), newcount, plural(newcount));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( greaterthan(count , 1 )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(count, 1)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    count = beers(newcount );
+    count = beers(newcount);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(count );
+    return(count);
 
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(0 );
+  return(0);
 
 if (globalTrace)
     {printf("Leaving beers\n");}
@@ -6086,13 +7166,13 @@ if (globalTrace)
     {printf("test8 at q/tests.qon:110\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equal(sub(sub(2 , 1 ), sub(3 , 1 )), -1 )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equal(sub(sub(2, 1), sub(3, 1)), -1)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("8.  pass Nested expressions work\n" );
+    printf("8.  pass Nested expressions work\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("8.  fail Nested expressions don't work\n" );
+    printf("8.  fail Nested expressions don't work\n");
 
   };
 
@@ -6105,22 +7185,22 @@ if (globalTrace)
 //Building function test9 from line: 118
 
 function test9() {
-  var answer = -999999 ;
+  var answer = -999999;
 
 if (globalTrace)
     {printf("test9 at q/tests.qon:118\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  answer = sub(sub(20 , 1 ), sub(3 , 1 ));
+  answer = sub(sub(20, 1), sub(3, 1));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equal(answer , 17 )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equal(answer, 17)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("9.  pass arithmetic works\n" );
+    printf("9.  pass arithmetic works\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("9.  fail arithmetic\n" );
+    printf("9.  fail arithmetic\n");
 
   };
 
@@ -6133,19 +7213,19 @@ if (globalTrace)
 //Building function test10 from line: 127
 
 function test10() {
-  var testString = "This is a test string" ;
+  var testString = "This is a test string";
 
 if (globalTrace)
     {printf("test10 at q/tests.qon:127\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString(testString , unBoxString(car(cons(boxString(testString ), NULL ))))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString(testString, unBoxString(car(cons(boxString(testString), NULL))))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("10. pass cons and car work\n" );
+    printf("10. pass cons and car work\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("10. fail cons and car fail\n" );
+    printf("10. fail cons and car fail\n");
 
   };
 
@@ -6158,7 +7238,7 @@ if (globalTrace)
 //Building function test12 from line: 137
 
 function test12() {
-  var b = NULL ;
+  var b = NULL;
 
 if (globalTrace)
     {printf("test12 at q/tests.qon:137\n");}
@@ -6167,10 +7247,10 @@ if (globalTrace)
   b = {};
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  b.str = "12. pass structure accessors\n" ;
+  b.str = "12. pass structure accessors\n";
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , b.str);
+  printf("%s", b.str);
 
 if (globalTrace)
     {printf("Leaving test12\n");}
@@ -6181,32 +7261,32 @@ if (globalTrace)
 //Building function test13 from line: 145
 
 function test13() {
-  var testString = "Hello from the filesystem!" ;
-var contents = "" ;
+  var testString = "Hello from the filesystem!";
+var contents = "";
 
 if (globalTrace)
     {printf("test13 at q/tests.qon:145\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  write_file("test.txt" , testString );
+  write_file("test.txt", testString);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  contents = read_file("test.txt" );
+  contents = read_file("test.txt");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString(testString , contents )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString(testString, contents)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("13. pass Read and write files\n" );
+    printf("13. pass Read and write files\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("13. fail Read and write files\n" );
+    printf("13. fail Read and write files\n");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("Expected: %s\n" , testString );
+    printf("Expected: %s\n", testString);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("Got: %s\n" , contents );
+    printf("Got: %s\n", contents);
 
   };
 
@@ -6219,24 +7299,24 @@ if (globalTrace)
 //Building function test15 from line: 161
 
 function test15() {
-  var a = "hello" ;
-var b = " world" ;
-var c = "" ;
+  var a = "hello";
+var b = " world";
+var c = "";
 
 if (globalTrace)
     {printf("test15 at q/tests.qon:161\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  c = stringConcatenate(a , b );
+  c = stringConcatenate(a, b);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString(c , "hello world" )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString(c, "hello world")) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("15. pass String concatenate\n" );
+    printf("15. pass String concatenate\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("15. fail String concatenate\n" );
+    printf("15. fail String concatenate\n");
 
   };
 
@@ -6249,51 +7329,51 @@ if (globalTrace)
 //Building function test16 from line: 169
 
 function test16() {
-  var assocCell1 = NULL ;
-var assList = NULL ;
-var assocCell2 = NULL ;
-var assocCell3 = NULL ;
+  var assocCell1 = NULL;
+var assList = NULL;
+var assocCell2 = NULL;
+var assocCell3 = NULL;
 
 if (globalTrace)
     {printf("test16 at q/tests.qon:169\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  assocCell1 = cons(boxString("Hello" ), boxString("world" ));
+  assocCell1 = cons(boxString("Hello"), boxString("world"));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  assocCell2 = cons(boxString("goodnight" ), boxString("moon" ));
+  assocCell2 = cons(boxString("goodnight"), boxString("moon"));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  assocCell3 = cons(boxSymbol("ohio" ), boxString("gozaimasu" ));
+  assocCell3 = cons(boxSymbol("ohio"), boxString("gozaimasu"));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  assList = cons(assocCell2 , emptyList ());
+  assList = cons(assocCell2, emptyList());
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  assList = cons(assocCell1 , assList );
+  assList = cons(assocCell1, assList);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  assList = cons(assocCell3 , assList );
+  assList = cons(assocCell3, assList);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(cdr(assoc("Hello" , assList )), boxString("world" ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(cdr(assoc("Hello", assList)), boxString("world"))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("16.1 pass Basic assoc works\n" );
+    printf("16.1 pass Basic assoc works\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("16.1 fail Basic assoc fails\n" );
+    printf("16.1 fail Basic assoc fails\n");
 
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( andBool(andBool(equalBox(cdr(assoc("Hello" , assList )), boxString("world" )), equalBox(cdr(assoc("goodnight" , assList )), boxString("moon" ))), equalBox(cdr(assoc("ohio" , assList )), boxString("gozaimasu" )))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( andBool(andBool(equalBox(cdr(assoc("Hello", assList)), boxString("world")), equalBox(cdr(assoc("goodnight", assList)), boxString("moon"))), equalBox(cdr(assoc("ohio", assList)), boxString("gozaimasu")))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("16.2 pass assoc list\n" );
+    printf("16.2 pass assoc list\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("16.2 fail assoc list\n" );
+    printf("16.2 fail assoc list\n");
 
   };
 
@@ -6306,22 +7386,22 @@ if (globalTrace)
 //Building function test17 from line: 193
 
 function test17() {
-  var l = NULL ;
+  var l = NULL;
 
 if (globalTrace)
     {printf("test17 at q/tests.qon:193\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  l = cons(boxInt(1 ), cons(boxInt(2 ), cons(boxInt(3 ), NULL )));
+  l = cons(boxInt(1), cons(boxInt(2), cons(boxInt(3), NULL)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(car(l ), boxInt(1 ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(car(l), boxInt(1))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("17. pass list literal works\n" );
+    printf("17. pass list literal works\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("17. fail list literal failed\n" );
+    printf("17. fail list literal failed\n");
 
   };
 
@@ -6334,25 +7414,24 @@ if (globalTrace)
 //Building function test18 from line: 204
 
 function test18() {
-  var val1 = "a" ;
-var val2 = "b" ;
-var val3 = "c" ;
-var l = NULL ;
+  var val1 = "a";
+var val2 = "b";
+var l = NULL;
 
 if (globalTrace)
     {printf("test18 at q/tests.qon:204\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  l = cons(boxString(val1 ), cons(boxString(val2 ), cons(boxString("c" ), NULL )));
+  l = cons(boxString(val1), cons(boxString(val2), cons(boxString("c"), NULL)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalList(l , cons(boxString("a" ), cons(boxString("b" ), cons(boxString("c" ), NULL ))))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalList(l, cons(boxString("a"), cons(boxString("b"), cons(boxString("c"), NULL))))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("18. pass string list constructor works\n" );
+    printf("18. pass string list constructor works\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("18. fail string list constructor failed\n" );
+    printf("18. fail string list constructor failed\n");
 
   };
 
@@ -6362,36 +7441,35 @@ if (globalTrace)
 }
 
 
-//Building function test19 from line: 219
+//Building function test19 from line: 218
 
 function test19() {
-  var val1 = "a" ;
-var val2 = "b" ;
-var val3 = "c" ;
-var l = NULL ;
-var revlist = NULL ;
-var answer = NULL ;
+  var val1 = "a";
+var val2 = "b";
+var l = NULL;
+var revlist = NULL;
+var answer = NULL;
 
 if (globalTrace)
-    {printf("test19 at q/tests.qon:219\n");}
+    {printf("test19 at q/tests.qon:218\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  l = cons(boxString(val1 ), cons(boxString(val2 ), cons(boxString("c" ), NULL )));
+  l = cons(boxString(val1), cons(boxString(val2), cons(boxString("c"), NULL)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  answer = cons(boxString("c" ), cons(boxString(val2 ), cons(boxString(val1 ), NULL )));
+  answer = cons(boxString("c"), cons(boxString(val2), cons(boxString(val1), NULL)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  revlist = reverseList(l );
+  revlist = reverseList(l);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalList(answer , revlist )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalList(answer, revlist)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("19. pass reverseList\n" );
+    printf("19. pass reverseList\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("19. fail reverseList\n" );
+    printf("19. fail reverseList\n");
 
   };
 
@@ -6401,15 +7479,15 @@ if (globalTrace)
 }
 
 
-//Building function concatenateLists from line: 238
+//Building function concatenateLists from line: 236
 
-function concatenateLists(oldL ,newL ) {
+function concatenateLists(oldL,newL) {
   
 if (globalTrace)
-    {printf("concatenateLists at q/tests.qon:238\n");}
+    {printf("concatenateLists at q/tests.qon:236\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(reverseRec(reverseList(oldL ), newL ));
+  return(reverseRec(reverseList(oldL), newL));
 
 if (globalTrace)
     {printf("Leaving concatenateLists\n");}
@@ -6417,41 +7495,40 @@ if (globalTrace)
 }
 
 
-//Building function test20 from line: 243
+//Building function test20 from line: 241
 
 function test20() {
-  var val1 = "a" ;
-var val2 = "b" ;
-var val3 = "c" ;
-var l = NULL ;
-var l2 = NULL ;
-var l3 = NULL ;
-var combined = NULL ;
-var revlist = NULL ;
+  var val1 = "a";
+var val2 = "b";
+var val3 = "c";
+var l = NULL;
+var l2 = NULL;
+var l3 = NULL;
+var combined = NULL;
 
 if (globalTrace)
-    {printf("test20 at q/tests.qon:243\n");}
+    {printf("test20 at q/tests.qon:241\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  l = cons(boxString(val1 ), cons(boxString(val2 ), cons(boxString("c" ), NULL )));
+  l = cons(boxString(val1), cons(boxString(val2), cons(boxString("c"), NULL)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  l2 = cons(boxString("d" ), cons(boxString("e" ), cons(boxString("f" ), NULL )));
+  l2 = cons(boxString("d"), cons(boxString("e"), cons(boxString("f"), NULL)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  l3 = cons(boxString(val1 ), cons(boxString(val2 ), cons(boxString("c" ), cons(boxString("d" ), cons(boxString("e" ), cons(boxString("f" ), NULL ))))));
+  l3 = cons(boxString(val1), cons(boxString(val2), cons(boxString(val3), cons(boxString("d"), cons(boxString("e"), cons(boxString("f"), NULL))))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  combined = concatenateLists(l , l2 );
+  combined = concatenateLists(l, l2);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalList(l3 , combined )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalList(l3, combined)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("21. pass concatenateLists\n" );
+    printf("21. pass concatenateLists\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("21. fail concatenateLists\n" );
+    printf("21. fail concatenateLists\n");
 
   };
 
@@ -6461,32 +7538,32 @@ if (globalTrace)
 }
 
 
-//Building function test21 from line: 264
+//Building function test21 from line: 261
 
 function test21() {
-  var val1 = "a" ;
-var val2 = "b" ;
-var val3 = "c" ;
-var l = NULL ;
-var l2 = NULL ;
+  var val1 = "a";
+var val2 = "b";
+var val3 = "c";
+var l = NULL;
+var l2 = NULL;
 
 if (globalTrace)
-    {printf("test21 at q/tests.qon:264\n");}
+    {printf("test21 at q/tests.qon:261\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  l = cons(boxString(val1 ), cons(boxString(val2 ), cons(boxString(val3 ), NULL )));
+  l = cons(boxString(val1), cons(boxString(val2), cons(boxString(val3), NULL)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  l2 = cons(boxString("a" ), cons(boxString("b" ), cons(boxString("c" ), NULL )));
+  l2 = cons(boxString("a"), cons(boxString("b"), cons(boxString("c"), NULL)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalList(l , l2 )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalList(l, l2)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("21. pass equalList\n" );
+    printf("21. pass equalList\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("21. fail equalList\n" );
+    printf("21. fail equalList\n");
 
   };
 
@@ -6498,33 +7575,33 @@ if (globalTrace)
 
 //Building function nodeFunctionArgs from line: 4
 
-function nodeFunctionArgs(tree ) {
+function nodeFunctionArgs(tree) {
   
 if (globalTrace)
     {printf("nodeFunctionArgs at q/node.qon:4\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    display(second(tree ));
+    display(second(tree));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isNil(cddr(tree ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isNil(cddr(tree))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("," );
+      printf(",");
 
     };
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeFunctionArgs(cddr(tree ));
+    nodeFunctionArgs(cddr(tree));
 
   };
 
@@ -6536,13 +7613,13 @@ if (globalTrace)
 
 //Building function nodeLeaf from line: 13
 
-function nodeLeaf(thisNode ,indent ) {
+function nodeLeaf(thisNode,indent) {
   
 if (globalTrace)
     {printf("nodeLeaf at q/node.qon:13\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  display(nodeFuncMap(codeof(thisNode )));
+  display(nodeFuncMap(codeof(thisNode)));
 
 if (globalTrace)
     {printf("Leaving nodeLeaf\n");}
@@ -6552,19 +7629,19 @@ if (globalTrace)
 
 //Building function nodeStructGetterExpression from line: 16
 
-function nodeStructGetterExpression(thisNode ,indent ) {
+function nodeStructGetterExpression(thisNode,indent) {
   
 if (globalTrace)
     {printf("nodeStructGetterExpression at q/node.qon:16\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(boxString("structGetter" ), subnameof(thisNode ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(boxString("structGetter"), subnameof(thisNode))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeGetStruct(thisNode , indent );
+    nodeGetStruct(thisNode, indent);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeLeaf(thisNode , indent );
+    nodeLeaf(thisNode, indent);
 
   };
 
@@ -6576,19 +7653,19 @@ if (globalTrace)
 
 //Building function nodeExpression from line: 22
 
-function nodeExpression(node ,indent ) {
+function nodeExpression(node,indent) {
   
 if (globalTrace)
     {printf("nodeExpression at q/node.qon:22\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isLeaf(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isLeaf(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    display(nodeFuncMap(codeof(node )));
+    display(nodeFuncMap(codeof(node)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeSubExpression(node , indent );
+    nodeSubExpression(node, indent);
 
   };
 
@@ -6600,31 +7677,31 @@ if (globalTrace)
 
 //Building function nodeRecurList from line: 28
 
-function nodeRecurList(expr ,indent ) {
+function nodeRecurList(expr,indent) {
   
 if (globalTrace)
     {printf("nodeRecurList at q/node.qon:28\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(expr )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(expr)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeExpression(car(expr ), indent );
+    nodeExpression(car(expr), indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isNil(cdr(expr ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isNil(cdr(expr))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf(", " );
+      printf(", ");
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      nodeRecurList(cdr(expr ), indent );
+      nodeRecurList(cdr(expr), indent);
 
     };
 
@@ -6638,70 +7715,70 @@ if (globalTrace)
 
 //Building function nodeSubExpression from line: 41
 
-function nodeSubExpression(tree ,indent ) {
-  var thing = NULL ;
+function nodeSubExpression(tree,indent) {
+  var thing = NULL;
 
 if (globalTrace)
     {printf("nodeSubExpression at q/node.qon:41\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isNode(childrenof(tree ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isNode(childrenof(tree))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      nodeSubExpression(childrenof(tree ), indent );
+      nodeSubExpression(childrenof(tree), indent);
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( isLeaf(tree )) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( isLeaf(tree)) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        display(nodeFuncMap(codeof(tree )));
+        display(nodeFuncMap(codeof(tree)));
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( equal(1 , listLength(childrenof(tree )))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( equal(1, listLength(childrenof(tree)))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          display(codeof(car(childrenof(tree ))));
+          display(codeof(car(childrenof(tree))));
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( equalBox(boxString("return" ), codeof(car(childrenof(tree ))))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( equalBox(boxString("return"), codeof(car(childrenof(tree))))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf("" );
+            printf("");
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf("()" );
+            printf("()");
 
           };
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          thing = codeof(car(childrenof(tree )));
+          thing = codeof(car(childrenof(tree)));
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( equalBox(boxSymbol("get-struct" ), thing )) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( equalBox(boxSymbol("get-struct"), thing)) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf("%s.%s" , stringify(codeof(second(childrenof(tree )))), stringify(codeof(third(childrenof(tree )))));
+            printf("%s.%s", stringify(codeof(second(childrenof(tree)))), stringify(codeof(third(childrenof(tree)))));
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            if ( equalBox(boxSymbol("new" ), thing )) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+            if ( equalBox(boxSymbol("new"), thing)) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf("{}" );
+              printf("{}");
 
             } else {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf("%s(" , stringify(nodeFuncMap(codeof(car(childrenof(tree ))))));
+              printf("%s(", stringify(nodeFuncMap(codeof(car(childrenof(tree))))));
               if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              nodeRecurList(cdr(childrenof(tree )), indent );
+              nodeRecurList(cdr(childrenof(tree)), indent);
               if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf(")" );
+              printf(")");
 
             };
 
@@ -6723,40 +7800,40 @@ if (globalTrace)
 
 //Building function nodeIf from line: 82
 
-function nodeIf(node ,indent ) {
+function nodeIf(node,indent) {
   
 if (globalTrace)
     {printf("nodeIf at q/node.qon:82\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("if ( " );
+  printf("if ( ");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  nodeExpression(car(first(childrenof(node ))), 0 );
+  nodeExpression(car(first(childrenof(node))), 0);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf(") {" );
+  printf(") {");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  nodeBody(second(childrenof(node )), add1(indent ));
+  nodeBody(second(childrenof(node)), add1(indent));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("} else {" );
+  printf("} else {");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  nodeBody(third(childrenof(node )), add1(indent ));
+  nodeBody(third(childrenof(node)), add1(indent));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("}" );
+  printf("}");
 
 if (globalTrace)
     {printf("Leaving nodeIf\n");}
@@ -6766,16 +7843,16 @@ if (globalTrace)
 
 //Building function nodeGetStruct from line: 96
 
-function nodeGetStruct(node ,indent ) {
+function nodeGetStruct(node,indent) {
   
 if (globalTrace)
     {printf("nodeGetStruct at q/node.qon:96\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s.%s" , stringify(first(codeof(node ))), stringify(second(codeof(node ))));
+  printf("%s.%s", stringify(first(codeof(node))), stringify(second(codeof(node))));
 
 if (globalTrace)
     {printf("Leaving nodeGetStruct\n");}
@@ -6785,19 +7862,19 @@ if (globalTrace)
 
 //Building function nodeSet from line: 104
 
-function nodeSet(node ,indent ) {
+function nodeSet(node,indent) {
   
 if (globalTrace)
     {printf("nodeSet at q/node.qon:104\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s = " , stringify(first(codeof(node ))));
+  printf("%s = ", stringify(first(codeof(node))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  nodeExpression(childrenof(node ), indent );
+  nodeExpression(childrenof(node), indent);
 
 if (globalTrace)
     {printf("Leaving nodeSet\n");}
@@ -6807,19 +7884,19 @@ if (globalTrace)
 
 //Building function nodeSetStruct from line: 110
 
-function nodeSetStruct(node ,indent ) {
+function nodeSetStruct(node,indent) {
   
 if (globalTrace)
     {printf("nodeSetStruct at q/node.qon:110\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s.%s = " , stringify(first(codeof(node ))), stringify(second(codeof(node ))));
+  printf("%s.%s = ", stringify(first(codeof(node))), stringify(second(codeof(node))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  nodeExpression(childrenof(node ), indent );
+  nodeExpression(childrenof(node), indent);
 
 if (globalTrace)
     {printf("Leaving nodeSetStruct\n");}
@@ -6829,43 +7906,43 @@ if (globalTrace)
 
 //Building function nodeStatement from line: 118
 
-function nodeStatement(node ,indent ) {
+function nodeStatement(node,indent) {
   
 if (globalTrace)
     {printf("nodeStatement at q/node.qon:118\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(boxString("setter" ), subnameof(node ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(boxString("setter"), subnameof(node))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeSet(node , indent );
+    nodeSet(node, indent);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalBox(boxString("structSetter" ), subnameof(node ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalBox(boxString("structSetter"), subnameof(node))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      nodeSetStruct(node , indent );
+      nodeSetStruct(node, indent);
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( equalBox(boxString("if" ), subnameof(node ))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( equalBox(boxString("if"), subnameof(node))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        nodeIf(node , indent );
+        nodeIf(node, indent);
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( equalBox(boxString("returnvoid" ), subnameof(node ))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( equalBox(boxString("returnvoid"), subnameof(node))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          newLine(indent );
+          newLine(indent);
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printf("return" );
+          printf("return");
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          newLine(indent );
+          newLine(indent);
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          nodeExpression(childrenof(node ), indent );
+          nodeExpression(childrenof(node), indent);
 
         };
 
@@ -6876,7 +7953,7 @@ if (globalTrace)
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf(";\n" );
+  printf(";\n");
 
 if (globalTrace)
     {printf("Leaving nodeStatement\n");}
@@ -6886,28 +7963,28 @@ if (globalTrace)
 
 //Building function nodeBody from line: 137
 
-function nodeBody(tree ,indent ) {
+function nodeBody(tree,indent) {
   
 if (globalTrace)
     {printf("nodeBody at q/node.qon:137\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(indent );
+    printIndent(indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("%s" , "if (globalStepTrace) {console.log(new Error(\"StepTrace \\n\"));}\n" );
+    printf("%s", "if (globalStepTrace) {console.log(new Error(\"StepTrace \\n\"));}\n");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeStatement(car(tree ), indent );
+    nodeStatement(car(tree), indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeBody(cdr(tree ), indent );
+    nodeBody(cdr(tree), indent);
 
   };
 
@@ -6919,32 +7996,32 @@ if (globalTrace)
 
 //Building function nodeDeclarations from line: 151
 
-function nodeDeclarations(decls ,indent ) {
-  var decl = NULL ;
+function nodeDeclarations(decls,indent) {
+  var decl = NULL;
 
 if (globalTrace)
     {printf("nodeDeclarations at q/node.qon:151\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(decls )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(decls)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    decl = car(decls );
+    decl = car(decls);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("var %s = " , stringify(second(decl )));
+    printf("var %s = ", stringify(second(decl)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    display(nodeFuncMap(third(decl )));
+    display(nodeFuncMap(third(decl)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(";\n" );
+    printf(";\n");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeDeclarations(cdr(decls ), indent );
+    nodeDeclarations(cdr(decls), indent);
 
   };
 
@@ -6956,80 +8033,80 @@ if (globalTrace)
 
 //Building function nodeFunction from line: 166
 
-function nodeFunction(node ) {
-  var name = NULL ;
+function nodeFunction(node) {
+  var name = NULL;
 
 if (globalTrace)
     {printf("nodeFunction at q/node.qon:166\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  name = subnameof(node );
+  name = subnameof(node);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\n\n//Building function %s from line: %s" , stringify(name ), stringify(getTag(name , boxString("line" ))));
+  printf("\n\n//Building function %s from line: %s", stringify(name), stringify(getTag(name, boxString("line"))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(0 );
+  newLine(0);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    newLine(0 );
+    newLine(0);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("function %s(" , stringify(subnameof(node )));
+    printf("function %s(", stringify(subnameof(node)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeFunctionArgs(cdr(assoc("intype" , cdr(node ))));
+    nodeFunctionArgs(cdr(assoc("intype", cdr(node))));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(") {" );
+    printf(") {");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    newLine(1 );
+    newLine(1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeDeclarations(declarationsof(node ), 1 );
+    nodeDeclarations(declarationsof(node), 1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( inList(toStr(name ), noStackTrace ())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( inList(toStr(name), noStackTrace())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("\nif (globalTrace)\n    {printf(\"%s at %s:%s\\n\");}\n" , stringify(name ), stringify(getTag(name , boxString("filename" ))), stringify(getTag(name , boxString("line" ))));
+      printf("\nif (globalTrace)\n    {printf(\"%s at %s:%s\\n\");}\n", stringify(name), stringify(getTag(name, boxString("filename"))), stringify(getTag(name, boxString("line"))));
 
     };
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( inList(toStr(name ), noStackTrace ())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( inList(toStr(name), noStackTrace())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {
     };
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeBody(childrenof(node ), 1 );
+    nodeBody(childrenof(node), 1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( inList(toStr(name ), noStackTrace ())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( inList(toStr(name), noStackTrace())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("\nif (globalTrace)\n    {printf(\"Leaving %s\\n\");}\n" , stringify(name ));
+      printf("\nif (globalTrace)\n    {printf(\"Leaving %s\\n\");}\n", stringify(name));
 
     };
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\n}\n" );
+    printf("\n}\n");
 
   };
 
@@ -7041,25 +8118,25 @@ if (globalTrace)
 
 //Building function nodeForwardDeclaration from line: 199
 
-function nodeForwardDeclaration(node ) {
+function nodeForwardDeclaration(node) {
   
 if (globalTrace)
     {printf("nodeForwardDeclaration at q/node.qon:199\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\n%s %s(" , stringify(nodeTypeMap(cdr(assoc("outtype" , cdr(node ))))), stringify(subnameof(node )));
+    printf("\n%s %s(", stringify(nodeTypeMap(cdr(assoc("outtype", cdr(node))))), stringify(subnameof(node)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeFunctionArgs(cdr(assoc("intype" , cdr(node ))));
+    nodeFunctionArgs(cdr(assoc("intype", cdr(node))));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(");" );
+    printf(");");
 
   };
 
@@ -7071,22 +8148,22 @@ if (globalTrace)
 
 //Building function nodeForwardDeclarations from line: 211
 
-function nodeForwardDeclarations(tree ) {
+function nodeForwardDeclarations(tree) {
   
 if (globalTrace)
     {printf("nodeForwardDeclarations at q/node.qon:211\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeForwardDeclaration(car(tree ));
+    nodeForwardDeclaration(car(tree));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeForwardDeclarations(cdr(tree ));
+    nodeForwardDeclarations(cdr(tree));
 
   };
 
@@ -7098,22 +8175,22 @@ if (globalTrace)
 
 //Building function nodeFunctions from line: 221
 
-function nodeFunctions(tree ) {
+function nodeFunctions(tree) {
   
 if (globalTrace)
     {printf("nodeFunctions at q/node.qon:221\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeFunction(car(tree ));
+    nodeFunction(car(tree));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeFunctions(cdr(tree ));
+    nodeFunctions(cdr(tree));
 
   };
 
@@ -7125,94 +8202,94 @@ if (globalTrace)
 
 //Building function nodeIncludes from line: 229
 
-function nodeIncludes(nodes ) {
+function nodeIncludes(nodes) {
   
 if (globalTrace)
     {printf("nodeIncludes at q/node.qon:229\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function read_file(filename) {return fs.readFileSync(filename);}\n" );
+  printf("%s", "function read_file(filename) {return fs.readFileSync(filename);}\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function write_file(filename, data) {fs.writeFileSync(filename, data);}\n" );
+  printf("%s", "function write_file(filename, data) {fs.writeFileSync(filename, data);}\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "var util = require('util');\n" );
+  printf("%s", "var util = require('util');\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function printf() {process.stdout.write(util.format.apply(this, arguments));}\n" );
+  printf("%s", "function printf() {process.stdout.write(util.format.apply(this, arguments));}\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "var fs = require('fs');\n" );
+  printf("%s", "var fs = require('fs');\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function equalString(a,b) {return a.toString()===b.toString() }\n" );
+  printf("%s", "function equalString(a,b) {if (a==null) {return false;}if (b==null) {return false;}return a.toString()===b.toString() }\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function panic(s){console.trace(s);process.exit(1);}\n" );
+  printf("%s", "function panic(s){console.trace(s);process.exit(1);}\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function dump(s){console.log(s)}" );
+  printf("%s", "function dump(s){console.log(s)}");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function sub(a, b) { return a - b; }\n" );
+  printf("%s", "function sub(a, b) { return a - b; }\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function mult(a, b) { return a * b; }\n" );
+  printf("%s", "function mult(a, b) { return a * b; }\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function greaterthan(a, b) { return a > b; }\n" );
+  printf("%s", "function greaterthan(a, b) { return a > b; }\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function subf(a, b) { return a - b; }\n" );
+  printf("%s", "function subf(a, b) { return a - b; }\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function multf(a, b) { return a * b; }\n" );
+  printf("%s", "function multf(a, b) { return a * b; }\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function greaterthanf(a, b) { return a > b; }\n" );
+  printf("%s", "function greaterthanf(a, b) { return a > b; }\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function equal(a, b) { return a == b; }\n" );
+  printf("%s", "function equal(a, b) { return a == b; }\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function andBool(a, b) { return a == b;}\n" );
+  printf("%s", "function andBool(a, b) { return a == b;}\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function string_length(s) { return s.length;}\n" );
+  printf("%s", "function string_length(s) { return s.length;}\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function sub_string(str, start, len) {str = ''+str;return str.substring(start, start+len)};\n" );
+  printf("%s", "function sub_string(str, start, len) {str = ''+str;return str.substring(start, start+len)};\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function stringConcatenate(a, b) { return a + b}\n" );
+  printf("%s", "function stringConcatenate(a, b) { return a + b}\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function intToString(a) {}\n\n\n" );
+  printf("%s", "function intToString(a) {}\n\n\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function gc_malloc( size ) {\nreturn {};\n}\n\n" );
+  printf("%s", "function gc_malloc( size ) {\nreturn {};\n}\n\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function makeArray(length) {\n   return [];\n}\n\n" );
+  printf("%s", "function makeArray(length) {\n   return [];\n}\n\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function at(arr, index) {\n  return arr[index];\n}\n\n" );
+  printf("%s", "function at(arr, index) {\n  return arr[index];\n}\n\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function setAt(array, index, value) {\n    array[index] = value;\n}\n\n" );
+  printf("%s", "function setAt(array, index, value) {\n    array[index] = value;\n}\n\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function getStringArray(index, strs) {\nreturn strs[index];\n}\n\n" );
+  printf("%s", "function getStringArray(index, strs) {\nreturn strs[index];\n}\n\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "var NULL = null;" );
+  printf("%s", "var NULL = null;");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "var globalArgs;\nvar globalArgsCount;\nvar globalTrace = false;\nvar globalStepTrace = false;" );
+  printf("%s", "var globalArgs;\nvar globalArgsCount;\nvar globalTrace = false;\nvar globalStepTrace = false;");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "function character(num) {}" );
+  printf("%s", "function character(num) {}");
 
 if (globalTrace)
     {printf("Leaving nodeIncludes\n");}
@@ -7222,25 +8299,25 @@ if (globalTrace)
 
 //Building function nodeTypeDecl from line: 262
 
-function nodeTypeDecl(l ) {
+function nodeTypeDecl(l) {
   
 if (globalTrace)
     {printf("nodeTypeDecl at q/node.qon:262\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( greaterthan(listLength(l ), 2 )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(listLength(l), 2)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(1 );
+    printIndent(1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("%s %s %s;\n" , stringify(second(l )), stringify(nodeTypeMap(listLast(l ))), stringify(first(l )));
+    printf("%s %s %s;\n", stringify(second(l)), stringify(nodeTypeMap(listLast(l))), stringify(first(l)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(1 );
+    printIndent(1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("%s %s;\n" , stringify(nodeTypeMap(listLast(l ))), stringify(car(l )));
+    printf("%s %s;\n", stringify(nodeTypeMap(listLast(l))), stringify(car(l)));
 
   };
 
@@ -7252,22 +8329,22 @@ if (globalTrace)
 
 //Building function nodeStructComponents from line: 279
 
-function nodeStructComponents(node ) {
+function nodeStructComponents(node) {
   
 if (globalTrace)
     {printf("nodeStructComponents at q/node.qon:279\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeTypeDecl(car(node ));
+    nodeTypeDecl(car(node));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeStructComponents(cdr(node ));
+    nodeStructComponents(cdr(node));
 
   };
 
@@ -7279,13 +8356,13 @@ if (globalTrace)
 
 //Building function nodeStruct from line: 287
 
-function nodeStruct(node ) {
+function nodeStruct(node) {
   
 if (globalTrace)
     {printf("nodeStruct at q/node.qon:287\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  nodeStructComponents(cdr(car(node )));
+  nodeStructComponents(cdr(car(node)));
 
 if (globalTrace)
     {printf("Leaving nodeStruct\n");}
@@ -7295,23 +8372,23 @@ if (globalTrace)
 
 //Building function nodeTypeMap from line: 292
 
-function nodeTypeMap(aSym ) {
-  var symMap = NULL ;
+function nodeTypeMap(aSym) {
+  var symMap = NULL;
 
 if (globalTrace)
     {printf("nodeTypeMap at q/node.qon:292\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  symMap = alistCons(boxSymbol("stringArray" ), boxSymbol("char**" ), alistCons(boxSymbol("string" ), boxSymbol("char*" ), NULL ));
+  symMap = alistCons(boxSymbol("stringArray"), boxSymbol("char**"), alistCons(boxSymbol("string"), boxSymbol("char*"), NULL));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( truthy(assoc(stringify(aSym ), symMap ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( truthy(assoc(stringify(aSym), symMap))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cdr(assoc(stringify(aSym ), symMap )));
+    return(cdr(assoc(stringify(aSym), symMap)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(aSym );
+    return(aSym);
 
   };
 
@@ -7323,31 +8400,31 @@ if (globalTrace)
 
 //Building function nodeFuncMap from line: 307
 
-function nodeFuncMap(aSym ) {
-  var symMap = NULL ;
+function nodeFuncMap(aSym) {
+  var symMap = NULL;
 
 if (globalTrace)
     {printf("nodeFuncMap at q/node.qon:307\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString("symbol" , boxType(aSym ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString("symbol", boxType(aSym))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    symMap = alistCons(boxSymbol("=" ), boxSymbol("equal" ), alistCons(boxSymbol("sub-string" ), boxSymbol("sub_string" ), alistCons(boxSymbol("read-file" ), boxSymbol("read_file" ), alistCons(boxSymbol("write-file" ), boxSymbol("write_file" ), alistCons(boxSymbol(">" ), boxSymbol("greaterthan" ), alistCons(boxSymbol("string-length" ), boxSymbol("string_length" ), alistCons(boxSymbol("nil" ), boxSymbol("NULL" ), NULL )))))));
+    symMap = alistCons(boxSymbol("="), boxSymbol("equal"), alistCons(boxSymbol("sub-string"), boxSymbol("sub_string"), alistCons(boxSymbol("read-file"), boxSymbol("read_file"), alistCons(boxSymbol("write-file"), boxSymbol("write_file"), alistCons(boxSymbol(">"), boxSymbol("greaterthan"), alistCons(boxSymbol("string-length"), boxSymbol("string_length"), alistCons(boxSymbol("nil"), boxSymbol("NULL"), NULL)))))));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( truthy(assoc(stringify(aSym ), symMap ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( truthy(assoc(stringify(aSym), symMap))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(cdr(assoc(stringify(aSym ), symMap )));
+      return(cdr(assoc(stringify(aSym), symMap)));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(aSym );
+      return(aSym);
 
     };
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(aSym );
+    return(aSym);
 
   };
 
@@ -7359,7 +8436,7 @@ if (globalTrace)
 
 //Building function nodeType from line: 338
 
-function nodeType(node ) {
+function nodeType(node) {
   
 if (globalTrace)
     {printf("nodeType at q/node.qon:338\n");}
@@ -7372,22 +8449,22 @@ if (globalTrace)
 
 //Building function nodeTypes from line: 342
 
-function nodeTypes(nodes ) {
+function nodeTypes(nodes) {
   
 if (globalTrace)
     {printf("nodeTypes at q/node.qon:342\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(nodes )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(nodes)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeType(car(nodes ));
+    nodeType(car(nodes));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    nodeTypes(cdr(nodes ));
+    nodeTypes(cdr(nodes));
 
   };
 
@@ -7399,58 +8476,58 @@ if (globalTrace)
 
 //Building function nodeCompile from line: 350
 
-function nodeCompile(filename ) {
-  var programStr = "" ;
-var tree = NULL ;
-var program = NULL ;
+function nodeCompile(filename) {
+  var programStr = "";
+var tree = NULL;
+var program = NULL;
 
 if (globalTrace)
     {printf("nodeCompile at q/node.qon:350\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  programStr = read_file(filename );
+  programStr = read_file(filename);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = readSexpr(programStr , filename );
+  tree = readSexpr(programStr, filename);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  program = alistCons(boxString("includes" ), astIncludes(first(tree )), alistCons(boxString("types" ), astTypes(second(tree )), alistCons(boxString("functions" ), astFunctions(third(tree )), NULL )));
+  program = alistCons(boxString("includes"), astIncludes(first(tree)), alistCons(boxString("types"), astTypes(second(tree)), alistCons(boxString("functions"), astFunctions(third(tree)), NULL)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  program = mergeIncludes(program );
+  program = mergeIncludes(program);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  nodeIncludes(cdr(assoc("includes" , program )));
+  nodeIncludes(cdr(assoc("includes", program)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  nodeTypes(childrenof(cdr(assoc("types" , program ))));
+  nodeTypes(childrenof(cdr(assoc("types", program))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\nvar globalStackTrace = NULL;\n" );
+  printf("\nvar globalStackTrace = NULL;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\nvar caller = \"\";\n" );
+  printf("\nvar caller = \"\";\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\nfunction isNil(p) {\n    return p == NULL;\n}\n\n" );
+  printf("\nfunction isNil(p) {\n    return p == NULL;\n}\n\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  nodeFunctions(cdr(assoc("children" , cdr(cdr(assoc("functions" , program ))))));
+  nodeFunctions(cdr(assoc("children", cdr(cdr(assoc("functions", program))))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\n" );
+  printf("\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("const [asfdasdf, ...qwerqwer] = process.argv;" );
+  printf("const [asfdasdf, ...qwerqwer] = process.argv;");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("globalArgs = qwerqwer;" );
+  printf("globalArgs = qwerqwer;");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("globalArgsCount = qwerqwer.length;" );
+  printf("globalArgsCount = qwerqwer.length;");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "start();\n" );
+  printf("%s", "start();\n");
 
 if (globalTrace)
     {printf("Leaving nodeCompile\n");}
@@ -7460,39 +8537,39 @@ if (globalTrace)
 
 //Building function javaFunctionArgs from line: 3
 
-function javaFunctionArgs(tree ) {
+function javaFunctionArgs(tree) {
   
 if (globalTrace)
     {printf("javaFunctionArgs at q/java.qon:3\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    display(javaTypeMap(first(tree )));
+    display(javaTypeMap(first(tree)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(" " );
+    printf(" ");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    display(second(tree ));
+    display(second(tree));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isNil(cddr(tree ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isNil(cddr(tree))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("," );
+      printf(",");
 
     };
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaFunctionArgs(cddr(tree ));
+    javaFunctionArgs(cddr(tree));
 
   };
 
@@ -7504,13 +8581,13 @@ if (globalTrace)
 
 //Building function javaLeaf from line: 14
 
-function javaLeaf(thisNode ,indent ) {
+function javaLeaf(thisNode,indent) {
   
 if (globalTrace)
     {printf("javaLeaf at q/java.qon:14\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  display(javaFuncMap(codeof(thisNode )));
+  display(javaFuncMap(codeof(thisNode)));
 
 if (globalTrace)
     {printf("Leaving javaLeaf\n");}
@@ -7520,19 +8597,19 @@ if (globalTrace)
 
 //Building function javaStructGetterExpression from line: 17
 
-function javaStructGetterExpression(thisNode ,indent ) {
+function javaStructGetterExpression(thisNode,indent) {
   
 if (globalTrace)
     {printf("javaStructGetterExpression at q/java.qon:17\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(boxString("structGetter" ), subnameof(thisNode ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(boxString("structGetter"), subnameof(thisNode))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaGetStruct(thisNode , indent );
+    javaGetStruct(thisNode, indent);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaLeaf(thisNode , indent );
+    javaLeaf(thisNode, indent);
 
   };
 
@@ -7544,19 +8621,19 @@ if (globalTrace)
 
 //Building function javaExpression from line: 23
 
-function javaExpression(node ,indent ) {
+function javaExpression(node,indent) {
   
 if (globalTrace)
     {printf("javaExpression at q/java.qon:23\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isLeaf(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isLeaf(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    display(javaFuncMap(codeof(node )));
+    display(javaFuncMap(codeof(node)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaSubExpression(node , indent );
+    javaSubExpression(node, indent);
 
   };
 
@@ -7568,31 +8645,31 @@ if (globalTrace)
 
 //Building function javaRecurList from line: 29
 
-function javaRecurList(expr ,indent ) {
+function javaRecurList(expr,indent) {
   
 if (globalTrace)
     {printf("javaRecurList at q/java.qon:29\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(expr )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(expr)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaExpression(car(expr ), indent );
+    javaExpression(car(expr), indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isNil(cdr(expr ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isNil(cdr(expr))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf(", " );
+      printf(", ");
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      javaRecurList(cdr(expr ), indent );
+      javaRecurList(cdr(expr), indent);
 
     };
 
@@ -7606,70 +8683,70 @@ if (globalTrace)
 
 //Building function javaSubExpression from line: 41
 
-function javaSubExpression(tree ,indent ) {
-  var thing = NULL ;
+function javaSubExpression(tree,indent) {
+  var thing = NULL;
 
 if (globalTrace)
     {printf("javaSubExpression at q/java.qon:41\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isNode(childrenof(tree ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isNode(childrenof(tree))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      javaSubExpression(childrenof(tree ), indent );
+      javaSubExpression(childrenof(tree), indent);
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( isLeaf(tree )) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( isLeaf(tree)) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        display(javaFuncMap(codeof(tree )));
+        display(javaFuncMap(codeof(tree)));
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( equal(1 , listLength(childrenof(tree )))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( equal(1, listLength(childrenof(tree)))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          display(codeof(car(childrenof(tree ))));
+          display(codeof(car(childrenof(tree))));
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( equalBox(boxString("return" ), codeof(car(childrenof(tree ))))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( equalBox(boxString("return"), codeof(car(childrenof(tree))))) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf("" );
+            printf("");
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf("()" );
+            printf("()");
 
           };
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          thing = codeof(car(childrenof(tree )));
+          thing = codeof(car(childrenof(tree)));
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( equalBox(boxSymbol("get-struct" ), thing )) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( equalBox(boxSymbol("get-struct"), thing)) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf("%s.%s" , stringify(codeof(second(childrenof(tree )))), stringify(codeof(third(childrenof(tree )))));
+            printf("%s.%s", stringify(codeof(second(childrenof(tree)))), stringify(codeof(third(childrenof(tree)))));
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            if ( equalBox(boxSymbol("new" ), thing )) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+            if ( equalBox(boxSymbol("new"), thing)) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf("new %s()" , stringify(codeof(third(childrenof(tree )))));
+              printf("new %s()", stringify(codeof(third(childrenof(tree)))));
 
             } else {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf("%s(" , stringify(javaFuncMap(codeof(car(childrenof(tree ))))));
+              printf("%s(", stringify(javaFuncMap(codeof(car(childrenof(tree))))));
               if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              javaRecurList(cdr(childrenof(tree )), indent );
+              javaRecurList(cdr(childrenof(tree)), indent);
               if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf(")" );
+              printf(")");
 
             };
 
@@ -7691,40 +8768,40 @@ if (globalTrace)
 
 //Building function javaIf from line: 81
 
-function javaIf(node ,indent ) {
+function javaIf(node,indent) {
   
 if (globalTrace)
     {printf("javaIf at q/java.qon:81\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("if ( " );
+  printf("if ( ");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  javaExpression(car(first(childrenof(node ))), 0 );
+  javaExpression(car(first(childrenof(node))), 0);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf(") {" );
+  printf(") {");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  javaBody(second(childrenof(node )), add1(indent ));
+  javaBody(second(childrenof(node)), add1(indent));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("} else {" );
+  printf("} else {");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  javaBody(third(childrenof(node )), add1(indent ));
+  javaBody(third(childrenof(node)), add1(indent));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("}" );
+  printf("}");
 
 if (globalTrace)
     {printf("Leaving javaIf\n");}
@@ -7734,22 +8811,22 @@ if (globalTrace)
 
 //Building function javaSetStruct from line: 94
 
-function javaSetStruct(node ,indent ) {
+function javaSetStruct(node,indent) {
   
 if (globalTrace)
     {printf("javaSetStruct at q/java.qon:94\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s.%s = " , stringify(first(codeof(node ))), stringify(second(codeof(node ))));
+  printf("%s.%s = ", stringify(first(codeof(node))), stringify(second(codeof(node))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  javaExpression(childrenof(node ), indent );
+  javaExpression(childrenof(node), indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf(";" );
+  printf(";");
 
 if (globalTrace)
     {printf("Leaving javaSetStruct\n");}
@@ -7759,16 +8836,16 @@ if (globalTrace)
 
 //Building function javaGetStruct from line: 105
 
-function javaGetStruct(node ,indent ) {
+function javaGetStruct(node,indent) {
   
 if (globalTrace)
     {printf("javaGetStruct at q/java.qon:105\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s.%s" , stringify(first(codeof(node ))), stringify(second(codeof(node ))));
+  printf("%s.%s", stringify(first(codeof(node))), stringify(second(codeof(node))));
 
 if (globalTrace)
     {printf("Leaving javaGetStruct\n");}
@@ -7778,22 +8855,22 @@ if (globalTrace)
 
 //Building function javaSet from line: 113
 
-function javaSet(node ,indent ) {
+function javaSet(node,indent) {
   
 if (globalTrace)
     {printf("javaSet at q/java.qon:113\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(indent );
+  newLine(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s = " , stringify(first(codeof(node ))));
+  printf("%s = ", stringify(first(codeof(node))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  javaExpression(childrenof(node ), indent );
+  javaExpression(childrenof(node), indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf(";" );
+  printf(";");
 
 if (globalTrace)
     {printf("Leaving javaSet\n");}
@@ -7803,46 +8880,46 @@ if (globalTrace)
 
 //Building function javaStatement from line: 121
 
-function javaStatement(node ,indent ) {
+function javaStatement(node,indent) {
   
 if (globalTrace)
     {printf("javaStatement at q/java.qon:121\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(boxString("setter" ), subnameof(node ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(boxString("setter"), subnameof(node))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaSet(node , indent );
+    javaSet(node, indent);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalBox(boxString("structSetter" ), subnameof(node ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalBox(boxString("structSetter"), subnameof(node))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      javaSetStruct(node , indent );
+      javaSetStruct(node, indent);
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( equalBox(boxString("if" ), subnameof(node ))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( equalBox(boxString("if"), subnameof(node))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        javaIf(node , indent );
+        javaIf(node, indent);
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( equalBox(boxString("returnvoid" ), subnameof(node ))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( equalBox(boxString("returnvoid"), subnameof(node))) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          newLine(indent );
+          newLine(indent);
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printf("return;" );
+          printf("return;");
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          newLine(indent );
+          newLine(indent);
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          javaExpression(childrenof(node ), indent );
+          javaExpression(childrenof(node), indent);
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printf(";" );
+          printf(";");
 
         };
 
@@ -7860,28 +8937,28 @@ if (globalTrace)
 
 //Building function javaBody from line: 141
 
-function javaBody(tree ,indent ) {
+function javaBody(tree,indent) {
   
 if (globalTrace)
     {printf("javaBody at q/java.qon:141\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(indent );
+    printIndent(indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("" );
+    printf("");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaStatement(car(tree ), indent );
+    javaStatement(car(tree), indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaBody(cdr(tree ), indent );
+    javaBody(cdr(tree), indent);
 
   };
 
@@ -7893,32 +8970,32 @@ if (globalTrace)
 
 //Building function javaDeclarations from line: 151
 
-function javaDeclarations(decls ,indent ) {
-  var decl = NULL ;
+function javaDeclarations(decls,indent) {
+  var decl = NULL;
 
 if (globalTrace)
     {printf("javaDeclarations at q/java.qon:151\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(decls )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(decls)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    decl = car(decls );
+    decl = car(decls);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("%s %s = " , stringify(javaTypeMap(first(decl ))), stringify(second(decl )));
+    printf("%s %s = ", stringify(javaTypeMap(first(decl))), stringify(second(decl)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    display(javaFuncMap(third(decl )));
+    display(javaFuncMap(third(decl)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(";\n" );
+    printf(";\n");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaDeclarations(cdr(decls ), indent );
+    javaDeclarations(cdr(decls), indent);
 
   };
 
@@ -7930,88 +9007,88 @@ if (globalTrace)
 
 //Building function javaFunction from line: 165
 
-function javaFunction(node ) {
-  var name = NULL ;
+function javaFunction(node) {
+  var name = NULL;
 
 if (globalTrace)
     {printf("javaFunction at q/java.qon:165\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  name = subnameof(node );
+  name = subnameof(node);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\n\n//Building function %s from line: %s" , stringify(name ), stringify(getTag(name , boxString("line" ))));
+  printf("\n\n//Building function %s from line: %s", stringify(name), stringify(getTag(name, boxString("line"))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  newLine(0 );
+  newLine(0);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    newLine(0 );
+    newLine(0);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("public %s %s(" , stringify(javaTypeMap(cdr(assoc("outtype" , cdr(node ))))), stringify(subnameof(node )));
+    printf("public %s %s(", stringify(javaTypeMap(cdr(assoc("outtype", cdr(node))))), stringify(subnameof(node)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaFunctionArgs(cdr(assoc("intype" , cdr(node ))));
+    javaFunctionArgs(cdr(assoc("intype", cdr(node))));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(") {" );
+    printf(") {");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    newLine(1 );
+    newLine(1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaDeclarations(declarationsof(node ), 1 );
+    javaDeclarations(declarationsof(node), 1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( inList(toStr(name ), noStackTrace ())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( inList(toStr(name), noStackTrace())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     };
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( inList(toStr(name ), noStackTrace ())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( inList(toStr(name), noStackTrace())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {
     };
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaBody(childrenof(node ), 1 );
+    javaBody(childrenof(node), 1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( inList(toStr(name ), noStackTrace ())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( inList(toStr(name), noStackTrace())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( equalString("void" , stringify(javaTypeMap(cdr(assoc("outtype" , cdr(node ))))))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( equalString("void", stringify(javaTypeMap(cdr(assoc("outtype", cdr(node))))))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        printf("\nif (globalTrace)\n   System.out. printf(\"Leaving %s\\n\");\n" , stringify(name ));
+        printf("\nif (globalTrace)\n   System.out. printf(\"Leaving %s\\n\");\n", stringify(name));
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        printf("" );
+        printf("");
 
       };
 
     };
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\n}\n" );
+    printf("\n}\n");
 
   };
 
@@ -8023,22 +9100,22 @@ if (globalTrace)
 
 //Building function javaFunctions from line: 204
 
-function javaFunctions(tree ) {
+function javaFunctions(tree) {
   
 if (globalTrace)
     {printf("javaFunctions at q/java.qon:204\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaFunction(car(tree ));
+    javaFunction(car(tree));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaFunctions(cdr(tree ));
+    javaFunctions(cdr(tree));
 
   };
 
@@ -8050,67 +9127,67 @@ if (globalTrace)
 
 //Building function javaIncludes from line: 210
 
-function javaIncludes(nodes ) {
+function javaIncludes(nodes) {
   
 if (globalTrace)
     {printf("javaIncludes at q/java.qon:210\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public void panic(String s) {System.exit(1);}\n" );
+  printf("%s", "public void panic(String s) {System.exit(1);}\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public int sub(int a, int b) { return a - b; }\n" );
+  printf("%s", "public int sub(int a, int b) { return a - b; }\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public double mult(int a, int b) { return a * b; }\n" );
+  printf("%s", "public double mult(int a, int b) { return a * b; }\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public boolean greaterthan(int a, int b) { return a > b; }\n" );
+  printf("%s", "public boolean greaterthan(int a, int b) { return a > b; }\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public double subf(double a, double b) { return a - b; }\n" );
+  printf("%s", "public double subf(double a, double b) { return a - b; }\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public double multf(double a, double b) { return a * b; }\n" );
+  printf("%s", "public double multf(double a, double b) { return a * b; }\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public boolean greaterthanf(double a, double b) { return a > b; }\n" );
+  printf("%s", "public boolean greaterthanf(double a, double b) { return a > b; }\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public boolean equal(int a, int b) { return a == b; }\n" );
+  printf("%s", "public boolean equal(int a, int b) { return a == b; }\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public boolean equalString(String a, String b) { return a.equals(b); }\n" );
+  printf("%s", "public boolean equalString(String a, String b) { return a.equals(b); }\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public boolean andBool(boolean a, boolean b) { return a == b;}\n" );
+  printf("%s", "public boolean andBool(boolean a, boolean b) { return a == b;}\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public int string_length(String s) { return s.length();}\n" );
+  printf("%s", "public int string_length(String s) { return s.length();}\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public String stringConcatenate(String s1, String s2) { return s1 + s2; }\n" );
+  printf("%s", "public String stringConcatenate(String s1, String s2) { return s1 + s2; }\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public int strcmp(String s1, String s2) { return s1.compareTo(s2);}\n" );
+  printf("%s", "public int strcmp(String s1, String s2) { return s1.compareTo(s2);}\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public String read_file(String filename) {try { return new String(Files.readAllBytes(Paths.get(filename)));} catch (Exception e) {panic(\"Could not read file\");return \"\";}}\n" );
+  printf("%s", "public String read_file(String filename) {try { return new String(Files.readAllBytes(Paths.get(filename)));} catch (Exception e) {panic(\"Could not read file\");return \"\";}}\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public void write_file(String filename, String data) {try {Files.write(Paths.get(filename), data.getBytes(\"UTF-8\"));} catch (Exception e) {panic(\"Could not write file\");}}\n" );
+  printf("%s", "public void write_file(String filename, String data) {try {Files.write(Paths.get(filename), data.getBytes(\"UTF-8\"));} catch (Exception e) {panic(\"Could not write file\");}}\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public String sub_string(String s, int start, int length) {\nreturn s.substring(start, start+length);\n}\n\n\n\n" );
+  printf("%s", "public String sub_string(String s, int start, int length) {\nreturn s.substring(start, start+length);\n}\n\n\n\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public String intToString(int num) { char c=(char) num;  String s=Character.toString(c); return s;}" );
+  printf("%s", "public String intToString(int num) { char c=(char) num;  String s=Character.toString(c); return s;}");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public String character(int num) { char c=(char) num;  String s=Character.toString(c); return s;}" );
+  printf("%s", "public String character(int num) { char c=(char) num;  String s=Character.toString(c); return s;}");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public String getStringArray(int index, String[] arr) { return arr[index];}" );
+  printf("%s", "public String getStringArray(int index, String[] arr) { return arr[index];}");
 
 if (globalTrace)
     {printf("Leaving javaIncludes\n");}
@@ -8120,25 +9197,25 @@ if (globalTrace)
 
 //Building function javaTypeDecl from line: 233
 
-function javaTypeDecl(l ) {
+function javaTypeDecl(l) {
   
 if (globalTrace)
     {printf("javaTypeDecl at q/java.qon:233\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( greaterthan(listLength(l ), 2 )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(listLength(l), 2)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(1 );
+    printIndent(1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("%s %s;\n" , stringify(javaTypeMap(listLast(l ))), stringify(first(l )));
+    printf("%s %s;\n", stringify(javaTypeMap(listLast(l))), stringify(first(l)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(1 );
+    printIndent(1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("%s %s;\n" , stringify(javaTypeMap(listLast(l ))), stringify(car(l )));
+    printf("%s %s;\n", stringify(javaTypeMap(listLast(l))), stringify(car(l)));
 
   };
 
@@ -8150,22 +9227,22 @@ if (globalTrace)
 
 //Building function javaStructComponents from line: 250
 
-function javaStructComponents(node ) {
+function javaStructComponents(node) {
   
 if (globalTrace)
     {printf("javaStructComponents at q/java.qon:250\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaTypeDecl(car(node ));
+    javaTypeDecl(car(node));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaStructComponents(cdr(node ));
+    javaStructComponents(cdr(node));
 
   };
 
@@ -8177,13 +9254,13 @@ if (globalTrace)
 
 //Building function javaStruct from line: 256
 
-function javaStruct(node ) {
+function javaStruct(node) {
   
 if (globalTrace)
     {printf("javaStruct at q/java.qon:256\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  javaStructComponents(cdr(car(node )));
+  javaStructComponents(cdr(car(node)));
 
 if (globalTrace)
     {printf("Leaving javaStruct\n");}
@@ -8193,23 +9270,23 @@ if (globalTrace)
 
 //Building function javaTypeMap from line: 259
 
-function javaTypeMap(aSym ) {
-  var symMap = NULL ;
+function javaTypeMap(aSym) {
+  var symMap = NULL;
 
 if (globalTrace)
     {printf("javaTypeMap at q/java.qon:259\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  symMap = alistCons(boxSymbol("pair" ), boxSymbol("Box" ), alistCons(boxSymbol("bool" ), boxSymbol("boolean" ), alistCons(boxSymbol("box" ), boxSymbol("Box" ), alistCons(boxSymbol("list" ), boxSymbol("Box" ), alistCons(boxSymbol("Box*" ), boxSymbol("Box" ), alistCons(boxSymbol("struct" ), boxSymbol("" ), alistCons(boxSymbol("int" ), boxSymbol("Integer" ), alistCons(boxSymbol("float" ), boxSymbol("double" ), alistCons(boxSymbol("stringArray" ), boxSymbol("String[]" ), alistCons(boxSymbol("string" ), boxSymbol("String" ), NULL ))))))))));
+  symMap = alistCons(boxSymbol("pair"), boxSymbol("Box"), alistCons(boxSymbol("bool"), boxSymbol("boolean"), alistCons(boxSymbol("box"), boxSymbol("Box"), alistCons(boxSymbol("list"), boxSymbol("Box"), alistCons(boxSymbol("Box*"), boxSymbol("Box"), alistCons(boxSymbol("struct"), boxSymbol(""), alistCons(boxSymbol("int"), boxSymbol("Integer"), alistCons(boxSymbol("float"), boxSymbol("double"), alistCons(boxSymbol("stringArray"), boxSymbol("String[]"), alistCons(boxSymbol("string"), boxSymbol("String"), NULL))))))))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( truthy(assoc(stringify(aSym ), symMap ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( truthy(assoc(stringify(aSym), symMap))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cdr(assoc(stringify(aSym ), symMap )));
+    return(cdr(assoc(stringify(aSym), symMap)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(aSym );
+    return(aSym);
 
   };
 
@@ -8222,16 +9299,16 @@ if (globalTrace)
 //Building function javaTypesNoDeclare from line: 277
 
 function javaTypesNoDeclare() {
-  var syms = NULL ;
+  var syms = NULL;
 
 if (globalTrace)
     {printf("javaTypesNoDeclare at q/java.qon:277\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  syms = cons(boxString("pair" ), cons(boxString("box" ), NULL ));
+  syms = cons(boxString("pair"), cons(boxString("box"), NULL));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(syms );
+  return(syms);
 
 if (globalTrace)
     {printf("Leaving javaTypesNoDeclare\n");}
@@ -8241,31 +9318,31 @@ if (globalTrace)
 
 //Building function javaFuncMap from line: 286
 
-function javaFuncMap(aSym ) {
-  var symMap = NULL ;
+function javaFuncMap(aSym) {
+  var symMap = NULL;
 
 if (globalTrace)
     {printf("javaFuncMap at q/java.qon:286\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString("symbol" , boxType(aSym ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString("symbol", boxType(aSym))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    symMap = alistCons(boxSymbol("printf" ), boxSymbol("System.out.printf" ), alistCons(boxSymbol("=" ), boxSymbol("equal" ), alistCons(boxSymbol("sub-string" ), boxSymbol("sub_string" ), alistCons(boxSymbol("read-file" ), boxSymbol("read_file" ), alistCons(boxSymbol("write-file" ), boxSymbol("write_file" ), alistCons(boxSymbol(">" ), boxSymbol("greaterthan" ), alistCons(boxSymbol("string-length" ), boxSymbol("string_length" ), alistCons(boxSymbol("nil" ), boxSymbol("null" ), NULL ))))))));
+    symMap = alistCons(boxSymbol("printf"), boxSymbol("System.out.printf"), alistCons(boxSymbol("="), boxSymbol("equal"), alistCons(boxSymbol("sub-string"), boxSymbol("sub_string"), alistCons(boxSymbol("read-file"), boxSymbol("read_file"), alistCons(boxSymbol("write-file"), boxSymbol("write_file"), alistCons(boxSymbol(">"), boxSymbol("greaterthan"), alistCons(boxSymbol("string-length"), boxSymbol("string_length"), alistCons(boxSymbol("nil"), boxSymbol("null"), NULL))))))));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( truthy(assoc(stringify(aSym ), symMap ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( truthy(assoc(stringify(aSym), symMap))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(cdr(assoc(stringify(aSym ), symMap )));
+      return(cdr(assoc(stringify(aSym), symMap)));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      return(aSym );
+      return(aSym);
 
     };
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(aSym );
+    return(aSym);
 
   };
 
@@ -8277,34 +9354,34 @@ if (globalTrace)
 
 //Building function javaType from line: 316
 
-function javaType(node ) {
+function javaType(node) {
   
 if (globalTrace)
     {printf("javaType at q/java.qon:316\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalBox(subnameof(node ), boxString("struct" ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalBox(subnameof(node), boxString("struct"))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\npublic class %s {\n" , stringify(first(codeof(node ))));
+    printf("\npublic class %s {\n", stringify(first(codeof(node))));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\npublic String caller =\"\";" );
+    printf("\npublic String caller =\"\";");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaStruct(cdr(codeof(node )));
+    javaStruct(cdr(codeof(node)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\n};\n" );
+    printf("\n};\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( inList(boxString(stringify(first(codeof(node )))), javaTypesNoDeclare ())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( inList(boxString(stringify(first(codeof(node)))), javaTypesNoDeclare())) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("public class %s extends %s {};\n" , stringify(first(codeof(node ))), stringify(javaTypeMap(listLast(codeof(node )))));
+      printf("public class %s extends %s {};\n", stringify(first(codeof(node))), stringify(javaTypeMap(listLast(codeof(node)))));
 
     };
 
@@ -8318,22 +9395,22 @@ if (globalTrace)
 
 //Building function javaTypes from line: 332
 
-function javaTypes(nodes ) {
+function javaTypes(nodes) {
   
 if (globalTrace)
     {printf("javaTypes at q/java.qon:332\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(nodes )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(nodes)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaType(car(nodes ));
+    javaType(car(nodes));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    javaTypes(cdr(nodes ));
+    javaTypes(cdr(nodes));
 
   };
 
@@ -8345,85 +9422,85 @@ if (globalTrace)
 
 //Building function javaCompile from line: 338
 
-function javaCompile(filename ) {
-  var programStr = "" ;
-var tree = NULL ;
-var program = NULL ;
+function javaCompile(filename) {
+  var programStr = "";
+var tree = NULL;
+var program = NULL;
 
 if (globalTrace)
     {printf("javaCompile at q/java.qon:338\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "package quonverter;\n" );
+  printf("%s", "package quonverter;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "import java.nio.file.Files;\n" );
+  printf("%s", "import java.nio.file.Files;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "import java.nio.file.Paths;\n" );
+  printf("%s", "import java.nio.file.Paths;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "import java.io.IOException;\n" );
+  printf("%s", "import java.io.IOException;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "import java.io.UnsupportedEncodingException;\n" );
+  printf("%s", "import java.io.UnsupportedEncodingException;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("class MyProgram {\n" );
+  printf("class MyProgram {\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\npublic String caller =\"\";" );
+  printf("\npublic String caller =\"\";");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  programStr = read_file(filename );
+  programStr = read_file(filename);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = readSexpr(programStr , filename );
+  tree = readSexpr(programStr, filename);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  program = alistCons(boxString("includes" ), astIncludes(first(tree )), alistCons(boxString("types" ), astTypes(second(tree )), alistCons(boxString("functions" ), astFunctions(third(tree )), NULL )));
+  program = alistCons(boxString("includes"), astIncludes(first(tree)), alistCons(boxString("types"), astTypes(second(tree)), alistCons(boxString("functions"), astFunctions(third(tree)), NULL)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  program = mergeIncludes(program );
+  program = mergeIncludes(program);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  javaIncludes(cdr(assoc("includes" , program )));
+  javaIncludes(cdr(assoc("includes", program)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  javaTypes(childrenof(cdr(assoc("types" , program ))));
+  javaTypes(childrenof(cdr(assoc("types", program))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("public boolean globalStackTrace = false;\n" );
+  printf("public boolean globalStackTrace = false;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("public boolean globalStepTrace = false;\n" );
+  printf("public boolean globalStepTrace = false;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("public boolean globalTrace = false;\n" );
+  printf("public boolean globalTrace = false;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("public String FILE = null;\n" );
+  printf("public String FILE = null;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("public Integer LINE = 0;\n" );
+  printf("public Integer LINE = 0;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("public static Integer globalArgsCount = 0;\n" );
+  printf("public static Integer globalArgsCount = 0;\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("public static String globalArgs[];\n" );
+  printf("public static String globalArgs[];\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\npublic boolean isNil(Box p) {\n    return p == null;\n}\n\n\n" );
+  printf("\npublic boolean isNil(Box p) {\n    return p == null;\n}\n\n\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  javaFunctions(cdr(assoc("children" , cdr(cdr(assoc("functions" , program ))))));
+  javaFunctions(cdr(assoc("children", cdr(cdr(assoc("functions", program))))));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "public static void main(String args[]) {\nglobalArgs = args;\nglobalArgsCount = args.length;MyProgram mp = new MyProgram(); mp.start();\n}" );
+  printf("%s", "public static void main(String args[]) {\nglobalArgs = args;\nglobalArgsCount = args.length;MyProgram mp = new MyProgram(); mp.start();\n}");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("}\n" );
+  printf("}\n");
 
 if (globalTrace)
     {printf("Leaving javaCompile\n");}
@@ -8433,33 +9510,33 @@ if (globalTrace)
 
 //Building function luaFunctionArgs from line: 4
 
-function luaFunctionArgs(indent ,tree ) {
+function luaFunctionArgs(indent,tree) {
   
 if (globalTrace)
     {printf("luaFunctionArgs at q/lua.qon:4\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    display(second(tree ));
+    display(second(tree));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isNil(cddr(tree ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isNil(cddr(tree))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("," );
+      printf(",");
 
     };
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    luaFunctionArgs(indent , cddr(tree ));
+    luaFunctionArgs(indent, cddr(tree));
 
   };
 
@@ -8471,38 +9548,38 @@ if (globalTrace)
 
 //Building function luaFunction from line: 14
 
-function luaFunction(indent ,functionDefinition ) {
-  var fname = "" ;
+function luaFunction(indent,functionDefinition) {
+  var fname = "";
 
 if (globalTrace)
     {printf("luaFunction at q/lua.qon:14\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  fname = stringify(second(functionDefinition ));
+  fname = stringify(second(functionDefinition));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("-- Chose function name %s" , fname );
+  printf("-- Chose function name %s", fname);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\nfunction %s(" , fname );
+  printf("\nfunction %s(", fname);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  luaFunctionArgs(indent , third(functionDefinition ));
+  luaFunctionArgs(indent, third(functionDefinition));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf(")\n" );
+  printf(")\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("print(\"caller: \", caller, \"-> %s\")\n" , fname );
+  printf("print(\"caller: \", caller, \"-> %s\")\n", fname);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  luaDeclarations(add1(indent ), cdr(fourth(functionDefinition )));
+  luaDeclarations(add1(indent), cdr(fourth(functionDefinition)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  luaBody(fname , indent , cdr(fifth(functionDefinition )));
+  luaBody(fname, indent, cdr(fifth(functionDefinition)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("end\n" );
+  printf("end\n");
 
 if (globalTrace)
     {printf("Leaving luaFunction\n");}
@@ -8512,32 +9589,32 @@ if (globalTrace)
 
 //Building function luaDeclarations from line: 26
 
-function luaDeclarations(indent ,declarations ) {
-  var decl = NULL ;
+function luaDeclarations(indent,declarations) {
+  var decl = NULL;
 
 if (globalTrace)
     {printf("luaDeclarations at q/lua.qon:26\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(declarations )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(declarations)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    decl = first(declarations );
+    decl = first(declarations);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("local %s =" , stringify(second(decl )));
+    printf("local %s =", stringify(second(decl)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    luaExpressionStart(indent , third(decl ));
+    luaExpressionStart(indent, third(decl));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\n" );
+    printf("\n");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    luaDeclarations(indent , cdr(declarations ));
+    luaDeclarations(indent, cdr(declarations));
 
   };
 
@@ -8549,57 +9626,57 @@ if (globalTrace)
 
 //Building function luaExpressionStart from line: 42
 
-function luaExpressionStart(indent ,program ) {
+function luaExpressionStart(indent,program) {
   
 if (globalTrace)
     {printf("luaExpressionStart at q/lua.qon:42\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(program )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(program)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isList(program )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isList(program)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( equalString(stringify(car(program )), "get-struct" )) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( equalString(stringify(car(program)), "get-struct")) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        printf("%s.%s" , stringify(second(program )), stringify(third(program )));
+        printf("%s.%s", stringify(second(program)), stringify(third(program)));
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( equalString(stringify(car(program )), ">" )) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( equalString(stringify(car(program)), ">")) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printf("greaterthan(" );
+          printf("greaterthan(");
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          luaExpression(indent , cdr(program ));
+          luaExpression(indent, cdr(program));
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printf(")" );
+          printf(")");
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( equalString(stringify(car(program )), "=" )) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( equalString(stringify(car(program)), "=")) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf("equal(" );
+            printf("equal(");
             if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            luaExpression(indent , cdr(program ));
+            luaExpression(indent, cdr(program));
             if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf(")" );
+            printf(")");
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf("%s(" , stringify(car(program )));
+            printf("%s(", stringify(car(program)));
             if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            luaExpression(indent , cdr(program ));
+            luaExpression(indent, cdr(program));
             if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf(")" );
+            printf(")");
 
           };
 
@@ -8609,7 +9686,7 @@ if (globalTrace)
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      luaExpression(indent , program );
+      luaExpression(indent, program);
 
     };
 
@@ -8623,44 +9700,44 @@ if (globalTrace)
 
 //Building function luaExpression from line: 84
 
-function luaExpression(indent ,program ) {
+function luaExpression(indent,program) {
   
 if (globalTrace)
     {printf("luaExpression at q/lua.qon:84\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(program )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(program)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isList(program )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isList(program)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( isList(car(program ))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( isList(car(program))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        luaExpressionStart(indent , car(program ));
+        luaExpressionStart(indent, car(program));
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        display(car(program ));
+        display(car(program));
 
       };
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( greaterthan(listLength(program ), 1 )) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( greaterthan(listLength(program), 1)) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        printf(", " );
+        printf(", ");
 
       } else {
       };
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      luaExpression(indent , cdr(program ));
+      luaExpression(indent, cdr(program));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      display(program );
+      display(program);
 
     };
 
@@ -8674,96 +9751,96 @@ if (globalTrace)
 
 //Building function luaStatement from line: 112
 
-function luaStatement(indent ,statement ) {
+function luaStatement(indent,statement) {
   
 if (globalTrace)
     {printf("luaStatement at q/lua.qon:112\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString(stringify(car(statement )), "if" )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString(stringify(car(statement)), "if")) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(indent );
+    printIndent(indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("if " );
+    printf("if ");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    add1(indent );
+    add1(indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    luaExpressionStart(add1(indent ), second(statement ));
+    luaExpressionStart(add1(indent), second(statement));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(" then\n" );
+    printf(" then\n");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    luaBody(caller , add1(indent ), cdr(third(statement )));
+    luaBody(caller, add1(indent), cdr(third(statement)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(indent );
+    printIndent(indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("else\n" );
+    printf("else\n");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    luaBody(caller , add1(indent ), cdr(fourth(statement )));
+    luaBody(caller, add1(indent), cdr(fourth(statement)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(indent );
+    printIndent(indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("end\n" );
+    printf("end\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalString(stringify(car(statement )), "set" )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalString(stringify(car(statement)), "set")) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printIndent(indent );
+      printIndent(indent);
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("%s = " , stringify(second(statement )));
+      printf("%s = ", stringify(second(statement)));
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      luaExpressionStart(add1(indent ), third(statement ));
+      luaExpressionStart(add1(indent), third(statement));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( equalString(stringify(car(statement )), "set-struct" )) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( equalString(stringify(car(statement)), "set-struct")) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        printf("%s.%s = " , stringify(second(statement )), stringify(third(statement )));
+        printf("%s.%s = ", stringify(second(statement)), stringify(third(statement)));
         if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        luaExpressionStart(indent , fourth(statement ));
+        luaExpressionStart(indent, fourth(statement));
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( equalString(stringify(car(statement )), "return" )) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( equalString(stringify(car(statement)), "return")) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printIndent(indent );
+          printIndent(indent);
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printf("return " );
+          printf("return ");
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( greaterthan(listLength(statement ), 1 )) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( greaterthan(listLength(statement), 1)) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            luaExpressionStart(indent , second(statement ));
+            luaExpressionStart(indent, second(statement));
 
           } else {
           };
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printf("\n" );
+          printf("\n");
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printIndent(indent );
+          printIndent(indent);
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          luaExpressionStart(indent , statement );
+          luaExpressionStart(indent, statement);
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printf(";\n" );
+          printf(";\n");
 
         };
 
@@ -8781,32 +9858,32 @@ if (globalTrace)
 
 //Building function luaBody from line: 164
 
-function luaBody(local_caller ,indent ,program ) {
-  var statement = NULL ;
+function luaBody(local_caller,indent,program) {
+  var statement = NULL;
 
 if (globalTrace)
     {printf("luaBody at q/lua.qon:164\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(program )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(program)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    statement = car(program );
+    statement = car(program);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("caller = \"%s:%s:%d\"\n" , local_caller , unBoxString(getTagFail(statement , boxString("filename" ), boxString("Unknown file" ))), unBoxInt(getTagFail(statement , boxString("line" ), boxInt(-1 ))));
+    printf("caller = \"%s:%s:%d\"\n", local_caller, unBoxString(getTagFail(statement, boxString("filename"), boxString("Unknown file"))), unBoxInt(getTagFail(statement, boxString("line"), boxInt(-1))));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    luaStatement(add1(indent ), statement );
+    luaStatement(add1(indent), statement);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\n" );
+    printf("\n");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    luaBody(local_caller , indent , cdr(program ));
+    luaBody(local_caller, indent, cdr(program));
 
   };
 
@@ -8818,22 +9895,22 @@ if (globalTrace)
 
 //Building function luaFunctions from line: 176
 
-function luaFunctions(indent ,program ) {
+function luaFunctions(indent,program) {
   
 if (globalTrace)
     {printf("luaFunctions at q/lua.qon:176\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(program )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(program)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    luaFunction(indent , car(program ));
+    luaFunction(indent, car(program));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    luaFunctions(indent , cdr(program ));
+    luaFunctions(indent, cdr(program));
 
   };
 
@@ -8845,16 +9922,16 @@ if (globalTrace)
 
 //Building function luaProgram from line: 188
 
-function luaProgram(program ) {
+function luaProgram(program) {
   
 if (globalTrace)
     {printf("luaProgram at q/lua.qon:188\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  luaIncludes(NULL );
+  luaIncludes(NULL);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  luaFunctions(0 , cdr(third(program )));
+  luaFunctions(0, cdr(third(program)));
 
 if (globalTrace)
     {printf("Leaving luaProgram\n");}
@@ -8864,13 +9941,13 @@ if (globalTrace)
 
 //Building function luaIncludes from line: 195
 
-function luaIncludes(nodes ) {
+function luaIncludes(nodes) {
   
 if (globalTrace)
     {printf("luaIncludes at q/lua.qon:195\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("%s" , "\nfunction luaDump(o)\n   if type(o) == 'table' then\n      local s = '{ '\n      for k,v in pairs(o) do\n         if type(k) ~= 'number' then k = '\"'..k..'\"' end\n         s = s .. '['..k..'] = ' .. luaDump(v) .. ','\n      end\n      return s .. '} '\n   else\n      return tostring(o)\n   end\nend\nprintf = function(s,...)\nreturn io.write(s:format(...))\nend -- function\n    \nfunction stringConcatenate(a,b)\nreturn a..b\nend\n    \nfunction getStringArray(index, arr)\nreturn arr[index]\nend\n       \nfunction luaWriteFile(name, data)  \nlocal file = io.open(name, \"w\")\nfile:write(data)\nfile:close(file)\nend\n    function luaSubstring(s, start, length)\nreturn string.sub(s, start, start+length)\nend\n    \n    function luaReadFile(file)\n      local f = assert(io.open(file, \"rb\"))\n      local content = f:read(\"*all\")      f:close()\n      return content\n    end\n     \nfunction equalString(a,b)\n        return a==b;\n     end\n    \n     function new()\n        return {};\n     end\n    \n     function isNil(val)\n        return val == nil;\n     end\n    \n     function getEnv(key)\n        return os.getenv(key);\n     end\n    \n    function panic(s)\n      print(s);\n    os.exit()\n    end\n    \n    function sub(a, b) \n      return a - b; \n    end\n\n    function mult(a, b) \n      return a * b;\n    end\n    \n    function greaterthan(a, b)\n      return a > b;\n    end\n    \n    function subf(a, b) \n      return a - b;\n    end\n    \n    function multf(a, b)\n      return a * b;\n    end\n    \n    function greaterthanf(a, b)\n      return a > b;\n    end\n    \n    function equal(a, b)\n      return a == b;\n    end\n    \n    function andBool(a, b)\n      return a == b;\n    end\n    \n    function string_length(s)\n      return strlen(s);\n    end\n    \n    function setSubString(target, start, source)\n      panic(\"stub\");\n      end\n    \n    function sub_string(s, start, length)\n      panic(\"stub\");\n    end\n    \n    function intToString(a)\n      panic(\"stub\")\n return a\n    end\n\n    function gc_malloc(size)\n      return \"\"\n    end\n    \n    function makeArray(length)\n      return {}\n    end\n    \n    function at(arr, index)\n      return arr[index+1];\n    end\n    \n    function setAt(array, index, value)\n      array[index+1] = value;\n    end\n    \n    function read_file(file)\n      local f = io.open(file, \"r\")\n      local content = \"\"\n      local length = 0\n\n      while f:read(0) ~= \"\" do\n          local current = f:read(\"*all\")\n\n          print(#current, length)\n          length = length + #current\n\n          content = content .. current\n      end\n\n      return content\n    end\n    \n    function write_file(filename, data)\n      local file = io.open(filename,'w')\n      file:write(tostring(data))\n      file:close()\n    end\n    \n    caller=\"main\";\n    \n    globalArgs={};\n    globalArgsCount=0;\n    globalTrace = false;\n    globalStepTrace = false;\n\n    function main()\n      globalArgs = arg;\n      globalArgsCount = #arg + 1;\n      return start();\n    end\n    \n" );
+  printf("%s", "\nfunction luaDump(o)\n   if type(o) == 'table' then\n      local s = '{ '\n      for k,v in pairs(o) do\n         if type(k) ~= 'number' then k = '\"'..k..'\"' end\n         s = s .. '['..k..'] = ' .. luaDump(v) .. ','\n      end\n      return s .. '} '\n   else\n      return tostring(o)\n   end\nend\nprintf = function(s,...)\nreturn io.write(s:format(...))\nend -- function\n    \nfunction stringConcatenate(a,b)\nreturn a..b\nend\n    \nfunction getStringArray(index, arr)\nreturn arr[index]\nend\n       \nfunction luaWriteFile(name, data)  \nlocal file = io.open(name, \"w\")\nfile:write(data)\nfile:close(file)\nend\n    function luaSubstring(s, start, length)\nreturn string.sub(s, start, start+length)\nend\n    \n    function luaReadFile(file)\n      local f = assert(io.open(file, \"rb\"))\n      local content = f:read(\"*all\")      f:close()\n      return content\n    end\n     \nfunction equalString(a,b)\n        return a==b;\n     end\n    \n     function new()\n        return {};\n     end\n    \n     function isNil(val)\n        return val == nil;\n     end\n    \n     function getEnv(key)\n        return os.getenv(key);\n     end\n    \n    function panic(s)\n      print(s);\n    os.exit()\n    end\n    \n    function sub(a, b) \n      return a - b; \n    end\n\n    function mult(a, b) \n      return a * b;\n    end\n    \n    function greaterthan(a, b)\n      return a > b;\n    end\n    \n    function subf(a, b) \n      return a - b;\n    end\n    \n    function multf(a, b)\n      return a * b;\n    end\n    \n    function greaterthanf(a, b)\n      return a > b;\n    end\n    \n    function equal(a, b)\n      return a == b;\n    end\n    \n    function andBool(a, b)\n      return a == b;\n    end\n    \n    function string_length(s)\n      return strlen(s);\n    end\n    \n    function setSubString(target, start, source)\n      panic(\"stub\");\n      end\n    \n    function sub_string(s, start, length)\n      panic(\"stub\");\n    end\n    \n    function intToString(a)\n      panic(\"stub\")\n return a\n    end\n\n    function gc_malloc(size)\n      return \"\"\n    end\n    \n    function makeArray(length)\n      return {}\n    end\n    \n    function at(arr, index)\n      return arr[index+1];\n    end\n    \n    function setAt(array, index, value)\n      array[index+1] = value;\n    end\n    \n    function read_file(file)\n      local f = io.open(file, \"r\")\n      local content = \"\"\n      local length = 0\n\n      while f:read(0) ~= \"\" do\n          local current = f:read(\"*all\")\n\n          print(#current, length)\n          length = length + #current\n\n          content = content .. current\n      end\n\n      return content\n    end\n    \n    function write_file(filename, data)\n      local file = io.open(filename,'w')\n      file:write(tostring(data))\n      file:close()\n    end\n    \n    caller=\"main\";\n    \n    globalArgs={};\n    globalArgsCount=0;\n    globalTrace = false;\n    globalStepTrace = false;\n\n    function main()\n      globalArgs = arg;\n      globalArgsCount = #arg + 1;\n      return start();\n    end\n    \n");
 
 if (globalTrace)
     {printf("Leaving luaIncludes\n");}
@@ -8880,47 +9957,47 @@ if (globalTrace)
 
 //Building function luaCompile from line: 203
 
-function luaCompile(filename ) {
-  var tree = NULL ;
+function luaCompile(filename) {
+  var tree = NULL;
 
 if (globalTrace)
     {printf("luaCompile at q/lua.qon:203\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = loadQuon("compiler.qon" );
+  tree = loadQuon(filename);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = loadIncludes(tree );
+  tree = loadIncludes(tree);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = macrowalk(tree );
+  tree = macrowalk(tree);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = macrosingle(tree , "write-file" , "luaWriteFile" );
+  tree = macrosingle(tree, "write-file", "luaWriteFile");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = macrosingle(tree , "read-file" , "luaReadFile" );
+  tree = macrosingle(tree, "read-file", "luaReadFile");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = macrosingle(tree , "string-length" , "string.len" );
+  tree = macrosingle(tree, "string-length", "string.len");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = macrosingle(tree , "sub-string" , "luaSubstring" );
+  tree = macrosingle(tree, "sub-string", "luaSubstring");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = macrosingle(tree , "stringLength" , "string.len" );
+  tree = macrosingle(tree, "stringLength", "string.len");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  luaProgram(tree );
+  luaProgram(tree);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\n" );
+  printf("\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("function main()\nglobalArgs = arg\nglobalArgsCount = #arg\nstart()\nend\n" );
+  printf("function main()\nglobalArgs = arg\nglobalArgsCount = #arg\nstart()\nend\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("main()" );
+  printf("main()");
 
 if (globalTrace)
     {printf("Leaving luaCompile\n");}
@@ -8928,41 +10005,41 @@ if (globalTrace)
 }
 
 
-//Building function imaFunctionArgs from line: 20
+//Building function imaFunctionArgs from line: 4
 
-function imaFunctionArgs(indent ,tree ) {
+function imaFunctionArgs(indent,tree) {
   
 if (globalTrace)
-    {printf("imaFunctionArgs at q/imaginary.qon:20\n");}
+    {printf("imaFunctionArgs at q/imaginary.qon:4\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(tree )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(tree)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    display(second(tree ));
+    display(second(tree));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(": " );
+    printf(": ");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    display(first(tree ));
+    display(first(tree));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isNil(cddr(tree ))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isNil(cddr(tree))) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("" );
+      printf("");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf(", " );
+      printf(", ");
 
     };
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    imaFunctionArgs(indent , cddr(tree ));
+    imaFunctionArgs(indent, cddr(tree));
 
   };
 
@@ -8972,54 +10049,54 @@ if (globalTrace)
 }
 
 
-//Building function imaFunction from line: 32
+//Building function imaFunction from line: 16
 
-function imaFunction(indent ,functionDefinition ) {
-  var fname = "" ;
+function imaFunction(indent,functionDefinition) {
+  var fname = "";
 
 if (globalTrace)
-    {printf("imaFunction at q/imaginary.qon:32\n");}
+    {printf("imaFunction at q/imaginary.qon:16\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  fname = stringify(second(functionDefinition ));
+  fname = stringify(second(functionDefinition));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\nfu %s(" , fname );
+  printf("\nfu %s(", fname);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  imaFunctionArgs(indent , third(functionDefinition ));
+  imaFunctionArgs(indent, third(functionDefinition));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf(") " );
+  printf(") ");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("-> %s" , stringify(first(functionDefinition )));
+  printf("-> %s", stringify(first(functionDefinition)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  imaDeclarations(add1(indent ), cdr(fourth(functionDefinition )));
+  imaDeclarations(add1(indent), cdr(fourth(functionDefinition)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( greaterthan(listLength(cdr(fourth(functionDefinition ))), 0 )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(listLength(cdr(fourth(functionDefinition))), 0)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\n" );
+    printf("\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(" " );
+    printf(" ");
 
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printIndent(indent );
+  printIndent(indent);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("in\n" );
+  printf("in\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  imaBody(fname , indent , cdr(fifth(functionDefinition )));
+  imaBody(fname, indent, cdr(fifth(functionDefinition)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("end function\n" );
+  printf("end function\n");
 
 if (globalTrace)
     {printf("Leaving imaFunction\n");}
@@ -9027,37 +10104,37 @@ if (globalTrace)
 }
 
 
-//Building function imaDeclarations from line: 53
+//Building function imaDeclarations from line: 37
 
-function imaDeclarations(indent ,declarations ) {
-  var decl = NULL ;
+function imaDeclarations(indent,declarations) {
+  var decl = NULL;
 
 if (globalTrace)
-    {printf("imaDeclarations at q/imaginary.qon:53\n");}
+    {printf("imaDeclarations at q/imaginary.qon:37\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(declarations )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(declarations)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    decl = first(declarations );
+    decl = first(declarations);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\n" );
+    printf("\n");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(indent );
+    printIndent(indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("%s: %s " , stringify(second(decl )), stringify(first(decl )));
+    printf("%s: %s ", stringify(second(decl)), stringify(first(decl)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    imaExpressionStart(indent , third(decl ));
+    imaExpressionStart(indent, third(decl));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    imaDeclarations(indent , cdr(declarations ));
+    imaDeclarations(indent, cdr(declarations));
 
   };
 
@@ -9067,59 +10144,59 @@ if (globalTrace)
 }
 
 
-//Building function imaExpressionStart from line: 72
+//Building function imaExpressionStart from line: 56
 
-function imaExpressionStart(indent ,program ) {
+function imaExpressionStart(indent,program) {
   
 if (globalTrace)
-    {printf("imaExpressionStart at q/imaginary.qon:72\n");}
+    {printf("imaExpressionStart at q/imaginary.qon:56\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(program )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(program)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isList(program )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isList(program)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( equalString(stringify(car(program )), "get-struct" )) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( equalString(stringify(car(program)), "get-struct")) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        printf("%s.%s" , stringify(second(program )), stringify(third(program )));
+        printf("%s.%s", stringify(second(program)), stringify(third(program)));
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( equalString(stringify(car(program )), ">" )) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( equalString(stringify(car(program)), ">")) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printf("greaterthan(" );
+          printf("greaterthan(");
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          imaExpression(indent , cdr(program ));
+          imaExpression(indent, cdr(program));
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printf(")" );
+          printf(")");
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( equalString(stringify(car(program )), "=" )) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( equalString(stringify(car(program)), "=")) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf("equal(" );
+            printf("equal(");
             if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            imaExpression(indent , cdr(program ));
+            imaExpression(indent, cdr(program));
             if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf(")" );
+            printf(")");
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf("%s(" , stringify(car(program )));
+            printf("%s(", stringify(car(program)));
             if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            imaExpression(indent , cdr(program ));
+            imaExpression(indent, cdr(program));
             if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf(")" );
+            printf(")");
 
           };
 
@@ -9129,7 +10206,7 @@ if (globalTrace)
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      imaExpression(indent , program );
+      imaExpression(indent, program);
 
     };
 
@@ -9141,46 +10218,46 @@ if (globalTrace)
 }
 
 
-//Building function imaExpression from line: 114
+//Building function imaExpression from line: 98
 
-function imaExpression(indent ,program ) {
+function imaExpression(indent,program) {
   
 if (globalTrace)
-    {printf("imaExpression at q/imaginary.qon:114\n");}
+    {printf("imaExpression at q/imaginary.qon:98\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(program )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(program)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( isList(program )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( isList(program)) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( isList(car(program ))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( isList(car(program))) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        imaExpressionStart(indent , car(program ));
+        imaExpressionStart(indent, car(program));
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        display(car(program ));
+        display(car(program));
 
       };
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( greaterthan(listLength(program ), 1 )) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( greaterthan(listLength(program), 1)) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        printf(", " );
+        printf(", ");
 
       } else {
       };
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      imaExpression(indent , cdr(program ));
+      imaExpression(indent, cdr(program));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      display(program );
+      display(program);
 
     };
 
@@ -9192,107 +10269,107 @@ if (globalTrace)
 }
 
 
-//Building function imaStatement from line: 142
+//Building function imaStatement from line: 126
 
-function imaStatement(indent ,statement ) {
+function imaStatement(indent,statement) {
   
 if (globalTrace)
-    {printf("imaStatement at q/imaginary.qon:142\n");}
+    {printf("imaStatement at q/imaginary.qon:126\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( equalString(stringify(car(statement )), "if" )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( equalString(stringify(car(statement)), "if")) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(indent );
+    printIndent(indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("if " );
+    printf("if ");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    add1(indent );
+    add1(indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    imaExpressionStart(add1(indent ), second(statement ));
+    imaExpressionStart(add1(indent), second(statement));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(" then\n" );
+    printf(" then\n");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    imaBody(caller , add1(indent ), cdr(third(statement )));
+    imaBody(caller, add1(indent), cdr(third(statement)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(indent );
+    printIndent(indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("else\n" );
+    printf("else\n");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    imaBody(caller , add1(indent ), cdr(fourth(statement )));
+    imaBody(caller, add1(indent), cdr(fourth(statement)));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(indent );
+    printIndent(indent);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("end\n" );
+    printf("end\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( equalString(stringify(car(statement )), "set" )) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( equalString(stringify(car(statement)), "set")) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printIndent(indent );
+      printIndent(indent);
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf("%s = " , stringify(second(statement )));
+      printf("%s = ", stringify(second(statement)));
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      imaExpressionStart(add1(indent ), third(statement ));
+      imaExpressionStart(add1(indent), third(statement));
       if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      printf(";\n" );
+      printf(";\n");
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( equalString(stringify(car(statement )), "set-struct" )) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( equalString(stringify(car(statement)), "set-struct")) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        printIndent(indent );
+        printIndent(indent);
         if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        printf("%s.%s = " , stringify(second(statement )), stringify(third(statement )));
+        printf("%s.%s = ", stringify(second(statement)), stringify(third(statement)));
         if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        imaExpressionStart(indent , fourth(statement ));
+        imaExpressionStart(indent, fourth(statement));
         if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        printf(";\n" );
+        printf(";\n");
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( equalString(stringify(car(statement )), "return" )) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( equalString(stringify(car(statement)), "return")) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printIndent(indent );
+          printIndent(indent);
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printf("return; " );
+          printf("return; ");
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( greaterthan(listLength(statement ), 1 )) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( greaterthan(listLength(statement), 1)) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            imaExpressionStart(indent , second(statement ));
+            imaExpressionStart(indent, second(statement));
 
           } else {
           };
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printf("\n" );
+          printf("\n");
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printIndent(indent );
+          printIndent(indent);
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          imaExpressionStart(indent , statement );
+          imaExpressionStart(indent, statement);
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printf(";\n" );
+          printf(";\n");
 
         };
 
@@ -9308,28 +10385,28 @@ if (globalTrace)
 }
 
 
-//Building function imaBody from line: 197
+//Building function imaBody from line: 181
 
-function imaBody(local_caller ,indent ,program ) {
-  var statement = NULL ;
+function imaBody(local_caller,indent,program) {
+  var statement = NULL;
 
 if (globalTrace)
-    {printf("imaBody at q/imaginary.qon:197\n");}
+    {printf("imaBody at q/imaginary.qon:181\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(program )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(program)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    statement = car(program );
+    statement = car(program);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    imaStatement(add1(indent ), statement );
+    imaStatement(add1(indent), statement);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    imaBody(local_caller , indent , cdr(program ));
+    imaBody(local_caller, indent, cdr(program));
 
   };
 
@@ -9339,24 +10416,24 @@ if (globalTrace)
 }
 
 
-//Building function imaFunctions from line: 208
+//Building function imaFunctions from line: 192
 
-function imaFunctions(indent ,program ) {
+function imaFunctions(indent,program) {
   
 if (globalTrace)
-    {printf("imaFunctions at q/imaginary.qon:208\n");}
+    {printf("imaFunctions at q/imaginary.qon:192\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isNil(program )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isNil(program)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    imaFunction(indent , car(program ));
+    imaFunction(indent, car(program));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    imaFunctions(indent , cdr(program ));
+    imaFunctions(indent, cdr(program));
 
   };
 
@@ -9366,41 +10443,41 @@ if (globalTrace)
 }
 
 
-//Building function imaTypeDecl from line: 218
+//Building function imaTypeDecl from line: 202
 
-function imaTypeDecl(l ) {
-  var name = "" ;
-var body = NULL ;
+function imaTypeDecl(l) {
+  var name = "";
+var body = NULL;
 
 if (globalTrace)
-    {printf("imaTypeDecl at q/imaginary.qon:218\n");}
+    {printf("imaTypeDecl at q/imaginary.qon:202\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  name = stringify(first(l ));
+  name = stringify(first(l));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  body = cdr(l );
+  body = cdr(l);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( greaterthan(listLength(l ), 2 )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(listLength(l), 2)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(1 );
+    printIndent(1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("%s is " , name );
+    printf("%s is ", name);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    displayList(body , 0 , true );
+    displayList(body, 0, true);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf(";\n" );
+    printf(";\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printIndent(1 );
+    printIndent(1);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("%s is %s;\n" , name , stringify(second(l )));
+    printf("%s is %s;\n", name, stringify(second(l)));
 
   };
 
@@ -9410,24 +10487,24 @@ if (globalTrace)
 }
 
 
-//Building function imaStructComponents from line: 243
+//Building function imaStructComponents from line: 227
 
-function imaStructComponents(node ) {
+function imaStructComponents(node) {
   
 if (globalTrace)
-    {printf("imaStructComponents at q/imaginary.qon:243\n");}
+    {printf("imaStructComponents at q/imaginary.qon:227\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(node )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(node)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    imaTypeDecl(car(node ));
+    imaTypeDecl(car(node));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    imaStructComponents(cdr(node ));
+    imaStructComponents(cdr(node));
 
   };
 
@@ -9437,15 +10514,15 @@ if (globalTrace)
 }
 
 
-//Building function imaStruct from line: 249
+//Building function imaStruct from line: 233
 
-function imaStruct(node ) {
+function imaStruct(node) {
   
 if (globalTrace)
-    {printf("imaStruct at q/imaginary.qon:249\n");}
+    {printf("imaStruct at q/imaginary.qon:233\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  imaStructComponents(cdr(car(node )));
+  imaStructComponents(cdr(car(node)));
 
 if (globalTrace)
     {printf("Leaving imaStruct\n");}
@@ -9453,25 +10530,25 @@ if (globalTrace)
 }
 
 
-//Building function imaTypeMap from line: 252
+//Building function imaTypeMap from line: 236
 
-function imaTypeMap(aSym ) {
-  var symMap = NULL ;
+function imaTypeMap(aSym) {
+  var symMap = NULL;
 
 if (globalTrace)
-    {printf("imaTypeMap at q/imaginary.qon:252\n");}
+    {printf("imaTypeMap at q/imaginary.qon:236\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  symMap = alistCons(boxSymbol("stringArray" ), boxSymbol("char**" ), alistCons(boxSymbol("string" ), boxSymbol("char*" ), NULL ));
+  symMap = alistCons(boxSymbol("stringArray"), boxSymbol("char**"), alistCons(boxSymbol("string"), boxSymbol("char*"), NULL));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( truthy(assoc(stringify(aSym ), symMap ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( truthy(assoc(stringify(aSym), symMap))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(cdr(assoc(stringify(aSym ), symMap )));
+    return(cdr(assoc(stringify(aSym), symMap)));
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    return(aSym );
+    return(aSym);
 
   };
 
@@ -9481,38 +10558,38 @@ if (globalTrace)
 }
 
 
-//Building function imaType from line: 264
+//Building function imaType from line: 248
 
-function imaType(node ) {
-  var name = "" ;
-var body = NULL ;
+function imaType(node) {
+  var name = "";
+var body = NULL;
 
 if (globalTrace)
-    {printf("imaType at q/imaginary.qon:264\n");}
+    {printf("imaType at q/imaginary.qon:248\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  name = stringify(first(node ));
+  name = stringify(first(node));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  body = cdr(node );
+  body = cdr(node);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isList(first(body ))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isList(first(body))) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\ntype %s is struct (\n" , name );
+    printf("\ntype %s is struct (\n", name);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    imaStruct(body );
+    imaStruct(body);
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\n);\n" , name );
+    printf(");\n");
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("type" );
+    printf("type");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    imaTypeDecl(node );
+    imaTypeDecl(node);
 
   };
 
@@ -9522,24 +10599,24 @@ if (globalTrace)
 }
 
 
-//Building function imaTypes from line: 279
+//Building function imaTypes from line: 263
 
-function imaTypes(indent ,nodes ) {
+function imaTypes(indent,nodes) {
   
 if (globalTrace)
-    {printf("imaTypes at q/imaginary.qon:279\n");}
+    {printf("imaTypes at q/imaginary.qon:263\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( isEmpty(nodes )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( isEmpty(nodes)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
     return;
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    imaType(car(nodes ));
+    imaType(car(nodes));
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    imaTypes(indent , cdr(nodes ));
+    imaTypes(indent, cdr(nodes));
 
   };
 
@@ -9549,27 +10626,27 @@ if (globalTrace)
 }
 
 
-//Building function imaProgram from line: 288
+//Building function imaProgram from line: 272
 
-function imaProgram(program ) {
+function imaProgram(program) {
   
 if (globalTrace)
-    {printf("imaProgram at q/imaginary.qon:288\n");}
+    {printf("imaProgram at q/imaginary.qon:272\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  imaIncludes(0 , cdr(first(program )));
+  imaIncludes(0, cdr(first(program)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\nTypes:\n" );
+  printf("\nTypes:\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  imaTypes(0 , cdr(second(program )));
+  imaTypes(0, cdr(second(program)));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\nFunctions:\n" );
+  printf("\nFunctions:\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  imaFunctions(0 , cdr(third(program )));
+  imaFunctions(0, cdr(third(program)));
 
 if (globalTrace)
     {printf("Leaving imaProgram\n");}
@@ -9577,18 +10654,18 @@ if (globalTrace)
 }
 
 
-//Building function imaIncludes from line: 298
+//Building function imaIncludes from line: 282
 
-function imaIncludes(indent ,nodes ) {
+function imaIncludes(indent,nodes) {
   
 if (globalTrace)
-    {printf("imaIncludes at q/imaginary.qon:298\n");}
+    {printf("imaIncludes at q/imaginary.qon:282\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("Includes: \n" );
+  printf("Includes: \n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  displayList(nodes , 0 , true );
+  displayList(nodes, 0, true);
 
 if (globalTrace)
     {printf("Leaving imaIncludes\n");}
@@ -9596,49 +10673,49 @@ if (globalTrace)
 }
 
 
-//Building function imaCompile from line: 305
+//Building function imaCompile from line: 289
 
-function imaCompile(filename ) {
-  var tree = NULL ;
+function imaCompile(filename) {
+  var tree = NULL;
 
 if (globalTrace)
-    {printf("imaCompile at q/imaginary.qon:305\n");}
+    {printf("imaCompile at q/imaginary.qon:289\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = loadQuon("compiler.qon" );
+  tree = loadQuon("compiler.qon");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = loadIncludes(tree );
+  tree = loadIncludes(tree);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = macrowalk(tree );
+  tree = macrowalk(tree);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = macrosingle(tree , "write-file" , "imaWriteFile" );
+  tree = macrosingle(tree, "write-file", "imaWriteFile");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = macrosingle(tree , "read-file" , "imaReadFile" );
+  tree = macrosingle(tree, "read-file", "imaReadFile");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = macrosingle(tree , "string-length" , "string.len" );
+  tree = macrosingle(tree, "string-length", "string.len");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = macrosingle(tree , "sub-string" , "imaSubstring" );
+  tree = macrosingle(tree, "sub-string", "imaSubstring");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  tree = macrosingle(tree , "stringLength" , "string.len" );
+  tree = macrosingle(tree, "stringLength", "string.len");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  imaProgram(tree );
+  imaProgram(tree);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("\n" );
+  printf("\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("function main()\nglobalArgs = arg\nglobalArgsCount = #arg\nstart()\nend\n" );
+  printf("function main()\nglobalArgs = arg\nglobalArgsCount = #arg\nstart()\nend\n");
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  printf("main()" );
+  printf("main()");
 
 if (globalTrace)
     {printf("Leaving imaCompile\n");}
@@ -9649,195 +10726,210 @@ if (globalTrace)
 //Building function start from line: 4
 
 function start() {
-  var runTests = false ;
-var cmdLine = NULL ;
-var filename = NULL ;
-var runPerl = false ;
-var runJava = false ;
-var runAst = false ;
-var runNode = false ;
-var runLua = false ;
-var runIma = false ;
-var runTree = false ;
+  var runTests = false;
+var cmdLine = NULL;
+var filename = NULL;
+var runPerl = false;
+var runJava = false;
+var runAst = false;
+var runNode = false;
+var runLua = false;
+var runIma = false;
+var runAnsi2 = false;
+var runTree = false;
 
 if (globalTrace)
     {printf("start at compiler.qon:4\n");}
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  cmdLine = listReverse(argList(globalArgsCount , 0 , globalArgs ));
+  cmdLine = listReverse(argList(globalArgsCount, 0, globalArgs));
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( greaterthan(listLength(cmdLine ), 1 )) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  if ( greaterthan(listLength(cmdLine), 1)) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    filename = second(cmdLine );
+    filename = second(cmdLine);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    filename = boxString("compiler.qon" );
+    filename = boxString("compiler.qon");
 
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  runTests = inList(boxString("--test" ), cmdLine );
+  runTests = inList(boxString("--test"), cmdLine);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  runJava = inList(boxString("--java" ), cmdLine );
+  runJava = inList(boxString("--java"), cmdLine);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  runPerl = inList(boxString("--perl" ), cmdLine );
+  runPerl = inList(boxString("--perl"), cmdLine);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  runAst = inList(boxString("--ast" ), cmdLine );
+  runAst = inList(boxString("--ast"), cmdLine);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  runTree = inList(boxString("--tree" ), cmdLine );
+  runTree = inList(boxString("--tree"), cmdLine);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  runNode = inList(boxString("--node" ), cmdLine );
+  runNode = inList(boxString("--node"), cmdLine);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  runLua = inList(boxString("--lua" ), cmdLine );
+  runLua = inList(boxString("--lua"), cmdLine);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  runIma = inList(boxString("--ima" ), cmdLine );
+  runIma = inList(boxString("--ima"), cmdLine);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  globalTrace = inList(boxString("--trace" ), cmdLine );
+  runAnsi2 = inList(boxString("--ansi2"), cmdLine);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  globalStepTrace = inList(boxString("--steptrace" ), cmdLine );
+  globalTrace = inList(boxString("--trace"), cmdLine);
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  if ( runTests ) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+  globalStepTrace = inList(boxString("--steptrace"), cmdLine);
+  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test0 ();
+  if ( runTests) {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+    test0();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test1 ();
+    test1();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test2 ();
+    test2();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test3 ();
+    test3();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test4 ();
+    test4();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test5 ();
+    test5();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test6 ();
+    test6();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test7 ();
+    test7();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test8 ();
+    test8();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test9 ();
+    test9();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test10 ();
+    test10();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test12 ();
+    test12();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test13 ();
+    test13();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test15 ();
+    test15();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test16 ();
+    test16();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test17 ();
+    test17();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test18 ();
+    test18();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test19 ();
+    test19();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test20 ();
+    test20();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    test21 ();
+    test21();
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    printf("\n\nAfter all that hard work, I need a beer...\n" );
+    printf("\n\nAfter all that hard work, I need a beer...\n");
     if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    beers(9 );
+    beers(9);
 
   } else {    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-    if ( runTree ) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+    if ( runTree) {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      display(macrowalk(treeCompile(unBoxString(filename ))));
+      display(macrowalk(treeCompile(unBoxString(filename))));
 
     } else {      if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-      if ( runAst ) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+      if ( runAst) {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        astCompile(unBoxString(filename ));
+        astCompile(unBoxString(filename));
 
       } else {        if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-        if ( runNode ) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+        if ( runNode) {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          nodeCompile(unBoxString(filename ));
+          nodeCompile(unBoxString(filename));
           if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          printf("\n" );
+          printf("\n");
 
         } else {          if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-          if ( runPerl ) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+          if ( runPerl) {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            perlCompile(unBoxString(filename ));
+            perlCompile(unBoxString(filename));
             if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            printf("\n" );
+            printf("\n");
 
           } else {            if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-            if ( runJava ) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+            if ( runJava) {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              javaCompile(unBoxString(filename ));
+              javaCompile(unBoxString(filename));
               if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              printf("\n" );
+              printf("\n");
 
             } else {              if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-              if ( runLua ) {                if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+              if ( runLua) {                if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-                luaCompile(unBoxString(filename ));
+                luaCompile(unBoxString(filename));
                 if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-                printf("\n" );
+                printf("\n");
 
               } else {                if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-                if ( runIma ) {                  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+                if ( runIma) {                  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-                  imaCompile(unBoxString(filename ));
+                  imaCompile(unBoxString(filename));
                   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-                  printf("\n" );
+                  printf("\n");
 
                 } else {                  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-                  ansiCompile(unBoxString(filename ));
-                  if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+                  if ( runAnsi2) {                    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-                  printf("\n" );
+                    ansi2Compile(unBoxString(filename));
+                    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+                    printf("\n");
+
+                  } else {                    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+                    ansiCompile(unBoxString(filename));
+                    if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
+
+                    printf("\n");
+
+                  };
 
                 };
 
@@ -9856,7 +10948,7 @@ if (globalTrace)
   };
   if (globalStepTrace) {console.log(new Error("StepTrace \n"));}
 
-  return(0 );
+  return(0);
 
 if (globalTrace)
     {printf("Leaving start\n");}
