@@ -1,7 +1,7 @@
 (( includes )
 (types)
  (functions
-(list loadQuon (string filename) (declare  (list foundation nil) (string programStr "")  (list tree nil) )
+(list loadQuon (string filename) (declare   (string programStr "")  (list tree nil) )
 (body
 
     (set programStr (read-file filename))
