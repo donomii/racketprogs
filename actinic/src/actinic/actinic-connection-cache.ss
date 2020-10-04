@@ -52,7 +52,7 @@
                   res]]
             
             ; (semaphore-post sem)
-            res)))
+            )))
       
       (define/public cache-fill
         (lambda () (list (length (hash-table-map cache (lambda (a b) #t))) cache-size)))

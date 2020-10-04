@@ -426,15 +426,18 @@
                                                              (display (format "Could not find an open socket for ~a, opening a new one~n" (make-socket-cache-key a-url)))
                                                            ((if  (equal? (jrl-scheme a-url) "http")
                               tcp-connect
-                              ssl-connect)
+                              [begin
+                                [displayln [format "Opening https connection to server ~a port ~a" (jrl-server/proxy a-url) (jrl-port/proxy a-url)]]
+                                ssl-connect])
                          (jrl-server/proxy a-url) (jrl-port/proxy a-url)))])
                                                (cons in out))))])
                           (values (car ports) (cdr ports)))))
   
   [define websocket [lambda [a-url]
                               (call-with-semaphore sem 
-                             (lambda () (call-with-values (lambda () (tcp-connect [jrl-server a-url] [jrl-port a-url]))
+                             (lambda () (call-with-values (lambda () (open-server a-url))
                                                (lambda (inp outp)
+                                                 
                                                  (send-request [build-header [format "~a ~a HTTP/~a~a~a" "GET"  [url-encode (jrl-path/proxy a-url)]  "1.1" #\return #\linefeed ] `( ("Sec-WebSocket-Version" . "13") ("Origin" . "http://not.a.site/") ("Upgrade" . "websocket")("Connection" . "Upgrade")("Sec-WebSocket-Key" . "dGhlIHNhbXBsZSBub25jZQ==")("Host" . ,[format "~a:~a" [jrl-server a-url] [jrl-port a-url]]))] #f outp)
                                                  [list inp outp]
                       
