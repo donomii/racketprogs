@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -33,10 +34,15 @@ func dispatchURLs(urlCh chan string) {
 var urlCh chan string
 
 func main() {
+
+	//flag.StringVar(&gopherType, "gopher_type", defaultGopher, usage)
+	//flag.StringVar(&gopherType, "g", defaultGopher, usage+" (shorthand)")
+	flag.Parse()
+	start := flag.Args()[0]
 	urlCh = make(chan string)
 	go dispatchURLs(urlCh)
-	//urlCh <- "https://www.reddit.com/"
-	urlCh <- "http://www.praeceptamachinae.com/"
+	urlCh <- start
+	//urlCh <- "http://www.praeceptamachinae.com/"
 	for {
 		time.Sleep(1 * time.Second)
 	}
@@ -50,7 +56,7 @@ func handler(ctx *fetchbot.Context, res *http.Response, err error) {
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Printf("[%d] %s %s\n", res.StatusCode, ctx.Cmd.Method(), ctx.Cmd.URL())
-	//url := ctx.Cmd.URL().String()
+	url := ctx.Cmd.URL()
 	upath := ctx.Cmd.URL().Path
 
 	if upath == "" {
@@ -63,7 +69,7 @@ func handler(ctx *fetchbot.Context, res *http.Response, err error) {
 		upath = upath + "index.html"
 	}
 	path := filepath.Clean(upath)
-	path = "rip/" + path
+	path = "rip/" + url.Hostname() + "/" + path
 	fmt.Printf("%v\n", path)
 	dir := filepath.Dir(path)
 	os.MkdirAll(dir, 0600)
@@ -105,9 +111,9 @@ func handler(ctx *fetchbot.Context, res *http.Response, err error) {
 					// HREF TAG
 					//fmt.Printf("%s, %s\n", key, val)
 					if bytes.HasPrefix(val, httpTag) {
-						if strings.Contains(string(val), "reddit") {
-							urlCh <- fmt.Sprintf("%s", val)
-						}
+						//Filter here?
+						urlCh <- fmt.Sprintf("%s", val)
+
 					} else {
 						urlCh <- fmt.Sprintf("%s/%s", ctx.Cmd.URL(), val)
 					}
