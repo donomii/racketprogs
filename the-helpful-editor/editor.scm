@@ -257,7 +257,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                       [display [format "Found word: ~a~n" word]]
                                       
                                       [begin 
-                                        [let [[new-box [new editor-snip%]]
+                                        [let [[new-box [new editor-snip% [left-margin 20][max-width 40] [max-height 40]]]
                                               [new-text [new my-text%]]]
                                           
                                           [let [[replacement-text [f new-box word]]]
@@ -285,7 +285,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                      [display [format "Found word: ~a~n" word]]
                                       
                                                      [begin 
-                                                       [let [[new-box [new editor-snip%]]
+                                                       [let [[new-box [new editor-snip% [max-width 600] [max-height 300]]]
                                                              [new-text [new my-text%]]]
                                           
                                                          [let [[replacement-text [f new-box word]]]
@@ -385,14 +385,22 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 
                                        [lambda [a-snip word]
                                          [letrec [[editor [send a-snip get-editor]]
-                                               [text [send editor get-text]]
-                                               ;[position [send editor find-string word 'forward 'start 'eof #t #f]]
-                                               [position [string-contains text word ]]
-                                               ]
-                                           [display text]
-                                           [printf "Found word '~s' at ~a" word position]
-                                           [send editor set-position [+ 200 position]]
-                                           [send editor set-position position]
+                                                  [text [send editor get-text]]
+                                                  ;[position [send editor find-string word 'forward 'start 'eof #t #f]]
+                                                  [position [string-contains text word ]]
+                                                  ]
+                                           ;[display text]
+                                           [thread [lambda []
+                                                     [sleep 5]
+                                                     [printf "Found word '~s' at ~a\n" word position]
+                                                     [send editor set-position [+ 200 position]]
+                                                     [send editor set-position position]
+                                                     ;[send editor refresh]
+                                           
+                                                     
+                                                     [send editor scroll-to-position position #f [+ 100 position]]
+                                                     [printf "Canvas: ~a\n" [send editor get-canvases]]
+                                                     ]]
                                            ]
       
                                          ]
