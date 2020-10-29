@@ -56,6 +56,7 @@
   ["c:down" "shutdown-dispatcher" "Close the viewport and run the default action on the text"]
   ["c:k" "pop-keybindings" "Open viewport and show keybindings"]
   ["c:d" "pop-defs" "Open viewport and show definitions"]
+  ["c:t" "pop-ctag" "Open viewport and show ctag"]
   ]
   ]
 
@@ -339,7 +340,23 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                                           [set! defs [eval-string the-text]]
                                                                           
                                                                           ""]]]]
+[define pop-ctag  [make-pop-func [lambda [a-box word] [write "popping ctags"]
+                                      ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
+                                   [let [[tag-data [find-ctag word [load-ctags-file "tags"]]]]
+                                     [if [empty? tag-data]
+                                         #f
+                                         [begin
+                                          
+                                        [file->string [second [first tag-data ]]]]]
+                                      ]]
+                                    
+                                    [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
+]
+                                                                          [display [format "closing ~a~n" var-name]]
+                                                                          ;[eval-string the-set!]
+                                                                          
 
+                                                                          var-name]]]]
 
 [define [shutdown-dispatcher b e] [ letrec [[snip [send  [send b get-admin] get-snip]]
                                             [t [send [send snip get-admin] get-editor]]
@@ -448,6 +465,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
   [send a-keymap add-function "pop-listvars" pop-listvars]
   [send a-keymap add-function "pop-keybindings" pop-keybindings]
   [send a-keymap add-function "pop-defs" pop-defs]
+  [send a-keymap add-function "pop-ctag" pop-ctag]
   
   [send a-keymap add-function "close-viewport" close-viewport]
   [send a-keymap add-function "pop-viewport" pop-viewport]
@@ -561,5 +579,6 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                        [lambda [a-port another-path]
                            [display [send t get-text 0 9999999] a-port]]]]]]
 
-
+[define [find-ctag name ctags] [filter [lambda [x] [equal? name [car x]]] ctags]]
+[define [load-ctags-file a-path] [map [lambda [x] [string-split  x "\t"]] [file->lines a-path] ]]
 
