@@ -1,14 +1,10 @@
-((includes)
+(( includes )
 (types)
  (functions
-(list loadQuon (string filename) (declare (list foundationFuncs nil) (list foundation nil) (string programStr "")  (list tree nil) )
+(list loadQuon (string filename) (declare   (string programStr "")  (list tree nil) )
 (body
-   (set foundation (readSexpr (read-file filename) filename))
-   (set foundationFuncs (cdr (third foundation)))
 
-   ;(printf "--[[Scanning file...%s--]]\n" filename)
     (set programStr (read-file filename))
-   ;(printf "--[[Building sexpr--]]\n")
     (set tree (readSexpr programStr filename))
 	
   (return tree)
@@ -27,7 +23,7 @@
     (return  (cdr (third program)))))
 
 
-(list loadIncludes (list tree) (declare (list newProg nil) (string includeFile "") (list functionsCombined nil) (list typesCombined nil) (list includeTree nil) (list program nil))
+(list loadIncludes (list tree) (declare (list newProg nil) (string includeFile "") (list functionsCombined nil) (list typesCombined nil) (list includeTree nil) )
 (body
 
 (if ( greaterthan (listLength (getIncludes tree)) 0)

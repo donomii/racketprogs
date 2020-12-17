@@ -70,7 +70,7 @@ also be a code definition or the results of a function.  Portals can also nest:
 
 (Control + Up on 'Nesting')"]
                ["Nesting" . "Portals can nest as deeply as you like.  To close a portal, press Control + Down"]
-               
+               ; FIXME add actions like ["keybindings" . ,[lambda [x] [pop-keybindings]]]
                ]]
 [define welcome-text 
   "Welcome to the Helpful Editor, the revolutionary editor that blah blah blah.  
@@ -88,6 +88,10 @@ Control + E to eval as scheme code
 
 Control + M to convert an sexpr to a mexpr
  - Control + Down will paste the result of the eval into the parent document
+
+Control + K to edit the keybindings (currently not saved)
+
+
 
 or
 
@@ -250,6 +254,9 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
       [send t set-position start 'same]
       [send t insert text]]]
   ]
+
+; The first function prepares to open the box.  The return value is placed in the box
+; The second function closes the box
 [define [make-pop-func f close-f] [lambda [t e]
                                     [letrec [[untrimmed-word [get-word t]]
                                              [word [regexp-replace* "\\[|\\]|\\(|\\)" untrimmed-word ""]]
@@ -314,6 +321,14 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                               [set! viewports-name [cons [cons new-box word]  viewports-name]]
                                                               [if linked [cdr linked] #f]]]
                                     [lambda [parent child text] [cdr [assq child viewports-name]]]]]
+
+[define pop-command-viewport  [make-pop-func [lambda [new-box word]
+                                               [write "Creating command box"]
+                                                              [set! viewports-name [cons [cons new-box word]  viewports-name]]
+                                               ""
+                                                              ]
+                                    [lambda [parent child text]  [write "closing command box"](with-input-from-string text
+     (lambda () (eval (read))))]]]
 
 [define pop-varedit  [make-pop-func [lambda [a-box word] [write "popping varedit"]
                                       ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
@@ -418,6 +433,8 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                             [shutdown-func   [cdr [assq snip shutdown-funcs]]]]
                                      [shutdown-func b e]]]
 
+
+
 [define strip-brackets [lambda [a-list pad-length]
                          [string-join 
                           [map
@@ -449,6 +466,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                             
                                             [add-shutdown-func new-box close-f]]]]
 [define close-viewport [make-shutdown-func [lambda [parent child text] text]]]
+[define abort-viewport [make-shutdown-func [lambda [parent child text] ""]]]
 
 [define close-let [make-shutdown-func [lambda [parent child text]
                                         [write "Closing let"] [newline]
@@ -522,6 +540,8 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
   [send a-keymap add-function "pop-ctag" pop-ctag]
   
   [send a-keymap add-function "close-viewport" close-viewport]
+   [send a-keymap add-function "abort-viewport" abort-viewport]
+  
   [send a-keymap add-function "pop-viewport" pop-viewport]
   [send a-keymap add-function "open-let" open-let1]
 
@@ -533,6 +553,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
   [send a-keymap add-function "system-command" system-command]
   
   [send a-keymap add-function "shutdown-dispatcher" shutdown-dispatcher]
+  [send a-keymap add-function "pop-command-viewport" pop-command-viewport]
   [send a-keymap map-function "c:down" "shutdown-dispatcher"]
   ;[send a-keymap map-function "c:," "close-let"]
   

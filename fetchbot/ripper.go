@@ -2,15 +2,15 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
-	"net/rpc"
-	"net/rpc/jsonrpc"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/donomii/tagdb/tagbrowser"
 
 	"golang.org/x/net/html"
 
@@ -21,24 +21,28 @@ func dispatchURLs(urlCh chan string) {
 	f := fetchbot.New(fetchbot.HandlerFunc(handler))
 	queue := f.Start()
 	seenURL := map[string]bool{}
-	for url := range urlCh {
-		if !seenURL[url] {
-			seenURL[url] = true
-			queue.SendStringGet(url)
+	for _url := range urlCh {
+
+		if !seenURL[_url] {
+			seenURL[_url] = true
+			queue.SendStringGet(_url)
 		}
 	}
 	queue.Close()
 }
 
 var urlCh chan string
-var rpcClient *rpc.Client
 
 func main() {
-	rpcClient, _ = jsonrpc.Dial("tcp", tagbrowser.ServerAddress)
+
+	//flag.StringVar(&gopherType, "gopher_type", defaultGopher, usage)
+	//flag.StringVar(&gopherType, "g", defaultGopher, usage+" (shorthand)")
+	flag.Parse()
+	start := flag.Args()[0]
 	urlCh = make(chan string)
 	go dispatchURLs(urlCh)
-	urlCh <- "http://msn.com"
-
+	urlCh <- start
+	//urlCh <- "http://www.praeceptamachinae.com/"
 	for {
 		time.Sleep(1 * time.Second)
 	}
@@ -52,23 +56,39 @@ func handler(ctx *fetchbot.Context, res *http.Response, err error) {
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Printf("[%d] %s %s\n", res.StatusCode, ctx.Cmd.Method(), ctx.Cmd.URL())
+	url := ctx.Cmd.URL()
+	upath := ctx.Cmd.URL().Path
 
-	//fmt.Println(string(body))
-	f := tagbrowser.RegSplit(strings.ToLower(string(body)), tagbrowser.FragsRegex)
-
-	args := &tagbrowser.InsertArgs{fmt.Sprintf("%s", ctx.Cmd.URL()), -1, f}
-	reply := &tagbrowser.SuccessReply{}
-
-	rpcClient.Call("TagResponder.InsertRecord", args, reply)
-
+	if upath == "" {
+		upath = upath + "/index.html"
+	}
+	if upath == "." {
+		upath = upath + "index.html"
+	}
+	if strings.HasSuffix(upath, "/") {
+		upath = upath + "index.html"
+	}
+	path := filepath.Clean(upath)
+	path = "rip/" + url.Hostname() + "/" + path
+	fmt.Printf("%v\n", path)
+	dir := filepath.Dir(path)
+	os.MkdirAll(dir, 0600)
 	var (
 		anchorTag = []byte{'a'}
 		hrefTag   = []byte("href")
 		httpTag   = []byte("http")
+		imgTag    = []byte("img")
 	)
 
 	bodyR := bytes.NewReader(body)
 	//defer bodyR.Close()
+
+	buf, err := ioutil.ReadAll(bodyR)
+	if err != nil {
+		log.Fatal(err)
+	}
+	ioutil.WriteFile(path, buf, 0600)
+	bodyR = bytes.NewReader(buf)
 	tkzer := html.NewTokenizer(bodyR)
 
 	for {
@@ -79,15 +99,21 @@ func handler(ctx *fetchbot.Context, res *http.Response, err error) {
 
 		case html.StartTagToken:
 			tag, hasAttr := tkzer.TagName()
+			if hasAttr && bytes.Equal(imgTag, tag) {
+				key, val, _ := tkzer.TagAttr()
+				fmt.Printf("%s, %s\n", key, val)
+			}
 			if hasAttr && bytes.Equal(anchorTag, tag) { // a
 				// HANDLE ANCHOR
 				key, val, _ := tkzer.TagAttr()
+
 				if bytes.Equal(hrefTag, key) { // href, http(s)
 					// HREF TAG
-					fmt.Printf("%s, %s\n", key, val)
+					//fmt.Printf("%s, %s\n", key, val)
 					if bytes.HasPrefix(val, httpTag) {
-
+						//Filter here?
 						urlCh <- fmt.Sprintf("%s", val)
+
 					} else {
 						urlCh <- fmt.Sprintf("%s/%s", ctx.Cmd.URL(), val)
 					}
