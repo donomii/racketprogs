@@ -10,19 +10,19 @@ import (
 	"time"
 
 	"github.com/donomii/glim"
-	//	"github.com/donomii/goof"
 	"github.com/donomii/govox"
 
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/thoj/go-galib"
 )
 
+var progressDir string = "progress"
 var refImagePath string = "../input/front.png"
-var refImageDir string = "../input-sphere/"
+var inputDir string = "../input-sphere/"
 var CameraViews []View
 var window *glfw.Window
 var rv govox.RenderVars
-var currDiff int
+var currDiff int64
 
 // Abs64 returns the absolute value of x.
 func Abs64(x int64) int64 {
@@ -187,7 +187,7 @@ func anneal(renderFunc func([]float32, int, int) []byte, rounds int, oldGen []fl
 					//go glim.SaveBuff(x, y, diffbuff, fmt.Sprintf("pix/refdiff%05d.png", saveCount))
 
 					//go goof.QC([]string{"cp", "scene.png", fmt.Sprintf("pix/render_%05d.png", saveCount)})
-					go glim.SaveBuff(x, y, front, fmt.Sprintf("pix/render%05d.png", saveCount))
+					go glim.SaveBuff(x, y, front, fmt.Sprintf(progressDir+"/render%05d.png", saveCount))
 					oldDiff = diff
 					oldGen = newGen
 					//_, xbuff := glim.CalcDiff(oldRender, renderImage, x, y)
@@ -210,9 +210,9 @@ func ga_render(g *ga.GAFloatGenome) float64 {
 	diff, front, x, y := renderAndDiff(render_voxel, CameraViews, gen32)
 	//log.Printf("New: %v\n", diff)
 	if diff < currDiff {
-		curDiff = diff
+		currDiff = diff
 		saveCount = saveCount + 1
-		go glim.SaveBuff(x, y, front, fmt.Sprintf("pix/render%05d.png", saveCount))
+		go glim.SaveBuff(x, y, front, fmt.Sprintf(progressDir+"/render%05d.png", saveCount))
 	}
 	/*
 		refImage, x, y := glim.LoadImage(refImagePath)
@@ -220,7 +220,7 @@ func ga_render(g *ga.GAFloatGenome) float64 {
 
 		saveCount = saveCount + 1
 		localCount := saveCount
-		glim.SaveBuff(x, y, glim.FlipUp(x, y, renderImage), fmt.Sprintf("pix/render_%05d.png", localCount))
+		glim.SaveBuff(x, y, glim.FlipUp(x, y, renderImage), fmt.Sprintf(progressDir+"/render_%05d.png", localCount))
 
 		diff, diffBuff := glim.CalcDiff(refImage, renderImage, x, y)
 
@@ -276,13 +276,15 @@ func init() {
 }
 func main() {
 	resumeFile := flag.String("resume", "", "File containing resume data")
+	inputDir := flag.String("inputs", "input", "Directory containing input pictures")
+	progressDir = *flag.String("progress", "progress", "Output in-progress pictures here")
+	renderEngine := *flag.String("engine", "voxels", "The render engine: voxels, voxanneal, triangles, povray")
 	flag.Parse()
 	currDiff = 9999999999
 	size := int(10)
-	window, rv = govox.InitGraphics(size, 1000, 1000)
 
-	CameraViews = InitViews("../input-bluesphere")
-	os.Mkdir("pix", 0755)
+	CameraViews = InitViews(*inputDir)
+	os.Mkdir(progressDir, 0755)
 	oldGen := defaultGenome(size*size*size + 7)
 	refImage, _, _ := glim.LoadImage(refImagePath)
 	//diff, _ := glim.CalcDiff(refImage, refImage, x, y)
@@ -292,8 +294,29 @@ func main() {
 		log.Println("Loading triangle data from file: ", *resumeFile)
 		oldGen, _ = LoadState(*resumeFile)
 	}
+	if renderEngine == "voxanneal" {
+		window, rv = govox.InitGraphics(size, 500, 500)
+		go func() {
 
-	//genome := anneal(render_voxel, 1000000, oldGen, refImage)
-	genome := gasolve(render_voxel, 1000, oldGen, refImage)
-	fmt.Println(genome)
+			genome := anneal(render_voxel, 1000000, oldGen, refImage)
+			fmt.Println(genome)
+		}()
+
+		for !window.ShouldClose() {
+			govox.GlRenderer(size, &rv, window)
+		}
+	}
+	if renderEngine == "voxels" {
+		window, rv = govox.InitGraphics(size, 500, 500)
+		go func() {
+
+			genome := gasolve(render_voxel, 10000, oldGen, refImage)
+			fmt.Println(genome)
+		}()
+
+		for !window.ShouldClose() {
+			govox.GlRenderer(size, &rv, window)
+		}
+	}
+	log.Println("Finished!")
 }

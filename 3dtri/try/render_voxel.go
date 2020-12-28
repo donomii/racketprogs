@@ -12,9 +12,7 @@ import (
 
 	//"github.com/donomii/glim"
 	"github.com/donomii/govox"
-
 	//	"github.com/go-gl/glfw/v3.2/glfw"
-
 	"github.com/go-gl/gl/v3.3-core/gl"
 )
 
@@ -45,8 +43,13 @@ func Genome2Blocks(size int, genomeAndViews []float32, inblocks [][][]govox.Bloc
 				} else {
 					blocks[i][j][k] = govox.Block{
 						Active: false,
-						Color:  mgl32.Vec4{0.0, 0.0, 0.0, 0.0},
+						Color:  mgl32.Vec4{1.0, 0.0, 0.0, 0.0},
 					}
+				}
+
+				blocks[i][j][k] = govox.Block{
+					Active: true,
+					Color:  mgl32.Vec4{elem[0], elem[1], elem[2], elem[3]},
 				}
 
 			}
@@ -60,11 +63,22 @@ func render_voxel(newGen []float32, x, y int) []byte {
 	os.Mkdir("renderfiles", 0755)
 	//_, elements := unpackGenome(newGen)
 
-	gl.Viewport(0, 0, int32(x), int32(y))
 	drawBlocks := Genome2Blocks(int(size), newGen, nil)
-	govox.Renderblocks(rv, window, drawBlocks, 0, 0, int(size))
+	govox.RunGL(func() { gl.Viewport(0, 0, int32(x), int32(y)) })
+	govox.RenderBlocks(&rv, drawBlocks, 0, 0, int(size), true)
 
-	renderImage := govox.ScreenshotBuff(x, y)
+	var renderImage []byte
+	govox.RunGL(func() {
+		gl.Flush()
+		gl.Finish()
+		renderImage = govox.ScreenshotBuff(x, y)
+		gl.Finish()
+	})
+	govox.RunGL(func() {})
+
+	//govox.RunGL(func() { gl.Viewport(int32(x+1), int32(y+1), int32(500), int32(500)) })
+	//govox.RenderBlocks(&rv, drawBlocks, 0, 0, int(size), true)
+
 	/*
 
 		log.Println("Saving screenshot to", pngName)
