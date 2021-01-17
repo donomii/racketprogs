@@ -19,6 +19,7 @@ import (
 
 func dispatchURLs(urlCh chan string) {
 	f := fetchbot.New(fetchbot.HandlerFunc(handler))
+	f.DisablePoliteness = true
 	queue := f.Start()
 	seenURL := map[string]bool{}
 	for _url := range urlCh {
@@ -93,6 +94,7 @@ func handler(ctx *fetchbot.Context, res *http.Response, err error) {
 
 	for {
 		switch tkzer.Next() {
+			log.Println(tkzer.TagName())
 		case html.ErrorToken:
 			// HANDLE ERROR
 			return
@@ -115,7 +117,12 @@ func handler(ctx *fetchbot.Context, res *http.Response, err error) {
 						urlCh <- fmt.Sprintf("%s", val)
 
 					} else {
-						urlCh <- fmt.Sprintf("%s/%s", ctx.Cmd.URL(), val)
+						fuck, err := url.Parse(string(val))
+						if err == nil {
+							urlCh <- ctx.Cmd.URL().ResolveReference(fuck).String()
+						} else {
+							fmt.Printf("Cannot parse: %s\n", err)
+						}
 					}
 				}
 
