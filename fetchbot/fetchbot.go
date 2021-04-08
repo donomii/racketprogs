@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"donomii/tagbrowser"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -10,6 +9,8 @@ import (
 	"net/rpc/jsonrpc"
 	"strings"
 	"time"
+
+	"github.com/donomii/tagdb/tagbrowser"
 
 	"golang.org/x/net/html"
 

@@ -206,7 +206,6 @@
     (declare 
        (string val1 "a")
        (string val2 "b")
-       (string val3 "c")
        (list l nil) )
     (body
       (set l (stringList val1 val2 "c"))
@@ -221,7 +220,6 @@
        
        (string val1 "a")
        (string val2 "b")
-       (string val3 "c")
        (list l nil)
        (list revlist nil)
        (list answer nil))
@@ -249,12 +247,11 @@
        (list l2 nil)
        (list l3 nil)
        (list combined nil)
-       (list revlist nil)
        )
              (body
                 (set l (stringList val1 val2 "c"))
                 (set l2 (stringList "d" "e" "f"))
-                (set l3 (stringList val1 val2 "c" "d" "e" "f"))
+                (set l3 (stringList val1 val2 val3 "d" "e" "f"))
                 (set combined (concatenateLists l l2))
                 (if (equalList l3 combined)
                   (then (printf "21. pass concatenateLists\n"))
@@ -278,6 +275,22 @@
                  )
                  ))
 
-
+;	(void test22 () (declare 
+;       (list l nil)
+;       (list l2 nil)
+;       )
+;             (body
+;                (set l (cons (boxString "a") (cons (boxSymbol "aaaa")  nil)))
+;				;(printf "List1: ")
+;				;(displayList l 0 true)
+;                (set l2 (multiList "a" aaaa))
+;				;(printf "\nList2: ")
+;				;(displayList l2 0 true)
+;				;(printf "\n\n")
+;                (if (equalList l l2)
+;                  (then (printf "22. pass multiList\n"))
+;                  (else (printf "22. fail multiList\n"))
+;                 )
+;                 ))
 
   ))

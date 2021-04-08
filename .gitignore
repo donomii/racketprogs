@@ -1,1 +1,7 @@
 *.bak
+actinic/src/actinic/compiled/*
+fetchbot/rip/*
+fetchbot/ripper.exe
+the-helpful-editor/ctags.exe
+the-helpful-editor/readtags.exe
+the-helpful-editor/tags

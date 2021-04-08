@@ -266,11 +266,12 @@
   (void perlIncludes (list nodes) (declare)
         (body
          (printf "%s\n" "use strict;")
-         (printf "%s\n" "my $caller;")
+         (printf "%s%s%s" "my " (dollar) "caller;\n" )
          (printf "%s\n" "use Carp;")
          (dollar)
          (printf "%s\n" "use Carp::Always;")
          (printf "%s%s%s%s%s\n" "sub greaterthan { " (dollar) "_[0] > " (dollar) "_[1] };" )
+         (printf "%s%s%s\n" "sub qlog { warn " "@" "_ };" )
          (printf "%s%s%s%s%s\n" "sub mult { " (dollar) "_[0] * " (dollar) "_[1] };" )
          (printf "%s%s%s%s%s\n" "sub multf { " (dollar) "_[0] * " (dollar) "_[1] };" )
          (printf "%s%s%s%s%s\n" "sub greaterthanf { " (dollar) "_[0] > " (dollar) "_[1] };" )
@@ -283,7 +284,7 @@
                  )
          (printf "sub read_file { my %sfile = shift; %sfile || die \"Empty file name!!!\"; open my %sfh, '<', %sfile or die; local %s/ = undef; my %scont = <%sfh>; close %sfh; return %scont; }; \n"
                  (dollar) (dollar) (dollar) (dollar) (dollar) (dollar) (dollar) (dollar) (dollar) )
-         (printf "sub write_file {my %sfile = shift; my %sdata = shift; %sfile || die \"Empty file name!!!\"; open my %sfh, '<', %sfile or die; print %sfh %sdata; close %sfh; } \n"
+         (printf "sub write_file {my %sfile = shift; my %sdata = shift; %sfile || die \"Empty file name!!!\"; open my %sfh, '>', %sfile or die; print %sfh %sdata; close %sfh; } \n"
                  (dollar) (dollar) (dollar) (dollar) (dollar) (dollar) (dollar) (dollar) )
          (printf "%s%s%s%s%s\n" "sub stringConcatenate { "(dollar)"_[0] . "(dollar)"_[1]}")
          (printf "%s%s%s%s%s\n" "sub subtract { "(dollar)"_[0] - "(dollar)"_[1]}")

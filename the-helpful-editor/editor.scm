@@ -43,25 +43,26 @@
 
 
 [define keymaps
-`[
-  ["c:r" "close-varedit" "Close variable viewport"]
-  ["c:b" "pop-varedit" "Open variable viewport"]
-  ["c:n" "pop-listvars" "Open viewport and list variables"]
-  ["c:l" "open-let" "dunno"]
-  ["c:e" "eval-selection" "Run selection in scheme evaluator"]
-  ["c:up" "pop-viewport" "Open empty viewport"]
-  ["c:m" "open-mexpr" "Open m-expression"]
-  ["c:h" "open-html" "Open html"]
-  ["c:s" "system-command"  "Shell out"]
-  ["c:down" "shutdown-dispatcher" "Close the viewport and run the default action on the text"]
-  ["c:k" "pop-keybindings" "Open viewport and show keybindings"]
-  ["c:d" "pop-defs" "Open viewport and show definitions"]
-  ]
+  `[
+    ["c:r" "close-varedit" "Close variable viewport"]
+    ["c:b" "pop-varedit" "Open variable viewport"]
+    ["c:n" "pop-listvars" "Open viewport and list variables"]
+    ["c:l" "open-let" "dunno"]
+    ["c:e" "eval-selection" "Run selection in scheme evaluator"]
+    ["c:up" "pop-viewport" "Open empty viewport"]
+    ["c:m" "open-mexpr" "Open m-expression"]
+    ["c:h" "open-html" "Open html"]
+    ["c:s" "system-command"  "Shell out"]
+    ["c:down" "shutdown-dispatcher" "Close the viewport and run the default action on the text"]
+    ["c:k" "pop-keybindings" "Open viewport and show keybindings"]
+    ["c:d" "pop-defs" "Open viewport and show definitions"]
+    ["c:t" "pop-ctag" "Open viewport and show ctag"]
+    ]
   ]
 
 
 [define defs '[["word" . 
-"The Helpful Editor will open a text portal when you press Control + Up.  Exactly 
+                       "The Helpful Editor will open a text portal when you press Control + Up.  Exactly 
 what appears in the portal depends on context.  Here it is just text, but it can 
 also be a code definition or the results of a function.  Portals can also nest:
 
@@ -69,10 +70,10 @@ also be a code definition or the results of a function.  Portals can also nest:
 
 (Control + Up on 'Nesting')"]
                ["Nesting" . "Portals can nest as deeply as you like.  To close a portal, press Control + Down"]
-               
+               ; FIXME add actions like ["keybindings" . ,[lambda [x] [pop-keybindings]]]
                ]]
 [define welcome-text 
-"Welcome to the Helpful Editor, the revolutionary editor that blah blah blah.  
+  "Welcome to the Helpful Editor, the revolutionary editor that blah blah blah.  
 Put the cursor inside the word below and press Control + Up
 
 word
@@ -87,6 +88,10 @@ Control + E to eval as scheme code
 
 Control + M to convert an sexpr to a mexpr
  - Control + Down will paste the result of the eval into the parent document
+
+Control + K to edit the keybindings (currently not saved)
+
+
 
 or
 
@@ -127,9 +132,9 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 [define my-frame% [class frame% 
                     [super-new]
                     [define/augment on-close [lambda args [letrec 
-             [[text [send t get-text 0 9999999]]]
-                                               ;[set-tvar! "welcome-text" text]
-             [put-preferences '[vars] [list [hash->list vars]] ][exit]]]]]]
+                                                              [[text [send t get-text 0 9999999]]]
+                                                            ;[set-tvar! "welcome-text" text]
+                                                            [put-preferences '[vars] [list [hash->list vars]] ][exit]]]]]]
 (define f [dox "Make new frame" (new my-frame% [label (application:current-app-name)]
                                      [width 800]
                                      [height 600])])
@@ -249,6 +254,9 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
       [send t set-position start 'same]
       [send t insert text]]]
   ]
+
+; The first function prepares to open the box.  The return value is placed in the box
+; The second function closes the box
 [define [make-pop-func f close-f] [lambda [t e]
                                     [letrec [[untrimmed-word [get-word t]]
                                              [word [regexp-replace* "\\[|\\]|\\(|\\)" untrimmed-word ""]]
@@ -256,7 +264,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                       [display [format "Found word: ~a~n" word]]
                                       
                                       [begin 
-                                        [let [[new-box [new editor-snip%]]
+                                        [let [[new-box [new editor-snip% [left-margin 20][max-width 40] [max-height 40]]]
                                               [new-text [new my-text%]]]
                                           
                                           [let [[replacement-text [f new-box word]]]
@@ -276,76 +284,156 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                               
                                               
                                               [add-shutdown-func new-box close-f]]  shutdown-funcs]]]]]]
+;Three functions.  The first loads the text for the snip, the second is called after loading, and the third is called on shutdown
+[define [make-extra-pop-func f middle-f close-f] [lambda [t e]
+                                                   [letrec [[untrimmed-word [get-word t]]
+                                                            [word [regexp-replace* "\\[|\\]|\\(|\\)" untrimmed-word ""]]
+                                                            ]
+                                                     [display [format "Found word: ~a~n" word]]
+                                      
+                                                     [begin 
+                                                       [let [[new-box [new editor-snip% [max-width 600] [max-height 300]]]
+                                                             [new-text [new my-text%]]]
+                                          
+                                                         [let [[replacement-text [f new-box word]]]
+                                                           [when replacement-text
+                                                             [zap-word t]
+                                              
+                                              
+                                                             ;[let [[new-box [send t on-new-box 'text]]]
+                                                             [send new-box set-editor new-text]
+                                                             [send t insert new-box]
+                                                             [set! viewports-name [cons [cons new-box word]  viewports-name]]
+                                              
+                                              
+                                                             [send [send new-box get-editor] insert  [regexp-replace* "\r" replacement-text ""]]
+                                                             [send [send new-box get-editor] set-caret-owner #f 'global]
+                                                             [insert-keybindings [send new-box get-editor]]
+                                                             [middle-f new-box word]
+                                              
+                                              
+                                                             [add-shutdown-func new-box close-f]]  shutdown-funcs]]]]]]
+
+
+
+
 [define pop-viewport [make-pop-func [lambda [new-box word]  [letrec [[linked [assoc word defs]]]
                                                               [set! viewports-name [cons [cons new-box word]  viewports-name]]
                                                               [if linked [cdr linked] #f]]]
                                     [lambda [parent child text] [cdr [assq child viewports-name]]]]]
+
+[define pop-command-viewport  [make-pop-func [lambda [new-box word]
+                                               [write "Creating command box"]
+                                                              [set! viewports-name [cons [cons new-box word]  viewports-name]]
+                                               ""
+                                                              ]
+                                    [lambda [parent child text]  [write "closing command box"](with-input-from-string text
+     (lambda () (eval (read))))]]]
 
 [define pop-varedit  [make-pop-func [lambda [a-box word] [write "popping varedit"]
                                       ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
                                       [pretty-format [hash-ref vars word [lambda [] "unknown"]]]]
                                     
                                     [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
-                                                                              [the-set! [format "(set! ~a [quote ~a])" var-name the-text]]]
+                                                                                 [the-set! [format "(set! ~a [quote ~a])" var-name the-text]]]
                                                                           [display [format "Evalling ~a~n" the-set!]]
                                                                           ;[eval-string the-set!]
                                                                           
                                                                           [hash-set! vars var-name [read [open-input-string the-text]]]
                                                                           ""]]]]
 [define pop-listvars  [make-pop-func [lambda [a-box word] [write "popping listvars"]
-                                      ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
+                                       ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
                                        [pretty-format [hash-keys vars ]]
-                                      ]
+                                       ]
                                     
-                                    [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
-                                                                              [the-set! [format "(set! ~a [quote ~a])" var-name the-text]]]
-                                                                          [display [format "Evalling ~a~n" the-set!]]
-                                                                          ;[eval-string the-set!]
+                                     [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
+                                                                                  [the-set! [format "(set! ~a [quote ~a])" var-name the-text]]]
+                                                                           [display [format "Evalling ~a~n" the-set!]]
+                                                                           ;[eval-string the-set!]
                                                                           
-                                                                          [hash-set! vars var-name [read [open-input-string the-text]]]
-                                                                          ""]]]]
+                                                                           [hash-set! vars var-name [read [open-input-string the-text]]]
+                                                                           ""]]]]
 
 [define pop-keybindings  [make-pop-func [lambda [a-box word] [write "popping keybindings"]
-                                      ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
-                                       [format "`~a" [pretty-format keymaps]]
-                                      ]
+                                          ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
+                                          [format "`~a" [pretty-format keymaps]]
+                                          ]
                                     
-                                    [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
-]
-                                                                          [display [format "closing ~a~n" var-name]]
-                                                                          ;[eval-string the-set!]
+                                        [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
+                                                                                     ]
+                                                                              [display [format "closing ~a~n" var-name]]
+                                                                              ;[eval-string the-set!]
                                                                           
 
-                                                                          [set! keymaps [eval-string the-text]]
-                                                                          [map [lambda [definition]
-       [display [format "Binding ~a to ~a~n" [first definition] [second definition]]]
-       [send a-keymap map-function [first definition] [second definition]]]
-     keymaps]
-                                                                          [insert-keybindings t]
-                                                                          ""]]]]
+                                                                              [set! keymaps [eval-string the-text]]
+                                                                              [map [lambda [definition]
+                                                                                     [display [format "Binding ~a to ~a~n" [first definition] [second definition]]]
+                                                                                     [send a-keymap map-function [first definition] [second definition]]]
+                                                                                   keymaps]
+                                                                              [insert-keybindings t]
+                                                                              ""]]]]
 
 
 [define pop-defs  [make-pop-func [lambda [a-box word] [write "popping defs"]
-                                      ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
-                                       [format "`~a" [pretty-format defs]]
-                                      ]
+                                   ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
+                                   [format "`~a" [pretty-format defs]]
+                                   ]
                                     
-                                    [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
-]
-                                                                          [display [format "closing ~a~n" var-name]]
-                                                                          ;[eval-string the-set!]
+                                 [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
+                                                                              ]
+                                                                       [display [format "closing ~a~n" var-name]]
+                                                                       ;[eval-string the-set!]
                                                                           
 
-                                                                          [set! defs [eval-string the-text]]
+                                                                       [set! defs [eval-string the-text]]
                                                                           
-                                                                          ""]]]]
+                                                                       ""]]]]
+[define pop-ctag  [make-extra-pop-func [lambda [a-box word] [write "popping ctags"]
+                                         ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
+                                         [let [[tag-data [find-ctag word [load-ctags-file "tags"]]]]
+                                           [if [empty? tag-data]
+                                               #f
+                                               [begin
+                                          
+                                                 [file->string [second [first tag-data ]]]]]
+                                           ]]
 
+                                       [lambda [a-snip word]
+                                         [letrec [[editor [send a-snip get-editor]]
+                                                  [text [send editor get-text]]
+                                                  ;[position [send editor find-string word 'forward 'start 'eof #t #f]]
+                                                  [position [string-contains text word ]]
+                                                  ]
+                                           ;[display text]
+                                           [thread [lambda []
+                                                     [sleep 5]
+                                                     [printf "Found word '~s' at ~a\n" word position]
+                                                     [send editor set-position [+ 200 position]]
+                                                     [send editor set-position position]
+                                                     ;[send editor refresh]
+                                           
+                                                     
+                                                     [send editor scroll-to-position position #f [+ 100 position]]
+                                                     [printf "Canvas: ~a\n" [send editor get-canvases]]
+                                                     ]]
+                                           ]
+      
+                                         ]
+                                    
+                                       [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]]
+                                                                             [display [format "closing ~a~n" var-name]]
+                                                                             ;[eval-string the-set!]
+                                                                          
+
+                                                                             var-name]]]]
 
 [define [shutdown-dispatcher b e] [ letrec [[snip [send  [send b get-admin] get-snip]]
                                             [t [send [send snip get-admin] get-editor]]
                                             [ed-snip [send snip get-editor]]
                                             [shutdown-func   [cdr [assq snip shutdown-funcs]]]]
                                      [shutdown-func b e]]]
+
+
 
 [define strip-brackets [lambda [a-list pad-length]
                          [string-join 
@@ -378,6 +466,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                             
                                             [add-shutdown-func new-box close-f]]]]
 [define close-viewport [make-shutdown-func [lambda [parent child text] text]]]
+[define abort-viewport [make-shutdown-func [lambda [parent child text] ""]]]
 
 [define close-let [make-shutdown-func [lambda [parent child text]
                                         [write "Closing let"] [newline]
@@ -425,7 +514,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 ;[new button% [label "Open viewport"] [parent f] [callback ]]
 
 [define open-mexpr [make-open-selection [lambda [parent child text] [statements->mexpr  [read [open-input-string text]]]] 
-                                         [lambda [parent child text] text]]]
+                                        [lambda [parent child text] text]]]
 ;[define open-html [make-open-selection [lambda [parent child text] [pretty-format [html->shtml   text]]]
 ;                                         [lambda [parent child text] [display "converting to html..."] [shtml->html text][shtml->html [read [open-input-string text]]]]]]
 [define system-command [make-open-selection [lambda [parent child some-text] [command-output some-text]]
@@ -448,8 +537,11 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
   [send a-keymap add-function "pop-listvars" pop-listvars]
   [send a-keymap add-function "pop-keybindings" pop-keybindings]
   [send a-keymap add-function "pop-defs" pop-defs]
+  [send a-keymap add-function "pop-ctag" pop-ctag]
   
   [send a-keymap add-function "close-viewport" close-viewport]
+   [send a-keymap add-function "abort-viewport" abort-viewport]
+  
   [send a-keymap add-function "pop-viewport" pop-viewport]
   [send a-keymap add-function "open-let" open-let1]
 
@@ -461,13 +553,14 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
   [send a-keymap add-function "system-command" system-command]
   
   [send a-keymap add-function "shutdown-dispatcher" shutdown-dispatcher]
+  [send a-keymap add-function "pop-command-viewport" pop-command-viewport]
   [send a-keymap map-function "c:down" "shutdown-dispatcher"]
   ;[send a-keymap map-function "c:," "close-let"]
   
-[map [lambda [definition]
-       [display [format "Binding ~a to ~a~n" [first definition] [second definition]]]
-       [send a-keymap map-function [first definition] [second definition]]]
-     keymaps]
+  [map [lambda [definition]
+         [display [format "Binding ~a to ~a~n" [first definition] [second definition]]]
+         [send a-keymap map-function [first definition] [second definition]]]
+       keymaps]
   ]
 
 [insert-keybindings t]
@@ -513,36 +606,36 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                            '[]]
                        '[]]]]
 [define [get-multi-defs input-files] [apply append [map [lambda [a-path] 
-                                                    [write input-files]
-                                                    [let  [[file-source [call-with-input-file a-path [lambda [in] [read-string 999999 in]] #:mode 'text]]]
-                             [send t insert file-source]
+                                                          [write input-files]
+                                                          [let  [[file-source [call-with-input-file a-path [lambda [in] [read-string 999999 in]] #:mode 'text]]]
+                                                            [send t insert file-source]
                              
-                              [get-defs   [call-with-input-file a-path [lambda [in] [read-syntax #f in]] #:mode 'text] file-source]
-                             ]]
-                                                    input-files] ]]
+                                                            [get-defs   [call-with-input-file a-path [lambda [in] [read-syntax #f in]] #:mode 'text] file-source]
+                                                            ]]
+                                                        input-files] ]]
 [define load-file [lambda  [a-path]
-                           [send t erase]
+                    [send t erase]
                            
-                                                  [let  [[file-source [call-with-input-file a-path [lambda [in] [read-string 999999 in]] #:mode 'text]]]
-                                                    (set! last-file-name a-path)
-                             [send t insert file-source]]
-                           ]]
+                    [let  [[file-source [call-with-input-file a-path [lambda [in] [read-string 999999 in]] #:mode 'text]]]
+                      (set! last-file-name a-path)
+                      [send t insert file-source]]
+                    ]]
 [define load-scheme-file [lambda  [a-path]
                            [send t erase]
                            [read-accept-reader #t]
                            [set! defs [get-multi-defs [cons a-path [hash-ref vars "project-files" [lambda [] '[]]]]]]
-                                                  [let  [[file-source [call-with-input-file a-path [lambda [in] [read-string 999999 in]] #:mode 'text]]]
-                                                    (set! last-file-name a-path)
+                           [let  [[file-source [call-with-input-file a-path [lambda [in] [read-string 999999 in]] #:mode 'text]]]
+                             (set! last-file-name a-path)
                              [send t insert file-source]]
                            [pretty-write defs]]]
 [define [get-perl-multi-defs input-files]
   [apply append [map [lambda [a-path]
                        [read-from-string [shell-out "perl extract_subs.pl" [lambda [ stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
                                                                              [send f set-status-text [format "Loading ~a" a-path]]
-  [display a-path stdin-pipe]
-  [newline stdin-pipe]
-  [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]
-  ]]]]
+                                                                             [display a-path stdin-pipe]
+                                                                             [newline stdin-pipe]
+                                                                             [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]
+                                                                             ]]]]
                      input-files]]]
 [define [status some-text] [send f set-status-text some-text]]
 [define load-perl-file [lambda  [a-path]
@@ -559,7 +652,8 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                       [call-with-atomic-output-file
                        a-path
                        [lambda [a-port another-path]
-                           [display [send t get-text 0 9999999] a-port]]]]]]
+                         [display [send t get-text 0 9999999] a-port]]]]]]
 
-
+[define [find-ctag name ctags] [filter [lambda [x] [equal? name [car x]]] ctags]]
+[define [load-ctags-file a-path] [map [lambda [x] [string-split  x "\t"]] [file->lines a-path] ]]
 
