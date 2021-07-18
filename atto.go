@@ -1,8 +1,7 @@
-package main
+package atto
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -19,19 +18,18 @@ import (
 //go:embed core.at
 var coreFuncs string
 
-func makeOneArg(fn string, arg1 interface{}) []interface{} {
-	out := []interface{}{fn}
-	//out = append(out, fn)
-	out = append(out, arg1)
-	return out
+type Atto struct {
+	Functions map[string][]interface{}
 }
 
-func makeTwoArg(fn string, arg1, arg2 interface{}) []interface{} {
-	return append(makeOneArg(fn, arg1), arg2)
+func NewAtto() *Atto {
+	a := Atto{}
+	a.Functions = map[string][]interface{}{}
+	return &a
 }
 
-func makeThreeArg(fn string, arg1, arg2, arg3 interface{}) []interface{} {
-	return append(makeTwoArg(fn, arg1, arg2), arg3)
+func makeFunc(args ...interface{}) []interface{} {
+	return args
 
 }
 
@@ -52,7 +50,7 @@ func cloneEnv(e map[string][]interface{}) map[string][]interface{} {
 	}
 	return out
 }
-func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string]interface{}) interface{} {
+func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string][]interface{}) interface{} {
 
 	fnlist := expr.([]interface{})
 	log.Printf("Evaluating: %+v\n", fnlist)
@@ -115,14 +113,20 @@ func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string]i
 		fmt.Printf("%v\n", out)
 		return out
 	case "__value":
-		val, ok := funcsmap[fnlist[1].(string)]
-		if ok {
-			log.Printf("Resolved to %v\n", val[2])
-			return val[2]
-		} else {
-			log.Printf("Resolved to %v\n", fnlist[1])
-			return fnlist[1]
+		//Try to resolve a symbol.  If it is defined in the argument list, use that
+		val, ok := args[fnlist[1].(string)]
+		if !ok {
+			//Otherwise check to see if it is defined as a function
+			val, ok = funcsmap[fnlist[1].(string)]
+			if !ok {
+				//If not found at all, use it as a string
+				log.Printf("Resolved to %v\n", fnlist[1])
+				return fnlist[1]
+			}
 		}
+
+		log.Printf("Resolved to %v\n", val[2])
+		return val[2]
 
 	case "__pair":
 		car := eval(fnlist[1], funcsmap, args)
@@ -153,7 +157,7 @@ func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string]i
 	userFunc, ok := funcsmap[fn]
 	if ok {
 		log.Printf("Userfunc: %+v\n", userFunc)
-		newFM := cloneEnv(funcsmap)
+		newFM := map[string][]interface{}{}
 
 		for i, v := range userFunc[1].([]string) {
 			//fmt.Printf("(%v) Evalling: %+v for arg %v\n", userFunc, expr.([]interface{})[1+i], v)
@@ -161,7 +165,7 @@ func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string]i
 			log.Printf("(%v) Setting %v to %v\n", userFunc, v, val)
 			newFM[v] = []interface{}{v, []string{}, val}
 		}
-		return eval(userFunc[2], newFM, args)
+		return eval(userFunc[2], funcsmap, newFM)
 	}
 
 	log.Printf("Undefined function: %v\n", fnlist[0])
@@ -191,7 +195,7 @@ func parse_expr(tokens []string, args []string, func_defs map[string][]interface
 		log.Println("Parsed body", bodyTree)
 		log.Printf("Registering %v(%v)\n", name, args)
 
-		func_defs[name] = makeTwoArg("fn", args, bodyTree)
+		func_defs[name] = makeFunc("fn", args, bodyTree)
 		log.Printf("Registered functions %+v", func_defs)
 		return parse_expr(remainder, args, func_defs)
 	}
@@ -200,7 +204,7 @@ func parse_expr(tokens []string, args []string, func_defs map[string][]interface
 		arg1, remainder := parse_expr(tokens[1:], args, func_defs)
 		arg2, remainder := parse_expr(remainder, args, func_defs)
 		arg3, remainder := parse_expr(remainder, args, func_defs)
-		return makeThreeArg("if", arg1, arg2, arg3), remainder
+		return makeFunc("if", arg1, arg2, arg3), remainder
 	}
 
 	//No arg functions
@@ -216,7 +220,7 @@ func parse_expr(tokens []string, args []string, func_defs map[string][]interface
 		if token == builtIn {
 			arg1, remainder := parse_expr(tokens[1:], args, func_defs)
 			log.Printf("Function %v(%v)\n", token, arg1)
-			return makeOneArg(builtIn, arg1), remainder
+			return makeFunc(builtIn, arg1), remainder
 		}
 	}
 
@@ -225,7 +229,7 @@ func parse_expr(tokens []string, args []string, func_defs map[string][]interface
 			arg1, remainder := parse_expr(tokens[1:], args, func_defs)
 			arg2, remainder := parse_expr(remainder, args, func_defs)
 			log.Printf("Function %v(%v,%v)\n", token, arg1, arg2)
-			return makeTwoArg(builtIn, arg1, arg2), remainder
+			return makeFunc(builtIn, arg1, arg2), remainder
 		}
 	}
 
@@ -251,7 +255,7 @@ func parse_expr(tokens []string, args []string, func_defs map[string][]interface
 
 	//Default: it's a literal value
 	log.Println("Literal:", token)
-	return makeOneArg("__value", token), tokens[1:]
+	return makeFunc("__value", token), tokens[1:]
 }
 
 func lex(code string) []string {
@@ -259,34 +263,30 @@ func lex(code string) []string {
 	return tokens
 }
 
-func exec(fname string) {
+func LoadFile(fname string, a *Atto) {
 	code, _ := ioutil.ReadFile(fname)
 
+	LoadString(string(code), a)
+}
+
+func LoadString(code string, a *Atto) {
 	lexed := lex(coreFuncs + (string(code)))
-	funcs := map[string][]interface{}{}
 
 	//Parse twice to pick up forwards declarations.  The first pass parses the function args correctly,
 	//but can't resolve any functions that are defined later in the file.
 	//At the start of the second pass, we know the number of arguments for every function, so now we can
 	//parse the bodies correctly
-	parse_expr(lexed, []string{}, funcs) //First pass picks up function names
-	parse_expr(lexed, []string{}, funcs) //Second pass gets function bodies correctly
-
-	main, ok := funcs["main"]
-	log.Printf("Registered functions %+v", funcs)
-	if ok {
-		eval(main[2], funcs, nil)
-	}
-
+	parse_expr(lexed, []string{}, a.Functions) //First pass picks up function names
+	parse_expr(lexed, []string{}, a.Functions) //Second pass gets function bodies correctly
 }
-
-func main() {
-	var debug bool
-	flag.BoolVar(&debug, "debug", false, "Print looots of debug information")
-	flag.Parse()
-	if !debug {
-		log.SetFlags(0)
-		log.SetOutput(ioutil.Discard)
+func RunFunc(f string, a *Atto) interface{} {
+	main, ok := a.Functions[f]
+	//log.Printf("Registered functions %+v", funcs)
+	var ret interface{}
+	if ok {
+		ret = eval(main[2], a.Functions, nil)
+	} else {
+		fmt.Printf("Function %v not found\n", f)
 	}
-	exec(os.Args[1])
+	return ret
 }
