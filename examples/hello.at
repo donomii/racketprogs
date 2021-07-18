@@ -3,6 +3,15 @@ fn ++ a b is __strconcat a b
 fn hello is 
 	print ++ "hello " "world"
 
+fn testwords is
+	print  tail words "hello world"
+
+fn greet name is
+	print ++ "Hello " ++ name ", how are you?" 
+
 fn main is 
 	# hello
-	print ++ 2 ++ " plus " ++ 3 ++ " is "  + 2 3
+	# testwords
+	# print ++ 2 ++ " plus " ++ 3 ++ " is "  + 2 3
+	greet input "What is your name?"
+

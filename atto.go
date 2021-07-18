@@ -1,15 +1,23 @@
 package main
 
 import (
+	"bufio"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/mattn/go-shellwords"
+
+	_ "embed"
 )
+
+//go:embed core.at
+var coreFuncs string
 
 func makeOneArg(fn string, arg1 interface{}) []interface{} {
 	out := []interface{}{fn}
@@ -50,17 +58,47 @@ func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string]i
 	log.Printf("Evaluating: %+v\n", fnlist)
 	fn := fnlist[0].(string)
 	switch fn {
-
 	case "if":
 		if eval(fnlist[1], funcsmap, args).(bool) {
 			return eval(fnlist[2], funcsmap, args)
 		} else {
 			return eval(fnlist[3], funcsmap, args)
 		}
+	case "__eq":
+		a := eval(fnlist[1], funcsmap, args)
+		b := eval(fnlist[2], funcsmap, args)
+		return reflect.DeepEqual(a, b)
 	case "__add":
 		a, _ := strconv.ParseFloat(eval(fnlist[1], funcsmap, args).(string), 64)
 		b, _ := strconv.ParseFloat(eval(fnlist[2], funcsmap, args).(string), 64)
 		return fmt.Sprintf("%v", a+b)
+	case "__neg":
+		a, _ := strconv.ParseFloat(eval(fnlist[1], funcsmap, args).(string), 64)
+		return fmt.Sprintf("%v", -a)
+	case "__mul":
+		a, _ := strconv.ParseFloat(eval(fnlist[1], funcsmap, args).(string), 64)
+		b, _ := strconv.ParseFloat(eval(fnlist[2], funcsmap, args).(string), 64)
+		return fmt.Sprintf("%v", a*b)
+	case "__div":
+		a, _ := strconv.ParseFloat(eval(fnlist[1], funcsmap, args).(string), 64)
+		b, _ := strconv.ParseFloat(eval(fnlist[2], funcsmap, args).(string), 64)
+		return fmt.Sprintf("%v", a/b)
+	case "__rem":
+		a, _ := strconv.ParseInt(eval(fnlist[1], funcsmap, args).(string), 10, 64)
+		b, _ := strconv.ParseInt(eval(fnlist[2], funcsmap, args).(string), 10, 64)
+		return fmt.Sprintf("%v", a%b)
+	case "__less":
+		a, _ := strconv.ParseFloat(eval(fnlist[1], funcsmap, args).(string), 64)
+		b, _ := strconv.ParseFloat(eval(fnlist[2], funcsmap, args).(string), 64)
+		return a < b
+	case "__lesseq":
+		a, _ := strconv.ParseFloat(eval(fnlist[1], funcsmap, args).(string), 64)
+		b, _ := strconv.ParseFloat(eval(fnlist[2], funcsmap, args).(string), 64)
+		return a <= b
+	case "__head":
+		return eval(fnlist[1], funcsmap, args).([]interface{})[0]
+	case "__tail":
+		return eval(fnlist[1], funcsmap, args).([]interface{})[1:]
 	case "__strconcat":
 		log.Printf("Concatenating strings: %v, %v\n", fnlist[1], fnlist[2])
 		a := eval(fnlist[1], funcsmap, args)
@@ -68,15 +106,9 @@ func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string]i
 		out := fmt.Sprintf("%+v%+v", a, b)
 		log.Printf("Concatenated string: %v\n", out)
 		return out
-	case "__neg":
-		a, _ := strconv.ParseFloat(eval(fnlist[1], funcsmap, args).(string), 64)
-		return fmt.Sprintf("%v", -a)
+
 	case "__str":
 		return fmt.Sprintf("%v", fnlist[1])
-	case "__eq":
-		a := eval(fnlist[1], funcsmap, args)
-		b := eval(fnlist[2], funcsmap, args)
-		return reflect.DeepEqual(a, b)
 
 	case "__print":
 		out := fmt.Sprintf("%+v", eval(fnlist[1], funcsmap, args))
@@ -91,25 +123,42 @@ func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string]i
 			log.Printf("Resolved to %v\n", fnlist[1])
 			return fnlist[1]
 		}
-	case "__head":
-		return fnlist[1].([]interface{})[0]
-	case "__tail":
-		return fnlist[1].([]interface{})[1:]
+
 	case "__pair":
 		car := eval(fnlist[1], funcsmap, args)
-		cdr := eval(fnlist[2], funcsmap, args).(interface{})
+		cdr := eval(fnlist[2], funcsmap, args)
 		out := []interface{}{car, cdr}
 		return out
-	}
 
+	case "__words":
+		words, _ := shellwords.Parse(fmt.Sprintf("%v", eval(fnlist[1], funcsmap, args)))
+		out := []interface{}{}
+		for _, w := range words {
+			//out = append(out, []interface{}{"value", w})
+			v := []interface{}{w}
+			out = append(out, v[0])
+		}
+		return out
+	case "__input":
+		val := eval(fnlist[1], funcsmap, args)
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print(val)
+		text, err := reader.ReadString('\n')
+		text = strings.Trim(text, "\n")
+		if err != nil {
+			panic(err)
+		}
+		return []interface{}{text}[0]
+	}
 	userFunc, ok := funcsmap[fn]
 	if ok {
 		log.Printf("Userfunc: %+v\n", userFunc)
 		newFM := cloneEnv(funcsmap)
 
 		for i, v := range userFunc[1].([]string) {
+			//fmt.Printf("(%v) Evalling: %+v for arg %v\n", userFunc, expr.([]interface{})[1+i], v)
 			val := eval(expr.([]interface{})[1+i], funcsmap, args)
-			log.Printf("Setting %v to %v\n", v, val)
+			log.Printf("(%v) Setting %v to %v\n", userFunc, v, val)
 			newFM[v] = []interface{}{v, []string{}, val}
 		}
 		return eval(userFunc[2], newFM, args)
@@ -154,8 +203,16 @@ func parse_expr(tokens []string, args []string, func_defs map[string][]interface
 		return makeThreeArg("if", arg1, arg2, arg3), remainder
 	}
 
+	//No arg functions
+	for _, builtIn := range []string{} {
+		if token == builtIn {
+			log.Printf("Function %v(%v)\n", token)
+			return []interface{}{builtIn}, tokens
+		}
+	}
+
 	//Single arg functions
-	for _, builtIn := range []string{"__head", "__tail", "__litr", "__str", "__words", "__input", "__print", "__neg"} {
+	for _, builtIn := range []string{"__input", "__head", "__tail", "__litr", "__str", "__words", "__print", "__neg"} {
 		if token == builtIn {
 			arg1, remainder := parse_expr(tokens[1:], args, func_defs)
 			log.Printf("Function %v(%v)\n", token, arg1)
@@ -202,21 +259,10 @@ func lex(code string) []string {
 	return tokens
 }
 
-func include_str(filename string) string {
-	code, err := ioutil.ReadFile(filename)
-	if err != nil {
-		panic(err)
-	}
-	return string(code)
-}
-func with_core(code string) string {
-	return include_str("core.at") + code
-}
-
 func exec(fname string) {
 	code, _ := ioutil.ReadFile(fname)
 
-	lexed := lex(with_core(string(code)))
+	lexed := lex(coreFuncs + (string(code)))
 	funcs := map[string][]interface{}{}
 
 	//Parse twice to pick up forwards declarations.  The first pass parses the function args correctly,
@@ -235,5 +281,12 @@ func exec(fname string) {
 }
 
 func main() {
+	var debug bool
+	flag.BoolVar(&debug, "debug", false, "Print looots of debug information")
+	flag.Parse()
+	if !debug {
+		log.SetFlags(0)
+		log.SetOutput(ioutil.Discard)
+	}
 	exec(os.Args[1])
 }
