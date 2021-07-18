@@ -1,0 +1,8 @@
+fn ++ a b is __strconcat a b
+
+fn hello is 
+	print ++ "hello " "world"
+
+fn main is 
+	# hello
+	print ++ 2 ++ " plus " ++ 3 ++ " is "  + 2 3
