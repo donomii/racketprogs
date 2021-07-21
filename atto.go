@@ -35,24 +35,13 @@ func makeFunc(args ...interface{}) []interface{} {
 }
 
 func searchTo(search string, tokens, accum []string) ([]string, []string) {
-	if len(tokens) == 0 {
-		return accum, tokens
-	}
-	if search == tokens[0] {
+	if len(tokens) == 0 || search == tokens[0] {
 		return accum, tokens
 	}
 	return searchTo(search, tokens[1:], append(accum, tokens[0]))
 }
 
-func cloneEnv(e map[string][]interface{}) map[string][]interface{} {
-	out := map[string][]interface{}{}
-	for k, _ := range e {
-		out[k] = e[k]
-	}
-	return out
-}
 func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string][]interface{}) interface{} {
-
 	fnlist := expr.([]interface{})
 	log.Printf("Evaluating: %+v\n", fnlist)
 	fn := fnlist[0].(string)
@@ -220,7 +209,7 @@ func parse_expr(tokens []string, args []string, func_defs map[string][]interface
 	for _, builtIn := range []string{"__input", "__head", "__tail", "__litr", "__str", "__words", "__print", "__neg"} {
 		if token == builtIn {
 			arg1, remainder := parse_expr(tokens[1:], args, func_defs)
-			log.Printf("Function %v(%v)\n", token, arg1)
+			log.Printf("Defining function %v(%v)\n", token, arg1)
 			return makeFunc(builtIn, arg1), remainder
 		}
 	}
@@ -229,7 +218,7 @@ func parse_expr(tokens []string, args []string, func_defs map[string][]interface
 		if token == builtIn {
 			arg1, remainder := parse_expr(tokens[1:], args, func_defs)
 			arg2, remainder := parse_expr(remainder, args, func_defs)
-			log.Printf("Function %v(%v,%v)\n", token, arg1, arg2)
+			log.Printf("Defining function %v(%v,%v)\n", token, arg1, arg2)
 			return makeFunc(builtIn, arg1, arg2), remainder
 		}
 	}
@@ -238,9 +227,8 @@ func parse_expr(tokens []string, args []string, func_defs map[string][]interface
 	remainder := tokens[1:]
 	if ok {
 		log.Printf(
-			"Found defined function %v, num args: %+v, args: %+v,\n%+v\n",
+			"%v is a previously defined function,  args: (%+v),\n{%+v}\n",
 			token,
-			len(fn[1].([]string)),
 			fn[1],
 			fn,
 		)
@@ -265,8 +253,12 @@ func lex(code string) []string {
 }
 
 func LoadFile(fname string, a *Atto) {
-	code, _ := ioutil.ReadFile(fname)
+	code, err := ioutil.ReadFile(fname)
+	if err != nil {
+		panic(err)
+	}
 
+	log.Println("Loaded", string(code))
 	LoadString(string(code), a)
 }
 

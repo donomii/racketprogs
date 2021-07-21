@@ -4,7 +4,6 @@ import (
 	"flag"
 	"io/ioutil"
 	"log"
-	"os"
 
 	atto "../.."
 )
@@ -18,6 +17,6 @@ func main() {
 		log.SetOutput(ioutil.Discard)
 	}
 	a := atto.NewAtto()
-	atto.LoadFile(os.Args[1], a)
+	atto.LoadFile(flag.Args()[0], a)
 	atto.RunFunc("main", a)
 }
