@@ -2,6 +2,7 @@ package atto
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -259,7 +260,7 @@ func parse_expr(tokens []string, args []string, func_defs map[string][]interface
 }
 
 func lex(code string) []string {
-	tokens, _ := shellwords.Parse(code)
+	tokens, _ := Parse(code)
 	return tokens
 }
 
@@ -289,4 +290,137 @@ func RunFunc(f string, a *Atto) interface{} {
 		fmt.Printf("Function %v not found\n", f)
 	}
 	return ret
+}
+
+// based on https://github.com/mattn/go-shellwords
+func NewParser() *Parser {
+	return &Parser{
+		Position: 0,
+		Dir:      "",
+	}
+}
+
+func Parse(line string) ([]string, error) {
+	return NewParser().Parse(line)
+}
+
+type argType int
+
+const (
+	argNo argType = iota
+	argSingle
+	argQuoted
+)
+
+type Parser struct {
+	Position int
+	Dir      string
+}
+
+func isSpace(r rune) bool {
+	switch r {
+	case ' ', '\t', '\r', '\n':
+		return true
+	}
+	return false
+}
+
+func (p *Parser) Parse(line string) ([]string, error) {
+	args := []string{}
+	buf := ""
+	var escaped, doubleQuoted, singleQuoted, backQuote, dollarQuote bool
+	backtick := ""
+
+	pos := -1
+	got := argNo
+
+	i := -1
+	for _, r := range line {
+		i++
+		if escaped {
+			buf += string(r)
+			escaped = false
+			got = argSingle
+			continue
+		}
+
+		if r == '\\' {
+			if singleQuoted {
+				buf += string(r)
+			} else {
+				escaped = true
+			}
+			continue
+		}
+
+		if isSpace(r) {
+			if singleQuoted || doubleQuoted || backQuote || dollarQuote {
+				buf += string(r)
+				backtick += string(r)
+			} else if got != argNo {
+
+				args = append(args, buf)
+
+				buf = ""
+				got = argNo
+			}
+			continue
+		}
+
+		switch r {
+
+		case ')':
+			if !singleQuoted && !doubleQuoted && !backQuote {
+
+				backtick = ""
+				dollarQuote = !dollarQuote
+			}
+		case '(':
+			if !singleQuoted && !doubleQuoted && !backQuote {
+				if !dollarQuote && strings.HasSuffix(buf, "$") {
+					dollarQuote = true
+					buf += "("
+					continue
+				} else {
+					return nil, errors.New("invalid command line string")
+				}
+			}
+		case '"':
+			if !singleQuoted && !dollarQuote {
+				if doubleQuoted {
+					got = argQuoted
+				}
+				doubleQuoted = !doubleQuoted
+				continue
+			}
+		case '\'':
+			if !doubleQuoted && !dollarQuote {
+				if singleQuoted {
+					got = argQuoted
+				}
+				singleQuoted = !singleQuoted
+				continue
+			}
+		}
+
+		got = argSingle
+		buf += string(r)
+		if backQuote || dollarQuote {
+			backtick += string(r)
+		}
+	}
+
+	if got != argNo {
+
+		args = append(args, buf)
+
+	}
+
+	if escaped || singleQuoted || doubleQuoted || backQuote || dollarQuote {
+		return nil, errors.New("invalid command line string")
+	}
+
+	p.Position = pos
+
+	return args, nil
 }
