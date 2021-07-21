@@ -2,7 +2,6 @@ package atto
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -36,7 +35,13 @@ func makeFunc(args ...interface{}) []interface{} {
 
 func searchTo(search string, tokens, accum []string) ([]string, []string) {
 	if len(tokens) == 0 || search == tokens[0] {
+
 		return accum, tokens
+
+	}
+	if tokens[0] == "__quote" { //Ignore quoted strings
+		log.Printf("Skipping %v\n", tokens[1])
+		return searchTo(search, tokens[2:], append(accum, tokens[0:2]...))
 	}
 	return searchTo(search, tokens[1:], append(accum, tokens[0]))
 }
@@ -143,19 +148,22 @@ func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string][
 			panic(err)
 		}
 		return []interface{}{text}[0]
-	}
-	userFunc, ok := funcsmap[fn]
-	if ok {
-		log.Printf("Userfunc: %+v\n", userFunc)
-		newFM := map[string][]interface{}{}
+	case "__quote":
+		return fnlist[1]
+	default:
+		userFunc, ok := funcsmap[fn]
+		if ok {
+			log.Printf("Userfunc: %+v\n", userFunc)
+			newFM := map[string][]interface{}{}
 
-		for i, v := range userFunc[1].([]string) {
-			//fmt.Printf("(%v) Evalling: %+v for arg %v\n", userFunc, expr.([]interface{})[1+i], v)
-			val := eval(expr.([]interface{})[1+i], funcsmap, args)
-			log.Printf("(%v) Setting %v to %v\n", userFunc, v, val)
-			newFM[v] = []interface{}{v, []string{}, val}
+			for i, v := range userFunc[1].([]string) {
+				//fmt.Printf("(%v) Evalling: %+v for arg %v\n", userFunc, expr.([]interface{})[1+i], v)
+				val := eval(expr.([]interface{})[1+i], funcsmap, args)
+				log.Printf("(%v) Setting %v to %v\n", userFunc, v, val)
+				newFM[v] = []interface{}{v, []string{}, val}
+			}
+			return eval(userFunc[2], funcsmap, newFM)
 		}
-		return eval(userFunc[2], funcsmap, newFM)
 	}
 
 	log.Printf("Undefined function: %v\n", fnlist[0])
@@ -195,6 +203,10 @@ func parse_expr(tokens []string, args []string, func_defs map[string][]interface
 		arg2, remainder := parse_expr(remainder, args, func_defs)
 		arg3, remainder := parse_expr(remainder, args, func_defs)
 		return makeFunc("if", arg1, arg2, arg3), remainder
+	}
+
+	if token == "__quote" {
+		return makeFunc("__quote", tokens[1]), tokens[2:]
 	}
 
 	//No arg functions
@@ -265,6 +277,7 @@ func LoadFile(fname string, a *Atto) {
 func LoadString(code string, a *Atto) {
 	lexed := lex(coreFuncs + (string(code)))
 
+	log.Println("Lexed:", lexed)
 	//Parse twice to pick up forwards declarations.  The first pass parses the function args correctly,
 	//but can't resolve any functions that are defined later in the file.
 	//At the start of the second pass, we know the number of arguments for every function, so now we can
@@ -282,137 +295,4 @@ func RunFunc(f string, a *Atto) interface{} {
 		fmt.Printf("Function %v not found\n", f)
 	}
 	return ret
-}
-
-// based on https://github.com/mattn/go-shellwords
-func NewParser() *Parser {
-	return &Parser{
-		Position: 0,
-		Dir:      "",
-	}
-}
-
-func Parse(line string) ([]string, error) {
-	return NewParser().Parse(line)
-}
-
-type argType int
-
-const (
-	argNo argType = iota
-	argSingle
-	argQuoted
-)
-
-type Parser struct {
-	Position int
-	Dir      string
-}
-
-func isSpace(r rune) bool {
-	switch r {
-	case ' ', '\t', '\r', '\n':
-		return true
-	}
-	return false
-}
-
-func (p *Parser) Parse(line string) ([]string, error) {
-	args := []string{}
-	buf := ""
-	var escaped, doubleQuoted, singleQuoted, backQuote, dollarQuote bool
-	backtick := ""
-
-	pos := -1
-	got := argNo
-
-	i := -1
-	for _, r := range line {
-		i++
-		if escaped {
-			buf += string(r)
-			escaped = false
-			got = argSingle
-			continue
-		}
-
-		if r == '\\' {
-			if singleQuoted {
-				buf += string(r)
-			} else {
-				escaped = true
-			}
-			continue
-		}
-
-		if isSpace(r) {
-			if singleQuoted || doubleQuoted || backQuote || dollarQuote {
-				buf += string(r)
-				backtick += string(r)
-			} else if got != argNo {
-
-				args = append(args, buf)
-
-				buf = ""
-				got = argNo
-			}
-			continue
-		}
-
-		switch r {
-
-		case ')':
-			if !singleQuoted && !doubleQuoted && !backQuote {
-
-				backtick = ""
-				dollarQuote = !dollarQuote
-			}
-		case '(':
-			if !singleQuoted && !doubleQuoted && !backQuote {
-				if !dollarQuote && strings.HasSuffix(buf, "$") {
-					dollarQuote = true
-					buf += "("
-					continue
-				} else {
-					return nil, errors.New("invalid command line string")
-				}
-			}
-		case '"':
-			if !singleQuoted && !dollarQuote {
-				if doubleQuoted {
-					got = argQuoted
-				}
-				doubleQuoted = !doubleQuoted
-				continue
-			}
-		case '\'':
-			if !doubleQuoted && !dollarQuote {
-				if singleQuoted {
-					got = argQuoted
-				}
-				singleQuoted = !singleQuoted
-				continue
-			}
-		}
-
-		got = argSingle
-		buf += string(r)
-		if backQuote || dollarQuote {
-			backtick += string(r)
-		}
-	}
-
-	if got != argNo {
-
-		args = append(args, buf)
-
-	}
-
-	if escaped || singleQuoted || doubleQuoted || backQuote || dollarQuote {
-		return nil, errors.New("invalid command line string")
-	}
-
-	p.Position = pos
-
-	return args, nil
 }

@@ -9,9 +9,15 @@ fn testwords is
 fn greet name is
 	print ++ "Hello " ++ name ", how are you?" 
 
+fn testQuote is
+	# print "greet"
+	# print "fn"
+	  print "lalala"
+
 fn main is 
 	# hello
 	# testwords
 	# print ++ 2 ++ " plus " ++ 3 ++ " is "  + 2 3
+	# testQuote
 	greet input "What is your name?"
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 
@@ -19,4 +20,7 @@ func main() {
 	a := atto.NewAtto()
 	atto.LoadFile(flag.Args()[0], a)
 	atto.RunFunc("main", a)
+	if debug {
+		fmt.Println("Done!")
+	}
 }
