@@ -3,6 +3,8 @@ package atto
 import (
 	"bufio"
 	"fmt"
+	"go/importer"
+	"go/types"
 	"io/ioutil"
 	"log"
 	"os"
@@ -17,6 +19,23 @@ import (
 
 //go:embed core.at
 var coreFuncs string
+
+type Pair struct {
+	Car interface{}
+	Cdr *Pair
+}
+
+func Cons(a interface{}, b *Pair) *Pair {
+	return &Pair{a, b}
+}
+
+func Car(a *Pair) interface{} {
+	return a.Car
+}
+
+func Cdr(a *Pair) *Pair {
+	return a.Cdr
+}
 
 type Atto struct {
 	Functions map[string][]interface{}
@@ -46,6 +65,13 @@ func searchTo(search string, tokens, accum []string) ([]string, []string) {
 	return searchTo(search, tokens[1:], append(accum, tokens[0]))
 }
 
+func listToArgs(p *Pair, arr []reflect.Value) []reflect.Value {
+	if p == nil {
+		return arr
+	}
+	arr = append(arr, reflect.ValueOf(p.Car))
+	return listToArgs(Cdr(p), arr)
+}
 func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string][]interface{}) interface{} {
 	fnlist := expr.([]interface{})
 	log.Printf("Evaluating: %+v\n", fnlist)
@@ -60,7 +86,7 @@ func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string][
 	case "__eq":
 		a := eval(fnlist[1], funcsmap, args)
 		b := eval(fnlist[2], funcsmap, args)
-		return reflect.DeepEqual(a, b)
+		return a == b
 	case "__add":
 		a, _ := strconv.ParseFloat(eval(fnlist[1], funcsmap, args).(string), 64)
 		b, _ := strconv.ParseFloat(eval(fnlist[2], funcsmap, args).(string), 64)
@@ -68,6 +94,46 @@ func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string][
 	case "__neg":
 		a, _ := strconv.ParseFloat(eval(fnlist[1], funcsmap, args).(string), 64)
 		return fmt.Sprintf("%v", -a)
+	case "__import":
+		a, _ := eval(fnlist[1], funcsmap, args).(string)
+		pkg, err := importer.Default().Import(a)
+		fmt.Println(err)
+		return pkg
+	case "__getSym":
+		fname := eval(fnlist[1], funcsmap, args).(string)
+		pkg := eval(fnlist[2], funcsmap, args).(*types.Package)
+		scope := pkg.Scope()
+		for _, name := range scope.Names() {
+			if name == fname {
+				obj := scope.Lookup(name)
+				return obj
+			}
+		}
+	case "__dumpFunc":
+		pkg := eval(fnlist[2], funcsmap, args).(*types.Package)
+		fname := eval(fnlist[1], funcsmap, args).(string)
+		scope := pkg.Scope()
+		for _, name := range scope.Names() {
+			if name == fname {
+				obj := scope.Lookup(name)
+				if tn, ok := obj.Type().(*types.Named); ok {
+					fmt.Printf("%#v\n", tn.NumMethods())
+				}
+			}
+		}
+	case "__apply":
+		f := eval(fnlist[1], funcsmap, args)
+		fmt.Printf("Type %T", f)
+		argRes := eval(fnlist[2], funcsmap, args)
+		var argList *Pair = nil
+		if argRes != nil {
+			argList = argRes.(*Pair)
+		}
+		args := listToArgs(argList, []reflect.Value{})
+
+		v := reflect.ValueOf(f)
+		fmt.Printf("Kind: %v\n", v.Kind())
+		v.Call(args)
 	case "__mul":
 		a, _ := strconv.ParseFloat(eval(fnlist[1], funcsmap, args).(string), 64)
 		b, _ := strconv.ParseFloat(eval(fnlist[2], funcsmap, args).(string), 64)
@@ -89,9 +155,50 @@ func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string][
 		b, _ := strconv.ParseFloat(eval(fnlist[2], funcsmap, args).(string), 64)
 		return a <= b
 	case "__head":
-		return eval(fnlist[1], funcsmap, args).([]interface{})[0]
+		ret := eval(fnlist[1], funcsmap, args)
+		t := fmt.Sprintf("%T", eval(fnlist[1], funcsmap, args))
+		if t == "<nil>" {
+			return nil
+		}
+		switch ret.(type) {
+		case nil:
+			return nil
+		case []interface{}:
+			if len(ret.([]interface{})) == 0 {
+				return nil
+			}
+			return ret.([]interface{})[0]
+		case *Pair:
+			if ret.(*Pair) == nil {
+				return nil
+			}
+			return ret.(*Pair).Car
+		default:
+			return ret
+		}
+
 	case "__tail":
-		return eval(fnlist[1], funcsmap, args).([]interface{})[1:]
+		a := eval(fnlist[1], funcsmap, args)
+		t := fmt.Sprintf("%T", a)
+		if a == nil || t == "<nil>" {
+			return nil
+		}
+		b := a.(*Pair)
+		t = fmt.Sprintf("%T", b)
+		if b == nil || t == "<nil>" {
+			return nil
+		}
+		if b.Cdr == nil {
+			return nil
+		}
+		return b.Cdr
+	case "__cons":
+		a := eval(fnlist[1], funcsmap, args)
+		b := eval(fnlist[2], funcsmap, args)
+		if b != nil {
+			return &Pair{a, b.(*Pair)}
+		}
+		return &Pair{a, nil}
 	case "__strconcat":
 		log.Printf("Concatenating strings: %v, %v\n", fnlist[1], fnlist[2])
 		a := eval(fnlist[1], funcsmap, args)
@@ -99,9 +206,14 @@ func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string][
 		out := fmt.Sprintf("%+v%+v", a, b)
 		log.Printf("Concatenated string: %v\n", out)
 		return out
-
+	case "__type":
+		return fmt.Sprintf("%T", eval(fnlist[1], funcsmap, args))
+	case "__false":
+		return false
+	case "__true":
+		return true
 	case "__str":
-		return fmt.Sprintf("%v", fnlist[1])
+		return fmt.Sprintf("%v", eval(fnlist[1], funcsmap, args))
 
 	case "__print":
 		out := fmt.Sprintf("%+v", eval(fnlist[1], funcsmap, args))
@@ -123,12 +235,6 @@ func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string][
 		log.Printf("Resolved to %v\n", val[2])
 		return val[2]
 
-	case "__pair":
-		car := eval(fnlist[1], funcsmap, args)
-		cdr := eval(fnlist[2], funcsmap, args)
-		out := []interface{}{car, cdr}
-		return out
-
 	case "__words":
 		words, _ := shellwords.Parse(fmt.Sprintf("%v", eval(fnlist[1], funcsmap, args)))
 		out := []interface{}{}
@@ -148,6 +254,9 @@ func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string][
 			panic(err)
 		}
 		return []interface{}{text}[0]
+	case "__null":
+		return nil
+
 	case "__quote":
 		return fnlist[1]
 	default:
@@ -210,15 +319,15 @@ func parse_expr(tokens []string, args []string, func_defs map[string][]interface
 	}
 
 	//No arg functions
-	for _, builtIn := range []string{} {
+	for _, builtIn := range []string{"__false", "__true", "__null"} {
 		if token == builtIn {
-			log.Printf("Function %v(%v)\n", token)
+			log.Printf("Function %v()\n", token)
 			return []interface{}{builtIn}, tokens
 		}
 	}
 
 	//Single arg functions
-	for _, builtIn := range []string{"__input", "__head", "__tail", "__litr", "__str", "__words", "__print", "__neg"} {
+	for _, builtIn := range []string{"__type", "__input", "__head", "__tail", "__litr", "__str", "__words", "__print", "__neg", "__import"} {
 		if token == builtIn {
 			arg1, remainder := parse_expr(tokens[1:], args, func_defs)
 			log.Printf("Defining function %v(%v)\n", token, arg1)
@@ -226,7 +335,8 @@ func parse_expr(tokens []string, args []string, func_defs map[string][]interface
 		}
 	}
 
-	for _, builtIn := range []string{"__strconcat", "__fuse", "__pair", "__eq", "__add", "__mul", "__div", "__rem", "__less", "__lesseq"} {
+	//Two arg functions
+	for _, builtIn := range []string{"__apply", "__getSym", "__dumpFunc", "__cons", "__strconcat", "__fuse", "__pair", "__eq", "__add", "__mul", "__div", "__rem", "__less", "__lesseq"} {
 		if token == builtIn {
 			arg1, remainder := parse_expr(tokens[1:], args, func_defs)
 			arg2, remainder := parse_expr(remainder, args, func_defs)
@@ -271,11 +381,11 @@ func LoadFile(fname string, a *Atto) {
 	}
 
 	log.Println("Loaded", string(code))
-	LoadString(string(code), a)
+	LoadString(coreFuncs+string(code), a)
 }
 
 func LoadString(code string, a *Atto) {
-	lexed := lex(coreFuncs + (string(code)))
+	lexed := lex(string(code))
 
 	log.Println("Lexed:", lexed)
 	//Parse twice to pick up forwards declarations.  The first pass parses the function args correctly,

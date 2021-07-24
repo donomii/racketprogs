@@ -1,0 +1,41 @@
+fn type x is __type x
+
+fn list? x is if = null x true
+		= "*atto.Pair" type x 
+
+fn empty? x is = empty x
+
+fn forcelist x is
+	if list? x 
+		x
+		cons x empty
+
+fn reverse-rec l out is
+	if empty? l
+		out
+		reverse-rec tail l  cons head l out
+
+fn reverse l is
+	reverse-rec l empty
+
+fn append-rec a b out is
+	if empty? a
+		if empty? b
+			out
+			append-rec    a   tail b   cons  head b  out 
+		append-rec tail a b cons head a out
+
+fn append a b is 
+	reverse append-rec a b empty
+
+fn fuse x y is
+	append forcelist x forcelist y
+
+fn print-list x is
+	if = x empty
+		x
+		# print head x
+		# print "-------"
+		  print-list tail x
+
+fn main is print-list fuse "a" "b"

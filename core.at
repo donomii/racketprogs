@@ -1,3 +1,7 @@
+fn null is __null
+
+fn cons x y is __cons x y
+
 fn = x y is
 	__eq x y
 
@@ -18,6 +22,12 @@ fn / x y is
 
 fn % x y is
 	__rem x y
+
+fn false is __false
+
+fn true is __true
+
+fn empty is null
 
 fn ! x is
 	if = true x
@@ -50,7 +60,7 @@ fn fuse x y is
 	__fuse x y
 
 fn pair x y is
-	__pair x y
+	cons x cons y empty
 
 fn litr x is
 	__litr x
@@ -76,11 +86,7 @@ fn @ x y is
 
 fn wrap x is
 	# "Wrap a value in a list"
-	tail pair null x
-
-fn empty is
-	# "Produce the empty list"
-	tail wrap null
+	__cons x null
 
 fn debug_enabled is
 	# "Whether debugging output should occur"
@@ -134,12 +140,6 @@ fn is_bool x is
 	if = true x
 		true
 	if = false x
-		true
-	false
-
-fn is_null x is
-	# "Determine whether a value is null"
-	if = null x
 		true
 	false
 
