@@ -3,18 +3,18 @@ package atto
 import (
 	"bufio"
 	"fmt"
-	"go/importer"
-	"go/types"
+
 	"io/ioutil"
 	"log"
 	"os"
-	"reflect"
 	"strconv"
 	"strings"
 
-	"github.com/mattn/go-shellwords"
-
 	_ "embed"
+
+	_ "github.com/donomii/goof"
+
+	"github.com/mattn/go-shellwords"
 )
 
 //go:embed core.at
@@ -44,6 +44,7 @@ type Atto struct {
 func NewAtto() *Atto {
 	a := Atto{}
 	a.Functions = map[string][]interface{}{}
+	Build()
 	return &a
 }
 
@@ -65,6 +66,7 @@ func searchTo(search string, tokens, accum []string) ([]string, []string) {
 	return searchTo(search, tokens[1:], append(accum, tokens[0]))
 }
 
+/*
 func listToArgs(p *Pair, arr []reflect.Value) []reflect.Value {
 	if p == nil {
 		return arr
@@ -72,6 +74,7 @@ func listToArgs(p *Pair, arr []reflect.Value) []reflect.Value {
 	arr = append(arr, reflect.ValueOf(p.Car))
 	return listToArgs(Cdr(p), arr)
 }
+*/
 func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string][]interface{}) interface{} {
 	fnlist := expr.([]interface{})
 	log.Printf("Evaluating: %+v\n", fnlist)
@@ -94,46 +97,6 @@ func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string][
 	case "__neg":
 		a, _ := strconv.ParseFloat(eval(fnlist[1], funcsmap, args).(string), 64)
 		return fmt.Sprintf("%v", -a)
-	case "__import":
-		a, _ := eval(fnlist[1], funcsmap, args).(string)
-		pkg, err := importer.Default().Import(a)
-		fmt.Println(err)
-		return pkg
-	case "__getSym":
-		fname := eval(fnlist[1], funcsmap, args).(string)
-		pkg := eval(fnlist[2], funcsmap, args).(*types.Package)
-		scope := pkg.Scope()
-		for _, name := range scope.Names() {
-			if name == fname {
-				obj := scope.Lookup(name)
-				return obj
-			}
-		}
-	case "__dumpFunc":
-		pkg := eval(fnlist[2], funcsmap, args).(*types.Package)
-		fname := eval(fnlist[1], funcsmap, args).(string)
-		scope := pkg.Scope()
-		for _, name := range scope.Names() {
-			if name == fname {
-				obj := scope.Lookup(name)
-				if tn, ok := obj.Type().(*types.Named); ok {
-					fmt.Printf("%#v\n", tn.NumMethods())
-				}
-			}
-		}
-	case "__apply":
-		f := eval(fnlist[1], funcsmap, args)
-		fmt.Printf("Type %T", f)
-		argRes := eval(fnlist[2], funcsmap, args)
-		var argList *Pair = nil
-		if argRes != nil {
-			argList = argRes.(*Pair)
-		}
-		args := listToArgs(argList, []reflect.Value{})
-
-		v := reflect.ValueOf(f)
-		fmt.Printf("Kind: %v\n", v.Kind())
-		v.Call(args)
 	case "__mul":
 		a, _ := strconv.ParseFloat(eval(fnlist[1], funcsmap, args).(string), 64)
 		b, _ := strconv.ParseFloat(eval(fnlist[2], funcsmap, args).(string), 64)
