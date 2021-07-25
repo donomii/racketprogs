@@ -3,6 +3,7 @@ package atto
 import (
 	"bufio"
 	"fmt"
+	"reflect"
 
 	"io/ioutil"
 	"log"
@@ -39,12 +40,15 @@ func Cdr(a *Pair) *Pair {
 
 type Atto struct {
 	Functions map[string][]interface{}
+	Extern    map[string]map[string]map[string]reflect.Value
 }
+
+var Externs map[string]map[string]map[string]reflect.Value
 
 func NewAtto() *Atto {
 	a := Atto{}
 	a.Functions = map[string][]interface{}{}
-	Build()
+	Externs = Build()
 	return &a
 }
 
@@ -66,7 +70,6 @@ func searchTo(search string, tokens, accum []string) ([]string, []string) {
 	return searchTo(search, tokens[1:], append(accum, tokens[0]))
 }
 
-/*
 func listToArgs(p *Pair, arr []reflect.Value) []reflect.Value {
 	if p == nil {
 		return arr
@@ -74,7 +77,7 @@ func listToArgs(p *Pair, arr []reflect.Value) []reflect.Value {
 	arr = append(arr, reflect.ValueOf(p.Car))
 	return listToArgs(Cdr(p), arr)
 }
-*/
+
 func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string][]interface{}) interface{} {
 	fnlist := expr.([]interface{})
 	log.Printf("Evaluating: %+v\n", fnlist)
@@ -86,6 +89,12 @@ func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string][
 		} else {
 			return eval(fnlist[3], funcsmap, args)
 		}
+	case "__int":
+		a, _ := strconv.ParseInt(eval(fnlist[1], funcsmap, args).(string), 10, 64)
+		return int(a)
+	case "__int64":
+		a, _ := strconv.ParseInt(eval(fnlist[1], funcsmap, args).(string), 10, 64)
+		return int64(a)
 	case "__eq":
 		a := eval(fnlist[1], funcsmap, args)
 		b := eval(fnlist[2], funcsmap, args)
@@ -117,6 +126,20 @@ func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string][
 		a, _ := strconv.ParseFloat(eval(fnlist[1], funcsmap, args).(string), 64)
 		b, _ := strconv.ParseFloat(eval(fnlist[2], funcsmap, args).(string), 64)
 		return a <= b
+
+	case "__func":
+		pkg := eval(fnlist[1], funcsmap, args).(string)
+		t := eval(fnlist[2], funcsmap, args).(string)
+		name := eval(fnlist[3], funcsmap, args).(string)
+		ret := Externs[pkg][t][name]
+
+		return ret
+	case "__call":
+		f := eval(fnlist[1], funcsmap, args).(reflect.Value)
+		argList := eval(fnlist[2], funcsmap, args).(*Pair)
+		args := listToArgs(argList, []reflect.Value{})
+		fmt.Printf("Calling native func %v with args %v\n", f, args)
+		return fmt.Sprintf("%v", f.Call(args)[0])
 	case "__head":
 		ret := eval(fnlist[1], funcsmap, args)
 		t := fmt.Sprintf("%T", eval(fnlist[1], funcsmap, args))
@@ -290,7 +313,7 @@ func parse_expr(tokens []string, args []string, func_defs map[string][]interface
 	}
 
 	//Single arg functions
-	for _, builtIn := range []string{"__type", "__input", "__head", "__tail", "__litr", "__str", "__words", "__print", "__neg", "__import"} {
+	for _, builtIn := range []string{"__int64", "__int", "__type", "__input", "__head", "__tail", "__litr", "__str", "__words", "__print", "__neg", "__import"} {
 		if token == builtIn {
 			arg1, remainder := parse_expr(tokens[1:], args, func_defs)
 			log.Printf("Defining function %v(%v)\n", token, arg1)
@@ -299,12 +322,23 @@ func parse_expr(tokens []string, args []string, func_defs map[string][]interface
 	}
 
 	//Two arg functions
-	for _, builtIn := range []string{"__apply", "__getSym", "__dumpFunc", "__cons", "__strconcat", "__fuse", "__pair", "__eq", "__add", "__mul", "__div", "__rem", "__less", "__lesseq"} {
+	for _, builtIn := range []string{"__call", "__apply", "__getSym", "__dumpFunc", "__cons", "__strconcat", "__fuse", "__pair", "__eq", "__add", "__mul", "__div", "__rem", "__less", "__lesseq"} {
 		if token == builtIn {
 			arg1, remainder := parse_expr(tokens[1:], args, func_defs)
 			arg2, remainder := parse_expr(remainder, args, func_defs)
 			log.Printf("Defining function %v(%v,%v)\n", token, arg1, arg2)
 			return makeFunc(builtIn, arg1, arg2), remainder
+		}
+	}
+
+	//Three arg functions
+	for _, builtIn := range []string{"__func"} {
+		if token == builtIn {
+			arg1, remainder := parse_expr(tokens[1:], args, func_defs)
+			arg2, remainder := parse_expr(remainder, args, func_defs)
+			arg3, remainder := parse_expr(remainder, args, func_defs)
+			log.Printf("Defining function %v(%v,%v,%v)\n", token, arg1, arg2, arg3)
+			return makeFunc(builtIn, arg1, arg2, arg3), remainder
 		}
 	}
 
