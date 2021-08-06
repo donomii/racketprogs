@@ -108,6 +108,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 [define get-tvar  [lambda [tvar-name] [hash-ref vars tvar-name [lambda [] #f]]]]
 [define set-tvar! [lambda [tvar-name a-value] [hash-set! vars tvar-name a-value]]]
 [unless [get-tvar "welcome-text"] [set-tvar! "welcome-text" welcome-text]]
+[unless [get-tvar "current-filename"] [set-tvar! "current-filename" "no file"]]
 
 [define command-output [lambda [a-command] [letrec [[pipes [process a-command]]
                                                     [stdout [car pipes]]]
@@ -243,7 +244,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                          [displayln [format "Scrolling to ~s of ~s ~n" [second data] (send t num-scroll-lines)]]
                                                          [send t erase]
                                                          [send t insert [file->string [first data]]]
-                                              
+                                              [set-tvar! "current-filename"  [first data]]
                                                          [send t scroll-to-position [second data]]
                                                          ]
                                                        ]]
@@ -255,6 +256,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                       [displayln [format "Scrolling to ~s~n" [second data]]]
                                                       [send t erase]
                                                       [send t insert [file->string [first data]]]
+                                                       [set-tvar! "current-filename"  [first data]]
                                                       [send t scroll-to-position [second data]]
                                                       ]]
                            ;[define/augment after-insert [lambda [start end] [write "aaaa"][send this change-style mydelta start end]]]
@@ -463,7 +465,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                                        [set! defs [eval-string the-text]]
                                                                           
                                                                        ""]]]]
-[define [do-csearch word] [command-output [string-concatenate `["csearch " ,word]]]]
+[define [do-csearch word] [command-output [string-concatenate `["csearch " ,word " | head -100"]]]]
 [define pop-csearch  [make-extra-pop-func [lambda [a-box word] [write "popping csearch"]
                                             ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
                                             [do-csearch word]
@@ -710,6 +712,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                     [let  [[file-source [call-with-input-file a-path [lambda [in] [read-string 999999 in]] #:mode 'text]]]
                       (set! last-file-name a-path)
                       [send t insert file-source]]
+                    [set-tvar! "current-filename" a-path]
                     ]]
 [define load-scheme-file [lambda  [a-path]
                            [send t erase]
@@ -730,7 +733,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                      input-files]]]
 [define csearch [lambda [a-string]
                   [if  [< [string-length a-string] 4] ""
-                       [shell-out [string-append "/Users/jeremyprice/go/bin/csearch -f \\.go\\$ -n " a-string]
+                       [shell-out [format "/Users/jeremyprice/go/bin/csearch -f \\.go\\$ -n ~a | head -100"  a-string]
                                   [lambda [ stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
                                     [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]
                                     ]]
@@ -738,7 +741,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 
 [define tagsearch [lambda [a-string]
                     [if [< [string-length a-string] 4] ""
-                        [shell-out [format "grep \"~a\" tags " a-string]
+                        [shell-out [format "grep \"~a\" tags | head -100" a-string]
                                    [lambda [ stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
                                      [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]
                                      ]]
@@ -835,6 +838,11 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
       ]
   ]
 
+[define [render-filename word commentary editor]
+  [send commentary insert [get-tvar "current-filename"]]
+
+                     ]
+  
 [define [render-search word commentary editor direction]
                    [let [[snp [make-object image-callback-snip% "Skip to" ]]]
                      ;[set-field! data snp [list [second  tag-data ]   char-position]]
@@ -910,6 +918,8 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 
   ;[display [format "->~a<-" csearch-list]]
   ;[display commentary]
+  [render-filename word commentary editor]
+  [send commentary insert "\n\n"]
   [render-search word commentary editor 'forward]
   [render-search word commentary editor 'backward]
   [send commentary insert "\n\n"]
