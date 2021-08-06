@@ -16,9 +16,11 @@
          racket/system
          srfi/1
          srfi/13
-         mzlib/defmacro)
-
-(require "old.rkt")
+         mzlib/defmacro
+         json
+         )
+[require [prefix-in http- net/http-easy]]
+(require "old.rkt" "spath.rkt")
 ;(require (planet "htmlprag.ss" ("neil" "htmlprag.plt" 1 3)))
 [define vars [make-hash [get-preference 'vars [lambda [] [list]]]]]
 
@@ -34,11 +36,6 @@
   ;[control-proc 'wait]
   [read-string 9999999 stdout-pipe]
   ;[close-input-port stdout-pipe]
-  ]
-[define [handler-load-perl-file stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
-  [display "C:\\Documents and Settings\\user\\My Documents\\My Dropbox\\git\\entirety\\source\\bin\\nmea.pl" stdin-pipe]
-  [newline stdin-pipe]
-  [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]
   ]
 
 [define [shell-out a-string a-handler] [apply a-handler [process a-string]]]
@@ -117,8 +114,8 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                              [read-string 99999 stdout]]]]
 [define [highlight-active? a-text]
   [letrec [
-                                            [highlight-start [send a-text get-start-position]]
-                                            [hightlight-end [send a-text get-end-position]]]
+           [highlight-start [send a-text get-start-position]]
+           [hightlight-end [send a-text get-end-position]]]
     [not [eq? highlight-start hightlight-end]]]]
 [define get-word [lambda [a-text]  [letrec [
                                             [highlight-start [send a-text get-start-position]]
@@ -212,34 +209,58 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 
 
 
-(define my-string-snip% [class image-snip%
-                          [super-new]
-                          [field [data #f]]
+(define image-callback-snip% [class image-snip%
+                           [super-new]
+                           [field [data #f]]
+                               [field [callback #f]]
+                               [define set-callback [lambda [a-callback] [set! callback a-callback]]]
                           
-                          [define/override on-event [lambda [dc x y ex ey event]
-                                                      [super on-event  dc x y ex ey event]
-                                                      [when [send event get-left-down]
-                                                        [displayln [format "Scrolling to ~s of ~s ~n" [second data] (send t num-scroll-lines)]]
-                                                        [send t erase]
-                                                        [send t insert [file->string [first data]]]
-                                              
-                                                        [send t scroll-to-position [second data]]
-                                                        ]
-                                                      ]]
-                          [define/override on-char [lambda [dc x y ex ey event]
+                           [define/override on-event [lambda [dc x y ex ey event]
+                                                       [super on-event  dc x y ex ey event]
+                                                       [when [send event get-left-down]
+                                                         [callback dc x y ex ey event]
+                                                         ]
+                                                       ]]
+                           [define/override on-char [lambda [dc x y ex ey event]
                                                      
                                                     
-                                                     [super on-char  dc x y ex ey event]
+                                                      [super on-char  dc x y ex ey event]
                                                      
-                                                     [displayln [format "Scrolling to ~s~n" [second data]]]
-                                                     [send t erase]
-                                                     [send t insert [file->string [first data]]]
-                                                     [send t scroll-to-position [second data]]
-                                                     ]]
-                          ;[define/augment after-insert [lambda [start end] [write "aaaa"][send this change-style mydelta start end]]]
-                          ;[define/augment after-insert [lambda [start end] ]]
+                                                      [callback dc x y ex ey event]
+                                                      ]]
+                           ;[define/augment after-insert [lambda [start end] [write "aaaa"][send this change-style mydelta start end]]]
+                           ;[define/augment after-insert [lambda [start end] ]]
                    
-                          ])
+                           ])
+
+(define image-jump-snip% [class image-snip%
+                           [super-new]
+                           [field [data #f]]
+                          
+                           [define/override on-event [lambda [dc x y ex ey event]
+                                                       [super on-event  dc x y ex ey event]
+                                                       [when [send event get-left-down]
+                                                         [displayln [format "Scrolling to ~s of ~s ~n" [second data] (send t num-scroll-lines)]]
+                                                         [send t erase]
+                                                         [send t insert [file->string [first data]]]
+                                              
+                                                         [send t scroll-to-position [second data]]
+                                                         ]
+                                                       ]]
+                           [define/override on-char [lambda [dc x y ex ey event]
+                                                     
+                                                    
+                                                      [super on-char  dc x y ex ey event]
+                                                     
+                                                      [displayln [format "Scrolling to ~s~n" [second data]]]
+                                                      [send t erase]
+                                                      [send t insert [file->string [first data]]]
+                                                      [send t scroll-to-position [second data]]
+                                                      ]]
+                           ;[define/augment after-insert [lambda [start end] [write "aaaa"][send this change-style mydelta start end]]]
+                           ;[define/augment after-insert [lambda [start end] ]]
+                   
+                           ])
 
 (define t (new my-editor-text%))
 (define commentary-text (new text%))
@@ -444,39 +465,39 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                                        ""]]]]
 [define [do-csearch word] [command-output [string-concatenate `["csearch " ,word]]]]
 [define pop-csearch  [make-extra-pop-func [lambda [a-box word] [write "popping csearch"]
-                                         ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
-                                          [do-csearch word]
+                                            ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
+                                            [do-csearch word]
                                          
-                                           ]
+                                            ]
 
-                                       [lambda [a-snip word]
-                                         [letrec [[editor [send a-snip get-editor]]
-                                                  [text [send editor get-text]]
-                                                  ;[position [send editor find-string word 'forward 'start 'eof #t #f]]
-                                                  [position [string-contains text word ]]
-                                                  ]
-                                           ;[display text]
-                                           [thread [lambda []
-                                                     [sleep 5]
-                                                     [printf "Found word '~s' at ~a\n" word position]
-                                                     [send editor set-position [+ 200 position]]
-                                                     [send editor set-position position]
-                                                     ;[send editor refresh]
+                                          [lambda [a-snip word]
+                                            [letrec [[editor [send a-snip get-editor]]
+                                                     [text [send editor get-text]]
+                                                     ;[position [send editor find-string word 'forward 'start 'eof #t #f]]
+                                                     [position [string-contains text word ]]
+                                                     ]
+                                              ;[display text]
+                                              [thread [lambda []
+                                                        [sleep 5]
+                                                        [printf "Found word '~s' at ~a\n" word position]
+                                                        [send editor set-position [+ 200 position]]
+                                                        [send editor set-position position]
+                                                        ;[send editor refresh]
                                            
                                                      
-                                                     [send editor scroll-to-position position #f [+ 100 position]]
-                                                     [printf "Canvas: ~a\n" [send editor get-canvases]]
-                                                     ]]
-                                           ]
+                                                        [send editor scroll-to-position position #f [+ 100 position]]
+                                                        [printf "Canvas: ~a\n" [send editor get-canvases]]
+                                                        ]]
+                                              ]
       
-                                         ]
+                                            ]
                                     
-                                       [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]]
-                                                                             [display [format "closing ~a~n" var-name]]
-                                                                             ;[eval-string the-set!]
+                                          [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]]
+                                                                                [display [format "closing ~a~n" var-name]]
+                                                                                ;[eval-string the-set!]
                                                                           
 
-                                                                             var-name]]]]
+                                                                                var-name]]]]
 
 
 [define pop-ctag  [make-extra-pop-func [lambda [a-box word] [write "popping ctags"]
@@ -814,52 +835,90 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
       ]
   ]
 
-[define [seventh-or-bust a-list]
-  [if [> 6 [length a-list]]
-      [seventh a-list]
-      "0:0"
-      ]
-  ]
+[define [render-search word commentary editor direction]
+                   [let [[snp [make-object image-callback-snip% "Skip to" ]]]
+                     ;[set-field! data snp [list [second  tag-data ]   char-position]]
+                     [set-field! callback snp [lambda [dc x y ex ey event]
+                                            [let [[next [send editor find-string word direction [if [eq? direction 'forward]
+                                                                                                    [add1 [send editor get-start-position]]
+                                                                                                    [sub1 [send editor get-start-position]]]]]]
+                                              [displayln [format "Skipping to ~a" next]]
+                                              [send editor scroll-to-position next]
+                                              [send editor set-position next]]]]
+                     [send snp set-flags '[ handles-events ]]
+                     [send commentary insert snp]
+                     [send commentary insert [format "Skip ~a to next ~a" direction word ]]
+                     
+  ]]
 
-[define [comment-callback editor commentary type event word]
-  [letrec [;[t-list '[]] ;]
-           ;[csearch-list ]
-           [tag-list [if [highlight-active? editor]
+
+[define [render-wiktionary word commentary editor ]
+[letrec [[search-results [http-get [format "https://en.wiktionary.org/w/api.php?action=parse&page=~a&prop=wikitext&formatversion=2&format=json" word]]]
+         [json-results [bytes->jsexpr [http-response-body search-results] ]]
+         ;[urls [fourth json-results]]
+         [wikitext  [s 'parse/wikitext json-results]]
+         [sections [string-split wikitext [format "\n=="]]]
+         [wanted [filter [lambda [str] [regexp-match "Noun|Verb|Adjective|Adverb" str]] sections]]
+         [text [string-join wanted [format "\n"]]]
+         ]
+ ; [display [dict? json-results]]
+;[display [dict-ref json-results 'parse]]
+ ; [display [spath '[ parse] json-results]]
+   [send commentary insert text]
+  
+  ;[map [lambda [url] [send commentary insert [bytes->string/utf-8 [http-response-body  [http-get url ] ] ]]]
+   ;urls]
+  ]]
+  
+
+
+[define [render-jump-to-file word commentary editor]
+  [letrec [[tag-list [if [highlight-active? editor]
                          [format-csearch-results word [csearch word]]
-                         [format-ctags-results [find-ctag word [grep-ctags-file word]]]]]
-           ]
+                         [format-ctags-results [find-ctag word [grep-ctags-file word]]]]]]
     [if [empty? tag-list]
-        #f
+        [format "No results found for ~a" word]
         [begin
-          ;[display [format "->~a<-" csearch-list]]
-          ;[display commentary]
-          [string-join  [map [lambda [tag-data]
-                               [letrec [
-                                        [text [file->string [second  tag-data ]]]
-                                        [line-number                             
-                                         [third  tag-data ]]
-                                                    
-                                                     
-                                        [ out [format "~a" [extract-line text line-number]]]
-                                        [char-position [line->position text [- line-number 5] 0 0]]
-                                        ]
-                                 ;[displayln [format "line-number: ~a" line-number]]
-                                 [send commentary insert out]
+          [map [lambda [tag-data]
+                 [letrec [
+                          [text [file->string [second  tag-data ]]]
+                          [line-number [third  tag-data ]]
+                          [ out [format "~a" [extract-line text line-number]]]
+                          [char-position [line->position text [- line-number 5] 0 0]]
+                          ]
+                   ;[displayln [format "line-number: ~a" line-number]]
+                   [send commentary insert out]
                                                                        
-                                 ;[send editor insert     [make-object string-snip% "Load"  ]]
-                                 [send commentary insert "\n"]
-                                 [let [[snp [make-object my-string-snip% [format "Load: ~a" [list [second  tag-data ] line-number ] ] ]]]
-                                   [set-field! data snp [list [second  tag-data ]   char-position]] 
-                                   [send snp set-flags '[ handles-events ]]
-                                   [send commentary insert snp]
-                                   [send commentary insert [format "Load: ~a" [list [second  tag-data ] line-number ] ]]
-                                   [send commentary insert "\n\n"]
-                                   out
-                                   ]]
-                               ] tag-list] "\n\n"]
+                   ;[send editor insert     [make-object string-snip% "Load"  ]]
+                   [send commentary insert "\n"]
+                   [let [[snp [make-object image-jump-snip% [format "Load file: ~a" [list [second  tag-data ] line-number ] ] ]]]
+                     [set-field! data snp [list [second  tag-data ]   char-position]] 
+                     [send snp set-flags '[ handles-events ]]
+                     [send commentary insert snp]
+                     [send commentary insert [format "Load: ~a" [list [second  tag-data ] line-number ] ]]
+                     [send commentary insert "\n\n"]
+                     out
+                     ]]
+                 ] tag-list]
           ""
           ]
         ]
     ]
   ]
+
+[define [comment-callback editor commentary type event word]
+
+  ;[display [format "->~a<-" csearch-list]]
+  ;[display commentary]
+  [render-search word commentary editor 'forward]
+  [render-search word commentary editor 'backward]
+  [send commentary insert "\n\n"]
+  [render-wiktionary word commentary editor]
+  [render-jump-to-file word commentary editor]
+           
+  ""
+  ]
+
+
+
 
