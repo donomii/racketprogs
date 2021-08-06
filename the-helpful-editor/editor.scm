@@ -60,6 +60,7 @@
     ["c:d" "pop-defs" "Open viewport and show definitions"]
     ["c:t" "pop-ctag" "Open viewport and show ctag"]
     ["c:o" "open-file" "Open file"]
+    ["c:t" "pop-csearch" "Open viewport and show csearch"]
     ]
   ]
 
@@ -441,6 +442,43 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                                        [set! defs [eval-string the-text]]
                                                                           
                                                                        ""]]]]
+[define [do-csearch word] [command-output [string-concatenate `["csearch " ,word]]]]
+[define pop-csearch  [make-extra-pop-func [lambda [a-box word] [write "popping csearch"]
+                                         ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
+                                          [do-csearch word]
+                                         
+                                           ]
+
+                                       [lambda [a-snip word]
+                                         [letrec [[editor [send a-snip get-editor]]
+                                                  [text [send editor get-text]]
+                                                  ;[position [send editor find-string word 'forward 'start 'eof #t #f]]
+                                                  [position [string-contains text word ]]
+                                                  ]
+                                           ;[display text]
+                                           [thread [lambda []
+                                                     [sleep 5]
+                                                     [printf "Found word '~s' at ~a\n" word position]
+                                                     [send editor set-position [+ 200 position]]
+                                                     [send editor set-position position]
+                                                     ;[send editor refresh]
+                                           
+                                                     
+                                                     [send editor scroll-to-position position #f [+ 100 position]]
+                                                     [printf "Canvas: ~a\n" [send editor get-canvases]]
+                                                     ]]
+                                           ]
+      
+                                         ]
+                                    
+                                       [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]]
+                                                                             [display [format "closing ~a~n" var-name]]
+                                                                             ;[eval-string the-set!]
+                                                                          
+
+                                                                             var-name]]]]
+
+
 [define pop-ctag  [make-extra-pop-func [lambda [a-box word] [write "popping ctags"]
                                          ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
                                          [let [[tag-data [find-ctag word [load-ctags-file "tags"]]]]
@@ -592,6 +630,8 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
   [send a-keymap add-function "pop-keybindings" pop-keybindings]
   [send a-keymap add-function "pop-defs" pop-defs]
   [send a-keymap add-function "pop-ctag" pop-ctag]
+  
+  [send a-keymap add-function "pop-csearch" pop-csearch]
   
   [send a-keymap add-function "close-viewport" close-viewport]
   [send a-keymap add-function "abort-viewport" abort-viewport]
