@@ -17,11 +17,13 @@
          srfi/1
          srfi/13
          mzlib/defmacro)
+
+(require "old.rkt")
 ;(require (planet "htmlprag.ss" ("neil" "htmlprag.plt" 1 3)))
 [define vars [make-hash [get-preference 'vars [lambda [] [list]]]]]
 
 ;[define vars [make-hash]]
-[defmacro indent-dedent args `[begin [indent] [let [[temp ,[car args]]] [dedent] temp]]]
+
 [defmacro dox args [cadr args]]
 [defmacro myset args `[set! ,[car args] ,[cdr args]]]
 (application:current-app-name "Helpful Editor")
@@ -30,7 +32,7 @@
   [close-input-port stderr-pipe]
   [close-output-port stdin-pipe]
   ;[control-proc 'wait]
-  [read-string 99999 stdout-pipe]
+  [read-string 9999999 stdout-pipe]
   ;[close-input-port stdout-pipe]
   ]
 [define [handler-load-perl-file stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
@@ -57,6 +59,7 @@
     ["c:k" "pop-keybindings" "Open viewport and show keybindings"]
     ["c:d" "pop-defs" "Open viewport and show definitions"]
     ["c:t" "pop-ctag" "Open viewport and show ctag"]
+    ["c:o" "open-file" "Open file"]
     ]
   ]
 
@@ -111,11 +114,22 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 [define command-output [lambda [a-command] [letrec [[pipes [process a-command]]
                                                     [stdout [car pipes]]]
                                              [read-string 99999 stdout]]]]
-[define get-word [lambda [a-text]  [letrec [[startbox [box [send a-text get-start-position]]] 
-                                            [endbox [box [send a-text get-start-position]]]  
-                                            [start (send a-text find-wordbreak startbox #f 'selection)]
-                                            [end (send a-text find-wordbreak #f endbox  'selection)]]
-                                     [send a-text get-text [unbox startbox] [unbox endbox]]]]]
+[define [highlight-active? a-text]
+  [letrec [
+                                            [highlight-start [send a-text get-start-position]]
+                                            [hightlight-end [send a-text get-end-position]]]
+    [not [eq? highlight-start hightlight-end]]]]
+[define get-word [lambda [a-text]  [letrec [
+                                            [highlight-start [send a-text get-start-position]]
+                                            [hightlight-end [send a-text get-end-position]]]
+                                     [if [not [eq? highlight-start hightlight-end]]
+                                         [send a-text get-text highlight-start hightlight-end]
+                                         [letrec [[startbox [box highlight-start]] 
+                                                  [endbox [box hightlight-end]]  
+                                                  [start (send a-text find-wordbreak startbox #f 'selection)]
+                                                  [end (send a-text find-wordbreak #f endbox  'selection)]]
+                                           [send a-text get-text [unbox startbox] [unbox endbox]]]]]]]
+
 [define zap-word [lambda [a-text]  [letrec [[startbox [box [send a-text get-start-position]]] 
                                             [endbox [box [send a-text get-start-position]]] 
                                             [start (send a-text find-wordbreak startbox #f 'selection)]
@@ -131,28 +145,108 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 [define seqnum [lambda [] [set! num [add1 num]][format "~a" num]]]
 [define my-frame% [class frame% 
                     [super-new]
+                   
                     [define/augment on-close [lambda args [letrec 
                                                               [[text [send t get-text 0 9999999]]]
                                                             ;[set-tvar! "welcome-text" text]
                                                             [put-preferences '[vars] [list [hash->list vars]] ][exit]]]]]]
-(define f [dox "Make new frame" (new my-frame% [label (application:current-app-name)]
-                                     [width 800]
-                                     [height 600])])
-[send f create-status-line]
-(define c (new editor-canvas% [parent f]))
+
+[define my-frame2% [class frame% 
+                     [super-new]
+                     [define/augment on-close [lambda args [letrec 
+                                                               [[text [send t get-text 0 9999999]]]
+                                                             ;[set-tvar! "welcome-text" text]
+                                                             [put-preferences '[vars] [list [hash->list vars]] ][exit]]]]]]
+
+
+(define editor-window [dox "Make new frame" (new my-frame% [label (application:current-app-name)]
+                                                 [width 800]
+                                                 [height 600])])
+(define commentary-window [dox "Make new frame" (new my-frame2% [label "Commentary"]
+                                                     [width 800]
+                                                     [height 600])])
+[send editor-window create-status-line]
+
+(define c (new editor-canvas% [parent editor-window]))
+(define commentary-window-canvas (new editor-canvas% [parent commentary-window]))
 [define mydelta (make-object style-delta% )]
 [send mydelta  set-family 'modern]
 [send mydelta  set-face #f]
 
-(define my-text% [class scheme:text%
-                   [super-new]
-                   ;[define/augment after-insert [lambda [start end] [write "aaaa"][send this change-style mydelta start end]]]
-                   ;[define/augment after-insert [lambda [start end] ]]
+(define my-editor-text% [class scheme:text%
+                          [super-new]
+                          [define/override on-default-event [lambda [event]
+                                                              [super on-default-event event]
+                                                              [when [send event button-up? 'any]
+                                                                
+                                                                [send commentary-text erase]
+                                                                [let [[comment [comment-callback this commentary-text 'mouse event [get-word this]]]]
+                                                                  [when [not [equal? comment ""]]
+                                                                    
+                                                                    [send commentary-text insert [format "~a" comment]]
+                                                                    ]]]]]
+                          
+                          [define/override on-default-char [lambda [event]
+                      
+                                                             [super on-default-char event]
+                                                             [send commentary-text erase]
+                                                             [let [[comment [comment-callback this commentary-text 'char event [get-word this]]]]
+                                                               [when [not [equal? comment ""]]
+                                                                 
+                                                                 [send commentary-text insert [format "~a" comment]]
+                                                                 ]]
+                                                             ]]
+                          ;[define/augment after-insert [lambda [start end] [write "aaaa"][send this change-style mydelta start end]]]
+                          ;[define/augment after-insert [lambda [start end] ]]
                    
-                   ])
+                          ])
 
-(define t (new my-text%))
+(define my-commentary-text% [class scheme:text%
+                              [super-new]
+                  
+                              ;[define/augment after-insert [lambda [start end] [write "aaaa"][send this change-style mydelta start end]]]
+                              ;[define/augment after-insert [lambda [start end] ]]
+                   
+                              ])
+
+
+
+(define my-string-snip% [class image-snip%
+                          [super-new]
+                          [field [data #f]]
+                          
+                          [define/override on-event [lambda [dc x y ex ey event]
+                                                      [super on-event  dc x y ex ey event]
+                                                      [when [send event get-left-down]
+                                                        [displayln [format "Scrolling to ~s of ~s ~n" [second data] (send t num-scroll-lines)]]
+                                                        [send t erase]
+                                                        [send t insert [file->string [first data]]]
+                                              
+                                                        [send t scroll-to-position [second data]]
+                                                        ]
+                                                      ]]
+                          [define/override on-char [lambda [dc x y ex ey event]
+                                                     
+                                                    
+                                                     [super on-char  dc x y ex ey event]
+                                                     
+                                                     [displayln [format "Scrolling to ~s~n" [second data]]]
+                                                     [send t erase]
+                                                     [send t insert [file->string [first data]]]
+                                                     [send t scroll-to-position [second data]]
+                                                     ]]
+                          ;[define/augment after-insert [lambda [start end] [write "aaaa"][send this change-style mydelta start end]]]
+                          ;[define/augment after-insert [lambda [start end] ]]
+                   
+                          ])
+
+(define t (new my-editor-text%))
+(define commentary-text (new text%))
+[send t auto-wrap #t]
+[send commentary-text auto-wrap #t]
 (send c set-editor t)
+[send commentary-window-canvas set-editor commentary-text]
+(send commentary-window-canvas set-editor commentary-text)
 [send t set-max-undo-history 50]
 [send t insert welcome-text]
 ;text% is relentless in its desire to apply ANY style other than the one I want
@@ -186,54 +280,13 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 [define [add-shutdown-func an-editor l] [set! shutdown-funcs [cons [cons an-editor
                                                                          [make-shutdown-func l]]  shutdown-funcs]]]
 ;[send t set-clickback 0 3 [lambda [atext x y] [display "CLicky!"][newline]]]
-[define ensure-list [lambda [e] [if [list? e] e [list e]]]]
-[define indent-level 0]
-[define [indent] [set! indent-level [+ 4 indent-level]]]
-[define [dedent] [set! indent-level [- indent-level 4]]]
-[define [spaces] [make-string indent-level #\ ]]
-[define sexpr->mexpr [lambda [sexpr terminator linebreak]
-                       [if [list? sexpr]
-                           [if [> [length sexpr] 0]
-                               
-                               [cond
-                                 
-                                 [[eq? [car sexpr] 'set!]
-                                  [format "~a~a = ~a;\n" [spaces][cadr sexpr][string-join [map [lambda [s] [sexpr->mexpr s "" ""]] [cddr sexpr]] ", "] ]]
-                                 [[eq? [car sexpr] 'when]
-                                  [format "when (~a) {~n~a~n}~n" [cadr sexpr][begin [indent-dedent [string-join [map statements->mexpr [cddr sexpr]] ", "] ]]]]
-                                 [[eq? [car sexpr] 'if]
-                                  [format "if (~a) {~n~a~n}~nelse {~n~a~n}~n" [sexpr->mexpr [cadr sexpr] "" ""]
-                                          [sexpr->mexpr [caddr sexpr] "" ""]
-                                          [sexpr->mexpr [cadddr sexpr] "" ""]]]
-                                 [[eq? [car sexpr] 'begin]
-                                  [statements->mexpr [cdr sexpr]]]
-                                 [[or [eq? [car sexpr] 'let] [eq? [car sexpr] 'letrec]]
-                                  
-                                  [string-append 
-                                   [string-join [map [lambda [x]
-                                                       [format "~a~a := ~a;\n" [spaces][car x][string-join [map [lambda [s] [sexpr->mexpr s "" ""]] [cdr x]] ", "] ]
-                                                       ][cadr sexpr]] ""]
-                                   [indent-dedent
-                                    [statements->mexpr [cddr sexpr]]
-                                    ]
-                                   
-                                   ""]]
-                                 [[eq? [car sexpr] 'send]
-                                  [format "~a->~a(~a)~a~a" [sexpr->mexpr [cadr sexpr] "" ""] [sexpr->mexpr [caddr sexpr] "" ""] [string-join [map [lambda [s] [sexpr->mexpr s "" ""]] [cdddr sexpr]]  ", "] terminator linebreak]]
-                                 [else
-                                  [format "~a(~a)~a~a" [car sexpr][string-join [map [lambda [s] [sexpr->mexpr s "" ""]] [cdr sexpr]] ", "] terminator linebreak]]]
-                               ""]
-                           [format "~s" sexpr]]
-                       
-                       ]]
-[define statements->mexpr [lambda [statements]
-                            [string-join [map [lambda [s] [string-append [spaces] [sexpr->mexpr s ";"  "\n"]]] [ensure-list statements]]]]]
+
 
 [define search-text-for-snip-recur [lambda [atext asnip pos] [let [[testsnip [send atext get-text pos [add1 pos]]]]
-                                                               [display "Comparing "]
-                                                               [write asnip]
-                                                               [write testsnip]
-                                                               [newline]
+                                                               ;[display "Comparing "]
+                                                               ;[write asnip]
+                                                               ;[write testsnip]
+                                                               ;[newline]
                                                                [if [eq? testsnip asnip]
                                                                    pos
                                                                    [search-text-for-snip-recur atext asnip [add1 pos]]]]]]
@@ -261,11 +314,11 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                     [letrec [[untrimmed-word [get-word t]]
                                              [word [regexp-replace* "\\[|\\]|\\(|\\)" untrimmed-word ""]]
                                              ]
-                                      [display [format "Found word: ~a~n" word]]
+                                      ;[display [format "Found word: ~a~n" word]]
                                       
                                       [begin 
                                         [let [[new-box [new editor-snip% [left-margin 20][max-width 40] [max-height 40]]]
-                                              [new-text [new my-text%]]]
+                                              [new-text [new my-editor-text%]]]
                                           
                                           [let [[replacement-text [f new-box word]]]
                                             [when replacement-text
@@ -289,11 +342,11 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                    [letrec [[untrimmed-word [get-word t]]
                                                             [word [regexp-replace* "\\[|\\]|\\(|\\)" untrimmed-word ""]]
                                                             ]
-                                                     [display [format "Found word: ~a~n" word]]
+                                                     ;[display [format "Found word: ~a~n" word]]
                                       
                                                      [begin 
                                                        [let [[new-box [new editor-snip% [max-width 600] [max-height 300]]]
-                                                             [new-text [new my-text%]]]
+                                                             [new-text [new my-editor-text%]]]
                                           
                                                          [let [[replacement-text [f new-box word]]]
                                                            [when replacement-text
@@ -324,11 +377,11 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 
 [define pop-command-viewport  [make-pop-func [lambda [new-box word]
                                                [write "Creating command box"]
-                                                              [set! viewports-name [cons [cons new-box word]  viewports-name]]
+                                               [set! viewports-name [cons [cons new-box word]  viewports-name]]
                                                ""
-                                                              ]
-                                    [lambda [parent child text]  [write "closing command box"](with-input-from-string text
-     (lambda () (eval (read))))]]]
+                                               ]
+                                             [lambda [parent child text]  [write "closing command box"](with-input-from-string text
+                                                                                                         (lambda () (eval (read))))]]]
 
 [define pop-varedit  [make-pop-func [lambda [a-box word] [write "popping varedit"]
                                       ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
@@ -336,7 +389,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                     
                                     [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
                                                                                  [the-set! [format "(set! ~a [quote ~a])" var-name the-text]]]
-                                                                          [display [format "Evalling ~a~n" the-set!]]
+                                                                          ;[display [format "Evalling ~a~n" the-set!]]
                                                                           ;[eval-string the-set!]
                                                                           
                                                                           [hash-set! vars var-name [read [open-input-string the-text]]]
@@ -348,7 +401,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                     
                                      [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
                                                                                   [the-set! [format "(set! ~a [quote ~a])" var-name the-text]]]
-                                                                           [display [format "Evalling ~a~n" the-set!]]
+                                                                           ;[display [format "Evalling ~a~n" the-set!]]
                                                                            ;[eval-string the-set!]
                                                                           
                                                                            [hash-set! vars var-name [read [open-input-string the-text]]]
@@ -361,13 +414,13 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                     
                                         [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
                                                                                      ]
-                                                                              [display [format "closing ~a~n" var-name]]
+                                                                              ;[display [format "closing ~a~n" var-name]]
                                                                               ;[eval-string the-set!]
                                                                           
 
                                                                               [set! keymaps [eval-string the-text]]
                                                                               [map [lambda [definition]
-                                                                                     [display [format "Binding ~a to ~a~n" [first definition] [second definition]]]
+                                                                                     ;[display [format "Binding ~a to ~a~n" [first definition] [second definition]]]
                                                                                      [send a-keymap map-function [first definition] [second definition]]]
                                                                                    keymaps]
                                                                               [insert-keybindings t]
@@ -381,7 +434,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                     
                                  [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
                                                                               ]
-                                                                       [display [format "closing ~a~n" var-name]]
+                                                                       ;[display [format "closing ~a~n" var-name]]
                                                                        ;[eval-string the-set!]
                                                                           
 
@@ -421,7 +474,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                          ]
                                     
                                        [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]]
-                                                                             [display [format "closing ~a~n" var-name]]
+                                                                             ;[display [format "closing ~a~n" var-name]]
                                                                              ;[eval-string the-set!]
                                                                           
 
@@ -435,14 +488,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 
 
 
-[define strip-brackets [lambda [a-list pad-length]
-                         [string-join 
-                          [map
-                           [lambda [f]
-                             [format "~a = ~a ~n"  [string-pad-right [format "~a" [car f]] pad-length] [sexpr->mexpr [cadr f] "" ""]]]
-                           a-list]
-                          ""]
-                         ]]
+
 [define def-names [lambda [a-list]
                     [map car a-list]]]
 
@@ -453,7 +499,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                    ]
                                             
                                             
-                                            [send new-box set-editor [new my-text%]]
+                                            [send new-box set-editor [new my-editor-text%]]
                                             [force-fucking-style [send new-box get-editor]]
                                             [send t insert new-box]
                                             [set! viewports-name [cons [cons new-box some-text]  viewports-name]]
@@ -465,9 +511,11 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                             [insert-keybindings [send new-box get-editor]]
                                             
                                             [add-shutdown-func new-box close-f]]]]
+
+[define open-mexpr [make-open-selection [lambda [parent child text] [statements->mexpr  [read [open-input-string text]]]] 
+                                        [lambda [parent child text] text]]]
 [define close-viewport [make-shutdown-func [lambda [parent child text] text]]]
 [define abort-viewport [make-shutdown-func [lambda [parent child text] ""]]]
-
 [define close-let [make-shutdown-func [lambda [parent child text]
                                         [write "Closing let"] [newline]
                                         [letrec [
@@ -483,20 +531,23 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                           [rebuild-let def-pairs code]
                                           
                                           ]]]]
-[define open-let1 [make-open-selection [lambda [parent child some-text] 
+[define open-let1 [make-open-selection [lambda [parent child some-text]
+                                         
                                          [letrec [[a-list [read [open-input-string some-text]]]
                                                   [defs [cadr a-list]]
                                                   [code [cddr a-list]]
                                                   [temp-str ""]
                                                   
                                                   [defs-maxlength [longest-length [map symbol->string [def-names defs]]]]]
-                                           [display defs-maxlength]
+                                           ;[display defs-maxlength]
                                            
                                            [string-append  
                                             [strip-brackets  defs defs-maxlength]
                                             "\n---\n\n"
                                             [statements->mexpr code]
                                             ]]] close-let] ]
+
+
 
 [define insert-keybindings [lambda [a-text] [let [[ a-keymap [new keymap:aug-keymap%]]]
                                               
@@ -513,8 +564,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                               ]]]
 ;[new button% [label "Open viewport"] [parent f] [callback ]]
 
-[define open-mexpr [make-open-selection [lambda [parent child text] [statements->mexpr  [read [open-input-string text]]]] 
-                                        [lambda [parent child text] text]]]
+
 ;[define open-html [make-open-selection [lambda [parent child text] [pretty-format [html->shtml   text]]]
 ;                                         [lambda [parent child text] [display "converting to html..."] [shtml->html text][shtml->html [read [open-input-string text]]]]]]
 [define system-command [make-open-selection [lambda [parent child some-text] [command-output some-text]]
@@ -525,8 +575,12 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 
 
 
-[new button% [label "Close viewport"] [parent f] [callback close-let]]
+[new button% [label "Close viewport"] [parent editor-window] [callback close-let]]
 
+[define open-file [make-open-selection
+                   [lambda [parent child some-text] 
+                     [letrec [[a-text  [file->string some-text]]]
+                       a-text]] close-let] ]
 
 ; Ideally, we would be able to display these to the user, let them edit, then read them back
 [define [set-keybindings a-keymap]
@@ -540,7 +594,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
   [send a-keymap add-function "pop-ctag" pop-ctag]
   
   [send a-keymap add-function "close-viewport" close-viewport]
-   [send a-keymap add-function "abort-viewport" abort-viewport]
+  [send a-keymap add-function "abort-viewport" abort-viewport]
   
   [send a-keymap add-function "pop-viewport" pop-viewport]
   [send a-keymap add-function "open-let" open-let1]
@@ -555,21 +609,23 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
   [send a-keymap add-function "shutdown-dispatcher" shutdown-dispatcher]
   [send a-keymap add-function "pop-command-viewport" pop-command-viewport]
   [send a-keymap map-function "c:down" "shutdown-dispatcher"]
+  [send a-keymap add-function "open-file" open-file]
   ;[send a-keymap map-function "c:," "close-let"]
   
   [map [lambda [definition]
-         [display [format "Binding ~a to ~a~n" [first definition] [second definition]]]
+         ;[display [format "Binding ~a to ~a~n" [first definition] [second definition]]]
          [send a-keymap map-function [first definition] [second definition]]]
        keymaps]
   ]
 
 [insert-keybindings t]
-(send f show #t)
-
+[insert-keybindings commentary-text]
+(send editor-window show #t)
+(send commentary-window show #t)
 
 
 (define last-file-name #f)
-(define mb (new menu-bar% [parent f]))
+(define mb (new menu-bar% [parent editor-window]))
 (define m-file (new menu% [label "File"] [parent mb]))
 [new menu-item% [label "Open..."] [parent m-file] [callback [lambda args [load-file [get-file]]]] [shortcut #\o]]
 [new menu-item% [label "Open Scheme"] [parent m-file] [callback [lambda args [load-scheme-file [get-file]]]] [shortcut #\o]]
@@ -587,32 +643,6 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 ;[write viewports]
 ; Show the frame by calling its show method
 
-[define get-defs [lambda [a-syntax file-source]
-                   [if [list? [syntax-e a-syntax]]
-                       [if [> [length [syntax-e a-syntax]] 1]
-                           [letrec [[e a-syntax]
-                                    [1st [syntax-e [car [syntax-e e]]]]
-                                    ]
-                             
-                             [if [equal? 'define 1st] 
-                                 [if [symbol? [syntax-e [cadr [syntax-e e]]]]
-                                     ;[define name [lambda....
-                                     [list [cons [symbol->string [syntax-e [cadr [syntax-e e]]]] [substring file-source [syntax-position e] [+ [syntax-position e] [syntax-span e]]]]]
-                                     ;[define [name args ...
-                                     [list [cons [symbol->string [syntax-e [car [syntax-e [cadr [syntax-e e]]]]]] [substring file-source [syntax-position e] [sub1 [+ [syntax-position e] [syntax-span e]]]]]]]
-                                 
-                                 [concatenate [map [lambda [e] [get-defs e file-source] ] [syntax-e a-syntax]]]
-                                 ]]
-                           '[]]
-                       '[]]]]
-[define [get-multi-defs input-files] [apply append [map [lambda [a-path] 
-                                                          [write input-files]
-                                                          [let  [[file-source [call-with-input-file a-path [lambda [in] [read-string 999999 in]] #:mode 'text]]]
-                                                            [send t insert file-source]
-                             
-                                                            [get-defs   [call-with-input-file a-path [lambda [in] [read-syntax #f in]] #:mode 'text] file-source]
-                                                            ]]
-                                                        input-files] ]]
 [define load-file [lambda  [a-path]
                     [send t erase]
                            
@@ -631,13 +661,28 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 [define [get-perl-multi-defs input-files]
   [apply append [map [lambda [a-path]
                        [read-from-string [shell-out "perl extract_subs.pl" [lambda [ stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
-                                                                             [send f set-status-text [format "Loading ~a" a-path]]
+                                                                             [send editor-window set-status-text [format "Loading ~a" a-path]]
                                                                              [display a-path stdin-pipe]
                                                                              [newline stdin-pipe]
                                                                              [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]
                                                                              ]]]]
                      input-files]]]
-[define [status some-text] [send f set-status-text some-text]]
+[define csearch [lambda [a-string]
+                  [if  [< [string-length a-string] 4] ""
+                       [shell-out [string-append "/Users/jeremyprice/go/bin/csearch -f \\.go\\$ -n " a-string]
+                                  [lambda [ stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
+                                    [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]
+                                    ]]
+                       ]]]
+
+[define tagsearch [lambda [a-string]
+                    [if [< [string-length a-string] 4] ""
+                        [shell-out [format "grep \"~a\" tags " a-string]
+                                   [lambda [ stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
+                                     [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]
+                                     ]]
+                        ]]]
+[define [status some-text] [send editor-window set-status-text some-text]]
 [define load-perl-file [lambda  [a-path]
                          [send t erase]
                          [read-accept-reader #t]
@@ -655,5 +700,126 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                          [display [send t get-text 0 9999999] a-port]]]]]]
 
 [define [find-ctag name ctags] [filter [lambda [x] [equal? name [car x]]] ctags]]
-[define [load-ctags-file a-path] [map [lambda [x] [string-split  x "\t"]] [file->lines a-path] ]]
+[define [load-ctags-file a-path] [map [lambda [x] [string-split  x #px"\t+|\\s+" ]] [file->lines a-path] ]]
+
+[define [grep-ctags-file a-term]
+  [if [eq? a-term ""] '()
+      [map [lambda [x] [string-split  x #px"\t+|\\s+" ]] [string-split
+                                                          [let [[output [tagsearch a-term]]]
+                                                            [if [eq? output eof ]
+                                                                ""
+                                                                output]]
+                                                          "\n"] ]]]
+
+[define [format-ctags-results results]
+  [map [lambda [tag-data]
+         [letrec [
+                  [tag [first tag-data]]
+                  [filename [second  tag-data ]]
+                  [line-number [sub1 [false-to-zero [string->number [break-line-field [third  tag-data ]]]]]]
+                  ]
+           [list tag filename line-number]
+           ]]
+       results]
+        
+        
+  ]
+
+;/Users/jeremyprice/racketProgs/the-helpful-editor/editor.scm:439:[define pop-keybindings  [make-pop-func [lambda [a-box word] [write "popping keybindings"]
+[define [format-csearch-results tag results]
+  ;[displayln [format "Formatting csearch results ~a~n" results]]
+  [if [eq? eof results] '[]
+      [map [lambda [line]
+             [letrec [
+                      [tag-data [string-split line ":"]]
+                                      
+                      [filename [first  tag-data ]]
+                      [line-number [sub1 [string->number[second tag-data]]]]
+                      [example [third tag-data]]
+                      ]
+               [list tag filename line-number]
+               ]]
+           [string-split results "\n"]]
+        
+        
+      ]]
+
+
+[define [extract-line some-text line-number]
+  [list-ref [string-split some-text "\n"]
+
+
+            line-number ]
+  ]
+
+[define [break-line-field a-string]
+  ;[display [format "~nBreaking: ~a~n" a-string]]
+  ;[display [substring  a-string 0 [sub1 [string-length a-string]]]]
+  [substring  a-string 0 [- [string-length a-string] 2]]
+  ]
+
+[define [false-to-zero x]
+  [if [not x]
+      1
+      x]]
+
+[define [line->position text target-line linecount current-pos]
+  [if [> linecount target-line]
+      current-pos
+      [let [[letter [string-ref text current-pos]]]
+        [if [equal? #\newline letter]
+            [line->position text target-line [add1 linecount] [add1 current-pos]]
+            [line->position text target-line linecount [add1 current-pos]]]
+        ]
+      ]
+  ]
+
+[define [seventh-or-bust a-list]
+  [if [> 6 [length a-list]]
+      [seventh a-list]
+      "0:0"
+      ]
+  ]
+
+[define [comment-callback editor commentary type event word]
+  [letrec [;[t-list '[]] ;]
+           ;[csearch-list ]
+           [tag-list [if [highlight-active? editor]
+                         [format-csearch-results word [csearch word]]
+                         [format-ctags-results [find-ctag word [grep-ctags-file word]]]]]
+           ]
+    [if [empty? tag-list]
+        #f
+        [begin
+          ;[display [format "->~a<-" csearch-list]]
+          ;[display commentary]
+          [string-join  [map [lambda [tag-data]
+                               [letrec [
+                                        [text [file->string [second  tag-data ]]]
+                                        [line-number                             
+                                         [third  tag-data ]]
+                                                    
+                                                     
+                                        [ out [format "~a" [extract-line text line-number]]]
+                                        [char-position [line->position text [- line-number 5] 0 0]]
+                                        ]
+                                 ;[displayln [format "line-number: ~a" line-number]]
+                                 [send commentary insert out]
+                                                                       
+                                 ;[send editor insert     [make-object string-snip% "Load"  ]]
+                                 [send commentary insert "\n"]
+                                 [let [[snp [make-object my-string-snip% [format "Load: ~a" [list [second  tag-data ] line-number ] ] ]]]
+                                   [set-field! data snp [list [second  tag-data ]   char-position]] 
+                                   [send snp set-flags '[ handles-events ]]
+                                   [send commentary insert snp]
+                                   [send commentary insert [format "Load: ~a" [list [second  tag-data ] line-number ] ]]
+                                   [send commentary insert "\n\n"]
+                                   out
+                                   ]]
+                               ] tag-list] "\n\n"]
+          ""
+          ]
+        ]
+    ]
+  ]
 
