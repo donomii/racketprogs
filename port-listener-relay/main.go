@@ -28,20 +28,30 @@ func WaitForConn(port string, f func(conn net.Conn, A, B chan []byte), A, B chan
 		fmt.Println("Error listening:", err.Error())
 		os.Exit(1)
 	}
-	// Close the listener when the application closes.
-	defer l.Close()
-	// Listen for an incoming connection.
-	conn, err := l.Accept()
-	if err != nil {
-		fmt.Println("Error accepting: ", err.Error())
-		os.Exit(1)
+	for {
+
+		// Close the listener when the application closes.
+		defer l.Close()
+		// Listen for an incoming connection.
+		conn, err := l.Accept()
+		if err != nil {
+			fmt.Println("Error accepting: ", err.Error())
+			os.Exit(1)
+		}
+		// Handle connections in a new goroutine.
+		f(conn, A, B)
 	}
-	// Handle connections in a new goroutine.
-	f(conn, A, B)
 }
 
 // Handles incoming requests.
 func handleRequest(conn net.Conn, A, B chan []byte) {
+
+	quit := make(chan bool)
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Connection closed", r)
+		}
+	}()
 	go func() {
 		for {
 			// Make a buffer to hold incoming data.
@@ -50,13 +60,27 @@ func handleRequest(conn net.Conn, A, B chan []byte) {
 			reqLen, err := conn.Read(buf)
 			if err != nil {
 				fmt.Println("Error reading:", err.Error())
+				conn.Close()
+				quit <- true
+				return
 			}
 			A <- buf[:reqLen]
 		}
 	}()
 
-	for data := range B {
-		conn.Write(data)
+	for {
+		select {
+		case <-quit:
+			return
+		case data := <-B:
+
+			_, err := conn.Write(data)
+			if err != nil {
+				fmt.Println("Error writing:", err.Error())
+				conn.Close()
+				return
+			}
+		}
 
 	}
 	// Send a response back to person contacting us.
