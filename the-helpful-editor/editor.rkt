@@ -246,6 +246,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                          [send t insert [file->string [first data]]]
                                               [set-tvar! "current-filename"  [first data]]
                                                          [send t scroll-to-position [second data]]
+                                                         [send editor-window set-label [get-tvar "current-filename"]]
                                                          ]
                                                        ]]
                            [define/override on-char [lambda [dc x y ex ey event]
@@ -258,6 +259,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                       [send t insert [file->string [first data]]]
                                                        [set-tvar! "current-filename"  [first data]]
                                                       [send t scroll-to-position [second data]]
+                                                      [send editor-window set-label [get-tvar "current-filename"]]
                                                       ]]
                            ;[define/augment after-insert [lambda [start end] [write "aaaa"][send this change-style mydelta start end]]]
                            ;[define/augment after-insert [lambda [start end] ]]
@@ -840,6 +842,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 
 [define [render-filename word commentary editor]
   [send commentary insert [get-tvar "current-filename"]]
+  
 
                      ]
   
@@ -864,7 +867,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 [letrec [[search-results [http-get [format "https://en.wiktionary.org/w/api.php?action=parse&page=~a&prop=wikitext&formatversion=2&format=json" word]]]
          [json-results [bytes->jsexpr [http-response-body search-results] ]]
          ;[urls [fourth json-results]]
-         [wikitext  [s 'parse/wikitext json-results]]
+         [wikitext  [sf 'parse/wikitext json-results ""]]
          [sections [string-split wikitext [format "\n=="]]]
          [wanted [filter [lambda [str] [regexp-match "Noun|Verb|Adjective|Adverb" str]] sections]]
          [text [string-join wanted [format "\n"]]]

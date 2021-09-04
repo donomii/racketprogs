@@ -45,7 +45,7 @@ func WaitForConn(port string, f func(conn net.Conn, A, B chan []byte), A, B chan
 
 // Handles incoming requests.
 func handleRequest(conn net.Conn, A, B chan []byte) {
-
+	defer conn.Close()
 	quit := make(chan bool)
 	defer func() {
 		if r := recover(); r != nil {
@@ -86,5 +86,5 @@ func handleRequest(conn net.Conn, A, B chan []byte) {
 	// Send a response back to person contacting us.
 
 	// Close the connection when you're done with it.
-	conn.Close()
+
 }
