@@ -55,7 +55,7 @@ func handleRequest(conn net.Conn, A, B chan []byte) {
 	go func() {
 		for {
 			// Make a buffer to hold incoming data.
-			buf := make([]byte, 1024)
+			buf := make([]byte, 1024*1024)
 			// Read the incoming connection into the buffer.
 			reqLen, err := conn.Read(buf)
 			if err != nil {
