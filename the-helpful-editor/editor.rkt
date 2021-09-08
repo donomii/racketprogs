@@ -118,6 +118,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
            [highlight-start [send a-text get-start-position]]
            [hightlight-end [send a-text get-end-position]]]
     [not [eq? highlight-start hightlight-end]]]]
+
 [define get-word [lambda [a-text]  [letrec [
                                             [highlight-start [send a-text get-start-position]]
                                             [hightlight-end [send a-text get-end-position]]]
@@ -161,13 +162,14 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 (define editor-window [dox "Make new frame" (new my-frame% [label (application:current-app-name)]
                                                  [width 800]
                                                  [height 600])])
-(define commentary-window [dox "Make new frame" (new my-frame2% [label "Commentary"]
-                                                     [width 800]
-                                                     [height 600])])
+;(define commentary-window [dox "Make new frame" (new my-frame2% [label "Commentary"]
+;                                                     [width 800]
+;                                                     [height 600])])
 [send editor-window create-status-line]
+(define hpane (new horizontal-pane% [parent editor-window]))
 
-(define c (new editor-canvas% [parent editor-window]))
-(define commentary-window-canvas (new editor-canvas% [parent commentary-window]))
+(define c (new editor-canvas% [parent hpane]))
+(define commentary-window-canvas (new editor-canvas% [parent hpane]))
 [define mydelta (make-object style-delta% )]
 [send mydelta  set-family 'modern]
 [send mydelta  set-face #f]
@@ -211,28 +213,28 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 
 
 (define image-callback-snip% [class image-snip%
-                           [super-new]
-                           [field [data #f]]
+                               [super-new]
+                               [field [data #f]]
                                [field [callback #f]]
                                [define set-callback [lambda [a-callback] [set! callback a-callback]]]
                           
-                           [define/override on-event [lambda [dc x y ex ey event]
-                                                       [super on-event  dc x y ex ey event]
-                                                       [when [send event get-left-down]
-                                                         [callback dc x y ex ey event]
-                                                         ]
-                                                       ]]
-                           [define/override on-char [lambda [dc x y ex ey event]
+                               [define/override on-event [lambda [dc x y ex ey event]
+                                                           [super on-event  dc x y ex ey event]
+                                                           [when [send event get-left-down]
+                                                             [callback dc x y ex ey event]
+                                                             ]
+                                                           ]]
+                               [define/override on-char [lambda [dc x y ex ey event]
                                                      
                                                     
-                                                      [super on-char  dc x y ex ey event]
+                                                          [super on-char  dc x y ex ey event]
                                                      
-                                                      [callback dc x y ex ey event]
-                                                      ]]
-                           ;[define/augment after-insert [lambda [start end] [write "aaaa"][send this change-style mydelta start end]]]
-                           ;[define/augment after-insert [lambda [start end] ]]
+                                                          [callback dc x y ex ey event]
+                                                          ]]
+                               ;[define/augment after-insert [lambda [start end] [write "aaaa"][send this change-style mydelta start end]]]
+                               ;[define/augment after-insert [lambda [start end] ]]
                    
-                           ])
+                               ])
 
 (define image-jump-snip% [class image-snip%
                            [super-new]
@@ -244,7 +246,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                          [displayln [format "Scrolling to ~s of ~s ~n" [second data] (send t num-scroll-lines)]]
                                                          [send t erase]
                                                          [send t insert [file->string [first data]]]
-                                              [set-tvar! "current-filename"  [first data]]
+                                                         [set-tvar! "current-filename"  [first data]]
                                                          [send t scroll-to-position [second data]]
                                                          [send editor-window set-label [get-tvar "current-filename"]]
                                                          ]
@@ -257,7 +259,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                       [displayln [format "Scrolling to ~s~n" [second data]]]
                                                       [send t erase]
                                                       [send t insert [file->string [first data]]]
-                                                       [set-tvar! "current-filename"  [first data]]
+                                                      [set-tvar! "current-filename"  [first data]]
                                                       [send t scroll-to-position [second data]]
                                                       [send editor-window set-label [get-tvar "current-filename"]]
                                                       ]]
@@ -637,8 +639,24 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                             [lambda [parent child text] text]]]
 
 
+(define button-pane (new horizontal-panel% [parent editor-window]))
+(send button-pane stretchable-height #f)
+[new button% [label "Close viewport"] [parent button-pane] [callback close-let]]
 
-[new button% [label "Close viewport"] [parent editor-window] [callback close-let]]
+[new button% [label "Cindex"] [parent button-pane] [callback [lambda [a b] [cindex-directory [get-directory]]]]]
+
+[define [cindex-directory a-dir]
+[let [[cmd [format "/Users/jeremyprice/go/bin/cindex \"~a\"" a-dir]]]
+  [displayln cmd]
+  [shell-out cmd [lambda [ stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
+
+                                                                              [send commentary-text erase]
+                                                               
+                                                                    
+                                                                    [send commentary-text insert [format "~a" 
+
+                                                                    [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]]]
+                                    ]]]]
 
 [define open-file [make-open-selection
                    [lambda [parent child some-text] 
@@ -686,7 +704,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 [insert-keybindings t]
 [insert-keybindings commentary-text]
 (send editor-window show #t)
-(send commentary-window show #t)
+;(send commentary-window show #t)
 
 
 (define last-file-name #f)
@@ -844,42 +862,42 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
   [send commentary insert [get-tvar "current-filename"]]
   
 
-                     ]
+  ]
   
 [define [render-search word commentary editor direction]
-                   [let [[snp [make-object image-callback-snip% "Skip to" ]]]
-                     ;[set-field! data snp [list [second  tag-data ]   char-position]]
-                     [set-field! callback snp [lambda [dc x y ex ey event]
-                                            [let [[next [send editor find-string word direction [if [eq? direction 'forward]
-                                                                                                    [add1 [send editor get-start-position]]
-                                                                                                    [sub1 [send editor get-start-position]]]]]]
-                                              [displayln [format "Skipping to ~a" next]]
-                                              [send editor scroll-to-position next]
-                                              [send editor set-position next]]]]
-                     [send snp set-flags '[ handles-events ]]
-                     [send commentary insert snp]
-                     [send commentary insert [format "Skip ~a to next ~a" direction word ]]
+  [let [[snp [make-object image-callback-snip% "Skip to" ]]]
+    ;[set-field! data snp [list [second  tag-data ]   char-position]]
+    [set-field! callback snp [lambda [dc x y ex ey event]
+                               [let [[next [send editor find-string word direction [if [eq? direction 'forward]
+                                                                                       [add1 [send editor get-start-position]]
+                                                                                       [sub1 [send editor get-start-position]]]]]]
+                                 [displayln [format "Skipping to ~a" next]]
+                                 [send editor scroll-to-position next]
+                                 [send editor set-position next]]]]
+    [send snp set-flags '[ handles-events ]]
+    [send commentary insert snp]
+    [send commentary insert [format "Skip ~a to next ~a" direction word ]]
                      
-  ]]
+    ]]
 
 
 [define [render-wiktionary word commentary editor ]
-[letrec [[search-results [http-get [format "https://en.wiktionary.org/w/api.php?action=parse&page=~a&prop=wikitext&formatversion=2&format=json" word]]]
-         [json-results [bytes->jsexpr [http-response-body search-results] ]]
-         ;[urls [fourth json-results]]
-         [wikitext  [sf 'parse/wikitext json-results ""]]
-         [sections [string-split wikitext [format "\n=="]]]
-         [wanted [filter [lambda [str] [regexp-match "Noun|Verb|Adjective|Adverb" str]] sections]]
-         [text [string-join wanted [format "\n"]]]
-         ]
- ; [display [dict? json-results]]
-;[display [dict-ref json-results 'parse]]
- ; [display [spath '[ parse] json-results]]
-   [send commentary insert text]
+  [letrec [[search-results [http-get [format "https://en.wiktionary.org/w/api.php?action=parse&page=~a&prop=wikitext&formatversion=2&format=json" word]]]
+           [json-results [bytes->jsexpr [http-response-body search-results] ]]
+           ;[urls [fourth json-results]]
+           [wikitext  [sf 'parse/wikitext json-results ""]]
+           [sections [string-split wikitext [format "\n=="]]]
+           [wanted [filter [lambda [str] [regexp-match "Noun|Verb|Adjective|Adverb" str]] sections]]
+           [text [string-join wanted [format "\n"]]]
+           ]
+    ; [display [dict? json-results]]
+    ;[display [dict-ref json-results 'parse]]
+    ; [display [spath '[ parse] json-results]]
+    [send commentary insert text]
   
-  ;[map [lambda [url] [send commentary insert [bytes->string/utf-8 [http-response-body  [http-get url ] ] ]]]
-   ;urls]
-  ]]
+    ;[map [lambda [url] [send commentary insert [bytes->string/utf-8 [http-response-body  [http-get url ] ] ]]]
+    ;urls]
+    ]]
   
 
 
