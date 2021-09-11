@@ -14,7 +14,25 @@ import (
 	"github.com/traefik/yaegi/interp"
 	"github.com/traefik/yaegi/stdlib"
 	"github.com/traefik/yaegi/stdlib/syscall"
+	"github.com/traefik/yaegi/stdlib/unrestricted"
+	"github.com/traefik/yaegi/stdlib/unsafe"
 )
+
+func VerbSearch(o *Object, verb string) (*Object, *Verb) {
+	ve := GetVerb(o, verb, 10)
+	foundObj := o
+	if ve == nil {
+		parent := LoadObject(GetProperty(o, "location", 10).Value)
+		ve = GetVerb(parent, verb, 10)
+		foundObj = parent
+		if ve == nil {
+			fmt.Printf("Failed to lookup %v on %v\n", verb, o.Id)
+			return nil, nil
+		}
+	}
+	return foundObj, ve
+
+}
 
 func main() {
 	var init bool
@@ -24,12 +42,13 @@ func main() {
 	if init {
 		log.Println("Overwriting core")
 		coreObj := Object{}
+		coreObj.Id = 1
 		coreObj.Verbs = map[string]Verb{}
 		coreObj.Properties = map[string]Property{}
 
 		coreObj.Properties["player"] = Property{Value: `false`}
 		coreObj.Properties["location"] = Property{Value: `0`}
-		coreObj.Properties["parent"] = Property{Value: `0`}
+		coreObj.Properties["parent"] = Property{Value: `1`}
 		coreObj.Properties["owner"] = Property{Value: `0`}
 		coreObj.Properties["programmer"] = Property{Value: `false`}
 		coreObj.Properties["wizard"] = Property{Value: `false`}
@@ -50,10 +69,11 @@ func main() {
 	`}
 		coreObj.Verbs["verb"] = ver
 
-		SaveObject(coreObj)
+		SaveObject(&coreObj)
 
 		log.Println("Overwriting Player 1")
 		playerobj := Object{}
+		playerobj.Id = 2
 		playerobj.Verbs = map[string]Verb{}
 		playerobj.Properties = map[string]Property{}
 
@@ -65,7 +85,40 @@ func main() {
 		playerobj.Properties["wizard"] = Property{Value: `true`}
 		playerobj.Properties["read"] = Property{Value: `true`}
 		playerobj.Properties["write"] = Property{Value: `false`}
+		SaveObject(&playerobj)
 
+		log.Println("Overwriting oops")
+		oops := Object{}
+		oops.Id = 0
+		oops.Verbs = map[string]Verb{}
+		oops.Properties = map[string]Property{}
+
+		oops.Properties["player"] = Property{Value: `false`}
+		oops.Properties["location"] = Property{Value: `0`}
+		oops.Properties["parent"] = Property{Value: `1`}
+		oops.Properties["owner"] = Property{Value: `1`}
+		oops.Properties["programmer"] = Property{Value: `false`}
+		oops.Properties["wizard"] = Property{Value: `false`}
+		oops.Properties["read"] = Property{Value: `true`}
+		oops.Properties["write"] = Property{Value: `false`}
+		SaveObject(&oops)
+
+		log.Println("Overwriting First room")
+		room := Object{}
+		room.Id = 3
+		room.Verbs = map[string]Verb{}
+		room.Properties = map[string]Property{}
+
+		room.Properties["description"] = Property{Value: `The First Room`}
+		room.Properties["player"] = Property{Value: `false`}
+		room.Properties["location"] = Property{Value: `0`}
+		room.Properties["parent"] = Property{Value: `1`}
+		room.Properties["owner"] = Property{Value: `1`}
+		room.Properties["programmer"] = Property{Value: `false`}
+		room.Properties["wizard"] = Property{Value: `false`}
+		room.Properties["read"] = Property{Value: `true`}
+		room.Properties["write"] = Property{Value: `false`}
+		SaveObject(&room)
 	}
 	i := interp.New(interp.Options{GoPath: build.Default.GOPATH, BuildTags: strings.Split("", ",")})
 	if err := i.Use(stdlib.Symbols); err != nil {
@@ -79,29 +132,31 @@ func main() {
 	if err := i.Use(syscall.Symbols); err != nil {
 		panic(err)
 	}
-	/*
-		// Using a environment var allows a nested interpreter to import the syscall package.
-		if err := os.Setenv("YAEGI_SYSCALL", "1"); err != nil {
-			panic(err)
-		}
 
-		if err := i.Use(unsafe.Symbols); err != nil {
-			panic(err)
-		}
-		if err := os.Setenv("YAEGI_UNSAFE", "1"); err != nil {
-			panic(err)
-		}
+	// Using a environment var allows a nested interpreter to import the syscall package.
+	if err := os.Setenv("YAEGI_SYSCALL", "1"); err != nil {
+		panic(err)
+	}
 
-		// Use of unrestricted symbols should always follow stdlib and syscall symbols, to update them.
-		if err := i.Use(unrestricted.Symbols); err != nil {
-			panic(err)
-		}
-	*/
-	//i.Eval(lib())
+	if err := i.Use(unsafe.Symbols); err != nil {
+		panic(err)
+	}
+	if err := os.Setenv("YAEGI_UNSAFE", "1"); err != nil {
+		panic(err)
+	}
+
+	// Use of unrestricted symbols should always follow stdlib and syscall symbols, to update them.
+	if err := i.Use(unrestricted.Symbols); err != nil {
+		panic(err)
+	}
+
+	i.Eval(`		import . "github.com/donomii/pmoo"
+		import "os"
+		import . "fmt"`)
 	//log.Println("libs loaded")
 	reader := bufio.NewReader(os.Stdin)
 	var verb Verb
-	player := "1"
+	player := "2"
 	for {
 
 		fmt.Println(verb)
@@ -110,19 +165,24 @@ func main() {
 		text = text[:len(text)-1]
 		fmt.Println(text)
 		verb, directObjectStr, prepositionStr, indirectObjectStr := BreakSentence(text)
-		dobjstr, dpropstr := ParseDo(directObjectStr)
-		iobjstr, ipropstr := ParseDo(indirectObjectStr)
+		dobjstr, dpropstr := ParseDo(directObjectStr, player)
+		iobjstr, ipropstr := ParseDo(indirectObjectStr, player)
 		dobj := LoadObject(dobjstr)
 		//iobj := LoadObject(iobjstr)
 
+		this, verbSource := VerbSearch(LoadObject(player), verb)
+		if this == nil {
+			fmt.Printf("Verb %v not found\n", verb)
+			continue
+		}
 		call := ` 
-		import . "github.com/donomii/pmoo"
+
 		
 		func runme(){
 	
 		
 		player := LoadObject("` + player + `")  //an object, the player who typed the command` + `
-		this := LoadObject("` + player + `") //an object, the object on which this verb was found
+		this := LoadObject("` + fmt.Sprintf("%v", this.Id) + `") //an object, the object on which this verb was found
 caller := LoadObject("` + player + `")  //an object, the same as player
 verb := "` + verb + `" //a string, the first word of the command
 //argstr //a string, everything after the first word of the command
@@ -136,94 +196,20 @@ ipropstr := "` + ipropstr + `" //a string, the indirect object string
 iobj := LoadObject("` + iobjstr + `")  //an object, the indirect object value
 `
 
-		ve := dobj.Verbs[verb]
-		//log.Println(do)
-		//log.Println("Verb", verb, "is", ve)
-		call = call + ve.Value
-		log.Println("Evalling ", call)
-		var v reflect.Value
-		v, err := i.Eval(call + `}
+		if verbSource == nil {
+			fmt.Printf("Failed to lookup %v on %v\n", verb, dobj.Id)
+		} else {
+			//log.Println(do)
+			//log.Println("Verb", verb, "is", ve)
+			call = call + verbSource.Value
+			//log.Println("Evalling ", call)
+			var v reflect.Value
+			v, err := i.Eval(call + `}
 		func main() {runme()}`)
-		fmt.Println(err)
-		if v.IsValid() {
-			fmt.Println(v)
+			fmt.Println(err)
+			if v.IsValid() {
+				fmt.Println(v)
+			}
 		}
 	}
 }
-
-func lib() string {
-	return `
-	import (
-	
-		"os"
-
-	)
-	type Property struct {
-		Value       string
-		Owner       string
-		Read        bool
-		Write       bool
-		ChangeOwner bool
-	}
-	
-	type Verb struct {
-		Value   string
-		Owner   string
-		Read    bool
-		Write   bool
-		Execute bool
-		Debug   bool
-	}
-	
-	type Object struct {
-		Properties map[string]Property
-		Verbs      map[string]Verb
-		Id         int
-	}
-	
-	func SaveObject(o Object) {
-os.Mkdir("objects", 0777)
-txt, err := json.Marshal(o)
-panicErr(err)
-err = ioutil.WriteFile(fmt.Sprintf("objects/%v.json", o.Id), txt, 0600)
-panicErr(err)
-}
-
-func LoadObject(id string) Object {
-log.Println("Loading " + "objects/" + id + ".json")
-file, _ := ioutil.ReadFile("objects/" + id + ".json")
-
-data := Object{}
-
-_ = json.Unmarshal([]byte(file), &data)
-return data
-}
-func ParseDo(s string) (string, string) {
-log.Println("Splitting", s, "on", ".")
-ss := strings.Split(s, ".")
-ss = append(ss, "no property")
-return ss[0], ss[1]
-}`
-}
-
-/*
-name
-a string, the usual name for this object
-owner
-an object, the player who controls access to it
-location
-an object, where the object is in virtual reality
-contents
-a list of objects, the inverse of location
-programmer
-a bit, does the object have programmer rights?
-wizard
-a bit, does the object have wizard rights?
-r
-a bit, is the object publicly readable?
-w
-a bit, is the object publicly writable?
-f
-a bit, is the object fertile?
-
-*/
