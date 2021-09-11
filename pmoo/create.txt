@@ -1,0 +1,7 @@
+verb #2.describe is "L(GetProperty(dobj, `description`,10).Value)"
+property #2.description is "A wavering, indistinct figure"
+verb #1.shutdown is "os.Exit(0)"
+verb #1.examine is "DumpObject(dobjstr)"
+verb #3.look is "Println(`*** ` + GetProperty(this, `description`,10).Value)"
+verb #2.move is "SetProperty(dobj, `location`, iobjstr);SaveObject(dobj);DumpObject(dobjstr)"
+verb #1.clone is "SaveObject(CloneObject(LoadObject(dobjstr)))"
