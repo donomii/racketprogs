@@ -29,13 +29,13 @@ func VerbSearch(o *Object, aName string) (*Object, *Property) {
 	contains = append([]string{toStr(o.Id), locId}, contains...)
 	for _, objId := range contains {
 		obj := LoadObject(objId)
-		nameProp := GetVerb(obj, aName, 10)
+		nameProp := GetVerbStruct(obj, aName, 10)
 		if nameProp != nil {
 			return obj, nameProp
 		}
 	}
 
-	fmt.Printf("Failed to find verb %v here!\n", aName)
+	log.Printf("Failed to find verb %v here!\n", aName)
 	return nil, nil
 
 }
@@ -56,7 +56,7 @@ func NameSearch(o *Object, aName string) (*Object, *Property) {
 		}
 	}
 
-	fmt.Printf("Failed to find object %v here!\n", aName)
+	log.Printf("Failed to find object %v here!\n", aName)
 	return nil, nil
 
 }
@@ -114,7 +114,7 @@ func Find(a []string, x string) int {
 }
 
 func FindPreposition(words []string) int {
-	preps := strings.Split("with using at to in front of in inside into on top of on onto upon out of from inside from over through under underneath beneath behind beside for about is as off off of", " ")
+	preps := strings.Split("is with using at to in front of in inside into on top of on onto upon out of from inside from over through under underneath beneath behind beside for about is as off off of", " ")
 	for _, p := range preps {
 		log.Println("Searching for ", p, "in", words)
 		r := Find(words, p)
@@ -288,7 +288,7 @@ func main() {
 		genthing.Properties["description"] = Property{Value: "small, grey and uninteresting"}
 		genthing.Properties["player"] = Property{Value: `false`}
 		genthing.Properties["location"] = Property{Value: `6`}
-		genthing.Properties["parent"] = Property{Value: `6`}
+		genthing.Properties["parent"] = Property{Value: `1`}
 		genthing.Properties["owner"] = Property{Value: `1`}
 		genthing.Properties["programmer"] = Property{Value: `false`}
 		genthing.Properties["wizard"] = Property{Value: `false`}
@@ -362,7 +362,8 @@ func main() {
 	
 		
 		player := LoadObject("` + player + `")  //an object, the player who typed the command` + `
-		this := LoadObject("` + fmt.Sprintf("%v", this.Id) + `") //an object, the object on which this verb was found
+		playerid := "` + player + `"  //an object id, the player who typed the command` + `
+		this := "` + fmt.Sprintf("%v", this.Id) + `" //an object, the object on which this verb was found
 caller := LoadObject("` + player + `")  //an object, the same as player
 verb := "` + verb + `" //a string, the first word of the command
 //argstr //a string, everything after the first word of the command
