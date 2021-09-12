@@ -18,19 +18,137 @@ import (
 	"github.com/traefik/yaegi/stdlib/unsafe"
 )
 
-func VerbSearch(o *Object, verb string) (*Object, *Verb) {
-	ve := GetVerb(o, verb, 10)
-	foundObj := o
-	if ve == nil {
-		parent := LoadObject(GetProperty(o, "location", 10).Value)
-		ve = GetVerb(parent, verb, 10)
-		foundObj = parent
-		if ve == nil {
-			fmt.Printf("Failed to lookup %v on %v\n", verb, o.Id)
-			return nil, nil
+func toStr(i interface{}) string {
+	return fmt.Sprintf("%v", i)
+}
+func VerbSearch(o *Object, aName string) (*Object, *Property) {
+
+	locId := GetProperty(o, "location", 10).Value
+	loc := LoadObject(locId)
+	contains := SplitStringList(GetProperty(loc, "contains", 10).Value)
+	contains = append([]string{toStr(o.Id), locId}, contains...)
+	for _, objId := range contains {
+		obj := LoadObject(objId)
+		nameProp := GetVerb(obj, aName, 10)
+		if nameProp != nil {
+			return obj, nameProp
 		}
 	}
-	return foundObj, ve
+
+	fmt.Printf("Failed to find verb %v here!\n", aName)
+	return nil, nil
+
+}
+
+func NameSearch(o *Object, aName string) (*Object, *Property) {
+
+	locId := GetProperty(o, "location", 10).Value
+	loc := LoadObject(locId)
+	contains := SplitStringList(GetProperty(loc, "contains", 10).Value)
+	contains = append([]string{locId, toStr(o.Id)}, contains...)
+	for _, objId := range contains {
+		obj := LoadObject(objId)
+		nameProp := GetProperty(obj, "name", 10)
+		if nameProp != nil {
+			if nameProp.Value == aName {
+				return obj, nameProp
+			}
+		}
+	}
+
+	fmt.Printf("Failed to find object %v here!\n", aName)
+	return nil, nil
+
+}
+
+func ParseDo(s string, objId string) (string, string) {
+	if s == "me" {
+		return objId, ""
+	}
+	if s == "here" {
+		return GetProperty(LoadObject(objId), "location", 10).Value, ""
+	}
+
+	//It's a generic object, look for it in the properties of #1
+	if s[0] == '$' {
+		prop := s[1:]
+		one := LoadObject("1")
+		oneprop := GetProperty(one, prop, 10)
+		if oneprop == nil {
+			fmt.Printf("Could not find special property %v on 1\n", prop)
+		}
+		objstr := oneprop.Value
+		return objstr, ""
+	}
+
+	//It's an object number
+	if s[0] == '#' {
+		s = s[1:]
+		log.Println("Splitting", s, "on", ".")
+		ss := strings.Split(s, ".")
+		ss = append(ss, "no property")
+		if ss[0] == "me" {
+			return objId, ss[1]
+		}
+		if ss[0] == "here" {
+			return GetProperty(LoadObject(objId), "location", 10).Value, ss[1]
+		}
+		return ss[0], ss[1]
+	}
+
+	//It might be the name of an object somewhere close
+	foundObjId, _ := NameSearch(LoadObject(objId), s)
+	if foundObjId != nil {
+		return toStr(foundObjId.Id), ""
+	}
+
+	return s, ""
+}
+func Find(a []string, x string) int {
+	for i, n := range a {
+		if x == n {
+			return i
+		}
+	}
+	return -1
+}
+
+func FindPreposition(words []string) int {
+	preps := strings.Split("with using at to in front of in inside into on top of on onto upon out of from inside from over through under underneath beneath behind beside for about is as off off of", " ")
+	for _, p := range preps {
+		log.Println("Searching for ", p, "in", words)
+		r := Find(words, p)
+		if r > -1 {
+			return r
+		}
+	}
+	return -1
+}
+
+func BreakSentence(s string) (string, string, string, string) {
+	x, _ := LexLine(s)
+	log.Printf("Parsed line into %v", strings.Join(x, ":"))
+	if len(x) == 0 {
+		return "", "oops", "oops", "oops"
+	}
+	if len(x) == 1 {
+		return s, "oops", "oops", "oops"
+	}
+	if len(x) == 2 {
+		return x[0], x[1], "oops", "oops"
+	}
+	verb := x[0]
+	x = x[1:]
+	preppos := FindPreposition(x)
+	if preppos < 0 {
+		return verb, strings.Join(x, " "), "oops", "oops"
+	}
+
+	do := x[:preppos]
+	prep := x[preppos]
+	io := x[preppos+1:]
+
+	return verb, strings.Join(do, " "), prep, strings.Join(io, " ")
 
 }
 
@@ -43,7 +161,6 @@ func main() {
 		log.Println("Overwriting core")
 		coreObj := Object{}
 		coreObj.Id = 1
-		coreObj.Verbs = map[string]Verb{}
 		coreObj.Properties = map[string]Property{}
 
 		coreObj.Properties["player"] = Property{Value: `false`}
@@ -54,43 +171,47 @@ func main() {
 		coreObj.Properties["wizard"] = Property{Value: `false`}
 		coreObj.Properties["read"] = Property{Value: `true`}
 		coreObj.Properties["write"] = Property{Value: `false`}
+		coreObj.Properties["contains"] = Property{Value: ``}
+		coreObj.Properties["room"] = Property{Value: `4`}
+		coreObj.Properties["player"] = Property{Value: `5`}
+		coreObj.Properties["thing"] = Property{Value: `6`}
+		coreObj.Properties["lastId"] = Property{Value: `101`}
 
-		prop := Verb{Value: `//go
+		prop := Property{Value: `//go
 	p := Property{Value: iobjstr}
 	dobj.Properties[dpropstr] = p
 	SaveObject(dobj)
-	`}
-		coreObj.Verbs["property"] = prop
+	`, Verb: true}
+		coreObj.Properties["property"] = prop
 
-		ver := Verb{Value: `//go
-	v := Verb{Value: iobjstr}
-	dobj.Verbs[dpropstr] = v
+		ver := Property{Value: `//go
+	v := Property{Value: iobjstr, Verb: true}
+	dobj.Properties[dpropstr] = v
 	SaveObject(dobj)
-	`}
-		coreObj.Verbs["verb"] = ver
-
-		SaveObject(&coreObj)
+	`, Verb: true}
+		coreObj.Properties["verb"] = ver
 
 		log.Println("Overwriting Player 1")
 		playerobj := Object{}
 		playerobj.Id = 2
-		playerobj.Verbs = map[string]Verb{}
 		playerobj.Properties = map[string]Property{}
 
+		playerobj.Properties["name"] = Property{Value: "Wizard"}
+		playerobj.Properties["description"] = Property{Value: "an old man with a scruffy beard, and a wizard's robe and hat"}
 		playerobj.Properties["player"] = Property{Value: `true`}
-		playerobj.Properties["location"] = Property{Value: `0`}
-		playerobj.Properties["parent"] = Property{Value: `1`}
+		playerobj.Properties["location"] = Property{Value: `3`}
+		playerobj.Properties["parent"] = Property{Value: `5`}
 		playerobj.Properties["owner"] = Property{Value: `1`}
 		playerobj.Properties["programmer"] = Property{Value: `true`}
 		playerobj.Properties["wizard"] = Property{Value: `true`}
 		playerobj.Properties["read"] = Property{Value: `true`}
 		playerobj.Properties["write"] = Property{Value: `false`}
+		playerobj.Properties["contains"] = Property{Value: ``}
 		SaveObject(&playerobj)
 
 		log.Println("Overwriting oops")
 		oops := Object{}
 		oops.Id = 0
-		oops.Verbs = map[string]Verb{}
 		oops.Properties = map[string]Property{}
 
 		oops.Properties["player"] = Property{Value: `false`}
@@ -101,24 +222,81 @@ func main() {
 		oops.Properties["wizard"] = Property{Value: `false`}
 		oops.Properties["read"] = Property{Value: `true`}
 		oops.Properties["write"] = Property{Value: `false`}
+		oops.Properties["contains"] = Property{Value: ``}
 		SaveObject(&oops)
 
 		log.Println("Overwriting First room")
 		room := Object{}
 		room.Id = 3
-		room.Verbs = map[string]Verb{}
 		room.Properties = map[string]Property{}
 
-		room.Properties["description"] = Property{Value: `The First Room`}
+		room.Properties["name"] = Property{Value: `The First Room`}
+		room.Properties["description"] = Property{Value: `The default entrance.`}
 		room.Properties["player"] = Property{Value: `false`}
 		room.Properties["location"] = Property{Value: `0`}
-		room.Properties["parent"] = Property{Value: `1`}
+		room.Properties["parent"] = Property{Value: `4`}
 		room.Properties["owner"] = Property{Value: `1`}
 		room.Properties["programmer"] = Property{Value: `false`}
 		room.Properties["wizard"] = Property{Value: `false`}
 		room.Properties["read"] = Property{Value: `true`}
 		room.Properties["write"] = Property{Value: `false`}
+		room.Properties["contains"] = Property{Value: ``}
 		SaveObject(&room)
+
+		log.Println("Overwriting genroom")
+		genroom := Object{}
+		genroom.Id = 4
+		genroom.Properties = map[string]Property{}
+
+		genroom.Properties["name"] = Property{Value: `Generic Room`}
+		genroom.Properties["description"] = Property{Value: `You see nothing special.`}
+		genroom.Properties["player"] = Property{Value: `false`}
+		genroom.Properties["location"] = Property{Value: `4`}
+		genroom.Properties["parent"] = Property{Value: `1`}
+		genroom.Properties["owner"] = Property{Value: `1`}
+		genroom.Properties["programmer"] = Property{Value: `false`}
+		genroom.Properties["wizard"] = Property{Value: `false`}
+		genroom.Properties["read"] = Property{Value: `true`}
+		genroom.Properties["write"] = Property{Value: `false`}
+		genroom.Properties["contains"] = Property{Value: ``}
+		SaveObject(&genroom)
+
+		log.Println("Overwriting generic player")
+		genplayer := Object{}
+		genplayer.Id = 5
+		genplayer.Properties = map[string]Property{}
+
+		genplayer.Properties["name"] = Property{Value: "Generic player"}
+		genplayer.Properties["description"] = Property{Value: "A wavering, indistinct figure"}
+		genplayer.Properties["player"] = Property{Value: `true`}
+		genplayer.Properties["location"] = Property{Value: `5`}
+		genplayer.Properties["parent"] = Property{Value: `1`}
+		genplayer.Properties["owner"] = Property{Value: `1`}
+		genplayer.Properties["programmer"] = Property{Value: `false`}
+		genplayer.Properties["wizard"] = Property{Value: `false`}
+		genplayer.Properties["read"] = Property{Value: `false`}
+		genplayer.Properties["write"] = Property{Value: `false`}
+		genplayer.Properties["contains"] = Property{Value: ``}
+		SaveObject(&genplayer)
+
+		log.Println("Overwriting generic thing")
+		genthing := Object{}
+		genthing.Id = 6
+		genthing.Properties = map[string]Property{}
+
+		genthing.Properties["name"] = Property{Value: "Generic thing"}
+		genthing.Properties["description"] = Property{Value: "small, grey and uninteresting"}
+		genthing.Properties["player"] = Property{Value: `false`}
+		genthing.Properties["location"] = Property{Value: `6`}
+		genthing.Properties["parent"] = Property{Value: `6`}
+		genthing.Properties["owner"] = Property{Value: `1`}
+		genthing.Properties["programmer"] = Property{Value: `false`}
+		genthing.Properties["wizard"] = Property{Value: `false`}
+		genthing.Properties["read"] = Property{Value: `false`}
+		genthing.Properties["write"] = Property{Value: `false`}
+		genthing.Properties["contains"] = Property{Value: ``}
+		SaveObject(&genthing)
+		SaveObject(&coreObj)
 	}
 	i := interp.New(interp.Options{GoPath: build.Default.GOPATH, BuildTags: strings.Split("", ",")})
 	if err := i.Use(stdlib.Symbols); err != nil {
@@ -150,21 +328,23 @@ func main() {
 		panic(err)
 	}
 
-	i.Eval(`		import . "github.com/donomii/pmoo"
-		import "os"
-		import . "fmt"`)
+	i.Eval(`		
+	import . "github.com/donomii/pmoo"
+	import "os"
+	import . "fmt"`)
 	//log.Println("libs loaded")
 	reader := bufio.NewReader(os.Stdin)
-	var verb Verb
+
 	player := "2"
 	for {
 
-		fmt.Println(verb)
+		//fmt.Println(verb)
 		fmt.Print("Enter text: ")
 		text, _ := reader.ReadString('\n')
 		text = text[:len(text)-1]
-		fmt.Println(text)
+		//fmt.Println(text)
 		verb, directObjectStr, prepositionStr, indirectObjectStr := BreakSentence(text)
+		log.Println(strings.Join([]string{verb, directObjectStr, prepositionStr, indirectObjectStr}, ":"))
 		dobjstr, dpropstr := ParseDo(directObjectStr, player)
 		iobjstr, ipropstr := ParseDo(indirectObjectStr, player)
 		dobj := LoadObject(dobjstr)
@@ -202,13 +382,15 @@ iobj := LoadObject("` + iobjstr + `")  //an object, the indirect object value
 			//log.Println(do)
 			//log.Println("Verb", verb, "is", ve)
 			call = call + verbSource.Value
-			//log.Println("Evalling ", call)
+			log.Println("Evalling:", call)
 			var v reflect.Value
 			v, err := i.Eval(call + `}
 		func main() {runme()}`)
-			fmt.Println(err)
+			if err != nil {
+				fmt.Println("An error occurred:", err)
+			}
 			if v.IsValid() {
-				fmt.Println(v)
+				//fmt.Println(v)
 			}
 		}
 	}
