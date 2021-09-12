@@ -7,7 +7,6 @@ import (
 	"go/build"
 	"log"
 	"os"
-	"reflect"
 	"strings"
 
 	. "github.com/donomii/pmoo"
@@ -152,152 +151,152 @@ func BreakSentence(s string) (string, string, string, string) {
 
 }
 
-func main() {
-	var init bool
-	flag.BoolVar(&init, "init", false, "Create a core object.  Overwrites existing")
+//Writes the core objects to disk. Overwrites any that already exist.
+func initDB() {
+	log.Println("Overwriting core")
+	coreObj := Object{}
+	coreObj.Id = 1
+	coreObj.Properties = map[string]Property{}
 
-	flag.Parse()
-	if init {
-		log.Println("Overwriting core")
-		coreObj := Object{}
-		coreObj.Id = 1
-		coreObj.Properties = map[string]Property{}
+	coreObj.Properties["player"] = Property{Value: `false`}
+	coreObj.Properties["location"] = Property{Value: `0`}
+	coreObj.Properties["parent"] = Property{Value: `1`}
+	coreObj.Properties["owner"] = Property{Value: `0`}
+	coreObj.Properties["programmer"] = Property{Value: `false`}
+	coreObj.Properties["wizard"] = Property{Value: `false`}
+	coreObj.Properties["read"] = Property{Value: `true`}
+	coreObj.Properties["write"] = Property{Value: `false`}
+	coreObj.Properties["contains"] = Property{Value: ``}
+	coreObj.Properties["room"] = Property{Value: `4`}
+	coreObj.Properties["player"] = Property{Value: `5`}
+	coreObj.Properties["thing"] = Property{Value: `6`}
+	coreObj.Properties["lastId"] = Property{Value: `101`}
 
-		coreObj.Properties["player"] = Property{Value: `false`}
-		coreObj.Properties["location"] = Property{Value: `0`}
-		coreObj.Properties["parent"] = Property{Value: `1`}
-		coreObj.Properties["owner"] = Property{Value: `0`}
-		coreObj.Properties["programmer"] = Property{Value: `false`}
-		coreObj.Properties["wizard"] = Property{Value: `false`}
-		coreObj.Properties["read"] = Property{Value: `true`}
-		coreObj.Properties["write"] = Property{Value: `false`}
-		coreObj.Properties["contains"] = Property{Value: ``}
-		coreObj.Properties["room"] = Property{Value: `4`}
-		coreObj.Properties["player"] = Property{Value: `5`}
-		coreObj.Properties["thing"] = Property{Value: `6`}
-		coreObj.Properties["lastId"] = Property{Value: `101`}
-
-		prop := Property{Value: `//go
+	prop := Property{Value: `//go
 	p := Property{Value: iobjstr}
 	dobj.Properties[dpropstr] = p
 	SaveObject(dobj)
 	`, Verb: true}
-		coreObj.Properties["property"] = prop
+	coreObj.Properties["property"] = prop
 
-		ver := Property{Value: `//go
+	ver := Property{Value: `//go
 	v := Property{Value: iobjstr, Verb: true}
 	dobj.Properties[dpropstr] = v
 	SaveObject(dobj)
 	`, Verb: true}
-		coreObj.Properties["verb"] = ver
+	coreObj.Properties["verb"] = ver
 
-		log.Println("Overwriting Player 1")
-		playerobj := Object{}
-		playerobj.Id = 2
-		playerobj.Properties = map[string]Property{}
+	log.Println("Overwriting Player 1")
+	playerobj := Object{}
+	playerobj.Id = 2
+	playerobj.Properties = map[string]Property{}
 
-		playerobj.Properties["name"] = Property{Value: "Wizard"}
-		playerobj.Properties["description"] = Property{Value: "an old man with a scruffy beard, and a wizard's robe and hat"}
-		playerobj.Properties["player"] = Property{Value: `true`}
-		playerobj.Properties["location"] = Property{Value: `3`}
-		playerobj.Properties["parent"] = Property{Value: `5`}
-		playerobj.Properties["owner"] = Property{Value: `1`}
-		playerobj.Properties["programmer"] = Property{Value: `true`}
-		playerobj.Properties["wizard"] = Property{Value: `true`}
-		playerobj.Properties["read"] = Property{Value: `true`}
-		playerobj.Properties["write"] = Property{Value: `false`}
-		playerobj.Properties["contains"] = Property{Value: ``}
-		SaveObject(&playerobj)
+	playerobj.Properties["name"] = Property{Value: "Wizard"}
+	playerobj.Properties["description"] = Property{Value: "an old man with a scruffy beard, and a wizard's robe and hat"}
+	playerobj.Properties["player"] = Property{Value: `true`}
+	playerobj.Properties["location"] = Property{Value: `3`}
+	playerobj.Properties["parent"] = Property{Value: `5`}
+	playerobj.Properties["owner"] = Property{Value: `1`}
+	playerobj.Properties["programmer"] = Property{Value: `true`}
+	playerobj.Properties["wizard"] = Property{Value: `true`}
+	playerobj.Properties["read"] = Property{Value: `true`}
+	playerobj.Properties["write"] = Property{Value: `false`}
+	playerobj.Properties["contains"] = Property{Value: ``}
+	SaveObject(&playerobj)
 
-		log.Println("Overwriting oops")
-		oops := Object{}
-		oops.Id = 0
-		oops.Properties = map[string]Property{}
+	log.Println("Overwriting oops")
+	oops := Object{}
+	oops.Id = 0
+	oops.Properties = map[string]Property{}
 
-		oops.Properties["player"] = Property{Value: `false`}
-		oops.Properties["location"] = Property{Value: `0`}
-		oops.Properties["parent"] = Property{Value: `1`}
-		oops.Properties["owner"] = Property{Value: `1`}
-		oops.Properties["programmer"] = Property{Value: `false`}
-		oops.Properties["wizard"] = Property{Value: `false`}
-		oops.Properties["read"] = Property{Value: `true`}
-		oops.Properties["write"] = Property{Value: `false`}
-		oops.Properties["contains"] = Property{Value: ``}
-		SaveObject(&oops)
+	oops.Properties["player"] = Property{Value: `false`}
+	oops.Properties["location"] = Property{Value: `0`}
+	oops.Properties["parent"] = Property{Value: `1`}
+	oops.Properties["owner"] = Property{Value: `1`}
+	oops.Properties["programmer"] = Property{Value: `false`}
+	oops.Properties["wizard"] = Property{Value: `false`}
+	oops.Properties["read"] = Property{Value: `true`}
+	oops.Properties["write"] = Property{Value: `false`}
+	oops.Properties["contains"] = Property{Value: ``}
+	SaveObject(&oops)
 
-		log.Println("Overwriting First room")
-		room := Object{}
-		room.Id = 3
-		room.Properties = map[string]Property{}
+	log.Println("Overwriting First room")
+	room := Object{}
+	room.Id = 3
+	room.Properties = map[string]Property{}
 
-		room.Properties["name"] = Property{Value: `The First Room`}
-		room.Properties["description"] = Property{Value: `The default entrance.`}
-		room.Properties["player"] = Property{Value: `false`}
-		room.Properties["location"] = Property{Value: `0`}
-		room.Properties["parent"] = Property{Value: `4`}
-		room.Properties["owner"] = Property{Value: `1`}
-		room.Properties["programmer"] = Property{Value: `false`}
-		room.Properties["wizard"] = Property{Value: `false`}
-		room.Properties["read"] = Property{Value: `true`}
-		room.Properties["write"] = Property{Value: `false`}
-		room.Properties["contains"] = Property{Value: ``}
-		SaveObject(&room)
+	room.Properties["name"] = Property{Value: `The First Room`}
+	room.Properties["description"] = Property{Value: `The default entrance.`}
+	room.Properties["player"] = Property{Value: `false`}
+	room.Properties["location"] = Property{Value: `0`}
+	room.Properties["parent"] = Property{Value: `4`}
+	room.Properties["owner"] = Property{Value: `1`}
+	room.Properties["programmer"] = Property{Value: `false`}
+	room.Properties["wizard"] = Property{Value: `false`}
+	room.Properties["read"] = Property{Value: `true`}
+	room.Properties["write"] = Property{Value: `false`}
+	room.Properties["contains"] = Property{Value: ``}
+	SaveObject(&room)
 
-		log.Println("Overwriting genroom")
-		genroom := Object{}
-		genroom.Id = 4
-		genroom.Properties = map[string]Property{}
+	log.Println("Overwriting genroom")
+	genroom := Object{}
+	genroom.Id = 4
+	genroom.Properties = map[string]Property{}
 
-		genroom.Properties["name"] = Property{Value: `Generic Room`}
-		genroom.Properties["description"] = Property{Value: `You see nothing special.`}
-		genroom.Properties["player"] = Property{Value: `false`}
-		genroom.Properties["location"] = Property{Value: `4`}
-		genroom.Properties["parent"] = Property{Value: `1`}
-		genroom.Properties["owner"] = Property{Value: `1`}
-		genroom.Properties["programmer"] = Property{Value: `false`}
-		genroom.Properties["wizard"] = Property{Value: `false`}
-		genroom.Properties["read"] = Property{Value: `true`}
-		genroom.Properties["write"] = Property{Value: `false`}
-		genroom.Properties["contains"] = Property{Value: ``}
-		SaveObject(&genroom)
+	genroom.Properties["name"] = Property{Value: `Generic Room`}
+	genroom.Properties["description"] = Property{Value: `You see nothing special.`}
+	genroom.Properties["player"] = Property{Value: `false`}
+	genroom.Properties["location"] = Property{Value: `4`}
+	genroom.Properties["parent"] = Property{Value: `1`}
+	genroom.Properties["owner"] = Property{Value: `1`}
+	genroom.Properties["programmer"] = Property{Value: `false`}
+	genroom.Properties["wizard"] = Property{Value: `false`}
+	genroom.Properties["read"] = Property{Value: `true`}
+	genroom.Properties["write"] = Property{Value: `false`}
+	genroom.Properties["contains"] = Property{Value: ``}
+	SaveObject(&genroom)
 
-		log.Println("Overwriting generic player")
-		genplayer := Object{}
-		genplayer.Id = 5
-		genplayer.Properties = map[string]Property{}
+	log.Println("Overwriting generic player")
+	genplayer := Object{}
+	genplayer.Id = 5
+	genplayer.Properties = map[string]Property{}
 
-		genplayer.Properties["name"] = Property{Value: "Generic player"}
-		genplayer.Properties["description"] = Property{Value: "A wavering, indistinct figure"}
-		genplayer.Properties["player"] = Property{Value: `true`}
-		genplayer.Properties["location"] = Property{Value: `5`}
-		genplayer.Properties["parent"] = Property{Value: `1`}
-		genplayer.Properties["owner"] = Property{Value: `1`}
-		genplayer.Properties["programmer"] = Property{Value: `false`}
-		genplayer.Properties["wizard"] = Property{Value: `false`}
-		genplayer.Properties["read"] = Property{Value: `false`}
-		genplayer.Properties["write"] = Property{Value: `false`}
-		genplayer.Properties["contains"] = Property{Value: ``}
-		SaveObject(&genplayer)
+	genplayer.Properties["name"] = Property{Value: "Generic player"}
+	genplayer.Properties["description"] = Property{Value: "A wavering, indistinct figure"}
+	genplayer.Properties["player"] = Property{Value: `true`}
+	genplayer.Properties["location"] = Property{Value: `5`}
+	genplayer.Properties["parent"] = Property{Value: `1`}
+	genplayer.Properties["owner"] = Property{Value: `1`}
+	genplayer.Properties["programmer"] = Property{Value: `false`}
+	genplayer.Properties["wizard"] = Property{Value: `false`}
+	genplayer.Properties["read"] = Property{Value: `false`}
+	genplayer.Properties["write"] = Property{Value: `false`}
+	genplayer.Properties["contains"] = Property{Value: ``}
+	SaveObject(&genplayer)
 
-		log.Println("Overwriting generic thing")
-		genthing := Object{}
-		genthing.Id = 6
-		genthing.Properties = map[string]Property{}
+	log.Println("Overwriting generic thing")
+	genthing := Object{}
+	genthing.Id = 6
+	genthing.Properties = map[string]Property{}
 
-		genthing.Properties["name"] = Property{Value: "Generic thing"}
-		genthing.Properties["description"] = Property{Value: "small, grey and uninteresting"}
-		genthing.Properties["player"] = Property{Value: `false`}
-		genthing.Properties["location"] = Property{Value: `6`}
-		genthing.Properties["parent"] = Property{Value: `1`}
-		genthing.Properties["owner"] = Property{Value: `1`}
-		genthing.Properties["programmer"] = Property{Value: `false`}
-		genthing.Properties["wizard"] = Property{Value: `false`}
-		genthing.Properties["read"] = Property{Value: `false`}
-		genthing.Properties["write"] = Property{Value: `false`}
-		genthing.Properties["contains"] = Property{Value: ``}
-		SaveObject(&genthing)
-		SaveObject(&coreObj)
-	}
+	genthing.Properties["name"] = Property{Value: "Generic thing"}
+	genthing.Properties["description"] = Property{Value: "small, grey and uninteresting"}
+	genthing.Properties["player"] = Property{Value: `false`}
+	genthing.Properties["location"] = Property{Value: `6`}
+	genthing.Properties["parent"] = Property{Value: `1`}
+	genthing.Properties["owner"] = Property{Value: `1`}
+	genthing.Properties["programmer"] = Property{Value: `false`}
+	genthing.Properties["wizard"] = Property{Value: `false`}
+	genthing.Properties["read"] = Property{Value: `false`}
+	genthing.Properties["write"] = Property{Value: `false`}
+	genthing.Properties["contains"] = Property{Value: ``}
+	SaveObject(&genthing)
+	SaveObject(&coreObj)
+
+	log.Println("Initialised core objects")
+}
+
+func NewInterpreter() *interp.Interpreter {
 	i := interp.New(interp.Options{GoPath: build.Default.GOPATH, BuildTags: strings.Split("", ",")})
 	if err := i.Use(stdlib.Symbols); err != nil {
 		panic(err)
@@ -328,11 +327,39 @@ func main() {
 		panic(err)
 	}
 
+	return i
+
+}
+
+func Eval(i *interp.Interpreter, code string) {
+	log.Println("Evalling:", code)
+
+	_, err := i.Eval(`
+		
+	func runme(){
+
+	` + code + `}
+func main() {runme()}`)
+	if err != nil {
+		fmt.Println("An error occurred:", err)
+	}
+}
+
+func main() {
+	var init bool
+	flag.BoolVar(&init, "init", false, "Create basic objects.  Overwrites existing")
+
+	flag.Parse()
+	if init {
+		initDB()
+	}
+
+	i := NewInterpreter()
 	i.Eval(`		
 	import . "github.com/donomii/pmoo"
 	import "os"
 	import . "fmt"`)
-	//log.Println("libs loaded")
+
 	reader := bufio.NewReader(os.Stdin)
 
 	player := "2"
@@ -342,57 +369,40 @@ func main() {
 		fmt.Print("Enter text: ")
 		text, _ := reader.ReadString('\n')
 		text = text[:len(text)-1]
-		//fmt.Println(text)
 		verb, directObjectStr, prepositionStr, indirectObjectStr := BreakSentence(text)
 		log.Println(strings.Join([]string{verb, directObjectStr, prepositionStr, indirectObjectStr}, ":"))
 		dobjstr, dpropstr := ParseDo(directObjectStr, player)
 		iobjstr, ipropstr := ParseDo(indirectObjectStr, player)
 		dobj := LoadObject(dobjstr)
-		//iobj := LoadObject(iobjstr)
 
 		this, verbSource := VerbSearch(LoadObject(player), verb)
 		if this == nil {
 			fmt.Printf("Verb %v not found\n", verb)
 			continue
 		}
-		call := ` 
-
-		
-		func runme(){
-	
-		
-		player := LoadObject("` + player + `")  //an object, the player who typed the command` + `
-		playerid := "` + player + `"  //an object id, the player who typed the command` + `
-		this := "` + fmt.Sprintf("%v", this.Id) + `" //an object, the object on which this verb was found
-caller := LoadObject("` + player + `")  //an object, the same as player
-verb := "` + verb + `" //a string, the first word of the command
-//argstr //a string, everything after the first word of the command
-//args a list of strings, the words in argstr
-dobjstr := "` + dobjstr + `"` + ` //a string, the direct object string found during parsing
-dpropstr := "` + dpropstr + `"` + ` //a string, the direct object property string found during parsing
-dobj := LoadObject("` + dobjstr + `")  //an object, the direct object value found during matching
-prepstr:= "` + prepositionStr + `" //a string, the prepositional phrase found during parsing
-iobjstr := "` + iobjstr + `" //a string, the indirect object string
-ipropstr := "` + ipropstr + `" //a string, the indirect object string
-iobj := LoadObject("` + iobjstr + `")  //an object, the indirect object value
-`
 
 		if verbSource == nil {
 			fmt.Printf("Failed to lookup %v on %v\n", verb, dobj.Id)
 		} else {
-			//log.Println(do)
-			//log.Println("Verb", verb, "is", ve)
-			call = call + verbSource.Value
-			log.Println("Evalling:", call)
-			var v reflect.Value
-			v, err := i.Eval(call + `}
-		func main() {runme()}`)
-			if err != nil {
-				fmt.Println("An error occurred:", err)
-			}
-			if v.IsValid() {
-				//fmt.Println(v)
-			}
+			definitions := ` 
+
+			player := LoadObject("` + player + `")  //an object, the player who typed the command` + `
+			playerid := "` + player + `"  //an object id, the player who typed the command` + `
+			this := "` + fmt.Sprintf("%v", this.Id) + `" //an object, the object on which this verb was found
+			caller := LoadObject("` + player + `")  //an object, the same as player
+			verb := "` + verb + `" //a string, the first word of the command
+			//argstr //a string, everything after the first word of the command
+			//args a list of strings, the words in argstr
+			dobjstr := "` + dobjstr + `"` + ` //a string, the direct object string found during parsing
+			dpropstr := "` + dpropstr + `"` + ` //a string, the direct object property string found during parsing
+			dobj := LoadObject("` + dobjstr + `")  //an object, the direct object value found during matching
+			prepstr:= "` + prepositionStr + `" //a string, the prepositional phrase found during parsing
+			iobjstr := "` + iobjstr + `" //a string, the indirect object string
+			ipropstr := "` + ipropstr + `" //a string, the indirect object string
+			iobj := LoadObject("` + iobjstr + `")  //an object, the indirect object value
+		`
+			definitions = definitions + verbSource.Value
+			Eval(i, definitions)
 		}
 	}
 }
