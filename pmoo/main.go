@@ -4,17 +4,11 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"go/build"
 	"log"
 	"os"
 	"strings"
 
 	. "github.com/donomii/pmoo"
-	"github.com/traefik/yaegi/interp"
-	"github.com/traefik/yaegi/stdlib"
-	"github.com/traefik/yaegi/stdlib/syscall"
-	"github.com/traefik/yaegi/stdlib/unrestricted"
-	"github.com/traefik/yaegi/stdlib/unsafe"
 )
 
 func toStr(i interface{}) string {
@@ -296,52 +290,14 @@ func initDB() {
 	log.Println("Initialised core objects")
 }
 
-func NewInterpreter() *interp.Interpreter {
-	i := interp.New(interp.Options{GoPath: build.Default.GOPATH, BuildTags: strings.Split("", ",")})
-	if err := i.Use(stdlib.Symbols); err != nil {
-		panic(err)
-	}
+func ConsoleInputHandler(queue chan *Message) {
+	reader := bufio.NewReader(os.Stdin)
 
-	if err := i.Use(interp.Symbols); err != nil {
-		panic(err)
-	}
-
-	if err := i.Use(syscall.Symbols); err != nil {
-		panic(err)
-	}
-
-	// Using a environment var allows a nested interpreter to import the syscall package.
-	if err := os.Setenv("YAEGI_SYSCALL", "1"); err != nil {
-		panic(err)
-	}
-
-	if err := i.Use(unsafe.Symbols); err != nil {
-		panic(err)
-	}
-	if err := os.Setenv("YAEGI_UNSAFE", "1"); err != nil {
-		panic(err)
-	}
-
-	// Use of unrestricted symbols should always follow stdlib and syscall symbols, to update them.
-	if err := i.Use(unrestricted.Symbols); err != nil {
-		panic(err)
-	}
-
-	return i
-
-}
-
-func Eval(i *interp.Interpreter, code string) {
-	log.Println("Evalling:", code)
-
-	_, err := i.Eval(`
-		
-	func runme(){
-
-	` + code + `}
-func main() {runme()}`)
-	if err != nil {
-		fmt.Println("An error occurred:", err)
+	for {
+		fmt.Print("Enter text: ")
+		text, _ := reader.ReadString('\n')
+		text = text[:len(text)-1]
+		queue <- &Message{"2", "-1", "input", text}
 	}
 }
 
@@ -353,6 +309,11 @@ func main() {
 	if init {
 		initDB()
 	}
+	inQ := make(chan *Message, 100)
+	SetQ(inQ)
+	Hello = "hi"
+
+	go ConsoleInputHandler(inQ)
 
 	i := NewInterpreter()
 	i.Eval(`		
@@ -360,47 +321,33 @@ func main() {
 	import "os"
 	import . "fmt"`)
 
-	reader := bufio.NewReader(os.Stdin)
-
 	player := "2"
 	for {
+		log.Println("Waiting on Q")
+		m := <-inQ
+		if m.Target == "2" && m.Verb == "tell" {
+			fmt.Println(m.Data)
+			continue
+		}
 
-		//fmt.Println(verb)
-		fmt.Print("Enter text: ")
-		text, _ := reader.ReadString('\n')
-		text = text[:len(text)-1]
+		text := m.Data
 		verb, directObjectStr, prepositionStr, indirectObjectStr := BreakSentence(text)
 		log.Println(strings.Join([]string{verb, directObjectStr, prepositionStr, indirectObjectStr}, ":"))
 		dobjstr, dpropstr := ParseDo(directObjectStr, player)
 		iobjstr, ipropstr := ParseDo(indirectObjectStr, player)
 		dobj := LoadObject(dobjstr)
 
-		this, verbSource := VerbSearch(LoadObject(player), verb)
-		if this == nil {
+		thisObj, verbSource := VerbSearch(LoadObject(player), verb)
+
+		if thisObj == nil {
 			fmt.Printf("Verb %v not found\n", verb)
 			continue
 		}
-
+		this := ToStr(thisObj.Id)
 		if verbSource == nil {
 			fmt.Printf("Failed to lookup %v on %v\n", verb, dobj.Id)
 		} else {
-			definitions := ` 
-
-			player := LoadObject("` + player + `")  //an object, the player who typed the command` + `
-			playerid := "` + player + `"  //an object id, the player who typed the command` + `
-			this := "` + fmt.Sprintf("%v", this.Id) + `" //an object, the object on which this verb was found
-			caller := LoadObject("` + player + `")  //an object, the same as player
-			verb := "` + verb + `" //a string, the first word of the command
-			//argstr //a string, everything after the first word of the command
-			//args a list of strings, the words in argstr
-			dobjstr := "` + dobjstr + `"` + ` //a string, the direct object string found during parsing
-			dpropstr := "` + dpropstr + `"` + ` //a string, the direct object property string found during parsing
-			dobj := LoadObject("` + dobjstr + `")  //an object, the direct object value found during matching
-			prepstr:= "` + prepositionStr + `" //a string, the prepositional phrase found during parsing
-			iobjstr := "` + iobjstr + `" //a string, the indirect object string
-			ipropstr := "` + ipropstr + `" //a string, the indirect object string
-			iobj := LoadObject("` + iobjstr + `")  //an object, the indirect object value
-		`
+			definitions := BuildDefinitions(player, this, verb, dobjstr, dpropstr, prepositionStr, iobjstr, ipropstr)
 			definitions = definitions + verbSource.Value
 			Eval(i, definitions)
 		}
