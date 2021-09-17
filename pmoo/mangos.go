@@ -43,6 +43,8 @@ import (
 	"nanomsg.org/go-mangos/transport/tcp"
 )
 
+var QueueServer string = "tcp://127.0.0.1:40899"
+
 func die(format string, v ...interface{}) {
 	fmt.Fprintln(os.Stderr, fmt.Sprintf(format, v...))
 	os.Exit(1)
@@ -123,8 +125,8 @@ func client(url string, name string) {
 
 func startNetworkQ() {
 
-	url := "tcp://127.0.0.1:40899"
-	go server(url)
+	url := QueueServer
+	go server("tcp://0.0.0.0:40899")
 
 	go client(url, "client")
 
