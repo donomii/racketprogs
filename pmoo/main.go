@@ -10,9 +10,8 @@ import (
 	"runtime/debug"
 	"strings"
 
-	myQ "./myQ"
-	okdb "./okdb"
 	. "github.com/donomii/pmoo"
+	"github.com/donomii/racketprogs/pmoo/myQ"
 	"github.com/donomii/throfflib"
 	"github.com/traefik/yaegi/interp"
 )
@@ -32,7 +31,7 @@ func ConsoleInputHandler(queue chan *Message) {
 }
 
 var goScript *interp.Interpreter
-var QueueServer string
+var Affinity string
 
 func main() {
 	etcdServer := ""
@@ -43,13 +42,14 @@ func main() {
 	flag.StringVar(&etcdServer, "etcd", "localhost:2379", "Location of object database.")
 	//flag.StringVar(&queueServer, "queue", "127.0.0.1:2888", "Location of queue server.")
 	flag.StringVar(&QueueServer, "queue", "http://127.0.0.1:8080", "Location of queue server.")
+	flag.StringVar(&Affinity, "affinity", "7", "Will process all messages with this affinity id.")
 
 	flag.Parse()
 
 	SetEtcdServers([]string{etcdServer})
 	//QueueServer = queueServer
 	if Cluster {
-		okdb.Connect("192.168.178.22:7778")
+		//okdb.Connect("192.168.178.22:7778")
 
 	}
 	if ClusterQueue {
@@ -81,6 +81,13 @@ func main() {
 		log.Println("Waiting on Q")
 		m := <-inQ
 		log.Println("Q:", m)
+		if m.Affinity != "" && m.Affinity != Affinity {
+			if ClusterQueue {
+				MyQMessage(QueueServer, m)
+			} else {
+				RawMsg(*m)
+			}
+		}
 		if m.This != "7" {
 			log.Println("Handling direct message")
 			/*
@@ -96,7 +103,7 @@ func main() {
 				//	verbStruct := GetVerbStruct(LoadObject(this), verb, 10)
 			*/
 
-			if m.This != "" { //Skip broken messages
+			if m.This != "" && m.Player != "" && m.Verb != "" { //Skip broken messages
 				log.Printf("Invoking direct message %+v", m)
 				invoke(m.Player, m.This, m.Verb, m.Dobj, m.Dpropstr, m.Prepstr, m.Iobj, m.Ipropstr, m.Dobjstr, m.Iobjstr)
 			}
@@ -124,10 +131,12 @@ func main() {
 			log.Println("Handling input - Queueing direct message")
 			if ClusterQueue {
 				//SendNetMessage(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace})
-				myQ.Message(QueueServer, Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace})
+				MyQMessage(QueueServer, Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace})
+				//time.Sleep(1 * time.Second) //FIXME
 			} else {
 				RawMsg(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace})
 			}
+
 		}
 
 	}
