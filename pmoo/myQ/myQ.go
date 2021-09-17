@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+
 	"net/http"
+
+	"github.com/donomii/pmoo"
 )
 
 func Receiver(url string, callback func([]byte)) {
@@ -27,3 +30,29 @@ func Message(url string, mess interface{}) {
 func Send(url string, data []byte) {
 	http.Post(url+"/publish/main", "who/cares", bytes.NewReader(data))
 }
+
+func StoreObject(url, id string, m pmoo.Object) {
+	b, _ := json.Marshal(m)
+	http.Post(url+"/store/"+id, "who/cares", bytes.NewReader(b))
+}
+
+func LoadObject(url, id string) *pmoo.Object {
+	resp, err := http.Get(url + "/subscribe/main")
+	if err != nil {
+		//log.Fatalln(err)
+	}
+	data, _ := ioutil.ReadAll(resp.Body)
+
+	retrievedVal := new(pmoo.Object)
+	json.Unmarshal(data, retrievedVal)
+	return retrievedVal
+}
+
+/*
+func DeleteObject(id string) {
+	err := KVstore.Delete(id)
+	if err != nil {
+		panic(err)
+	}
+}
+*/

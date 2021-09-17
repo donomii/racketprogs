@@ -54,6 +54,7 @@ func main() {
 	}
 	if ClusterQueue {
 		//go StartClient(QueueServer)
+		SetQueueServer(QueueServer)
 		go myQ.Receiver(QueueServer, func(b []byte) {
 			var m Message
 			json.Unmarshal(b, &m)
