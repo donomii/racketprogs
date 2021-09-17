@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -9,6 +10,8 @@ import (
 	"runtime/debug"
 	"strings"
 
+	myQ "./myQ"
+	okdb "./okdb"
 	. "github.com/donomii/pmoo"
 	"github.com/donomii/throfflib"
 	"github.com/traefik/yaegi/interp"
@@ -29,25 +32,37 @@ func ConsoleInputHandler(queue chan *Message) {
 }
 
 var goScript *interp.Interpreter
+var QueueServer string
 
 func main() {
 	etcdServer := ""
-	queueServer := ""
 	var init bool
 	flag.BoolVar(&init, "init", false, "Create basic objects.  Overwrites existing")
 	flag.BoolVar(&Cluster, "cluster", false, "Run in cluster mode.  See instructions.")
+	flag.BoolVar(&ClusterQueue, "clusterQ", false, "Run messages in cluster mode.  See instructions.")
 	flag.StringVar(&etcdServer, "etcd", "localhost:2379", "Location of object database.")
-	flag.StringVar(&queueServer, "queue", "tcp://127.0.0.1:40899", "Location of queue server.")
+	//flag.StringVar(&queueServer, "queue", "127.0.0.1:2888", "Location of queue server.")
+	flag.StringVar(&QueueServer, "queue", "http://127.0.0.1:8080", "Location of queue server.")
 
 	flag.Parse()
-	if init {
-		initDB()
+
+	SetEtcdServers([]string{etcdServer})
+	//QueueServer = queueServer
+	if Cluster {
+		okdb.Connect("192.168.178.22:7778")
+
+	}
+	if ClusterQueue {
+		//go StartClient(QueueServer)
+		go myQ.Receiver(QueueServer, func(b []byte) {
+			var m Message
+			json.Unmarshal(b, &m)
+			Q <- &m
+		})
 	}
 
-	EtcdServers = []string{etcdServer}
-	QueueServer = queueServer
-	if Cluster {
-		startNetworkQ()
+	if init {
+		initDB()
 	}
 	inQ := make(chan *Message, 100)
 	SetQ(inQ)
@@ -80,8 +95,10 @@ func main() {
 				//	verbStruct := GetVerbStruct(LoadObject(this), verb, 10)
 			*/
 
-			log.Printf("Invoking direct message %+v", m)
-			invoke(m.Player, m.This, m.Verb, m.Dobj, m.Dpropstr, m.Prepstr, m.Iobj, m.Ipropstr, m.Dobjstr, m.Iobjstr)
+			if m.This != "" { //Skip broken messages
+				log.Printf("Invoking direct message %+v", m)
+				invoke(m.Player, m.This, m.Verb, m.Dobj, m.Dpropstr, m.Prepstr, m.Iobj, m.Ipropstr, m.Dobjstr, m.Iobjstr)
+			}
 			continue
 
 		}
@@ -104,8 +121,12 @@ func main() {
 			this := ToStr(thisObj.Id)
 
 			log.Println("Handling input - Queueing direct message")
-			SendNetQ(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace})
-			//RawMsg(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace})
+			if ClusterQueue {
+				//SendNetMessage(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace})
+				myQ.Message(QueueServer, Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace})
+			} else {
+				RawMsg(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace})
+			}
 		}
 
 	}
