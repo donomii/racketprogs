@@ -1,12 +1,18 @@
 #lang sketching
 
-[define m '[w "toplevel" [name "Toplevel container"] [type "toplevel"][children
-                                                                       [w "A Test Window" [name "Test window"] [type "window"] [x 50] [y 50]]
-                                                                       [w "menu" [name "Popup menu"] [type "popup"][children
-                                                                                                                    [w "Do thing" [type "button"] [id "do thing button"]]
-                                                                                                                    [w "Exit" [id "exit button"][type "button"]]]]
+[define m '[w "toplevel" [id "Toplevel container"] [type "toplevel"]
+              [children
+               [w "A Test Window" [id "Test window"] [type "window"] [x 50] [y 50]
+                  [children
+                   [w "A handy little paragraph of text that should test the renderer a bit"
+                      [id "test text"] [type "text"]]
+                   [w "OK" [id "ok button"] [type "button"]]]]]
+                                                        
+               [w "menu" [id "Popup menu"] [type "popup"][children
+                                                          [w "Do thing" [type "button"] [id "do thing button"]]
+                                                          [w "Exit" [id "exit button"][type "button"]]]]
              
-                                                                       ]]]
+               ]]
 
 [define [mx x] [car x]]
 [define [my x] [cadr x]]
@@ -55,6 +61,16 @@
            [y  [my state]]]
     
     [cond
+      [[equal? type "text"][letrec [
+                                       [x2 [+ x 100]]
+                                       [y2 [ + y 100]]]
+                             [fill 255]
+                             [stroke 0 0 0 255]
+                                  [rect x y  x2   y2]
+                                  [text-size 11]
+                                  [fill 0]
+                                  [text data x y x2 y2 ]
+                                  [list [car [advancer x y x2  y2]] [cadr [advancer x y x2  y2]] [startx state] [starty state] [mouse-event state] [do-draw state] advancer]]]
       [[equal? type "button"] [letrec [
                                        [x2 [+ x 50]]
                                        [y2 [ + y 15]]
@@ -104,7 +120,7 @@
                                       [button-click [cadr [assoc 'id attribs]]]
                                       ]]]
                                 
-                                [list [car [advancer x y x2  y2]] [cadr [advancer x y x2  y2]] [startx state] [starty state] [mouse-event state] [do-draw state] [button-down? state] advancer]]]
+                                [list [car [advancer x y x2  [+ y 22]]] [cadr [advancer x y x2  [+ y 22]]] [startx state] [starty state] [mouse-event state] [do-draw state] [button-down? state] advancer]]]
       [[equal? type "popup"] [begin
                                [list [startx state] [starty state] [startx state] [starty state] [mouse-event state] [do-draw state] [button-down? state] advancer]
                                ]]
@@ -180,7 +196,7 @@
                                          
                      new-state]]
   [when mouse-pressed  
-          [set! button-down #t]]
+    [set! button-down #t]]
 
   
                     
