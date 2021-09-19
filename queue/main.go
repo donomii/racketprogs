@@ -17,6 +17,14 @@ func GetChan(key string) chan []byte {
 	return ch
 }
 
+func wrap(c *gin.Context, func(c *gin.Context) ) {
+	defer func() {
+		if r := recover(); r != nil {
+		   fmt.Printf("Recovering from panic in printAllOperations error is: %v \n", r)
+	   }
+	 }()
+}
+
 func main() {
 	StartKVstore()
 	chans = make(map[string]chan []byte)
