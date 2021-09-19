@@ -28,11 +28,13 @@ func AddEngineFuncs(e *throfflib.Engine, player, from, traceId string) {
 		prep, ne := throfflib.PopData(ne)
 		iobj, ne := throfflib.PopData(ne)
 
+		thisObj := LoadObject(target.GetString())
+		affin := thisObj.Properties["affinity"].Value
 		//log.Printf("From: %v, Target: %v, Verb: %v, Dobj: %v, Prep: %v, Iobj: %v\n", from.GetString(), target.GetString(), verb.GetString(), dobj.GetString(), prep.GetString(), iobj.GetString())
 
 		if ClusterQueue {
 			//SendNetMessage(Message{From: from.GetString(), Player: player, This: target.GetString(), Verb: verb.GetString(), Dobj: dobj.GetString(), Prepstr: prep.GetString(), Iobj: iobj.GetString(), Trace: traceId})
-			MyQMessage(QueueServer, Message{From: from.GetString(), Player: player, This: target.GetString(), Verb: verb.GetString(), Dobj: dobj.GetString(), Prepstr: prep.GetString(), Iobj: iobj.GetString(), Trace: traceId, Affinity: Affinity})
+			MyQMessage(QueueServer, Message{From: from.GetString(), Player: player, This: target.GetString(), Verb: verb.GetString(), Dobj: dobj.GetString(), Prepstr: prep.GetString(), Iobj: iobj.GetString(), Trace: traceId, Affinity: affin})
 		} else {
 			RawMsg(Message{From: player, Player: player, This: target.GetString(), Verb: verb.GetString(), Dobj: dobj.GetString(), Prepstr: prep.GetString(), Iobj: iobj.GetString(), Trace: traceId})
 		}

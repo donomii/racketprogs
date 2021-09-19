@@ -81,7 +81,7 @@ func main() {
 		log.Println("Waiting on Q")
 		m := <-inQ
 		log.Println("Q:", m)
-		if m.Affinity != "" && m.Affinity != Affinity && ClusterQueue {
+		if m.Affinity != "" && m.Affinity != Affinity && ClusterQueue && Affinity != "" {
 			//Put this message back in the queue so the right server can get it
 			//FIXME add queues for each server so we can send it directly to the right machine
 			MyQMessage(QueueServer, m)
@@ -119,6 +119,7 @@ func main() {
 		iobj, ipropstr := ParseDo(iobjstr, player)
 
 		thisObj, _ := VerbSearch(LoadObject(player), verb)
+		affin := thisObj.Properties["affinity"].Value
 
 		if thisObj == nil {
 			msg := fmt.Sprintf("Verb %v not found!\n", verb)
@@ -129,8 +130,8 @@ func main() {
 
 			log.Println("Handling input - Queueing direct message")
 			if ClusterQueue {
-				//SendNetMessage(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: this.Affinity})
-				MyQMessage(QueueServer, Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace})
+				//SendNetMessage(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: this.affin})
+				MyQMessage(QueueServer, Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: affin})
 				//time.Sleep(1 * time.Second) //FIXME
 			} else {
 				RawMsg(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace})
