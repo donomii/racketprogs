@@ -21,8 +21,8 @@ func ConsoleInputHandler(queue chan *Message) {
 	for {
 		//fmt.Print("Enter text: ")
 		text, _ := reader.ReadString('\n')
-		text=strings.TrimSuffix(text, "\r\n")
-		text=strings.TrimSuffix(text, "\n")
+		text = strings.TrimSuffix(text, "\r\n")
+		text = strings.TrimSuffix(text, "\n")
 		if text != "" {
 			//Console is always the wizard, at least for now
 			InputMsg("2", "7", "input", text)
@@ -81,12 +81,11 @@ func main() {
 		log.Println("Waiting on Q")
 		m := <-inQ
 		log.Println("Q:", m)
-		if m.Affinity != "" && m.Affinity != Affinity {
-			if ClusterQueue {
-				MyQMessage(QueueServer, m)
-			} else {
-				RawMsg(*m)
-			}
+		if m.Affinity != "" && m.Affinity != Affinity && ClusterQueue {
+			//Put this message back in the queue so the right server can get it
+			//FIXME add queues for each server so we can send it directly to the right machine
+			MyQMessage(QueueServer, m)
+			continue
 		}
 		if m.This != "7" {
 			log.Println("Handling direct message")
