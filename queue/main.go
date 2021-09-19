@@ -18,7 +18,6 @@ func GetChan(key string) chan []byte {
 }
 
 func main() {
-	Q := make(chan []byte, 1000)
 	StartKVstore()
 	chans = make(map[string]chan []byte)
 
