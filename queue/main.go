@@ -9,6 +9,7 @@ import (
 
 func main() {
 	Q := make(chan []byte, 1000)
+	StartKVstore()
 	r := gin.Default()
 	r.GET("/subscribe/:topic", func(c *gin.Context) {
 		c.Writer.Write(<-Q)
