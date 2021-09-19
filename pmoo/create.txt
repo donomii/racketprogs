@@ -16,16 +16,16 @@ verb #1.dig is " MoveObj exit GetProp player ^location *> SetThroffVerb exit dob
 verb #1.do_exit is "MoveObj player GetProp this ^exit_target"
 verb #1.exit_verb is "Msg player this ^do_exit [] [] [] "
 verb #1.findverb is "PRINTLN GetVerb iobjstr dobjstr"
-verb #1.tell is " Msg this this ^notify  dobjstr [ ] [ ] "
+verb #1.tell is " Msg this this ^notify  STRING-CONCATENATE dobj dobjstr [ ] [ ] "
 verb #1.whisper is " IF EQUAL  ->STRING  [ ]  ->STRING  dobj  [  Msg 7 player ^tell A[ [ You can't see ] dobjstr [ here ] ]A [ ] [ ]  ]  [ Msg this dobj ^tell  iobjstr [ ] [ ] ]    "
-verb #1.notify is " *> IF EQUAL GetProp player ^prefix_notify ^true THEN [ *> PRINTLN A[ GetProp player ^name ^: dobjstr ]A ] ELSE [ *> PRINTLN dobjstr ] "
+verb #1.notify is " *> IF EQUAL GetProp player ^prefix_notify ^true THEN [ *> PRINTLN ( GetProp player ^name ^: dobj dobjstr ) ] ELSE [ *> PRINTLN ( dobj dobjstr ) ] "
 verb #1.hello1 is " PRINTLN [ HELLO WORLD ] "
 verb #1.recycle is "MoveObj dobj 0"
 verb #1.debugParser is "  PRINTLN A[ ^player: player ]A PRINTLN A[ ^this: this ]A PRINTLN  A[ ^verb: verb ]A PRINTLN   A[ ^dobjstr: dobjstr ]A PRINTLN A[ ^dpropstr: dpropstr ]A PRINTLN  A[ ^prepstr: prepstr ]A  PRINTLN A[ ^iobjstr: iobjstr ]A   PRINTLN A[ ^ipropstr: ipropstr ]A PRINTLN [ ]  "
 verb #4.go is " WHEN EQUAL dobjstr GetProp this ^name [ MoveObj player this ] "
 
 create $thing named shell
-verb shell.ls is " Msg this player tell LS . [] [] "
+verb shell.ls is " Msg this player ^tell LS ^. [] [] "
 
 // PRINTLN A[ ^player: player ]A PRINTLN A[ ^this: this ]A PRINTLN  A[ ^verb: verb ]A PRINTLN   A[ ^dobjstr: dobjstr ]A PRINTLN A[ ^dpropstr: dpropstr ]A PRINTLN  A[ ^prepstr: prepstr ]A  PRINTLN A[ ^iobjstr: iobjstr ]A   PRINTLN A[ ^ipropstr: ipropstr ]A PRINTLN [ ] 
 //goscript #4.look is "Println(GetProp(this, `name`));Println(GetProp(this, `description`));for _,o := range VisibleObjects(player){Println(`You see`,GetProp(o, `name`), `here.`)}"
