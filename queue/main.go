@@ -7,16 +7,33 @@ import (
 	"github.com/philippgille/gokv/badgerdb"
 )
 
+var chans map[string]chan []byte
+func GetChan(key string) chan []byte {
+	ch,ok := chans[key]
+	if !ok {
+		ch = make(chan []byte,1000)
+		chans[key]=ch
+	}
+	return ch
+}
+
 func main() {
 	Q := make(chan []byte, 1000)
 	StartKVstore()
+	chans = make(map[string]chan []byte)
+
 	r := gin.Default()
+
 	r.GET("/subscribe/:topic", func(c *gin.Context) {
-		c.Writer.Write(<-Q)
+		key := c.Param("topic")
+		ch := GetChan(key)
+		c.Writer.Write(<-ch)
 	})
 	r.POST("/publish/:topic", func(c *gin.Context) {
 		data, _ := ioutil.ReadAll(c.Request.Body)
-		Q <- data
+		key := c.Param("topic")
+		ch := GetChan(key)
+		ch <- data
 	})
 
 	r.POST("/store/:key", func(c *gin.Context) {

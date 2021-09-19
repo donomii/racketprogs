@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	. "github.com/donomii/pmoo"
-	"github.com/donomii/racketprogs/pmoo/myQ"
 	"github.com/donomii/throfflib"
 	"github.com/traefik/yaegi/interp"
 )
@@ -22,7 +21,8 @@ func ConsoleInputHandler(queue chan *Message) {
 	for {
 		//fmt.Print("Enter text: ")
 		text, _ := reader.ReadString('\n')
-		text = text[:len(text)-1]
+		text=strings.TrimSuffix(text, "\r\n")
+		text=strings.TrimSuffix(text, "\n")
 		if text != "" {
 			//Console is always the wizard, at least for now
 			InputMsg("2", "7", "input", text)
@@ -55,7 +55,7 @@ func main() {
 	if ClusterQueue {
 		//go StartClient(QueueServer)
 		SetQueueServer(QueueServer)
-		go myQ.Receiver(QueueServer, func(b []byte) {
+		go Receiver(QueueServer, func(b []byte) {
 			var m Message
 			json.Unmarshal(b, &m)
 			Q <- &m
@@ -71,7 +71,7 @@ func main() {
 	go ConsoleInputHandler(inQ)
 
 	goScript = NewInterpreter()
-	goScript.Eval(`		
+	goScript.Eval(`
 	import . "github.com/donomii/pmoo"
 	import "os"
 	import . "fmt"`)
@@ -130,7 +130,7 @@ func main() {
 
 			log.Println("Handling input - Queueing direct message")
 			if ClusterQueue {
-				//SendNetMessage(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace})
+				//SendNetMessage(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: this.Affinity})
 				MyQMessage(QueueServer, Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace})
 				//time.Sleep(1 * time.Second) //FIXME
 			} else {
