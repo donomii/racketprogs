@@ -119,7 +119,6 @@ func main() {
 		iobj, ipropstr := ParseDo(iobjstr, player)
 
 		thisObj, _ := VerbSearch(LoadObject(player), verb)
-		affin := thisObj.Properties["affinity"].Value
 
 		if thisObj == nil {
 			msg := fmt.Sprintf("Verb %v not found!\n", verb)
@@ -127,9 +126,12 @@ func main() {
 
 		} else {
 			this := ToStr(thisObj.Id)
+			affin := thisObj.Properties["affinity"].Value
+			log.Println("Props", thisObj.Properties)
+			log.Println("Found affinity:", affin)
 
-			log.Println("Handling input - Queueing direct message")
 			if ClusterQueue {
+				log.Println("Handling input - Queueing direct message")
 				//SendNetMessage(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: this.affin})
 				MyQMessage(QueueServer, Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: affin})
 				//time.Sleep(1 * time.Second) //FIXME
