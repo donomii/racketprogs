@@ -1,10 +1,10 @@
 verb #1.property is "SetProp dobj dpropstr iobjstr"
 
-verb #2.describe is " *> Msg this player tell +> GetProp dobj [ description ] "
+verb #2.describe is " *> Msg this player ^tell +> GetProp dobj ^description "
 verb #1.shutdown is "EXIT 0"
 verb #1.examine is "PRINTLN A[ FormatObject dobj ]A"
 
-verb #4.look is "     *> ITERATE [ +> PRINTLN ( ^You ^see   GetProp o  ^name  ^here. )  +> ARG o => ] +> VisibleObjects player *> PRINTLN GetProp this ^description *> PRINTLN GetProp this ^name "
+verb #4.look is "     *> ITERATE [ +> Msg this player ^tell ( ^You ^see   GetProp o  ^name  ^here. ) [] [] +> ARG o => ] +> VisibleObjects player *> Msg this player ^tell GetProp this ^description [] [] *> Msg this player ^tell  GetProp this ^name [] [] "
 verb #1.clone is " SetProp o ^name iobjstr *> SetProp o ^owner player *> MoveObj o GetProp player ^location  *> BIND o => Clone dobj "
 verb #1.create is " SetProp o ^name iobjstr *> SetProp o ^owner player *> MoveObj o GetProp player ^location  *> BIND o => Clone dobj "
 goscript #1.alias is "p:=GetProperty(dobj, `aliases`,10);v:=p.Value+`,`+iobjstr; SetProperty(dobj, `aliases`,v);SaveObject(dobj)"
@@ -25,7 +25,7 @@ verb #1.debugParser is "  PRINTLN A[ ^player: player ]A PRINTLN A[ ^this: this ]
 verb #4.go is " WHEN EQUAL dobjstr GetProp this ^name [ MoveObj player this ] "
 
 create $thing named shell
-verb shell.ls is " Msg this player ^tell LS ^. [] [] "
+verb shell.ls is " Msg this player ^tell LS  IF EQUAL dobjstr [] THEN [ ^. ] ELSE [ dobjstr ]  [] [] "
 
 // PRINTLN A[ ^player: player ]A PRINTLN A[ ^this: this ]A PRINTLN  A[ ^verb: verb ]A PRINTLN   A[ ^dobjstr: dobjstr ]A PRINTLN A[ ^dpropstr: dpropstr ]A PRINTLN  A[ ^prepstr: prepstr ]A  PRINTLN A[ ^iobjstr: iobjstr ]A   PRINTLN A[ ^ipropstr: ipropstr ]A PRINTLN [ ] 
 //goscript #4.look is "Println(GetProp(this, `name`));Println(GetProp(this, `description`));for _,o := range VisibleObjects(player){Println(`You see`,GetProp(o, `name`), `here.`)}"
