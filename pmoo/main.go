@@ -104,7 +104,7 @@ func main() {
 
 			if m.This != "" && m.Player != "" && m.Verb != "" { //Skip broken messages
 				log.Printf("Invoking direct message %+v", m)
-				invoke(m.Player, m.This, m.Verb, m.Dobj, m.Dpropstr, m.Prepstr, m.Iobj, m.Ipropstr, m.Dobjstr, m.Iobjstr)
+				invoke(m.Player, m.This, m.Verb, m.Dobj, m.Dpropstr, m.Prepstr, m.Iobj, m.Ipropstr, m.Dobjstr, m.Iobjstr, *m)
 			}
 			continue
 
@@ -113,6 +113,8 @@ func main() {
 		log.Println("Handling input - Breaking sentence")
 
 		text := m.Data
+		args, _ := LexLine(text)
+		args = args[1:]
 		verb, dobjstr, prepstr, iobjstr := BreakSentence(text)
 		log.Println(strings.Join([]string{verb, dobjstr, prepstr, iobjstr}, ":"))
 		dobj, dpropstr := ParseDo(dobjstr, player)
@@ -133,10 +135,10 @@ func main() {
 			if ClusterQueue {
 				log.Println("Handling input - Queueing direct message")
 				//SendNetMessage(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: this.affin})
-				MyQMessage(QueueServer, Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: affin})
+				MyQMessage(QueueServer, Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: affin, Args: args})
 				//time.Sleep(1 * time.Second) //FIXME
 			} else {
-				RawMsg(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace})
+				RawMsg(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Args: args})
 			}
 
 		}
@@ -145,7 +147,7 @@ func main() {
 }
 
 //Actually evaluate the verb
-func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr string) {
+func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr string, m Message) {
 	code := ""
 	defer func() {
 		if r := recover(); r != nil {
@@ -161,11 +163,12 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 			t := throfflib.MakeEngine()
 			AddEngineFuncs(t, player, this, "0")
 			t = t.RunString(throfflib.BootStrapString(), "Internal Bootstrap")
-
+			args := throfflib.StringsToArray(m.Args)
 			code = verbStruct.Value
 			log.Println("Throff program: ", code)
 			//code = code + "  PRINTLN A[ ^player: player ]A PRINTLN A[ ^this: this ]A PRINTLN  A[ ^verb: verb ]A PRINTLN   A[ ^dobjstr: dobjstr ]A PRINTLN A[ ^dpropstr: dpropstr ]A PRINTLN  A[ ^prepstr: prepstr ]A  PRINTLN A[ ^iobjstr: iobjstr ]A   PRINTLN A[ ^ipropstr: ipropstr ]A PRINTLN [ ]  "
-			code = code + " ARG player TOK   ARG  this TOK   ARG verb TOK   ARG  dobj TOK   ARG dpropstr TOK   ARG prepstr TOK  ARG iobj TOK   ARG ipropstr TOK   ARG dobjstr TOK   ARG iobjstr TOK SAFETYON "
+			code = code + " ARG args TOK ARG player TOK   ARG  this TOK   ARG verb TOK   ARG  dobj TOK   ARG dpropstr TOK   ARG prepstr TOK  ARG iobj TOK   ARG ipropstr TOK   ARG dobjstr TOK   ARG iobjstr TOK SAFETYON "
+			t = throfflib.PushData(t, args)
 			t.CallArgs(code, player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr)
 		} else {
 			log.Println("Goscript program: ", code)

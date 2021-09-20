@@ -28,14 +28,14 @@ func initDB() {
 	rootObj.Properties["thing"] = Property{Value: `6`}
 	rootObj.Properties["lastId"] = Property{Value: `101`}
 
-	prop := Property{Value: ` SetProp dobj dpropstr iobjstr `, Verb: true, Throff: true}
+	prop := Property{Value: ` SetProp dobj dpropstr iobjstr `, Verb: true, Throff: true, Interpreter: "throff"}
 	rootObj.Properties["property"] = prop
 
-	ver := Property{Value: `SetVerb dobj dpropstr iobjstr`, Verb: true}
-	rootObj.Properties["goscript"] = ver
+	ver := Property{Value: `SetVerb dobj dpropstr iobjstr`, Verb: true, Interpreter: "yaegi"}
+	rootObj.Properties["verb.goscript"] = ver
 
-	thr := Property{Value: `SetThroffVerb dobj dpropstr iobjstr`, Verb: true, Throff: true}
-	rootObj.Properties["verb"] = thr
+	thr := Property{Value: `SetThroffVerb dobj dpropstr iobjstr`, Verb: true, Throff: true, Interpreter: "throff"}
+	rootObj.Properties["verb.throff"] = thr
 
 	log.Println("Overwriting Player 1")
 	playerobj := Object{}

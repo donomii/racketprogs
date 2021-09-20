@@ -8,21 +8,14 @@ import (
 )
 
 var chans map[string]chan []byte
+
 func GetChan(key string) chan []byte {
-	ch,ok := chans[key]
+	ch, ok := chans[key]
 	if !ok {
-		ch = make(chan []byte,1000)
-		chans[key]=ch
+		ch = make(chan []byte, 1000)
+		chans[key] = ch
 	}
 	return ch
-}
-
-func wrap(c *gin.Context, func(c *gin.Context) ) {
-	defer func() {
-		if r := recover(); r != nil {
-		   fmt.Printf("Recovering from panic in printAllOperations error is: %v \n", r)
-	   }
-	 }()
 }
 
 func main() {
@@ -51,6 +44,11 @@ func main() {
 	r.GET("/fetch/:key", func(c *gin.Context) {
 		key := c.Param("key")
 		c.Writer.Write(LoadObject(key))
+	})
+
+	r.GET("/operational", func(c *gin.Context) {
+
+		c.Writer.Write([]byte("Database operational"))
 	})
 
 	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
