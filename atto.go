@@ -251,6 +251,7 @@ func eval(expr interface{}, funcsmap map[string][]interface{}, args map[string][
 			log.Printf("Userfunc: %+v\n", userFunc)
 			newFM := map[string][]interface{}{}
 
+			//userFunc[1] is argslist, userFunc[2] is function body
 			for i, v := range userFunc[1].([]string) {
 				//fmt.Printf("(%v) Evalling: %+v for arg %v\n", userFunc, expr.([]interface{})[1+i], v)
 				val := eval(expr.([]interface{})[1+i], funcsmap, args)
@@ -371,7 +372,7 @@ func lex(code string) []string {
 	return tokens
 }
 
-func LoadFile(fname string, a *Atto) {
+func LoadFilewCore(fname string, a *Atto) {
 	code, err := ioutil.ReadFile(fname)
 	if err != nil {
 		panic(err)
@@ -379,6 +380,16 @@ func LoadFile(fname string, a *Atto) {
 
 	log.Println("Loaded", string(code))
 	LoadString(coreFuncs+string(code), a)
+}
+
+func LoadFile(fname string, a *Atto) {
+	code, err := ioutil.ReadFile(fname)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Println("Loaded", string(code))
+	LoadString(string(code), a)
 }
 
 func LoadString(code string, a *Atto) {

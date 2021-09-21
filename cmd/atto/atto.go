@@ -6,51 +6,92 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"os"
 
 	atto "../.."
 	"github.com/chzyer/readline"
 )
 
+var completer = readline.NewPrefixCompleter()
+
+func in(k string, list []string) bool {
+	for _, v := range list {
+		//.Printf("Comparing %v and %v\n", k, v)
+
+		if v == k {
+			return true
+		}
+	}
+	return false
+}
+
+func strify(v interface{}) string {
+	switch v.(type) {
+	case nil:
+		return ""
+	case []interface{}:
+		if fmt.Sprintf("%v", v.([]interface{})[0]) == "__value" {
+			return fmt.Sprintf("%v", v.([]interface{})[1])
+		}
+
+		o := "("
+
+		for i, e := range v.([]interface{}) {
+			atom := fmt.Sprintf("%v", e)
+			if i == 0 {
+				fn := atom
+				switch fn {
+				case "#":
+					o = o + "drop "
+				default:
+					o = o + fn + " "
+				}
+			} else {
+				o = o + strify(e) + " "
+			}
+		}
+		return o + ")"
+	case string:
+		return fmt.Sprintf("\"%v\"", v)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
 func main() {
-	var debug bool
+	var debug, scheme bool
 	flag.BoolVar(&debug, "debug", false, "Print looots of debug information")
+	flag.BoolVar(&scheme, "scheme", false, "Dump code as scheme s-expression")
+
 	flag.Parse()
 	if !debug {
 		log.SetFlags(0)
 		log.SetOutput(ioutil.Discard)
 	}
 	a := atto.NewAtto()
-	atto.LoadFile(flag.Args()[0], a)
-	atto.RunFunc("main", a)
-	if debug {
 
-		fmt.Println("Done!")
+	if scheme {
+		atto.LoadFilewCore(flag.Args()[0], a)
+		for k, v := range a.Functions {
+			if !in(k, []string{"cons", "true", "tail", "head", "and", "false", "or", "pair"}) {
+				//fn := strings.Replace(fmt.Sprintf("%v", v), "fn", "define "+k, 1)
+				fmt.Printf("(define %v (lambda %v %v))\n", k, strify(v[1]), strify(v[2]))
+			}
+		}
+		os.Exit(0)
 	}
-	Repl(a)
+	if len(flag.Args()) > 0 {
+
+		atto.LoadFilewCore(flag.Args()[0], a)
+		atto.RunFunc("main", a)
+
+		if debug {
+
+			fmt.Println("Done!")
+		}
+	} else {
+		Repl(a)
+	}
 }
-
-var completer = readline.NewPrefixCompleter(
-	readline.PcItem("mode",
-		readline.PcItem("vi"),
-		readline.PcItem("emacs"),
-	),
-	readline.PcItem("login"),
-
-	readline.PcItem("setprompt"),
-	readline.PcItem("setpassword"),
-	readline.PcItem("bye"),
-	readline.PcItem("help"),
-	readline.PcItem("go",
-		readline.PcItem("build", readline.PcItem("-o"), readline.PcItem("-v")),
-		readline.PcItem("install",
-			readline.PcItem("-v"),
-			readline.PcItem("-vv"),
-			readline.PcItem("-vvv"),
-		),
-		readline.PcItem("test"),
-	),
-	readline.PcItem("sleep"),
-)
 
 func Repl(e *atto.Atto) *atto.Atto {
 
