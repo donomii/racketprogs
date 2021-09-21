@@ -10,6 +10,7 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"github.com/chzyer/readline"
 	. "github.com/donomii/pmoo"
 	"github.com/donomii/throfflib"
 	"github.com/traefik/yaegi/interp"
@@ -30,7 +31,45 @@ func ConsoleInputHandler(queue chan *Message) {
 	}
 }
 
-var goScript *interp.Interpreter
+func listVerbs(player string) func(string) []string {
+	return func(s string) []string {
+		vs := VerbList(player)
+		fmt.Println("Found verbs:", vs)
+		return vs
+	}
+}
+
+func ReadLineInputHandler(queue chan *Message, player string) {
+
+	for {
+		var completer = readline.NewPrefixCompleter(
+			readline.PcItemDynamic(listVerbs(player)))
+
+		l, err := readline.NewEx(&readline.Config{
+			Prompt:          "",
+			HistoryFile:     "/tmp/readline.tmp",
+			AutoComplete:    completer,
+			InterruptPrompt: "^C",
+			EOFPrompt:       "exit",
+
+			HistorySearchFold: true,
+		})
+		if err != nil {
+			panic(err)
+		}
+		//fmt.Print ("\033[31m»\033[0m ")
+		text, _ := l.Readline()
+		text = strings.TrimSuffix(text, "\r\n")
+		text = strings.TrimSuffix(text, "\n")
+		if text != "" {
+			//Console is always the wizard, at least for now
+			InputMsg("2", "7", "input", text)
+		}
+		l.Close()
+	}
+
+}
+
 var Affinity string
 
 func main() {
@@ -39,7 +78,6 @@ func main() {
 	flag.BoolVar(&init, "init", false, "Create basic objects.  Overwrites existing")
 	flag.BoolVar(&Cluster, "cluster", false, "Run in cluster mode.  See instructions.")
 	flag.BoolVar(&ClusterQueue, "clusterQ", false, "Run messages in cluster mode.  See instructions.")
-	flag.StringVar(&etcdServer, "etcd", "localhost:2379", "Location of object database.")
 	//flag.StringVar(&queueServer, "queue", "127.0.0.1:2888", "Location of queue server.")
 	flag.StringVar(&QueueServer, "queue", "http://127.0.0.1:8080", "Location of queue server.")
 	flag.StringVar(&Affinity, "affinity", "7", "Will process all messages with this affinity id.")
@@ -47,7 +85,6 @@ func main() {
 	flag.Parse()
 
 	SetEtcdServers([]string{etcdServer})
-	//QueueServer = queueServer
 	if Cluster {
 		//okdb.Connect("192.168.178.22:7778")
 
@@ -68,15 +105,14 @@ func main() {
 	inQ := make(chan *Message, 100)
 	SetQ(inQ)
 
-	go ConsoleInputHandler(inQ)
-
-	goScript = NewInterpreter()
-	goScript.Eval(`
-	import . "github.com/donomii/pmoo"
-	import "os"
-	import . "fmt"`)
+	//go ConsoleInputHandler(inQ)
 
 	player := "2"
+
+	go ReadLineInputHandler(inQ, player)
+	MOOloop(inQ, player)
+}
+func MOOloop(inQ chan *Message, player string) {
 	for {
 		log.Println("Waiting on Q")
 		m := <-inQ
@@ -89,18 +125,6 @@ func main() {
 		}
 		if m.This != "7" {
 			log.Println("Handling direct message")
-			/*
-				player := m.Player
-				this := m.Target
-				verb := m.Verb
-				dobjstr := m.Data
-
-				//dobj, dpropstr := ParseDo(dobjstr, player)
-
-				//var iobjstr, prepstr, iobj, ipropstr string
-
-				//	verbStruct := GetVerbStruct(LoadObject(this), verb, 10)
-			*/
 
 			if m.This != "" && m.Player != "" && m.Verb != "" { //Skip broken messages
 				log.Printf("Invoking direct message %+v", m)
@@ -114,7 +138,9 @@ func main() {
 
 		text := m.Data
 		args, _ := LexLine(text)
-		args = args[1:]
+		if len(args) > 0 {
+			args = args[1:]
+		}
 		verb, dobjstr, prepstr, iobjstr := BreakSentence(text)
 		log.Println(strings.Join([]string{verb, dobjstr, prepstr, iobjstr}, ":"))
 		dobj, dpropstr := ParseDo(dobjstr, player)
@@ -172,6 +198,12 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 			t.CallArgs(code, player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr)
 		} else {
 			log.Println("Goscript program: ", code)
+			var goScript *interp.Interpreter
+			goScript = NewInterpreter()
+			goScript.Eval(`
+			import . "github.com/donomii/pmoo"
+			import "os"
+			import . "fmt"`)
 			code = BuildDefinitions(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr)
 			code = code + verbStruct.Value
 			Eval(goScript, code)
