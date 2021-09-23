@@ -3,7 +3,6 @@
 [require "spath.rkt"]
 [require srfi/1]
 
- (require compatibility/mlist)
 
 [define m '[w "toplevel" [id "Toplevel container"] [type "toplevel"]
               [children
@@ -78,7 +77,7 @@
 
 
 [define [render data type attribs children t state]
-  ;[printf "Rendering ~a~nState: ~a~n" type state]
+  [printf "Rendering ~a~nState: ~a~n" type state]
 
   [letrec [[x [mx state]]
            [y  [my state]]]
@@ -93,7 +92,8 @@
                              [text-size 11]
                              [fill 0]
                              [text data x y 100 100 ]
-                             [append [list `[mx . ,[car [advancer x y x2 y2]]] `[my . ,[cadr [advancer x y x2  y2]]] ] state ]]]
+                             [list attribs
+                                   [append [list `[mx . ,[car [advancer x y x2 y2]]] `[my . ,[cadr [advancer x y x2  y2]]] ] state ]]]]
       [[equal? type "button"] [letrec [
                                        [x2 [+ x 50]]
                                        [y2 [ + y 15]]
@@ -116,7 +116,8 @@
                                     [when [equal? [mouse-event state] 'release]
                                       [button-click [cadr [assoc 'id attribs]]]
                                       ]]]
-                                [append [list `[mx . ,[car [advancer x y x2 y2]]] `[my . ,[cadr [advancer x y x2  y2]]] ] state ]]]
+                                [list attribs
+                                      [append [list `[mx . ,[car [advancer x y x2 y2]]] `[my . ,[cadr [advancer x y x2  y2]]] ] state ]]]]
       [[equal? type "window"]
        ;[printf "case: window~n"]
        [letrec [
@@ -139,18 +140,23 @@
            ]
          ; [printf "Hover:~a id:~a mouse-event:~a\n" hover? [assoc 'id attribs] [mouse-event state]]
                                 
-                                  [when hover?
-                                  [when [assoc 'id attribs]
-                                    [when [equal? [mouse-event state] 'release]
-                                      [let [[pair [assoc 'x attribs]]]
-                                        [set-mcdr! pair [list x]]
-                                        ]
-                                      ]]]
-         [append [list `[mx . ,[car [advancer x y x2  [+ y 22]]]] `[my . ,[cadr [advancer x y x2  [+ y 22]]]] ] state ]]]
+         [when hover?
+           [when [assoc 'id attribs]
+             [when [equal? [mouse-event state] 'release]
+               [let [[pair [assoc 'x attribs]]]
+                 [printf ""]
+                 ;[set-mcdr! pair [list x]] ;Set window coords here
+                 ]
+               ]]]
+
+         
+         
+         [list attribs  [append [list `[mx . ,[car [advancer x y x2  [+ y 22]]]] `[my . ,[cadr [advancer x y x2  [+ y 22]]]] ] state ]]]]
       [[equal? type "popup"] [begin
-                               [append [list `[mx . ,[startx state]] `[my . ,[starty state]]] state]
+                               [list attribs
+                                     [append [list `[mx . ,[startx state]] `[my . ,[starty state]]] state]]
                                ]]
-      [else state]
+      [else [list attribs state]]
     
   
       ]
@@ -159,36 +165,48 @@
 
   ]
 
-[define [fold-children children state]
-  [display "fold-children"]
-  [displayln children]
-  [display "State:"]
-  [displayln state]
-  [if [< [length children] 1]
-      state
-      [fold-children [cdr children] [parse-tree [car children] state]]
-  
-      ]]
+
+
+[define [map-children children state]
+  [list [map [lambda [c]
+               [letrec [[alist [parse-tree c state]]
+                        [template [car alist]]
+                        [new-state [cadr alist]]]
+                 [set! state new-state]
+                 template
+                 ]] children]
+        state]
+  ]
 
 [define [parse-tree t state]
-  ; [printf "Parsetree ~a~nState: ~a~n" t state]
+  [printf "Parsetree ~a~nState: ~a~n~n" t state]
   [letrec [
            [ data [cadr t]]
            [attribs [cddr t]]
            [type [cadr [assoc 'type attribs]]]
-           [children [assoc 'children attribs]]]
+           [children [assoc 'children attribs]]
+           ]
     ;Used to enable/disable widgets
     [if [want-to-render? t state]
         ;render sub tree
-        [let [[new-state [render data type attribs children t state]]]
+        [letrec [[alist [render data type attribs children t state]]
+                 [new-attribs [car alist]]
+                 [new-state [cadr alist]]
+                 [children1 [assoc 'children new-attribs]]
+                 ]
           ;If there are children
-          [when children
-            ;Render them
-            [fold-children [cdr children] new-state]]
-          ;[printf "Parsetree after children ~a~nNew state: ~a~n" t new-state]
-          new-state
-          ]
-        state]]]
+          [if children1
+              ;Render them
+              [letrec [[new-alist [map-children [cdr children1] new-state]]
+                       [new-children [car alist]]
+                       [new-state1 [cadr alist]]]
+                [printf "New children ~a~nNew state: ~a~n~n" new-children new-state1]
+      
+          
+                [list [append `[w ,data ]  new-attribs] new-state1]]
+              [list t new-state]]] ;FIXME use new attributes
+        [list t state] ;FIXME process mouse events without render
+        ]]]
 
 
 
@@ -205,31 +223,37 @@
 
   [background 255]
 
- 
+  [printf "Last state: ~a~n" last-state]
+  [printf "Last template ~a~n" m]
 
-  [set! last-state [letrec [[new-state [parse-tree [list->mlist m] `[
-                                                       [mx . ,mouse-x]
-                                                       [my . ,mouse-y]  ;Current draw position
-                                                       [startx  .  ;Drag start x
+  [letrec [[alist [parse-tree  m `[
+                                   [mx . ,mouse-x]
+                                   [my . ,mouse-y]  ;Current draw position
+                                   [startx  .  ;Drag start x
                                                            
-                                                                ,[if [not button-down]
-                                                                     mouse-x
-                                                                     [startx last-state]]]
-                                                       ;Drag start y
-                                                       [starty . ,[if [not button-down]
-                                                                      mouse-y
-                                                                      [starty last-state]]]
-                                                       ;Mouse event in progress? (false, press, release)
-                                                       [mouse-event . ,persist-mouse-event]
-                                                       [do-draw . #t]   ;do draw
-                                                       [button-down? . ,button-down] ;Is the button currently down?
-                                                       [advancer . ,advancer]
-                                                       [drag-target . 'drag-target]
-                                                       [dragvecx . ,[- mouse-x [startx last-state]]]
-                                                       [dragvecy . ,[- mouse-y [starty last-state]]] ;Total drag vector, x and y
-                                                       ]]]]
+                                            ,[if [not button-down]
+                                                 mouse-x
+                                                 [startx last-state]]]
+                                   ;Drag start y
+                                   [starty . ,[if [not button-down]
+                                                  mouse-y
+                                                  [starty last-state]]]
+                                   ;Mouse event in progress? (false, press, release)
+                                   [mouse-event . ,persist-mouse-event]
+                                   [do-draw . #t]   ;do draw
+                                   [button-down? . ,button-down] ;Is the button currently down?
+                                   [advancer . ,advancer]
+                                   [drag-target . 'drag-target]
+                                   [dragvecx . ,[- mouse-x [startx last-state]]]
+                                   [dragvecy . ,[- mouse-y [starty last-state]]] ;Total drag vector, x and y
+                                   ]]]
+           [new-state [cadr alist]]
+           [new-template [car alist]]
+           ]
                                          
-                     new-state]]
+    [set! last-state new-state]
+    [set! m new-template] ]
+  
   [if mouse-pressed  
       [set! button-down #t]
       [set! button-down #f]]
