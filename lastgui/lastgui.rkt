@@ -169,6 +169,7 @@
 
 [define [map-children children state]
   [list [map [lambda [c]
+               [printf "Mapping ~a~n" [second c]]
                [letrec [[alist [parse-tree c state]]
                         [template [car alist]]
                         [new-state [cadr alist]]]
@@ -193,7 +194,9 @@
                  [new-attribs [car alist]]
                  [new-state [cadr alist]]
                  [children1 [assoc 'children new-attribs]]
+                 [new-widget   [append `[w ,data ]  new-attribs]]
                  ]
+           [printf "Parsetree1 ~a~nState: ~a~n~n" new-widget new-state]
           ;If there are children
           [if children1
               ;Render them
@@ -203,7 +206,7 @@
                 [printf "New children ~a~nNew state: ~a~n~n" new-children new-state1]
       
           
-                [list [append `[w ,data ]  new-attribs] new-state1]]
+                [list new-widget new-state1]]
               [list t new-state]]] ;FIXME use new attributes
         [list t state] ;FIXME process mouse events without render
         ]]]
