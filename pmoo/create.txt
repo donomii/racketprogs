@@ -25,9 +25,10 @@ verb.throff #1.debugParser is "  PRINTLN A[ ^player: player ]A PRINTLN A[ ^this:
 verb.throff #4.go is " WHEN EQUAL dobjstr GetProp this ^name [ MoveObj player this ] "
 
 create $thing named shell
-verb.throff shell.ls is " Msg this player ^tell DIRECTORY-LIST  IF EQUAL dobjstr [] THEN [ ^. ] ELSE [ dobjstr ]  [] [] "
+verb.throff shell.ls is " Msg this player ^tell DIRECTORY-LIST  IF EQUAL args [] THEN [ ^. ] ELSE [ dobjstr ]  [] [] "
  verb.throff shell.; is " Msg this player ^tell SHELL args  [] [] "
  verb.throff shell.? is " Msg this player ^tell args [] [] "
+ verb.throff shell.t is " Msg this player ^tell RUNSTRING args ENVIRONMENTOF [ THIS ] "
                    
 
 

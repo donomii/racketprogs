@@ -34,7 +34,7 @@ func ConsoleInputHandler(queue chan *Message) {
 func listVerbs(player string) func(string) []string {
 	return func(s string) []string {
 		vs := VerbList(player)
-		fmt.Println("Found verbs:", vs)
+		//fmt.Println("Found verbs:", vs)
 		return vs
 	}
 }
@@ -58,9 +58,15 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 			panic(err)
 		}
 		//fmt.Print ("\033[31m»\033[0m ")
-		text, _ := l.Readline()
+		text, err := l.Readline()
+		if err != nil {
+			os.Exit(1)
+		}
 		text = strings.TrimSuffix(text, "\r\n")
 		text = strings.TrimSuffix(text, "\n")
+		if text == "exit" {
+			os.Exit(0)
+		}
 		if text != "" {
 			//Console is always the wizard, at least for now
 			InputMsg("2", "7", "input", text)
@@ -117,6 +123,9 @@ func MOOloop(inQ chan *Message, player string) {
 		log.Println("Waiting on Q")
 		m := <-inQ
 		log.Println("Q:", m)
+		if m.Ticks < 1 {
+			log.Println("Audit: Dropped message because it timed out:", m)
+		}
 		if m.Affinity != "" && m.Affinity != Affinity && ClusterQueue && Affinity != "" {
 			//Put this message back in the queue so the right server can get it
 			//FIXME add queues for each server so we can send it directly to the right machine
@@ -131,7 +140,6 @@ func MOOloop(inQ chan *Message, player string) {
 				invoke(m.Player, m.This, m.Verb, m.Dobj, m.Dpropstr, m.Prepstr, m.Iobj, m.Ipropstr, m.Dobjstr, m.Iobjstr, *m)
 			}
 			continue
-
 		}
 
 		log.Println("Handling input - Breaking sentence")
@@ -150,7 +158,7 @@ func MOOloop(inQ chan *Message, player string) {
 
 		if thisObj == nil {
 			msg := fmt.Sprintf("Verb %v not found!\n", verb)
-			Msg("7", player, "notify", msg, "", "")
+			RawMsg(Message{From: "7", Player: player, Verb: "notify", Dobjstr: msg, Ticks: m.Ticks - 100})
 
 		} else {
 			this := ToStr(thisObj.Id)
@@ -161,10 +169,10 @@ func MOOloop(inQ chan *Message, player string) {
 			if ClusterQueue {
 				log.Println("Handling input - Queueing direct message")
 				//SendNetMessage(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: this.affin})
-				MyQMessage(QueueServer, Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: affin, Args: args})
+				MyQMessage(QueueServer, Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: affin, Args: args, Ticks: m.Ticks})
 				//time.Sleep(1 * time.Second) //FIXME
 			} else {
-				RawMsg(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Args: args})
+				RawMsg(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Args: args, Ticks: m.Ticks - 100})
 			}
 
 		}
