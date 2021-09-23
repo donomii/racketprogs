@@ -1,5 +1,10 @@
 #lang sketching
 
+[require "spath.rkt"]
+[require srfi/1]
+
+ (require compatibility/mlist)
+
 [define m '[w "toplevel" [id "Toplevel container"] [type "toplevel"]
               [children
                [w "A Test Window" [id "Test window"] [type "window"] [x 50] [y 50]
@@ -8,22 +13,39 @@
                       [id "test text"] [type "text"]]
                    [w "OK" [id "ok button"] [type "button"]]]]]
                                                         
-               [w "menu" [id "Popup menu"] [type "popup"][children
-                                                          [w "Do thing" [type "button"] [id "do thing button"]]
-                                                          [w "Exit" [id "exit button"][type "button"]]]]
+              [w "menu" [id "Popup menu"] [type "popup"][children
+                                                         [w "Do thing" [type "button"] [id "do thing button"]]
+                                                         [w "Exit" [id "exit button"][type "button"]]]]
              
-               ]]
+              ]]
 
-[define [mx x] [car x]]
-[define [my x] [cadr x]]
-[define [startx x] [caddr x]]
-[define [starty x] [cadddr x]]
-[define [mouse-event x] [cadr [cdddr x]]]
-[define [do-draw x] [caddr [cdddr x]]]
-[define [button-down? x] [cadddr [cdddr x]]]
+[define [mx x] [s= mx x]]
+[define [my x] [s= my x]]
+[define [startx x] [s= startx x]]
+[define [starty x] [s= starty x]]
+[define [mouse-event x] [s= mouse-event x]]
+[define [do-draw x] [s= do-draw x]]
+[define [button-down? x] [s= button-down?  x]]
 [define [advancer x y x2 y2] [list x y2]]
 
-[define last-state '[0 0 0 0 #f]]
+
+[define last-state `[
+                     [mx . 0]
+                     [my . 0]  ;Current draw position
+                     [startx  . 0 ;Drag start x
+                                                           
+                              ]
+                     ;Drag start y
+                     [starty . 0]
+                     ;Mouse event in progress? (false, press, release)
+                     [mouse-event . 'false]
+                     [do-draw . #t]   ;do draw
+                     [button-down? . #f] ;Is the button currently down?
+                     [advancer . ,advancer]
+                     [drag-target . 'drag-target]
+                     [dragvecx . 0]
+                     [dragvecy . 0] ;Total drag vector, x and y
+                     ]]
 
 [define [inside? mx my x1 y1 x2 y2]
   [and
@@ -36,7 +58,8 @@
 [define persist-mouse-event #f]
 [define [button-click id]
   [printf "Clicked on button: ~a~n" id]
-  [exit 0]]
+  [exit 0]
+  ]
 
 
 [define [want-to-render? t state]
@@ -55,22 +78,22 @@
 
 
 [define [render data type attribs children t state]
-  [printf "Rendering ~a~nState: ~a~n" type state]
+  ;[printf "Rendering ~a~nState: ~a~n" type state]
 
   [letrec [[x [mx state]]
            [y  [my state]]]
     
     [cond
       [[equal? type "text"][letrec [
-                                       [x2 [+ x 100]]
-                                       [y2 [ + y 100]]]
+                                    [x2 [+ x 100]]
+                                    [y2 [ + y 100]]]
                              [fill 255]
                              [stroke 0 0 0 255]
-                                  [rect x y  x2   y2]
-                                  [text-size 11]
-                                  [fill 0]
-                                  [text data x y x2 y2 ]
-                                  [list [car [advancer x y x2  y2]] [cadr [advancer x y x2  y2]] [startx state] [starty state] [mouse-event state] [do-draw state] advancer]]]
+                             [rect x y  100 100]
+                             [text-size 11]
+                             [fill 0]
+                             [text data x y 100 100 ]
+                             [append [list `[mx . ,[car [advancer x y x2 y2]]] `[my . ,[cadr [advancer x y x2  y2]]] ] state ]]]
       [[equal? type "button"] [letrec [
                                        [x2 [+ x 50]]
                                        [y2 [ + y 15]]
@@ -87,42 +110,45 @@
                                   [fill 0]
                                   [text data x y ]
                                   ]
-                                [printf "Hover:~a id:~a mouse-event:~a\n" hover? [assoc 'id attribs] [mouse-event state]]
+                                ; [printf "Hover:~a id:~a mouse-event:~a\n" hover? [assoc 'id attribs] [mouse-event state]]
                                 [when hover?
                                   [when [assoc 'id attribs]
                                     [when [equal? [mouse-event state] 'release]
                                       [button-click [cadr [assoc 'id attribs]]]
                                       ]]]
-                                
-                                [list [car [advancer x y x2  y2]] [cadr [advancer x y x2  y2]] [startx state] [starty state] [mouse-event state] [do-draw state] advancer]]]
-      [[equal? type "window"] [letrec [
-                                       [x [cadr[assoc 'x attribs]]]
-                                       [y [cadr [assoc 'y attribs]]]
-                                       [x2 [+ x 200]]
-                                       [y2 [ + y 200]]
-                                       [hover? [inside? mouse-x mouse-y x y x2 y2]]]
-                                [when [do-draw state]
-                                  [if hover?
-                                      [stroke 255 128 128 255]
-                                      [stroke 0 0 0 255]
+                                [append [list `[mx . ,[car [advancer x y x2 y2]]] `[my . ,[cadr [advancer x y x2  y2]]] ] state ]]]
+      [[equal? type "window"]
+       ;[printf "case: window~n"]
+       [letrec [
+                [x [+ [if [s= button-down? state] [s= dragvecx state] 0] [cadr[assoc 'x attribs]]]]
+                [y [+ [if [s= button-down? state][s= dragvecy state] 0] [cadr [assoc 'y attribs]]]]
+                [x2 [+ x 200]]
+                [y2 [ + y 200]]
+                [hover? [inside? mouse-x mouse-y x y x2 y2]]]
+         [when [do-draw state]
+           [if hover?
+               [stroke 255 128 128 255]
+               [stroke 0 0 0 255]
                                     
-                                      ]
-                                  [fill 255]
-                                  [rect x y  x2 y2]
-                                  [text-size 11]
-                                  [fill 0]
-                                  [text data [/ [+ x x2] 2] y ]
-                                  ]
-                                [printf "Hover:~a id:~a mouse-event:~a\n" hover? [assoc 'id attribs] [mouse-event state]]
-                                [when hover?
+               ]
+           [fill 255]
+           [rect x y  200 200]
+           [text-size 11]
+           [fill 0]
+           [text data [/ [+ x x2] 2] y ]
+           ]
+         ; [printf "Hover:~a id:~a mouse-event:~a\n" hover? [assoc 'id attribs] [mouse-event state]]
+                                
+                                  [when hover?
                                   [when [assoc 'id attribs]
                                     [when [equal? [mouse-event state] 'release]
-                                      [button-click [cadr [assoc 'id attribs]]]
+                                      [let [[pair [assoc 'x attribs]]]
+                                        [set-mcdr! pair [list x]]
+                                        ]
                                       ]]]
-                                
-                                [list [car [advancer x y x2  [+ y 22]]] [cadr [advancer x y x2  [+ y 22]]] [startx state] [starty state] [mouse-event state] [do-draw state] [button-down? state] advancer]]]
+         [append [list `[mx . ,[car [advancer x y x2  [+ y 22]]]] `[my . ,[cadr [advancer x y x2  [+ y 22]]]] ] state ]]]
       [[equal? type "popup"] [begin
-                               [list [startx state] [starty state] [startx state] [starty state] [mouse-event state] [do-draw state] [button-down? state] advancer]
+                               [append [list `[mx . ,[startx state]] `[my . ,[starty state]]] state]
                                ]]
       [else state]
     
@@ -134,10 +160,10 @@
   ]
 
 [define [fold-children children state]
-  ;  [display "fold-children"]
-  ;  [displayln children]
-  ;  [display "State:"]
-  ;  [displayln state]
+  [display "fold-children"]
+  [displayln children]
+  [display "State:"]
+  [displayln state]
   [if [< [length children] 1]
       state
       [fold-children [cdr children] [parse-tree [car children] state]]
@@ -179,27 +205,37 @@
 
   [background 255]
 
-  [set! last-state [letrec [[new-state [parse-tree m [list mouse-x mouse-y  ;Current draw position
-                                                           ;Drag start x
-                                                           [if [not button-down]
-                                                               mouse-x
-                                                               [startx last-state]]
-                                                           ;Drag start y
-                                                           [if [not button-down]
-                                                               mouse-y
-                                                               [starty last-state]]
-                                                           ;Mouse event in progress? (false, press, release)
-                                                           persist-mouse-event
-                                                           #t   ;do draw
-                                                           button-down ;Is the button currently down?
-                                                           advancer]]]]
+ 
+
+  [set! last-state [letrec [[new-state [parse-tree [list->mlist m] `[
+                                                       [mx . ,mouse-x]
+                                                       [my . ,mouse-y]  ;Current draw position
+                                                       [startx  .  ;Drag start x
+                                                           
+                                                                ,[if [not button-down]
+                                                                     mouse-x
+                                                                     [startx last-state]]]
+                                                       ;Drag start y
+                                                       [starty . ,[if [not button-down]
+                                                                      mouse-y
+                                                                      [starty last-state]]]
+                                                       ;Mouse event in progress? (false, press, release)
+                                                       [mouse-event . ,persist-mouse-event]
+                                                       [do-draw . #t]   ;do draw
+                                                       [button-down? . ,button-down] ;Is the button currently down?
+                                                       [advancer . ,advancer]
+                                                       [drag-target . 'drag-target]
+                                                       [dragvecx . ,[- mouse-x [startx last-state]]]
+                                                       [dragvecy . ,[- mouse-y [starty last-state]]] ;Total drag vector, x and y
+                                                       ]]]]
                                          
                      new-state]]
-  [when mouse-pressed  
-    [set! button-down #t]]
+  [if mouse-pressed  
+      [set! button-down #t]
+      [set! button-down #f]]
 
   
-                    
+                  
 
                      
 
