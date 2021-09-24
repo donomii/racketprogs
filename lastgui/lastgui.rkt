@@ -81,17 +81,26 @@
 [define [set-state key value attribs]
   [cons [cons key value] attribs]]
 
+[define [set-drag-target-if hover? id state]
+  [if hover?
+      [set-state 'drag-target id state]
+      state]]
+
 [define [render data type attribs children t state]
   ;[printf "Rendering ~a~nState: ~a~n" type state]
 
   [letrec [[x [mx state]]
-           [y  [my state]]]
+           [y  [my state]]
+           [id [s=f id attribs #f]]]
+    
+    [when [not id] [error [format "Error:  No id found for widget ~a~n" t]]]
     
     [cond
       [[equal? type "text"][letrec [
                                     [x2 [+ x 100]]
                                     [y2 [ + y 100]]
                                     [nextPos  [advancer x y x2  y2]]
+                                    [hover? [inside? mouse-x mouse-y x y x2 y2]]
                                     ]
                              [fill 255]
                              [stroke 0 0 0 255]
@@ -100,7 +109,8 @@
                              [fill 0]
                              [text data x y 100 100 ]
                              [list attribs
-                                   [append [list `[mx . ,[car nextPos]] `[my . ,[cadr nextPos]] ] state ]]]]
+                                   [set-drag-target-if hover? id
+                                                       [set-state 'mx [car nextPos] [set-state 'my [cadr nextPos] state] ]]]]]
       [[equal? type "button"] [letrec [
                                        [x2 [+ x 50]]
                                        [y2 [ + y 15]]
@@ -124,13 +134,14 @@
                                       [button-click [cadr [assoc 'id attribs]]]
                                       ]]]
                                 [list attribs
-                                      [append [list `[mx . ,[car [advancer x y x2 y2]]] `[my . ,[cadr [advancer x y x2  y2]]] ] state ]]]]
+                                      [set-drag-target-if hover? id
+                                      [append [list `[mx . ,[car [advancer x y x2 y2]]] `[my . ,[cadr [advancer x y x2  y2]]] ] state ]]]]]
       [[equal? type "window"]
        ;[printf "case: window~n"]
        [letrec [
-                
-                [x [if [s= button-down? state] mouse-x  [cadr[assoc 'x attribs]]]]
-                [y [if [s= button-down? state] mouse-y  [cadr [assoc 'y attribs]]]]
+                [dragging? [and [button-down? state] [equal? [s= drag-target state] [s= id attribs]]]]
+                [x [if dragging?  mouse-x  [cadr[assoc 'x attribs]]]]
+                [y  [if dragging? mouse-y  [cadr [assoc 'y attribs]]]]
                 [x2 [+ x 200]]
                 [y2 [ + y 200]]
                 [hover? [inside? mouse-x mouse-y x y x2 y2]]]
@@ -159,8 +170,9 @@
          
          [list
           [set-attrib 'y y [set-attrib 'x x attribs]]
+           [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
           [set-state 'mx  [car [advancer x y x2  [+ y 22]]]
-                     [set-state 'my  [cadr [advancer x y x2  [+ y 22]]] state] ]]]]
+                     [set-state 'my  [cadr [advancer x y x2  [+ y 22]]] state]] ]]]]
 
 
       
@@ -264,7 +276,7 @@
                                    [do-draw . #t]   ;do draw
                                    [button-down? . ,button-down] ;Is the button currently down?
                                    [advancer . ,advancer]
-                                   [drag-target . 'drag-target]
+                                   [drag-target . ,[s= drag-target last-state]]
                                    [dragvecx . ,[- mouse-x [startx last-state]]]
                                    [dragvecy . ,[- mouse-y [starty last-state]]] ;Total drag vector, x and y
                                    ]]]
@@ -274,7 +286,7 @@
                                          
     [set! last-state new-state]
     [set! m new-template] ]
-  
+  [printf "New state: ~a~n" last-state]
   [if mouse-pressed  
       [set! button-down #t]
       [set! button-down #f]]
