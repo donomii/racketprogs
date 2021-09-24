@@ -81,12 +81,14 @@ var Affinity string
 func main() {
 	etcdServer := ""
 	var init bool
+	var RawTerm bool
 	flag.BoolVar(&init, "init", false, "Create basic objects.  Overwrites existing")
 	flag.BoolVar(&Cluster, "cluster", false, "Run in cluster mode.  See instructions.")
 	flag.BoolVar(&ClusterQueue, "clusterQ", false, "Run messages in cluster mode.  See instructions.")
 	//flag.StringVar(&queueServer, "queue", "127.0.0.1:2888", "Location of queue server.")
 	flag.StringVar(&QueueServer, "queue", "http://127.0.0.1:8080", "Location of queue server.")
 	flag.StringVar(&Affinity, "affinity", "7", "Will process all messages with this affinity id.")
+	flag.BoolVar(&RawTerm, "raw", false, "Batch mode.  No shell enhancements, read directly from STDIN.  Works with rlwrap.")
 
 	flag.Parse()
 
@@ -110,12 +112,12 @@ func main() {
 	}
 	inQ := make(chan *Message, 100)
 	SetQ(inQ)
-
-	//go ConsoleInputHandler(inQ)
-
 	player := "2"
-
-	go ReadLineInputHandler(inQ, player)
+	if RawTerm {
+		go ConsoleInputHandler(inQ)
+	} else {
+		go ReadLineInputHandler(inQ, player)
+	}
 	MOOloop(inQ, player)
 }
 func MOOloop(inQ chan *Message, player string) {
@@ -154,6 +156,7 @@ func MOOloop(inQ chan *Message, player string) {
 		dobj, dpropstr := ParseDo(dobjstr, player)
 		iobj, ipropstr := ParseDo(iobjstr, player)
 
+		log.Printf("Searching for verb '%v' in '%v'", verb, player)
 		thisObj, _ := VerbSearch(LoadObject(player), verb)
 
 		if thisObj == nil {

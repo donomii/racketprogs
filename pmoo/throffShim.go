@@ -34,9 +34,9 @@ func AddEngineFuncs(e *throfflib.Engine, player, from, traceId string) {
 
 		if ClusterQueue {
 			//SendNetMessage(Message{From: from.GetString(), Player: player, This: target.GetString(), Verb: verb.GetString(), Dobj: dobj.GetString(), Prepstr: prep.GetString(), Iobj: iobj.GetString(), Trace: traceId})
-			MyQMessage(QueueServer, Message{From: from.GetString(), Player: player, This: target.GetString(), Verb: verb.GetString(), Dobj: dobj.GetString(), Prepstr: prep.GetString(), Iobj: iobj.GetString(), Trace: traceId, Affinity: affin})
+			MyQMessage(QueueServer, Message{From: from.GetString(), Player: player, This: target.GetString(), Verb: verb.GetString(), Dobj: dobj.GetString(), Prepstr: prep.GetString(), Iobj: iobj.GetString(), Trace: traceId, Affinity: affin, Ticks: DefaultTicks})
 		} else {
-			RawMsg(Message{From: player, Player: player, This: target.GetString(), Verb: verb.GetString(), Dobj: dobj.GetString(), Prepstr: prep.GetString(), Iobj: iobj.GetString(), Trace: traceId})
+			RawMsg(Message{From: player, Player: player, This: target.GetString(), Verb: verb.GetString(), Dobj: dobj.GetString(), Prepstr: prep.GetString(), Iobj: iobj.GetString(), Trace: traceId, Ticks: DefaultTicks})
 		}
 		//Msg(from.GetString(), target.GetString(), verb.GetString(), dobj.GetString(), prep.GetString(), iobj.GetString())
 		return ne
@@ -86,6 +86,14 @@ func AddEngineFuncs(e *throfflib.Engine, player, from, traceId string) {
 		val, ne := throfflib.PopData(ne)
 
 		SetProp(obj.GetString(), prop.GetString(), val.GetString())
+		return ne
+	}))
+
+	e = throfflib.Add(e, "FINDOBJECT", throfflib.NewCode("FINDOBJECT", 1, 1, 0, func(ne *throfflib.Engine, c *throfflib.Thingy) *throfflib.Engine {
+
+		name, ne := throfflib.PopData(ne)
+
+		FindObjectByName(player, name.GetString())
 		return ne
 	}))
 
