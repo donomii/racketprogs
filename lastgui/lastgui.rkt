@@ -77,7 +77,7 @@
 
 
 [define [render data type attribs children t state]
-  [printf "Rendering ~a~nState: ~a~n" type state]
+  ;[printf "Rendering ~a~nState: ~a~n" type state]
 
   [letrec [[x [mx state]]
            [y  [my state]]]
@@ -121,8 +121,9 @@
       [[equal? type "window"]
        ;[printf "case: window~n"]
        [letrec [
-                [x [+ [if [s= button-down? state] [s= dragvecx state] 0] [cadr[assoc 'x attribs]]]]
-                [y [+ [if [s= button-down? state][s= dragvecy state] 0] [cadr [assoc 'y attribs]]]]
+                
+                [x [if [s= button-down? state] mouse-x  [cadr[assoc 'x attribs]]]]
+                [y [if [s= button-down? state] mouse-y  [cadr [assoc 'y attribs]]]]
                 [x2 [+ x 200]]
                 [y2 [ + y 200]]
                 [hover? [inside? mouse-x mouse-y x y x2 y2]]]
@@ -151,7 +152,7 @@
 
          
          
-         [list attribs  [append [list `[mx . ,[car [advancer x y x2  [+ y 22]]]] `[my . ,[cadr [advancer x y x2  [+ y 22]]]] ] state ]]]]
+         [list  [cons [list 'y y] [cons [list 'x x] attribs]]  [append [list `[mx . ,[car [advancer x y x2  [+ y 22]]]] `[my . ,[cadr [advancer x y x2  [+ y 22]]]] ] state ]]]]
       [[equal? type "popup"] [begin
                                [list attribs
                                      [append [list `[mx . ,[startx state]] `[my . ,[starty state]]] state]]
@@ -168,19 +169,22 @@
 
 
 [define [map-children children state]
-  [list [map [lambda [c]
-               [printf "Mapping ~a~n" [second c]]
+  ;[printf "Child list: ~a~n" children]
+  [let [[returns  [map [lambda [c]
+               ;[printf "Mapping ~a~n" [second c]]
                [letrec [[alist [parse-tree c state]]
                         [template [car alist]]
                         [new-state [cadr alist]]]
                  [set! state new-state]
                  template
-                 ]] children]
+                 ]] children]]]
+    ;[printf "Returning children: ~a~n" returns]
+  [list returns
         state]
-  ]
+  ]]
 
 [define [parse-tree t state]
-  [printf "Parsetree ~a~nState: ~a~n~n" t state]
+  ;[printf "Parsetree ~a~nState: ~a~n~n" t state]
   [letrec [
            [ data [cadr t]]
            [attribs [cddr t]]
@@ -196,17 +200,19 @@
                  [children1 [assoc 'children new-attribs]]
                  [new-widget   [append `[w ,data ]  new-attribs]]
                  ]
-           [printf "Parsetree1 ~a~nState: ~a~n~n" new-widget new-state]
+           ;[printf "Parsetree1 ~a~nState: ~a~n~n" new-widget new-state]
           ;If there are children
           [if children1
               ;Render them
               [letrec [[new-alist [map-children [cdr children1] new-state]]
-                       [new-children [car alist]]
-                       [new-state1 [cadr alist]]]
-                [printf "New children ~a~nNew state: ~a~n~n" new-children new-state1]
+                       [new-children [car new-alist]]
+                       [new-state1 [cadr new-alist]]
+                       [new-new-attribs [delete-duplicates [cons [cons 'children new-children]   new-attribs] [lambda [x y] [equal? [car x] [car y]]]]]
+                       [new-new-widget   [append `[w ,data ]  new-new-attribs]]]
+                ;[printf "~nNew widget ~a~nNew state: ~a~nNew children ~a~n~n" new-new-widget new-state1 new-children]
       
           
-                [list new-widget new-state1]]
+                [list new-new-widget new-state1]]
               [list t new-state]]] ;FIXME use new attributes
         [list t state] ;FIXME process mouse events without render
         ]]]
@@ -226,8 +232,8 @@
 
   [background 255]
 
-  [printf "Last state: ~a~n" last-state]
-  [printf "Last template ~a~n" m]
+  ;[printf "Last state: ~a~n" last-state]
+  ;[printf "Last template ~a~n" m]
 
   [letrec [[alist [parse-tree  m `[
                                    [mx . ,mouse-x]
