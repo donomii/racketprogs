@@ -75,6 +75,11 @@
 
   ]
 
+[define [set-attrib key value attribs]
+  [cons [list key value] attribs]]
+
+[define [set-state key value attribs]
+  [cons [cons key value] attribs]]
 
 [define [render data type attribs children t state]
   ;[printf "Rendering ~a~nState: ~a~n" type state]
@@ -85,7 +90,9 @@
     [cond
       [[equal? type "text"][letrec [
                                     [x2 [+ x 100]]
-                                    [y2 [ + y 100]]]
+                                    [y2 [ + y 100]]
+                                    [nextPos  [advancer x y x2  y2]]
+                                    ]
                              [fill 255]
                              [stroke 0 0 0 255]
                              [rect x y  100 100]
@@ -93,7 +100,7 @@
                              [fill 0]
                              [text data x y 100 100 ]
                              [list attribs
-                                   [append [list `[mx . ,[car [advancer x y x2 y2]]] `[my . ,[cadr [advancer x y x2  y2]]] ] state ]]]]
+                                   [append [list `[mx . ,[car nextPos]] `[my . ,[cadr nextPos]] ] state ]]]]
       [[equal? type "button"] [letrec [
                                        [x2 [+ x 50]]
                                        [y2 [ + y 15]]
@@ -149,13 +156,18 @@
                  ;[set-mcdr! pair [list x]] ;Set window coords here
                  ]
                ]]]
+         
+         [list
+          [set-attrib 'y y [set-attrib 'x x attribs]]
+          [set-state 'mx  [car [advancer x y x2  [+ y 22]]]
+                     [set-state 'my  [cadr [advancer x y x2  [+ y 22]]] state] ]]]]
 
-         
-         
-         [list  [cons [list 'y y] [cons [list 'x x] attribs]]  [append [list `[mx . ,[car [advancer x y x2  [+ y 22]]]] `[my . ,[cadr [advancer x y x2  [+ y 22]]]] ] state ]]]]
+
+      
       [[equal? type "popup"] [begin
                                [list attribs
-                                     [append [list `[mx . ,[startx state]] `[my . ,[starty state]]] state]]
+                                     [set-state 'mx [startx state]
+                                                [set-state 'my [starty state] state]]]
                                ]]
       [else [list attribs state]]
     
@@ -171,17 +183,17 @@
 [define [map-children children state]
   ;[printf "Child list: ~a~n" children]
   [let [[returns  [map [lambda [c]
-               ;[printf "Mapping ~a~n" [second c]]
-               [letrec [[alist [parse-tree c state]]
-                        [template [car alist]]
-                        [new-state [cadr alist]]]
-                 [set! state new-state]
-                 template
-                 ]] children]]]
+                         ;[printf "Mapping ~a~n" [second c]]
+                         [letrec [[alist [parse-tree c state]]
+                                  [template [car alist]]
+                                  [new-state [cadr alist]]]
+                           [set! state new-state]
+                           template
+                           ]] children]]]
     ;[printf "Returning children: ~a~n" returns]
-  [list returns
-        state]
-  ]]
+    [list returns
+          state]
+    ]]
 
 [define [parse-tree t state]
   ;[printf "Parsetree ~a~nState: ~a~n~n" t state]
@@ -200,7 +212,7 @@
                  [children1 [assoc 'children new-attribs]]
                  [new-widget   [append `[w ,data ]  new-attribs]]
                  ]
-           ;[printf "Parsetree1 ~a~nState: ~a~n~n" new-widget new-state]
+          ;[printf "Parsetree1 ~a~nState: ~a~n~n" new-widget new-state]
           ;If there are children
           [if children1
               ;Render them
