@@ -10,7 +10,12 @@
                   [children
                    [w "A handy little paragraph of text that should test the renderer a bit"
                       [id "test text"] [type "text"]]
-                   [w "OK" [id "ok button"] [type "button"]]]]]
+                   [w "OK" [id "ok button"] [type "button"]]]]
+               [w "Another Test Window" [id "Another Test window"] [type "window"] [x 150] [y 150]
+                  [children
+                   [w "A handy little paragraph of text that should test the renderer a bit"
+                      [type "text"]]
+                   [w "Not OK" [id "not ok button"] [type "button"]]]]]
                                                         
               [w "menu" [id "Popup menu"] [type "popup"][children
                                                          [w "Do thing" [type "button"] [id "do thing button"]]
@@ -25,7 +30,8 @@
 [define [mouse-event x] [s= mouse-event x]]
 [define [do-draw x] [s= do-draw x]]
 [define [button-down? x] [s= button-down?  x]]
-[define [advancer x y x2 y2] [list x y2]]
+[define [vertical-advancer x y x2 y2] [list x y2]]
+[define [horizontal-advancer x y x2 y2] [list x2 y]]
 
 
 [define last-state `[
@@ -40,7 +46,7 @@
                      [mouse-event . 'false]
                      [do-draw . #t]   ;do draw
                      [button-down? . #f] ;Is the button currently down?
-                     [advancer . ,advancer]
+                     [advancer . vertical-advancer]
                      [drag-target . 'drag-target]
                      [dragvecx . 0]
                      [dragvecy . 0] ;Total drag vector, x and y
@@ -91,9 +97,10 @@
 
   [letrec [[x [mx state]]
            [y  [my state]]
-           [id [s=f id attribs #f]]]
+           [id [s=f id attribs #f]]
+           [advancer [s=f advancer state #f]]]
     
-    [when [not id] [error [format "Error:  No id found for widget ~a~n" t]]]
+    ;[when [not id] [error [format "Error:  No id found for widget ~a~n" t]]]
     
     [cond
       [[equal? type "text"][letrec [
@@ -109,11 +116,12 @@
                              [fill 0]
                              [text data x y 100 100 ]
                              [list attribs
-                                   [set-drag-target-if hover? id
+                                   [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
                                                        [set-state 'mx [car nextPos] [set-state 'my [cadr nextPos] state] ]]]]]
       [[equal? type "button"] [letrec [
                                        [x2 [+ x 50]]
                                        [y2 [ + y 15]]
+                                       [nextPos  [advancer x y x2  y2]]
                                        [hover? [inside? mouse-x mouse-y x y x2 y2]]]
                                 [when [do-draw state]
                                   [if hover?
@@ -127,15 +135,16 @@
                                   [fill 0]
                                   [text data x y ]
                                   ]
-                                ; [printf "Hover:~a id:~a mouse-event:~a\n" hover? [assoc 'id attribs] [mouse-event state]]
+                                 [printf "Hover:~a id:~a mouse-event:~a drag-target:~a is drag-target:~a\n" hover? [s= id attribs] [mouse-event state] [s= drag-target state][equal? [s= drag-target state] [s= id attribs]]]
                                 [when hover?
-                                  [when [assoc 'id attribs]
+                                  
+                                    [when [equal? [s= drag-target state] [s= id attribs]]
                                     [when [equal? [mouse-event state] 'release]
-                                      [button-click [cadr [assoc 'id attribs]]]
+                                      [button-click  [s= id attribs]]
                                       ]]]
                                 [list attribs
-                                      [set-drag-target-if hover? id
-                                      [append [list `[mx . ,[car [advancer x y x2 y2]]] `[my . ,[cadr [advancer x y x2  y2]]] ] state ]]]]]
+                                      [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
+                                                          [set-state 'mx [car nextPos] [set-state 'my [cadr nextPos] state ] ]]]]]
       [[equal? type "window"]
        ;[printf "case: window~n"]
        [letrec [
@@ -155,7 +164,7 @@
            [rect x y  200 200]
            [text-size 11]
            [fill 0]
-           [text data [/ [+ x x2] 2] y ]
+           [text data  x  y ]
            ]
          ; [printf "Hover:~a id:~a mouse-event:~a\n" hover? [assoc 'id attribs] [mouse-event state]]
                                 
@@ -170,9 +179,9 @@
          
          [list
           [set-attrib 'y y [set-attrib 'x x attribs]]
-           [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
-          [set-state 'mx  [car [advancer x y x2  [+ y 22]]]
-                     [set-state 'my  [cadr [advancer x y x2  [+ y 22]]] state]] ]]]]
+          [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
+                              [set-state 'mx  [car [advancer x y x2  [+ y 22]]]
+                                         [set-state 'my  [cadr [advancer x y x2  [+ y 22]]] state]] ]]]]
 
 
       
@@ -275,7 +284,7 @@
                                    [mouse-event . ,persist-mouse-event]
                                    [do-draw . #t]   ;do draw
                                    [button-down? . ,button-down] ;Is the button currently down?
-                                   [advancer . ,advancer]
+                                   [advancer . ,vertical-advancer]
                                    [drag-target . ,[s= drag-target last-state]]
                                    [dragvecx . ,[- mouse-x [startx last-state]]]
                                    [dragvecy . ,[- mouse-y [starty last-state]]] ;Total drag vector, x and y
@@ -286,7 +295,7 @@
                                          
     [set! last-state new-state]
     [set! m new-template] ]
-  [printf "New state: ~a~n" last-state]
+  ;[printf "New state: ~a~n" last-state]
   [if mouse-pressed  
       [set! button-down #t]
       [set! button-down #f]]
