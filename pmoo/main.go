@@ -5,12 +5,15 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"runtime/debug"
 	"strings"
 
 	"github.com/chzyer/readline"
+	"github.com/donomii/goof"
 	. "github.com/donomii/pmoo"
 	"github.com/donomii/throfflib"
 	"github.com/traefik/yaegi/interp"
@@ -77,11 +80,17 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 }
 
 var Affinity string
+var QuitOnEmptyQueue bool
 
 func main() {
 	etcdServer := ""
 	var init bool
 	var RawTerm bool
+	var inQ chan *Message = make(chan *Message, 100)
+	SetQ(inQ)
+	player := "2"
+	cmdProg := path.Base(os.Args[0])
+
 	flag.BoolVar(&init, "init", false, "Create basic objects.  Overwrites existing")
 	flag.BoolVar(&Cluster, "cluster", false, "Run in cluster mode.  See instructions.")
 	flag.BoolVar(&ClusterQueue, "clusterQ", false, "Run messages in cluster mode.  See instructions.")
@@ -92,37 +101,51 @@ func main() {
 
 	flag.Parse()
 
-	SetEtcdServers([]string{etcdServer})
-	if Cluster {
-		//okdb.Connect("192.168.178.22:7778")
-
-	}
-	if ClusterQueue {
-		//go StartClient(QueueServer)
-		SetQueueServer(QueueServer)
-		go Receiver(QueueServer, func(b []byte) {
-			var m Message
-			json.Unmarshal(b, &m)
-			Q <- &m
-		})
-	}
-
-	if init {
-		initDB()
-	}
-	inQ := make(chan *Message, 100)
-	SetQ(inQ)
-	player := "2"
-	if RawTerm {
-		go ConsoleInputHandler(inQ)
+	if cmdProg == "p" {
+		log.SetOutput(ioutil.Discard)
+		//fmt.Println("Single command mode")
+		dataDir := goof.HomeDirectory() + "/.pmoo/objects"
+		os.MkdirAll(dataDir, 0600)
+		SetDataDir(dataDir)
+		QuitOnEmptyQueue = true
+		args := append(os.Args[1:], "", "", "")
+		RawMsg(Message{Player: player, This: "7", Verb: "%commandline", Args: args, Ticks: DefaultTicks})
 	} else {
-		go ReadLineInputHandler(inQ, player)
+
+		SetEtcdServers([]string{etcdServer})
+		if Cluster {
+			//okdb.Connect("192.168.178.22:7778")
+
+		}
+		if ClusterQueue {
+			//go StartClient(QueueServer)
+			SetQueueServer(QueueServer)
+			go Receiver(QueueServer, func(b []byte) {
+				var m Message
+				json.Unmarshal(b, &m)
+				Q <- &m
+			})
+		}
+
+		if init {
+			initDB()
+		}
+
+		if RawTerm {
+			go ConsoleInputHandler(inQ)
+		} else {
+			go ReadLineInputHandler(inQ, player)
+		}
 	}
 	MOOloop(inQ, player)
 }
 func MOOloop(inQ chan *Message, player string) {
 	for {
 		log.Println("Waiting on Q")
+		if QuitOnEmptyQueue && len(inQ) == 0 {
+			log.Println("queue empty, exiting")
+			os.Exit(0)
+		}
 		m := <-inQ
 		log.Println("Q:", m)
 		if m.Ticks < 1 {
@@ -144,14 +167,21 @@ func MOOloop(inQ chan *Message, player string) {
 			continue
 		}
 
-		log.Println("Handling input - Breaking sentence")
-
 		text := m.Data
-		args, _ := LexLine(text)
-		if len(args) > 0 {
-			args = args[1:]
+		var args []string
+		var verb, dobjstr, prepstr, iobjstr string
+		if m.Verb == "%commandline" {
+			args = m.Args
+			verb, dobjstr, prepstr, iobjstr = m.Args[0], m.Args[1], m.Args[2], m.Args[3]
+		} else {
+			log.Println("Handling input - Breaking sentence")
+			args, _ = LexLine(text)
+			if len(args) > 0 {
+				args = args[1:]
+			}
+			verb, dobjstr, prepstr, iobjstr = BreakSentence(text)
 		}
-		verb, dobjstr, prepstr, iobjstr := BreakSentence(text)
+
 		log.Println(strings.Join([]string{verb, dobjstr, prepstr, iobjstr}, ":"))
 		dobj, dpropstr := ParseDo(dobjstr, player)
 		iobj, ipropstr := ParseDo(iobjstr, player)

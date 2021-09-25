@@ -22,7 +22,7 @@ func initDB() {
 	rootObj.Properties["wizard"] = Property{Value: `false`}
 	rootObj.Properties["read"] = Property{Value: `true`}
 	rootObj.Properties["write"] = Property{Value: `false`}
-	rootObj.Properties["contains"] = Property{Value: ``}
+	rootObj.Properties["contents"] = Property{Value: ``}
 	rootObj.Properties["room"] = Property{Value: `4`}
 	rootObj.Properties["player"] = Property{Value: `5`}
 	rootObj.Properties["thing"] = Property{Value: `6`}
@@ -52,7 +52,7 @@ func initDB() {
 	playerobj.Properties["wizard"] = Property{Value: `true`}
 	playerobj.Properties["read"] = Property{Value: `true`}
 	playerobj.Properties["write"] = Property{Value: `false`}
-	playerobj.Properties["contains"] = Property{Value: ``}
+	playerobj.Properties["contents"] = Property{Value: ``}
 	SaveObject(&playerobj)
 
 	log.Println("Overwriting oops")
@@ -68,7 +68,7 @@ func initDB() {
 	oops.Properties["wizard"] = Property{Value: `false`}
 	oops.Properties["read"] = Property{Value: `true`}
 	oops.Properties["write"] = Property{Value: `false`}
-	oops.Properties["contains"] = Property{Value: ``}
+	oops.Properties["contents"] = Property{Value: ``}
 	SaveObject(&oops)
 
 	log.Println("Overwriting First room")
@@ -86,7 +86,7 @@ func initDB() {
 	room.Properties["wizard"] = Property{Value: `false`}
 	room.Properties["read"] = Property{Value: `true`}
 	room.Properties["write"] = Property{Value: `false`}
-	room.Properties["contains"] = Property{Value: ``}
+	room.Properties["contents"] = Property{Value: ``}
 	SaveObject(&room)
 
 	log.Println("Overwriting genroom")
@@ -104,7 +104,7 @@ func initDB() {
 	genroom.Properties["wizard"] = Property{Value: `false`}
 	genroom.Properties["read"] = Property{Value: `true`}
 	genroom.Properties["write"] = Property{Value: `false`}
-	genroom.Properties["contains"] = Property{Value: ``}
+	genroom.Properties["contents"] = Property{Value: ``}
 	SaveObject(&genroom)
 
 	log.Println("Overwriting generic player")
@@ -122,7 +122,7 @@ func initDB() {
 	genplayer.Properties["wizard"] = Property{Value: `false`}
 	genplayer.Properties["read"] = Property{Value: `false`}
 	genplayer.Properties["write"] = Property{Value: `false`}
-	genplayer.Properties["contains"] = Property{Value: ``}
+	genplayer.Properties["contents"] = Property{Value: ``}
 	SaveObject(&genplayer)
 
 	log.Println("Overwriting generic thing")
@@ -140,7 +140,7 @@ func initDB() {
 	genthing.Properties["wizard"] = Property{Value: `false`}
 	genthing.Properties["read"] = Property{Value: `false`}
 	genthing.Properties["write"] = Property{Value: `false`}
-	genthing.Properties["contains"] = Property{Value: ``}
+	genthing.Properties["contents"] = Property{Value: ``}
 	SaveObject(&genthing)
 
 	log.Println("Overwriting core object")
@@ -158,7 +158,7 @@ func initDB() {
 	coreObj.Properties["wizard"] = Property{Value: `false`}
 	coreObj.Properties["read"] = Property{Value: `false`}
 	coreObj.Properties["write"] = Property{Value: `false`}
-	coreObj.Properties["contains"] = Property{Value: ``}
+	coreObj.Properties["contents"] = Property{Value: ``}
 	SaveObject(&coreObj)
 	SaveObject(&rootObj)
 
