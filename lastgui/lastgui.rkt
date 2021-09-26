@@ -62,8 +62,11 @@
   [when name
     [printf "Advancer: ~a Bounds: ~a~n" name bounds]]
   [let [[res [cond
+               ;Place the next widget under the title bar
                [[equal? name 'window][set-state 'nextx [first bounds] [set-state 'nexty [+ 22 [second bounds]] state]]]
+               ;Place the next widget to the top right of the current one
                [[equal? name 'horizontal][set-state 'nextx [third bounds] [set-state 'nexty [second bounds] state]]]
+               ;Place the next widget to the bottom left of the current one
                [[equal? name 'vertical][set-state 'nextx [first bounds] [set-state 'nexty [fourth bounds] state]]]
                [else state]
       
