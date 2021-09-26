@@ -8,21 +8,28 @@
 ;provides a window, the draw routines and a description of the gui, and lastgui renders onto the canvas provided.  Input is collected by the program using
 ;whatever native libraries, then passed into the gui to be processed.
 
-;Lastgui is not specifically a immediate or delayed mode gui, the best way to put it might be "state separated".
+;In order to actually make progress, I'm focussing on simple, effective solutions rather than complex complete solutions.  So lastgui contains significantly fewer features
+;and less polish than other toolkits.
+
+;Lastgui is not specifically a immediate or delayed mode gui, the best way to put it might be "state separated".  The widget tree defines the layout, and usually doesn't change
+;(unless you change the layout by dragging a window or something else.  The state variable holds the ephemeral state - mouse clicks and movements, drag state, etc.  It is
+;recreated on every frame, sometimes using data from the previous state.
+
+;The state vairable is effectively global for this module
 
 [define m '[w "toplevel" [id "Toplevel container"] [type "toplevel"]
               [children
                [w "A Test Window" [id "Test window"] [type "window"] [x 50] [y 50] [advancer window]
                   [children
-                        [w "A big container" [type "container"] [advancer vertical] [children
-                                                                                                            [w "A h1container" [type "container"] [advancer vertical][children
-                                                                                                                                                 [w "A handy little paragraph of text that should test the renderer a bit"
-                                                                                                                                                    [id "test text"] [type "text"][advancer horizontal]]
-                                                                                                                                                 [w "OK" [id "ok button"] [type "button"][advancer horizontal]]]]
-                                                                                                            [w "A h2container" [type "container"] [advancer horizontal][children
-                                                                                                                                                 [w "A handy little paragraph of text that should test the renderer a bit"
-                                                                                                                                                    [id "test text"] [type "text"]]
-                                                                                                                                                 [w "OK" [id "ok button"] [type "button"]]]]]]] ]
+                   [w "A big container" [type "container"] [advancer vertical] [children
+                                                                                [w "A h1container" [type "container"] [advancer vertical][children
+                                                                                                                                          [w "A handy little paragraph of text that should test the renderer a bit"
+                                                                                                                                             [id "test text"] [type "text"][advancer horizontal]]
+                                                                                                                                          [w "OK" [id "ok button"] [type "button"][advancer horizontal]]]]
+                                                                                [w "A h2container" [type "container"] [advancer horizontal][children
+                                                                                                                                            [w "A handy little paragraph of text that should test the renderer a bit"
+                                                                                                                                               [id "test text"] [type "text"]]
+                                                                                                                                            [w "OK" [id "ok button"] [type "button"]]]]]]] ]
                [w "Another Test Window" [id "Another Test window"] [type "window"] [x 150] [y 150]
                   [children
                    [w "A handy little paragraph of text that should test the renderer a bit"
@@ -33,7 +40,7 @@
                                                          [w "Do thing" [type "button"] [id "do thing button"]]
                                                          [w "Exit" [id "exit button"][type "button"]]]]]
              
-              ]
+  ]
 
 
 
@@ -53,16 +60,16 @@
 [define [horizontal-advancer x y x2 y2] [list x2 y]]
 [define [new-advancer name bounds state]
   [when name
-      [printf "Advancer: ~a Bounds: ~a~n" name bounds]]
-   [let [[res [cond
-      [[equal? name 'window][set-state 'nextx [first bounds] [set-state 'nexty [+ 22 [second bounds]] state]]]
-      [[equal? name 'horizontal][set-state 'nextx [third bounds] [set-state 'nexty [second bounds] state]]]
-      [[equal? name 'vertical][set-state 'nextx [first bounds] [set-state 'nexty [fourth bounds] state]]]
-      [else state]
+    [printf "Advancer: ~a Bounds: ~a~n" name bounds]]
+  [let [[res [cond
+               [[equal? name 'window][set-state 'nextx [first bounds] [set-state 'nexty [+ 22 [second bounds]] state]]]
+               [[equal? name 'horizontal][set-state 'nextx [third bounds] [set-state 'nexty [second bounds] state]]]
+               [[equal? name 'vertical][set-state 'nextx [first bounds] [set-state 'nexty [fourth bounds] state]]]
+               [else state]
       
-       ]]]
-     ;[printf "Advanced: ~a~n" res]
-     res]]
+               ]]]
+    ;[printf "Advanced: ~a~n" res]
+    res]]
 
 
 ;set an initial state
@@ -181,10 +188,10 @@
                                   [fill 0]
                                   [text data x y ]
                                   ]
-                                 ;[printf "Hover:~a id:~a mouse-event:~a drag-target:~a is drag-target:~a\n" hover? [s= id attribs] [mouse-event state] [s= drag-target state][equal? [s= drag-target state] [s= id attribs]]]
+                                ;[printf "Hover:~a id:~a mouse-event:~a drag-target:~a is drag-target:~a\n" hover? [s= id attribs] [mouse-event state] [s= drag-target state][equal? [s= drag-target state] [s= id attribs]]]
                                 [when hover?
                                   
-                                    [when [equal? [s= drag-target state] [s= id attribs]]
+                                  [when [equal? [s= drag-target state] [s= id attribs]]
                                     [when [equal? [mouse-event state] 'release]
                                       [button-click  [s= id attribs]]
                                       ]]]
@@ -238,20 +245,20 @@
                                                 [set-state 'nexty [starty state] state]]]
                                ]]
       [[equal? type "container"][letrec [
-                                    [x2 [+ x 100]]
-                                    [y2 [ + y 100]]
-                                    [nextPos  [list x y]]
-                                    [hover? [inside? mouse-x mouse-y x y x2 y2]]
-                                    ]
-                             [fill 255]
-                             [stroke 0 0 0 255]
-                             [rect x y  100 100]
-                             [text-size 11]
-                             [fill 0]
-                             [text data x y 100 100 ]
-                             [list [list x y x2 y2] attribs
+                                         [x2 [+ x 100]]
+                                         [y2 [ + y 100]]
+                                         [nextPos  [list x y]]
+                                         [hover? [inside? mouse-x mouse-y x y x2 y2]]
+                                         ]
+                                  [fill 255]
+                                  [stroke 0 0 0 255]
+                                  [rect x y  100 100]
+                                  [text-size 11]
+                                  [fill 0]
+                                  [text data x y 100 100 ]
+                                  [list [list x y x2 y2] attribs
                                    
-                                                       [set-state 'nextx [car nextPos] [set-state 'nexty [cadr nextPos] state] ]]]]
+                                        [set-state 'nextx [car nextPos] [set-state 'nexty [cadr nextPos] state] ]]]]
       [else [list parent-bounds attribs state]]
     
   
@@ -263,12 +270,12 @@
 
 ;find the smallest box that covers both bounding boxes
 [define [merge-bounds b1 b2]
-[list
-[if [> [first b1] [first b2]] [first b1] [first b2]]
-[if [> [second b1] [second b2]] [second b1] [second b2]]
-[if [> [third b1] [third b2]] [third b1] [third b2]]
-[if [> [fourth b1] [fourth b2]] [fourth b1] [fourth b2]]
- ]
+  [list
+   [if [> [first b1] [first b2]] [first b1] [first b2]]
+   [if [> [second b1] [second b2]] [second b1] [second b2]]
+   [if [> [third b1] [third b2]] [third b1] [third b2]]
+   [if [> [fourth b1] [fourth b2]] [fourth b1] [fourth b2]]
+   ]
   ]
 
 ;draw the children for a widget
@@ -280,19 +287,19 @@
 [define [map-children children state parent-bounds]
   ;[printf "Child list: ~a~n" children]
   [let [[out-bounds parent-bounds]]
-  [let [[new-widget-tree  [map [lambda [c]
-                         ;[printf "Mapping ~a~n" [second c]]
-                         [letrec [[alist [walk-widget-tree c state parent-bounds]]
-                                  [new-widget [car alist]]
-                                  [new-state [cadr alist]]
-                                  [new-bounds [caddr alist]]]
-                           [set! new-bounds [merge-bounds new-bounds out-bounds]]
-                           [set! state new-state]
-                           new-widget
-                           ]] children]]]
-    ;[printf "Returning children: ~a~n" returns]
-    [list new-widget-tree state out-bounds]
-    ]]]
+    [let [[new-widget-tree  [map [lambda [c]
+                                   ;[printf "Mapping ~a~n" [second c]]
+                                   [letrec [[alist [walk-widget-tree c state parent-bounds]]
+                                            [new-widget [car alist]]
+                                            [new-state [cadr alist]]
+                                            [new-bounds [caddr alist]]]
+                                     [set! new-bounds [merge-bounds new-bounds out-bounds]]
+                                     [set! state new-state]
+                                     new-widget
+                                     ]] children]]]
+      ;[printf "Returning children: ~a~n" returns]
+      [list new-widget-tree state out-bounds]
+      ]]]
 
 ;walk the widget tree, drawing each widget from top down
 [define [walk-widget-tree t state parent-bounds]
@@ -329,7 +336,7 @@
       
          
             
-              [set! new-state1 [new-advancer [car [s=f advancer attribs '[#f #f]]] new-child-bounds new-state1]]
+                [set! new-state1 [new-advancer [car [s=f advancer attribs '[#f #f]]] new-child-bounds new-state1]]
                 [list new-new-widget new-state1 new-child-bounds]]
               [begin
                 [set! new-state [new-advancer [car [s=f advancer attribs '[#f #f]]] new-parent-bounds new-state]]
@@ -356,28 +363,28 @@
   [background 255]
 
   [letrec [[alist [walk-widget-tree  m `[[nextx . 0]
-                                   [nexty . 0]
-                                   [mx . ,mouse-x]
-                                   [my . ,mouse-y]  ;Current draw position
-                                   [startx  .  ;Drag start x
+                                         [nexty . 0]
+                                         [mx . ,mouse-x]
+                                         [my . ,mouse-y]  ;Current draw position
+                                         [startx  .  ;Drag start x
                                                            
-                                            ,[if [not button-down]
-                                                 mouse-x
-                                                 [startx last-state]]]
-                                   ;Drag start y
-                                   [starty . ,[if [not button-down]
-                                                  mouse-y
-                                                  [starty last-state]]]
-                                   ;Mouse event in progress? (false, press, release)
-                                   [mouse-event . ,persist-mouse-event]
-                                   [do-draw . #t]   ;do draw
-                                   [button-down? . ,button-down] ;Is the button currently down?
-                                   [advancer . ,vertical-advancer]
-                                   [drag-target . ,[s= drag-target last-state]]
-                                   [dragvecx . ,[- mouse-x [startx last-state]]]
-                                   [dragvecy . ,[- mouse-y [starty last-state]]] ;Total drag vector, x and y
-                                   ]
-                               [list 0 0 0 0]]]
+                                                  ,[if [not button-down]
+                                                       mouse-x
+                                                       [startx last-state]]]
+                                         ;Drag start y
+                                         [starty . ,[if [not button-down]
+                                                        mouse-y
+                                                        [starty last-state]]]
+                                         ;Mouse event in progress? (false, press, release)
+                                         [mouse-event . ,persist-mouse-event]
+                                         [do-draw . #t]   ;do draw
+                                         [button-down? . ,button-down] ;Is the button currently down?
+                                         [advancer . ,vertical-advancer]
+                                         [drag-target . ,[s= drag-target last-state]]
+                                         [dragvecx . ,[- mouse-x [startx last-state]]]
+                                         [dragvecy . ,[- mouse-y [starty last-state]]] ;Total drag vector, x and y
+                                         ]
+                                     [list 0 0 0 0]]]
            [new-state [cadr alist]]
            [new-template [car alist]]
            ]
