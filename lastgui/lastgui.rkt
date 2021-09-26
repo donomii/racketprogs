@@ -4,6 +4,12 @@
 [require srfi/1]
 
 
+;lastgui is an experiment in creating a portable, simple, and useful gui.  To achieve this, lastgui is a library, not a framework.  The surrounding program
+;provides a window, the draw routines and a description of the gui, and lastgui renders onto the canvas provided.  Input is collected by the program using
+;whatever native libraries, then passed into the gui to be processed.
+
+;Lastgui is not specifically a immediate or delayed mode gui, the best way to put it might be "state separated".
+
 [define m '[w "toplevel" [id "Toplevel container"] [type "toplevel"]
               [children
                [w "A Test Window" [id "Test window"] [type "window"] [x 50] [y 50] [advancer window]
@@ -31,6 +37,7 @@
 
 
 
+; Some helper functions to deal with state
 [define [mx x] [s= mx x]]
 [define [my x] [s= my x]]
 [define [nx x] [s= nextx x]]
@@ -40,6 +47,8 @@
 [define [mouse-event x] [s= mouse-event x]]
 [define [do-draw x] [s= do-draw x]]
 [define [button-down? x] [s= button-down?  x]]
+
+;The advancers.  At the moment, layout is performed by specifying which side of the current widget to draw the next widget on.
 [define [vertical-advancer x y x2 y2] [list x y2]]
 [define [horizontal-advancer x y x2 y2] [list x2 y]]
 [define [new-advancer name bounds state]
@@ -55,6 +64,8 @@
      ;[printf "Advanced: ~a~n" res]
      res]]
 
+
+;set an initial state
 [define last-state `[
                      [mx . 0]
                      [my . 0]  ;Current draw position
@@ -73,6 +84,8 @@
                      [dragvecy . 0] ;Total drag vector, x and y
                      ]]
 
+
+;is mx, my inside the box x1,y1-x2,y2
 [define [inside? mx my x1 y1 x2 y2]
   [and
    [and [> mx x1] [< mx x2]]
@@ -80,8 +93,11 @@
    ]]
 
 
+;some more state
 [define button-down #f]
 [define persist-mouse-event #f]
+
+;example button callback
 [define [button-click id]
   [printf "Clicked on button: ~a~n" id]
   [exit 0]
@@ -102,17 +118,26 @@
 
   ]
 
+;helper function to add to the attribs conslist
 [define [set-attrib key value attribs]
   [cons [list key value] attribs]]
 
+;helper function to add to the state conslist
 [define [set-state key value attribs]
   [cons [cons key value] attribs]]
 
+;helper, sets drag state if conditions are met
 [define [set-drag-target-if hover? id state]
   [if hover?
       [set-state 'drag-target id state]
       state]]
 
+;the main render routine, is responsible for putting the graphics on the canvas
+;returns [list bounds attribs state]
+;
+; bounds - a bounding box for the last draw operation
+; attribs - the attributes for the current widget, including things like position, scroll position, and widget state
+; state - the ephemeral state
 [define [render data type attribs children t state parent-bounds]
   ;[printf "Rendering ~a~nState: ~a~n" type state]
 
@@ -245,12 +270,19 @@
 [if [> [fourth b1] [fourth b2]] [fourth b1] [fourth b2]]
  ]
   ]
+
+;draw the children for a widget
+;returns [list new-widget-tree state bounds]
+;
+; new-widget-tree - a widget tree, possibly identical to the input tree
+; state - the ephemeral state
+; bounds - a box covering all of the rendered children
 [define [map-children children state parent-bounds]
   ;[printf "Child list: ~a~n" children]
   [let [[out-bounds parent-bounds]]
-  [let [[returns  [map [lambda [c]
+  [let [[new-widget-tree  [map [lambda [c]
                          ;[printf "Mapping ~a~n" [second c]]
-                         [letrec [[alist [parse-tree c state parent-bounds]]
+                         [letrec [[alist [walk-widget-tree c state parent-bounds]]
                                   [new-widget [car alist]]
                                   [new-state [cadr alist]]
                                   [new-bounds [caddr alist]]]
@@ -259,11 +291,11 @@
                            new-widget
                            ]] children]]]
     ;[printf "Returning children: ~a~n" returns]
-    [list returns
-          state out-bounds]
+    [list new-widget-tree state out-bounds]
     ]]]
 
-[define [parse-tree t state parent-bounds]
+;walk the widget tree, drawing each widget from top down
+[define [walk-widget-tree t state parent-bounds]
   ;[printf "Parsetree ~a~nState: ~a~n~n" t state]
   [letrec [
            [ data [cadr t]]
@@ -273,7 +305,7 @@
            ]
     ;Used to enable/disable widgets
     [if [want-to-render? t state]
-        ;render sub tree
+        ;first, render the current widget
         [letrec [[alist [render data type attribs children t state parent-bounds]]
                  [new-parent-bounds [car alist]]
                  [new-attribs [cadr alist]]
@@ -282,13 +314,9 @@
                  [new-state [set-state 'mx [car nextPos] [set-state 'my [cadr nextPos] [caddr alist]]]]
                  [children1 [assoc 'children new-attribs]]
                  [new-widget   [append `[w ,data ]  new-attribs]]
-                 [old-advancer [s= advancer state]]
+                 
                  ]
-          ;[when  [s=f advancer attribs #f]
-            
-              ;[set! new-state [new-advancer [car [s= advancer attribs]] new-parent-bounds new-state]]]
-          ;[printf "Parsetree1 ~a~nState: ~a~n~n" new-widget new-state]
-          ;If there are children
+          ;If there are children, render them now
           [if children1
               ;Render them
               [letrec [[new-alist [map-children [cdr children1] new-state new-parent-bounds]]
@@ -312,8 +340,9 @@
 
 
 
-(size 640 480) 
+(size 800 600) 
 
+;Handle sketch input events
 [define [on-mouse-pressed]
   [set! persist-mouse-event 'press]]
 
@@ -323,12 +352,10 @@
   
 (define (draw)
 
+  ;clear the window
   [background 255]
 
-  ;[printf "Last state: ~a~n" last-state]
-  ;[printf "Last template ~a~n" m]
-
-  [letrec [[alist [parse-tree  m `[[nextx . 0]
+  [letrec [[alist [walk-widget-tree  m `[[nextx . 0]
                                    [nexty . 0]
                                    [mx . ,mouse-x]
                                    [my . ,mouse-y]  ;Current draw position
