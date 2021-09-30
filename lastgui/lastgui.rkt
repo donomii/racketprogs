@@ -22,10 +22,10 @@
                [w "A Test Window" [id "Test window"] [type "window"] [x 50] [y 50] [advancer window]
                   [children
                    [w "A big container" [type "container"] [advancer vertical] [children
-                                                                                [w "A h1container" [type "container"] [advancer vertical][children
+                                                                                [w "A h1container" [type "container"] [advancer horizontal][children
                                                                                                                                           [w "A handy little paragraph of text that should test the renderer a bit"
                                                                                                                                              [id "test text"] [type "text"][advancer horizontal]]
-                                                                                                                                          [w "OK" [id "ok button"] [type "button"][advancer horizontal]]]]
+                                                                                                                                          [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
                                                                                 [w "A h2container" [type "container"] [advancer horizontal][children
                                                                                                                                             [w "A handy little paragraph of text that should test the renderer a bit"
                                                                                                                                                [id "test text"] [type "text"]]
@@ -59,8 +59,8 @@
 [define [vertical-advancer x y x2 y2] [list x y2]]
 [define [horizontal-advancer x y x2 y2] [list x2 y]]
 [define [new-advancer name bounds state]
-  [when name
-    [printf "Advancer: ~a Bounds: ~a~n" name bounds]]
+  ;[when name
+    ;[printf "Advancer: ~a Bounds: ~a~n" name bounds]]
   [let [[res [cond
                ;Place the next widget under the title bar
                [[equal? name 'window][set-state 'nextx [first bounds] [set-state 'nexty [+ 22 [second bounds]] state]]]
@@ -274,9 +274,9 @@
 ;find the smallest box that covers both bounding boxes
 [define [merge-bounds b1 b2]
   [list
-   [if [> [first b1] [first b2]] [first b1] [first b2]]
-   [if [> [second b1] [second b2]] [second b1] [second b2]]
-   [if [> [third b1] [third b2]] [third b1] [third b2]]
+   [if [< [first b1]  [first b2]]  [first b1]  [first b2]]
+   [if [< [second b1] [second b2]] [second b1] [second b2]]
+   [if [> [third b1]  [third b2]]  [third b1]  [third b2]]
    [if [> [fourth b1] [fourth b2]] [fourth b1] [fourth b2]]
    ]
   ]
@@ -296,7 +296,9 @@
                                             [new-widget [car alist]]
                                             [new-state [cadr alist]]
                                             [new-bounds [caddr alist]]]
+                                     ;[printf "Merging old bounds ~a with ~a (~a)" out-bounds  [cddr  new-widget] new-bounds]
                                      [set! new-bounds [merge-bounds new-bounds out-bounds]]
+                                     [set! out-bounds [merge-bounds new-bounds out-bounds]]
                                      [set! state new-state]
                                      new-widget
                                      ]] children]]]
