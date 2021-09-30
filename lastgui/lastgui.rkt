@@ -145,9 +145,9 @@
 ;helper, sets drag state to id-resize if conditions are met
 [define [set-resize-target-if hover? id state]
   [let [[resize-id [format "~a-resize" id]]]
-  [if hover?
-      [set-state 'drag-target resize-id state]
-      state]]]
+    [if hover?
+        [set-state 'drag-target resize-id state]
+        state]]]
 
 ;the main render routine, is responsible for putting the graphics on the canvas
 ;returns [list bounds attribs state]
@@ -252,9 +252,9 @@
           [list x y x2 y2]
           [set-attrib 'h h [set-attrib 'w w [set-attrib 'y y [set-attrib 'x x attribs]]]]
           [set-resize-target-if [and resize-hover? [equal? [mouse-event state] 'press]] id
-          [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
-                              [set-state 'nextx  [car [advancer x y x2  [+ y [* 2 font-size]]]]
-                                         [set-state 'nexty  [cadr [advancer x y x2  [+ y [* 2 font-size]]]] state]] ]]]]]
+                                [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
+                                                    [set-state 'nextx  [car [advancer x y x2  [+ y [* 2 font-size]]]]
+                                                               [set-state 'nexty  [cadr [advancer x y x2  [+ y [* 2 font-size]]]] state]] ]]]]]
 
 
       
