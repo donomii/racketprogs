@@ -19,18 +19,18 @@
 
 [define m '[w "toplevel" [id "Toplevel container"] [type "toplevel"]
               [children
-               [w "A Test Window" [id "Test window"] [type "window"] [x 50] [y 50] [advancer window]
+               [w "A Test Window" [id "Test window"] [type "window"] [x 50] [y 50] [w 200] [h 200] [advancer window]
                   [children
                    [w "A big container" [type "container"] [advancer vertical] [children
                                                                                 [w "A h1container" [type "container"] [advancer horizontal][children
-                                                                                                                                          [w "A handy little paragraph of text that should test the renderer a bit"
-                                                                                                                                             [id "test text"] [type "text"][advancer horizontal]]
-                                                                                                                                          [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
+                                                                                                                                            [w "A handy little paragraph of text that should test the renderer a bit"
+                                                                                                                                               [id "test text"] [type "text"][advancer horizontal]]
+                                                                                                                                            [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
                                                                                 [w "A h2container" [type "container"] [advancer horizontal][children
                                                                                                                                             [w "A handy little paragraph of text that should test the renderer a bit"
                                                                                                                                                [id "test text"] [type "text"]]
                                                                                                                                             [w "OK" [id "ok button"] [type "button"]]]]]]] ]
-               [w "Another Test Window" [id "Another Test window"] [type "window"] [x 150] [y 150]
+               [w "Another Test Window" [id "Another Test window"] [type "window"] [x 150] [y 150]  [w 400] [h 400]
                   [children
                    [w "A handy little paragraph of text that should test the renderer a bit"
                       [type "text"]]
@@ -60,7 +60,7 @@
 [define [horizontal-advancer x y x2 y2] [list x2 y]]
 [define [new-advancer name bounds state]
   ;[when name
-    ;[printf "Advancer: ~a Bounds: ~a~n" name bounds]]
+  ;[printf "Advancer: ~a Bounds: ~a~n" name bounds]]
   [let [[res [cond
                ;Place the next widget under the title bar
                [[equal? name 'window][set-state 'nextx [first bounds] [set-state 'nexty [+ 22 [second bounds]] state]]]
@@ -142,6 +142,13 @@
       [set-state 'drag-target id state]
       state]]
 
+;helper, sets drag state to id-resize if conditions are met
+[define [set-resize-target-if hover? id state]
+  [let [[resize-id [format "~a-resize" id]]]
+  [if hover?
+      [set-state 'drag-target resize-id state]
+      state]]]
+
 ;the main render routine, is responsible for putting the graphics on the canvas
 ;returns [list bounds attribs state]
 ;
@@ -205,40 +212,49 @@
        ;[printf "case: window~n"]
        [letrec [
                 [dragging? [and [button-down? state] [equal? [s= drag-target state] [s= id attribs]]]]
-                [x [if dragging?  mouse-x  [cadr[assoc 'x attribs]]]]
-                [y  [if dragging? mouse-y  [cadr [assoc 'y attribs]]]]
-                [x2 [+ x 200]]
-                [y2 [ + y 200]]
-                [hover? [inside? mouse-x mouse-y x y x2 y2]]]
+                [resizing? [and [button-down? state] [equal? [s= drag-target state] [format "~a-resize" [s= id attribs]]]]]
+                [orig-x [cadr[assoc 'x attribs]]]
+                [orig-y [cadr [assoc 'y attribs]]]
+                [x [if dragging?  mouse-x  orig-x]]
+                [y  [if dragging? mouse-y  orig-y]]
+                [attrib-w [car [s=f w attribs '[50]]]]
+                ;[w [if resizing? [+ attrib-w [s= dragvecx state]] attrib-w]]
+                [w attrib-w]
+                [h [car [s=f h attribs '[50]]]]
+                [x2 [+ x  [if resizing? [+ w [s= dragvecx state]] w]]]
+                [y2 [+ y  [if resizing? [+ h [s= dragvecy state]]h]]]
+                [font-size 11]
+                [hover? [inside? mouse-x mouse-y x y x2 y2]]
+                [resize-hover? [inside? mouse-x mouse-y [- x2 font-size] [- y2 font-size] x2 y2]]
+                ]
          [when [do-draw state]
            [if hover?
                [stroke 255 128 128 255]
-               [stroke 0 0 0 255]
-                                    
-               ]
+               [stroke 0 0 0 255]]
            [fill 255]
-           [rect x y  200 200]
-           [text-size 11]
+           [rect x y  [- x2 x] [- y2 y]]
+           [text-size font-size]
            [fill 0]
            [text data  x  y ]
+           [fill 0]
+           [rect [- x2 font-size] [- y2 font-size] font-size font-size ]
+           [rect x y font-size font-size ]
            ]
          ; [printf "Hover:~a id:~a mouse-event:~a\n" hover? [assoc 'id attribs] [mouse-event state]]
                                 
-         [when hover?
+         [when resize-hover?
            [when [assoc 'id attribs]
              [when [equal? [mouse-event state] 'release]
-               [let [[pair [assoc 'x attribs]]]
-                 [printf ""]
-                 ;[set-mcdr! pair [list x]] ;Set window coords here
-                 ]
+               [set! w  [- x2 x]][set! h [- y2 y]]
                ]]]
          
          [list
           [list x y x2 y2]
-          [set-attrib 'y y [set-attrib 'x x attribs]]
+          [set-attrib 'h h [set-attrib 'w w [set-attrib 'y y [set-attrib 'x x attribs]]]]
+          [set-resize-target-if [and resize-hover? [equal? [mouse-event state] 'press]] id
           [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
-                              [set-state 'nextx  [car [advancer x y x2  [+ y 22]]]
-                                         [set-state 'nexty  [cadr [advancer x y x2  [+ y 22]]] state]] ]]]]
+                              [set-state 'nextx  [car [advancer x y x2  [+ y [* 2 font-size]]]]
+                                         [set-state 'nexty  [cadr [advancer x y x2  [+ y [* 2 font-size]]]] state]] ]]]]]
 
 
       
