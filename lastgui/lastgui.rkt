@@ -15,7 +15,7 @@
 ;(unless you change the layout by dragging a window or something else.  The state variable holds the ephemeral state - mouse clicks and movements, drag state, etc.  It is
 ;recreated on every frame, sometimes using data from the previous state.
 
-;The state vairable is effectively global for this module
+;The state variable is effectively global for this module
 
 [define m '[w "toplevel" [id "Toplevel container"] [type "toplevel"]
               [children
@@ -167,6 +167,7 @@
     
     [cond
       [[equal? type "text"][letrec [
+                                    
                                     [x2 [+ x 100]]
                                     [y2 [ + y 100]]
                                     [nextPos  [advancer x y x2  y2]]
@@ -182,8 +183,11 @@
                                    [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
                                                        [set-state 'nextx [car nextPos] [set-state 'nexty [cadr nextPos] state] ]]]]]
       [[equal? type "button"] [letrec [
-                                       [x2 [+ x 50]]
-                                       [y2 [ + y 15]]
+                                       [font-size 11]
+                                       [w [if [s=f w attribs #f] [s= w attribs] [* font-size [string-length data]]]]
+                                       [h [if [s=f h attribs #f] [s= h attribs] [* font-size 2]]]
+                                       [x2 [+ x w]]
+                                       [y2 [ + y h]]
                                        [nextPos  [advancer x y x2  y2]]
                                        [hover? [inside? mouse-x mouse-y x y x2 y2]]]
                                 [when [do-draw state]
@@ -193,10 +197,11 @@
                                     
                                       ]
                                   [stroke 0 0 0 255]
-                                  [rect x y  50   11]
-                                  [text-size 11]
+                                  [rect x y  w   h]
+                                  [text-size font-size]
                                   [fill 0]
-                                  [text data x y ]
+                                  (text-align 'center)
+                                  [text data x y w h]
                                   ]
                                 ;[printf "Hover:~a id:~a mouse-event:~a drag-target:~a is drag-target:~a\n" hover? [s= id attribs] [mouse-event state] [s= drag-target state][equal? [s= drag-target state] [s= id attribs]]]
                                 [when hover?
@@ -222,7 +227,7 @@
                 [w attrib-w]
                 [h [car [s=f h attribs '[50]]]]
                 [x2 [+ x  [if resizing? [+ w [s= dragvecx state]] w]]]
-                [y2 [+ y  [if resizing? [+ h [s= dragvecy state]]h]]]
+                [y2 [+ y  [if resizing? [+ h [s= dragvecy state]] h]]]
                 [font-size 11]
                 [hover? [inside? mouse-x mouse-y x y x2 y2]]
                 [resize-hover? [inside? mouse-x mouse-y [- x2 font-size] [- y2 font-size] x2 y2]]
@@ -235,7 +240,8 @@
            [rect x y  [- x2 x] [- y2 y]]
            [text-size font-size]
            [fill 0]
-           [text data  x  y ]
+           (text-align 'center)
+           [text data  [+ x font-size]  y [- x2 x]  [- y2 y] ]
            [fill 0]
            [rect [- x2 font-size] [- y2 font-size] font-size font-size ]
            [rect x y font-size font-size ]
@@ -246,6 +252,7 @@
            [when [assoc 'id attribs]
              [when [equal? [mouse-event state] 'release]
                [set! w  [- x2 x]][set! h [- y2 y]]
+               [set! resize-hover? #f]
                ]]]
          
          [list
@@ -416,6 +423,11 @@
   [if mouse-pressed  
       [set! button-down #t]
       [set! button-down #f]]
+  [define [on-mouse-released]
+  
+  [set! last-state [alist-cons 'drag-target #f last-state]]
+  [set! last-state [alist-cons 'resize-target #f last-state]]
+  ]
 
   
                   
