@@ -127,7 +127,7 @@
 
     ;example button callback
   [define [button-click id]
-    [printf "Clicked on button: ~a~n" id]
+    ;[printf "Clicked on button: ~a~n" id]
     [exit 0]
     ]
 
