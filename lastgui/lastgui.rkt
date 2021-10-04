@@ -54,6 +54,7 @@
 [define [mouse-event x] [s= mouse-event x]]
 [define [do-draw x] [s= do-draw x]]
 [define [button-down? x] [s= button-down?  x]]
+[define [get-attribs x] [cddr x]]
 
 ;The advancers.  At the moment, layout is performed by specifying which side of the current widget to draw the next widget on.
 [define [vertical-advancer x y x2 y2] [list x y2]]
@@ -136,6 +137,10 @@
 [define [set-state key value attribs]
   [cons [cons key value] attribs]]
 
+;helper function to add to the downstate conslist
+[define [set-downstate key value attribs]
+  [cons [cons key value] attribs]]
+
 ;helper, sets drag state if conditions are met
 [define [set-drag-target-if hover? id state]
   [if hover?
@@ -155,30 +160,43 @@
 ; bounds - a bounding box for the last draw operation
 ; attribs - the attributes for the current widget, including things like position, scroll position, and widget state
 ; state - the ephemeral state
-[define [render data type attribs children t state parent-bounds]
+[define [render data type attribs children t state parent-bounds downstate]
   ;[printf "Rendering ~a~nState: ~a~n" type state]
 
   [letrec [[x [nx state]]
            [y  [ny state]]
            [id [s=f id attribs #f]]
+           [w [car [s=f w attribs '[50]]]]
+           [h [car [s=f h attribs '[50]]]]
            [advancer [s=f advancer state #f]]]
     
     ;[when [not id] [error [format "Error:  No id found for widget ~a~n" t]]]
     
     [cond
       [[equal? type "text"][letrec [
-                                    [x2 [+ x 100]]
-                                    [y2 [ + y 100]]
+                                    ;[w [if resizing? [+ attrib-w [s= dragvecx state]] attrib-w]]
+                                   
+                                    [resizing? [s=f resizing downstate #f]]
+                                    [x2 [+ x   [max [+ w [if resizing? [s= dragvecx state] 0]] w]]]
+                                    [y2 [+ y [max [+ h   [if resizing? [s= dragvecy state] 0]] h]]]
                                     [nextPos  [advancer x y x2  y2]]
                                     [hover? [inside? mouse-x mouse-y x y x2 y2]]
                                     ]
+                             [when resizing?
+           
+                               [when [equal? [mouse-event state] 'release]
+                                 [set! w  [- x2 x]][set! h [- y2 y]]
+                                 ]]
                              [fill 255]
                              [stroke 0 0 0 255]
-                             [rect x y  100 100]
+                             [rect x y  [- x2 x] [- y2 y]]
                              [text-size 11]
                              [fill 0]
-                             [text data x y 100 100 ]
-                             [list [list x y x2 y2] attribs
+                             [text data x y [- x2 x] [- y2 y]]
+                             [list [list x y x2 y2]
+                                   downstate
+                                   [if [and resizing? [equal? [mouse-event state] 'release]] [set-attrib 'h [- y2 y] [set-attrib 'w [- x2 x]  attribs]]
+                                       attribs]
                                    [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
                                                        [set-state 'nextx [car nextPos] [set-state 'nexty [cadr nextPos] state] ]]]]]
       [[equal? type "button"] [letrec [
@@ -205,7 +223,7 @@
                                     [when [equal? [mouse-event state] 'release]
                                       [button-click  [s= id attribs]]
                                       ]]]
-                                [list [list x y x2 y2] attribs
+                                [list [list x y x2 y2] downstate  attribs
                                       [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
                                                           [set-state 'nextx [car nextPos] [set-state 'nexty [cadr nextPos] state ] ]]]]]
       [[equal? type "window"]
@@ -222,7 +240,7 @@
                 [w attrib-w]
                 [h [car [s=f h attribs '[50]]]]
                 [x2 [+ x  [if resizing? [+ w [s= dragvecx state]] w]]]
-                [y2 [+ y  [if resizing? [+ h [s= dragvecy state]]h]]]
+                [y2 [+ y  [if resizing? [+ h [s= dragvecy state]] h]]]
                 [font-size 11]
                 [hover? [inside? mouse-x mouse-y x y x2 y2]]
                 [resize-hover? [inside? mouse-x mouse-y [- x2 font-size] [- y2 font-size] x2 y2]]
@@ -250,6 +268,7 @@
          
          [list
           [list x y x2 y2]
+          [set-downstate 'resizing resizing? downstate]
           [set-attrib 'h h [set-attrib 'w w [set-attrib 'y y [set-attrib 'x x attribs]]]]
           [set-resize-target-if [and resize-hover? [equal? [mouse-event state] 'press]] id
                                 [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
@@ -259,7 +278,8 @@
 
       
       [[equal? type "popup"] [begin
-                               [list [list x y x y] attribs
+                               [list [list x y x y] downstate attribs
+                                     
                                      [set-state 'nextx [startx state]
                                                 [set-state 'nexty [starty state] state]]]
                                ]]
@@ -275,10 +295,13 @@
                                   [text-size 11]
                                   [fill 0]
                                   [text data x y 100 100 ]
-                                  [list [list x y x2 y2] attribs
+                                  [list
+                                   [list x y x2 y2]
+                                   downstate
+                                   attribs
                                    
-                                        [set-state 'nextx [car nextPos] [set-state 'nexty [cadr nextPos] state] ]]]]
-      [else [list parent-bounds attribs state]]
+                                   [set-state 'nextx [car nextPos] [set-state 'nexty [cadr nextPos] state] ]]]]
+      [else [list parent-bounds downstate attribs state]]
     
   
       ]
@@ -303,12 +326,12 @@
 ; new-widget-tree - a widget tree, possibly identical to the input tree
 ; state - the ephemeral state
 ; bounds - a box covering all of the rendered children
-[define [map-children children state parent-bounds]
+[define [map-children children state parent-bounds downstate]
   ;[printf "Child list: ~a~n" children]
   [let [[out-bounds parent-bounds]]
     [let [[new-widget-tree  [map [lambda [c]
                                    ;[printf "Mapping ~a~n" [second c]]
-                                   [letrec [[alist [walk-widget-tree c state parent-bounds]]
+                                   [letrec [[alist [walk-widget-tree c state parent-bounds downstate]]
                                             [new-widget [car alist]]
                                             [new-state [cadr alist]]
                                             [new-bounds [caddr alist]]]
@@ -322,8 +345,15 @@
       [list new-widget-tree state out-bounds]
       ]]]
 
+[define [get-child-pressures children]
+  [letrec [[pressures [map [lambda [c] [car [s=f pressures [get-attribs c] '[1]]] children]]]
+           [total [fold + 0 pressures]]
+           [percentages [map [lambda [c] [/ c total]]]]]
+    percentages
+    ]]
+
 ;walk the widget tree, drawing each widget from top down
-[define [walk-widget-tree t state parent-bounds]
+[define [walk-widget-tree t state parent-bounds downstate]
   ;[printf "Parsetree ~a~nState: ~a~n~n" t state]
   [letrec [
            [ data [cadr t]]
@@ -334,12 +364,13 @@
     ;Used to enable/disable widgets
     [if [want-to-render? t state]
         ;first, render the current widget
-        [letrec [[alist [render data type attribs children t state parent-bounds]]
+        [letrec [[alist [render data type attribs children t state parent-bounds downstate]]
                  [new-parent-bounds [car alist]]
-                 [new-attribs [cadr alist]]
+                 [new-downstate [cadr alist]]
+                 [new-attribs [caddr alist]]
                  [advancer [s= advancer state]]
                  [nextPos  [apply advancer new-parent-bounds]]
-                 [new-state [set-state 'mx [car nextPos] [set-state 'my [cadr nextPos] [caddr alist]]]]
+                 [new-state [set-state 'mx [car nextPos] [set-state 'my [cadr nextPos] [cadddr alist]]]]
                  [children1 [assoc 'children new-attribs]]
                  [new-widget   [append `[w ,data ]  new-attribs]]
                  
@@ -347,7 +378,7 @@
           ;If there are children, render them now
           [if children1
               ;Render them
-              [letrec [[new-alist [map-children [cdr children1] new-state new-parent-bounds]]
+              [letrec [[new-alist [map-children [cdr children1] new-state new-parent-bounds new-downstate]]
                        [new-children [car new-alist]]
                        [new-state1 [cadr new-alist]]
                        [new-child-bounds [caddr new-alist]]
@@ -405,7 +436,8 @@
                                          [dragvecx . ,[- mouse-x [startx last-state]]]
                                          [dragvecy . ,[- mouse-y [starty last-state]]] ;Total drag vector, x and y
                                          ]
-                                     [list 0 0 0 0]]]
+                                     [list 0 0 0 0]
+                                     '[]]]
            [new-state [cadr alist]]
            [new-template [car alist]]
            ]
