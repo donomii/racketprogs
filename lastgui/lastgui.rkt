@@ -1,34 +1,54 @@
-#lang sketching
 
-[require "spath.rkt"]
-[require srfi/1]
+[module lastgui racket
+[provide set-display-tree! set-draw-funcs! horizontal-advancer vertical-advancer  walk-widget-tree startx starty]
+  (require srfi/1)
+  [require (file "./spath.rkt")]
 
 
-;lastgui is an experiment in creating a portable, simple, and useful gui.  To achieve this, lastgui is a library, not a framework.  The surrounding program
-;provides a window, the draw routines and a description of the gui, and lastgui renders onto the canvas provided.  Input is collected by the program using
-;whatever native libraries, then passed into the gui to be processed.
+  ;lastgui is an experiment in creating a portable, simple, and useful gui.  To achieve this, lastgui is a library, not a framework.  The surrounding program
+  ;provides a window, the draw routines and a description of the gui, and lastgui renders onto the canvas provided.  Input is collected by the program using
+  ;whatever native libraries, then passed into the gui to be processed.
 
-;In order to actually make progress, I'm focussing on simple, effective solutions rather than complex complete solutions.  So lastgui contains significantly fewer features
-;and less polish than other toolkits.
+  ;In order to actually make progress, I'm focussing on simple, effective solutions rather than complex complete solutions.  So lastgui contains significantly fewer features
+  ;and less polish than other toolkits.
 
-;Lastgui is not specifically a immediate or delayed mode gui, the best way to put it might be "state separated".  The widget tree defines the layout, and usually doesn't change
-;(unless you change the layout by dragging a window or something else.  The state variable holds the ephemeral state - mouse clicks and movements, drag state, etc.  It is
-;recreated on every frame, sometimes using data from the previous state.
+  ;Lastgui is not specifically a immediate or delayed mode gui, the best way to put it might be "state separated".  The widget tree defines the layout, and usually doesn't change
+  ;(unless you change the layout by dragging a window or something else.  The state variable holds the ephemeral state - mouse clicks and movements, drag state, etc.  It is
+  ;recreated on every frame, sometimes using data from the previous state.
 
-;The state vairable is effectively global for this module
+  ;The state variable is effectively global for this module
 
-[define m '[w "toplevel" [id "Toplevel container"] [type "toplevel"]
+;  
+;[define fill #f]
+;  [define stroke #f]
+;  [define rect #f]
+;  [define text-size #f]
+;  [define text #f]per
+;  [define text-align #f]
+;  [define size #f]
+;  [define background #f]
+;  [define mouse-x #f]
+;  [define mouse-y #f]
+;[define mouse-pressed #f]
+
+  [define draw-funcs '[]]
+  [define [set-draw-funcs! funcs]
+    [set! draw-funcs funcs]]
+  [define [df name]
+    [cdr [assoc name draw-funcs ]]]
+;[error [format "~a not defined in ~a" name draw-funcs]]
+  [define display-tree '[w "toplevel" [id "Toplevel container"] [type "toplevel"]
               [children
                [w "A Test Window" [id "Test window"] [type "window"] [x 50] [y 50] [w 200] [h 200] [advancer window]
                   [children
                    [w "A big container" [type "container"] [advancer vertical] [children
-                                                                                [w "A h1container" [type "container"] [advancer horizontal][children
+                                                                                  [w "A h1container" [type "container"] [advancer vertical][children
                                                                                                                                             [w "A handy little paragraph of text that should test the renderer a bit"
-                                                                                                                                               [id "test text"] [type "text"][advancer horizontal]]
+                                                                                                                                               [id "test text"] [type "text"][w 200] [h 100][advancer horizontal]]
                                                                                                                                             [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
                                                                                 [w "A h2container" [type "container"] [advancer horizontal][children
                                                                                                                                             [w "A handy little paragraph of text that should test the renderer a bit"
-                                                                                                                                               [id "test text"] [type "text"]]
+                                                                                                                                                 [id "test text"][w 100] [h 200] [type "text"]]
                                                                                                                                             [w "OK" [id "ok button"] [type "button"]]]]]]] ]
                [w "Another Test Window" [id "Another Test window"] [type "window"] [x 150] [y 150]  [w 400] [h 400]
                   [children
@@ -42,6 +62,9 @@
              
   ]
 
+  [define [set-display-tree! tree]
+[set! display-tree tree]
+    ]
 
 
 ; Some helper functions to deal with state
@@ -76,46 +99,21 @@
     res]]
 
 
-;set an initial state
-[define last-state `[
-                     [mx . 0]
-                     [my . 0]  ;Current draw position
-                     [startx  . 0 ;Drag start x
                                                            
-                              ]
-                     ;Drag start y
-                     [starty . 0]
-                     ;Mouse event in progress? (false, press, release)
-                     [mouse-event . 'false]
-                     [do-draw . #t]   ;do draw
-                     [button-down? . #f] ;Is the button currently down?
-                     [advancer . vertical-advancer]
-                     [drag-target . 'drag-target]
-                     [dragvecx . 0]
-                     [dragvecy . 0] ;Total drag vector, x and y
-                     ]]
 
 
-;is mx, my inside the box x1,y1-x2,y2
-[define [inside? mx my x1 y1 x2 y2]
+  ;is mx, my inside the box x1,y1-x2,y2
+  [define [inside? mx my x1 y1 x2 y2]
   [and
    [and [> mx x1] [< mx x2]]
    [and [> my y1] [< my y2]]
    ]]
 
 
-;some more state
-[define button-down #f]
-[define persist-mouse-event #f]
-
-;example button callback
-[define [button-click id]
-  [printf "Clicked on button: ~a~n" id]
-  [exit 0]
-  ]
 
 
-[define [want-to-render? t state]
+
+  [define [want-to-render? t state]
   [letrec [
            [ data [cadr t]]
            [attribs [cddr t]]
@@ -129,12 +127,18 @@
 
   ]
 
-;helper function to add to the attribs conslist
-[define [set-attrib key value attribs]
+    ;example button callback
+  [define [button-click id]
+    ;[printf "Clicked on button: ~a~n" id]
+    [exit 0]
+    ]
+
+  ;helper function to add to the attribs conslist
+  [define [set-attrib key value attribs]
   [cons [list key value] attribs]]
 
-;helper function to add to the state conslist
-[define [set-state key value attribs]
+  ;helper function to add to the state conslist
+  [define [set-state key value attribs]
   [cons [cons key value] attribs]]
 
 ;helper function to add to the downstate conslist
@@ -147,8 +151,8 @@
       [set-state 'drag-target id state]
       state]]
 
-;helper, sets drag state to id-resize if conditions are met
-[define [set-resize-target-if hover? id state]
+  ;helper, sets drag state to id-resize if conditions are met
+  [define [set-resize-target-if hover? id state]
   [let [[resize-id [format "~a-resize" id]]]
     [if hover?
         [set-state 'drag-target resize-id state]
@@ -163,58 +167,64 @@
 [define [render data type attribs children t state parent-bounds downstate]
   ;[printf "Rendering ~a~nState: ~a~n" type state]
 
-  [letrec [[x [nx state]]
+    [letrec [[mouse-x [mx state]]
+             [mouse-y [my state]]
+             [x [nx state]]
            [y  [ny state]]
            [id [s=f id attribs #f]]
-           [w [car [s=f w attribs '[50]]]]
-           [h [car [s=f h attribs '[50]]]]
+             [font-size 11]
+             [w [if [s=f w attribs #f] [car [s= w attribs]] [* font-size [string-length data]]]]
+             [h [if [s=f h attribs #f] [car [s= h attribs]] [* font-size 2]]]
+                                   
            [advancer [s=f advancer state #f]]]
     
     ;[when [not id] [error [format "Error:  No id found for widget ~a~n" t]]]
     
     [cond
       [[equal? type "text"][letrec [
-                                    ;[w [if resizing? [+ attrib-w [s= dragvecx state]] attrib-w]]
-                                   
-                                    [resizing? [s=f resizing downstate #f]]
+                                    
+                                      [resizing? [s=f resizing downstate #f]]
                                     [x2 [+ x   [max [+ w [if resizing? [s= dragvecx state] 0]] w]]]
                                     [y2 [+ y [max [+ h   [if resizing? [s= dragvecy state] 0]] h]]]
-                                    [nextPos  [advancer x y x2  y2]]
-                                    [hover? [inside? mouse-x mouse-y x y x2 y2]]
-                                    ]
-                             [when resizing?
+                                      [nextPos  [advancer x y x2  y2]]
+                                      [hover? [inside? mouse-x mouse-y x y x2 y2]]
+                                      ]
+                                       [when resizing?
            
                                [when [equal? [mouse-event state] 'release]
                                  [set! w  [- x2 x]][set! h [- y2 y]]
                                  ]]
-                             [fill 255]
-                             [stroke 0 0 0 255]
-                             [rect x y  [- x2 x] [- y2 y]]
-                             [text-size 11]
-                             [fill 0]
-                             [text data x y [- x2 x] [- y2 y]]
-                             [list [list x y x2 y2]
-                                   downstate
-                                   [if [and resizing? [equal? [mouse-event state] 'release]] [set-attrib 'h [- y2 y] [set-attrib 'w [- x2 x]  attribs]]
+                               [[df 'fill] 255]
+                               [[df 'stroke] 0 0 0 255]
+                               [[df 'rect] x y [- x2 x] [- y2 y]]
+                               [[df 'text-size] font-size]
+                               [[df 'fill] 0]
+                               [[df 'text] data x y [- x2 x] [- y2 y] ]
+                               [list
+                                [list x y x2 y2]
+                                     downstate
+                                     [if [and resizing? [equal? [mouse-event state] 'release]] [set-attrib 'h [- y2 y] [set-attrib 'w [- x2 x]  attribs]]
                                        attribs]
                                    [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
                                                        [set-state 'nextx [car nextPos] [set-state 'nexty [cadr nextPos] state] ]]]]]
       [[equal? type "button"] [letrec [
-                                       [x2 [+ x 50]]
-                                       [y2 [ + y 15]]
+                                      
+                                         [x2 [+ x w]]
+                                         [y2 [ + y h]]
                                        [nextPos  [advancer x y x2  y2]]
                                        [hover? [inside? mouse-x mouse-y x y x2 y2]]]
                                 [when [do-draw state]
                                   [if hover?
-                                      [fill 128 128 128 255]
-                                      (fill 255 255 255 0)
+                                        [[df 'fill] 128 128 128 255]
+                                        ([df 'fill] 255 255 255 0)
                                     
                                       ]
-                                  [stroke 0 0 0 255]
-                                  [rect x y  50   11]
-                                  [text-size 11]
-                                  [fill 0]
-                                  [text data x y ]
+                                    [[df 'stroke] 0 0 0 255]
+                                    [[df 'rect] x y  w   h]
+                                    [[df 'text-size] font-size]
+                                    [[df 'fill] 0]
+                                    ([df 'text-align] 'center)
+                                    [[df 'text] data x y w h]
                                   ]
                                 ;[printf "Hover:~a id:~a mouse-event:~a drag-target:~a is drag-target:~a\n" hover? [s= id attribs] [mouse-event state] [s= drag-target state][equal? [s= drag-target state] [s= id attribs]]]
                                 [when hover?
@@ -223,7 +233,9 @@
                                     [when [equal? [mouse-event state] 'release]
                                       [button-click  [s= id attribs]]
                                       ]]]
-                                [list [list x y x2 y2] downstate  attribs
+                                [list [list x y x2 y2]
+                                      downstate
+                                      attribs
                                       [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
                                                           [set-state 'nextx [car nextPos] [set-state 'nexty [cadr nextPos] state ] ]]]]]
       [[equal? type "window"]
@@ -247,16 +259,17 @@
                 ]
          [when [do-draw state]
            [if hover?
-               [stroke 255 128 128 255]
-               [stroke 0 0 0 255]]
-           [fill 255]
-           [rect x y  [- x2 x] [- y2 y]]
-           [text-size font-size]
-           [fill 0]
-           [text data  x  y ]
-           [fill 0]
-           [rect [- x2 font-size] [- y2 font-size] font-size font-size ]
-           [rect x y font-size font-size ]
+                 [[df 'stroke] 255 128 128 255]
+                 [[df 'stroke] 0 0 0 255]]
+             [[df 'fill] 255]
+             [[df 'rect] x y  [- x2 x] [- y2 y]]
+             [[df 'text-size] font-size]
+             [[df 'fill] 0]
+             ([df 'text-align] 'center)
+             [[df 'text] data  [+ x font-size]  y [- x2 x]  [- y2 y] ]
+             [[df 'fill] 0]
+             [[df 'rect] [- x2 font-size] [- y2 font-size] font-size font-size ]
+             [[df 'rect] x y font-size font-size ]
            ]
          ; [printf "Hover:~a id:~a mouse-event:~a\n" hover? [assoc 'id attribs] [mouse-event state]]
                                 
@@ -264,6 +277,7 @@
            [when [assoc 'id attribs]
              [when [equal? [mouse-event state] 'release]
                [set! w  [- x2 x]][set! h [- y2 y]]
+                 [set! resize-hover? #f]
                ]]]
          
          [list
@@ -284,21 +298,20 @@
                                                 [set-state 'nexty [starty state] state]]]
                                ]]
       [[equal? type "container"][letrec [
-                                         [x2 [+ x 100]]
-                                         [y2 [ + y 100]]
+                                           [horiz-expand? [s=f horiz-expand attribs #f]]
+                                           [resizing? [s=f resizing downstate #f]]
+                                    [x2 [+ x   [max [+ w [if resizing? [s= dragvecx state] 0]] w]]]
+                                    [y2 [+ y [max [+ h   [if resizing? [s= dragvecy state] 0]] h]]]
                                          [nextPos  [list x y]]
                                          [hover? [inside? mouse-x mouse-y x y x2 y2]]
                                          ]
-                                  [fill 255]
-                                  [stroke 0 0 0 255]
-                                  [rect x y  100 100]
-                                  [text-size 11]
-                                  [fill 0]
-                                  [text data x y 100 100 ]
-                                  [list
-                                   [list x y x2 y2]
-                                   downstate
-                                   attribs
+                                    [[df 'fill] 255]
+                                    [[df 'stroke] 0 0 0 255]
+                                    [[df 'rect] x y [- x2 x] [- y2 y]]
+                                    [[df 'text-size] 11]
+                                    [[df 'fill] 0]
+                                    [[df 'text] data x y [- x2 x] [- y2 y] ]
+                                    [list [list x y x2 y2] downstate attribs
                                    
                                    [set-state 'nextx [car nextPos] [set-state 'nexty [cadr nextPos] state] ]]]]
       [else [list parent-bounds downstate attribs state]]
@@ -310,8 +323,8 @@
 
   ]
 
-;find the smallest box that covers both bounding boxes
-[define [merge-bounds b1 b2]
+  ;find the smallest box that covers both bounding boxes
+  [define [merge-bounds b1 b2]
   [list
    [if [< [first b1]  [first b2]]  [first b1]  [first b2]]
    [if [< [second b1] [second b2]] [second b1] [second b2]]
@@ -320,13 +333,23 @@
    ]
   ]
 
-;draw the children for a widget
-;returns [list new-widget-tree state bounds]
-;
-; new-widget-tree - a widget tree, possibly identical to the input tree
-; state - the ephemeral state
-; bounds - a box covering all of the rendered children
-[define [map-children children state parent-bounds downstate]
+  ;find the smallest box that covers both bounding boxes horizontally
+  [define [merge-bounds-horiz b1 b2]
+    [list
+     [if [< [first b1]  [first b2]]  [first b1]  [first b2]]
+     [second b1]
+     [third b2]
+     [fourth b2]
+     ]
+    ]
+
+  ;draw the children for a widget
+  ;returns [list new-widget-tree state bounds]
+  ;
+  ; new-widget-tree - a widget tree, possibly identical to the input tree
+  ; state - the ephemeral state
+  ; bounds - a box covering all of the rendered children
+  [define [map-children children state parent-bounds downstate]
   ;[printf "Child list: ~a~n" children]
   [let [[out-bounds parent-bounds]]
     [let [[new-widget-tree  [map [lambda [c]
@@ -370,7 +393,7 @@
                  [new-attribs [caddr alist]]
                  [advancer [s= advancer state]]
                  [nextPos  [apply advancer new-parent-bounds]]
-                 [new-state [set-state 'mx [car nextPos] [set-state 'my [cadr nextPos] [cadddr alist]]]]
+                   [new-state [set-state 'nx [car nextPos] [set-state 'ny [cadr nextPos] [cadddr alist]]]]
                  [children1 [assoc 'children new-attribs]]
                  [new-widget   [append `[w ,data ]  new-attribs]]
                  
@@ -385,7 +408,7 @@
                        [new-new-attribs [delete-duplicates [cons [cons 'children new-children]   new-attribs] [lambda [x y] [equal? [car x] [car y]]]]]
                        [new-new-widget   [append `[w ,data ]  new-new-attribs]]]
                 ;[printf "~nNew widget ~a~nNew state: ~a~nNew children ~a~n~n" new-new-widget new-state1 new-children]
-      
+                  [set! new-parent-bounds [merge-bounds new-child-bounds new-parent-bounds]]
          
             
                 [set! new-state1 [new-advancer [car [s=f advancer attribs '[#f #f]]] new-child-bounds new-state1]]
@@ -399,61 +422,6 @@
 
 
 
-(size 800 600) 
 
-;Handle sketch input events
-[define [on-mouse-pressed]
-  [set! persist-mouse-event 'press]]
-
-[define [on-mouse-released]
-  [set! persist-mouse-event 'release]
-  [displayln "Mouse button released"]]
-  
-(define (draw)
-
-  ;clear the window
-  [background 255]
-
-  [letrec [[alist [walk-widget-tree  m `[[nextx . 0]
-                                         [nexty . 0]
-                                         [mx . ,mouse-x]
-                                         [my . ,mouse-y]  ;Current draw position
-                                         [startx  .  ;Drag start x
                                                            
-                                                  ,[if [not button-down]
-                                                       mouse-x
-                                                       [startx last-state]]]
-                                         ;Drag start y
-                                         [starty . ,[if [not button-down]
-                                                        mouse-y
-                                                        [starty last-state]]]
-                                         ;Mouse event in progress? (false, press, release)
-                                         [mouse-event . ,persist-mouse-event]
-                                         [do-draw . #t]   ;do draw
-                                         [button-down? . ,button-down] ;Is the button currently down?
-                                         [advancer . ,vertical-advancer]
-                                         [drag-target . ,[s= drag-target last-state]]
-                                         [dragvecx . ,[- mouse-x [startx last-state]]]
-                                         [dragvecy . ,[- mouse-y [starty last-state]]] ;Total drag vector, x and y
                                          ]
-                                     [list 0 0 0 0]
-                                     '[]]]
-           [new-state [cadr alist]]
-           [new-template [car alist]]
-           ]
-                                         
-    [set! last-state new-state]
-    [set! m new-template] ]
-  ;[printf "New state: ~a~n" last-state]
-  [if mouse-pressed  
-      [set! button-down #t]
-      [set! button-down #f]]
-
-  
-                  
-
-                     
-
-  [set! persist-mouse-event #f]
-  
-  )
