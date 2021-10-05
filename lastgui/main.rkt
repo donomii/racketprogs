@@ -7,7 +7,7 @@
                [w "A Test Window" [id "Test window"] [type "window"] [x 50] [y 50] [w 200] [h 200] [advancer window]
                   [children
                    [w "A big container" [type "container"] [advancer vertical] [children
-                                                                                [w "A h1container" [type "container"] [advancer vertical][children
+                                                                                [w "A h1container" [type "container"] [advancer horizontal][children
                                                                                                                                           [w "A handy little paragraph of text that should test the renderer a bit"
                                                                                                                                              [id "test text"] [type "text"][w 200] [h 100][advancer horizontal]]
                                                                                                                                           [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
@@ -102,7 +102,8 @@
                      [dragvecx . ,[- mouse-x [startx last-state]]]
                      [dragvecy . ,[- mouse-y [starty last-state]]] ;Total drag vector, x and y
                      ]
-                   [list 0 0 0 0]]]
+                   [list 0 0 0 0]
+                   '[]]]
            [new-state [cadr alist]]
            [new-template [car alist]]
            ]
