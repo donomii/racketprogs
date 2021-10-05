@@ -64,6 +64,12 @@
                      [dragvecy . 0] ;Total drag vector, x and y
                      ]]
 
+[define [my-circle x y w h]
+  (ellipse-mode 'corner)
+  [ellipse x y w h]]
+[define [my-text data x y x2 y2]
+[text data x [+ y [/ [- y2 y]3]] [- x2 x] [- y2 y] ]
+  ]
 [define draw-funcs `[
                      [fill . ,fill]
                      [rect . ,rect]

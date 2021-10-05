@@ -37,30 +37,7 @@
   [define [df name]
     [cdr [assoc name draw-funcs ]]]
 ;[error [format "~a not defined in ~a" name draw-funcs]]
-  [define display-tree '[w "toplevel" [id "Toplevel container"] [type "toplevel"]
-              [children
-               [w "A Test Window" [id "Test window"] [type "window"] [x 50] [y 50] [w 200] [h 200] [advancer window]
-                  [children
-                   [w "A big container" [type "container"] [advancer vertical] [children
-                                                                                  [w "A h1container" [type "container"] [advancer vertical][children
-                                                                                                                                            [w "A handy little paragraph of text that should test the renderer a bit"
-                                                                                                                                               [id "test text"] [type "text"][w 200] [h 100][advancer horizontal]]
-                                                                                                                                            [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
-                                                                                [w "A h2container" [type "container"] [advancer horizontal][children
-                                                                                                                                            [w "A handy little paragraph of text that should test the renderer a bit"
-                                                                                                                                                 [id "test text"][w 100] [h 200] [type "text"]]
-                                                                                                                                            [w "OK" [id "ok button"] [type "button"]]]]]]] ]
-               [w "Another Test Window" [id "Another Test window"] [type "window"] [x 150] [y 150]  [w 400] [h 400]
-                  [children
-                   [w "A handy little paragraph of text that should test the renderer a bit"
-                      [type "text"]]
-                   [w "Not OK" [id "not ok button"] [type "button"]]]]]
-                                                        
-              [w "menu" [id "Popup menu"] [type "popup"][children
-                                                         [w "Do thing" [type "button"] [id "do thing button"]]
-                                                         [w "Exit" [id "exit button"][type "button"]]]]]
-             
-  ]
+  [define display-tree '[]]
 
   [define [set-display-tree! tree]
 [set! display-tree tree]
@@ -184,8 +161,8 @@
       [[equal? type "text"][letrec [
                                     
                                       [resizing? [s=f resizing downstate #f]]
-                                    [x2 [+ x   [max [+ w [if resizing? [s= dragvecx state] 0]] w]]]
-                                    [y2 [+ y [max [+ h   [if resizing? [s= dragvecy state] 0]] h]]]
+                                    [x2 [+ x   [max [+ w [if resizing? [* 0.5 [s= dragvecx state]] 0]] w]]]
+                                    [y2 [+ y [max  [+ h   [if resizing? [* 0.5[s= dragvecy state]] 0]] h]]]
                                       [nextPos  [advancer x y x2  y2]]
                                       [hover? [inside? mouse-x mouse-y x y x2 y2]]
                                       ]
@@ -196,10 +173,11 @@
                                  ]]
                                [[df 'fill] 255]
                                [[df 'stroke] 0 0 0 255]
-                               [[df 'rect] x y [- x2 x] [- y2 y]]
+                               [[df 'rect] x y [- x2 x] [- y2 y] 5]
                                [[df 'text-size] font-size]
                                [[df 'fill] 0]
-                               [[df 'text] data x y [- x2 x] [- y2 y] ]
+                             [[df 'text-align] 'center 'center]
+                               [[df 'text] data x [+ y [/ [- y2 y]3]] [- x2 x] [- y2 y] ]
                                [list
                                 [list x y x2 y2]
                                      downstate
@@ -220,10 +198,10 @@
                                     
                                       ]
                                     [[df 'stroke] 0 0 0 255]
-                                    [[df 'rect] x y  w   h]
+                                    [[df 'rect] x y  w   h 5]
                                     [[df 'text-size] font-size]
                                     [[df 'fill] 0]
-                                    ([df 'text-align] 'center)
+                                     [[df 'text-align] 'center 'center]
                                     [[df 'text] data x y w h]
                                   ]
                                 ;[printf "Hover:~a id:~a mouse-event:~a drag-target:~a is drag-target:~a\n" hover? [s= id attribs] [mouse-event state] [s= drag-target state][equal? [s= drag-target state] [s= id attribs]]]
@@ -262,14 +240,14 @@
                  [[df 'stroke] 255 128 128 255]
                  [[df 'stroke] 0 0 0 255]]
              [[df 'fill] 255]
-             [[df 'rect] x y  [- x2 x] [- y2 y]]
+             [[df 'rect] x y  [- x2 x] [- y2 y] 5]
              [[df 'text-size] font-size]
              [[df 'fill] 0]
-             ([df 'text-align] 'center)
+             [[df 'text-align] 'center 'center]
              [[df 'text] data  [+ x font-size]  y [- x2 x]  [- y2 y] ]
              [[df 'fill] 0]
-             [[df 'rect] [- x2 font-size] [- y2 font-size] font-size font-size ]
-             [[df 'rect] x y font-size font-size ]
+             [[df 'rect] [- x2 font-size] [- y2 font-size] font-size font-size 5]
+             [[df 'rect] x y font-size font-size 5]
            ]
          ; [printf "Hover:~a id:~a mouse-event:~a\n" hover? [assoc 'id attribs] [mouse-event state]]
                                 
@@ -307,10 +285,10 @@
                                          ]
                                     [[df 'fill] 255]
                                     [[df 'stroke] 0 0 0 255]
-                                    [[df 'rect] x y [- x2 x] [- y2 y]]
+                                    [[df 'rect] x y [- x2 x] [- y2 y] 5]
                                     [[df 'text-size] 11]
                                     [[df 'fill] 0]
-                                    [[df 'text] data x y [- x2 x] [- y2 y] ]
+                                    ;[[df 'text] data x y [- x2 x] [- y2 y] ]
                                     [list [list x y x2 y2] downstate attribs
                                    
                                    [set-state 'nextx [car nextPos] [set-state 'nexty [cadr nextPos] state] ]]]]
