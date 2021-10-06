@@ -1,6 +1,10 @@
 # racketProgs
 A collection of racket programs that are too small to have their own repository.  Generally they don't have UIs, the just start and do something.
 
+## actinic * racket
+
+An alternative to Racket's HTTP client.  Supports connection pooling and keep-alives
+
 ## bitmap fonts * golang
 
 Print out letters, similar to figlet.  Also generates code to be included in your programs, so you can print letters without a font library.
