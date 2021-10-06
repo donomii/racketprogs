@@ -5,6 +5,10 @@ A collection of racket programs that are too small to have their own repository.
 
 An alternative to Racket's HTTP client.  Supports connection pooling and keep-alives
 
+## allmdns * go
+
+Continuously scans the network for common MDNS services and prints them to STDOUT
+
 ## bitmap fonts * golang
 
 Print out letters, similar to figlet.  Also generates code to be included in your programs, so you can print letters without a font library.
