@@ -57,6 +57,10 @@ Not sure what this is meant to do
 
 Joy, implemented in perl
 
+## queue * go
+
+A very basic restful message queue and key-value store.  Perfect for local testing.
+
 ## the-helpful-editor * racket
 
 A very helpful editor
