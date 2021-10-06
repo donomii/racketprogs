@@ -21,9 +21,13 @@ Dump a file to stdout
 
 An experiment to make manipulating and reformatting text easier
 
-## bookmark-downloader
+## bookmark-downloader * racket
 
-Reads your firefox bookmarks file, then downloads all the links
+Reads your firefox bookmarks file, then downloads all the links.  Contains some useful routines for ripping webpages that I need to extract
+
+## emailfilter * perl
+
+Connects to an IMAP mailbox, trains a Bayes filter based on the contents of your spam folder, then classifies your inbox using that model.
 
 ## extract-subs * perl
 
