@@ -397,7 +397,7 @@
                         (if body-length (read-body a-port (string->number (cdr body-length))) 
                                            (if (equal? "chunked" (cdr [ftol (assoc "Transfer-Encoding" header-fields)]))
                                                (begin
-                                                 [printf "Decoding chunked body"]
+                                                 ;[printf "Decoding chunked body"]
                                                  (let ([res (process-chunks a-port)])
                                                    ;(dump-cache)
                                                    res))
@@ -430,11 +430,11 @@
                                            (lambda ()
                                              (let-values ([(in out)
                                                            (begin
-                                                             (display (format "Could not find an open socket for ~a, opening a new one~n" (make-socket-cache-key a-url)))
+                                                             ;(display (format "Could not find an open socket for ~a, opening a new one~n" (make-socket-cache-key a-url)))
                                                            ((if  (equal? (jrl-scheme a-url) "http")
                               tcp-connect
                               [begin
-                                [displayln [format "Opening https connection to server ~a port ~a" (jrl-server/proxy a-url) (jrl-port/proxy a-url)]]
+                                ;[displayln [format "Opening https connection to server ~a port ~a" (jrl-server/proxy a-url) (jrl-port/proxy a-url)]]
                                 ssl-connect])
                          (jrl-server/proxy a-url) (jrl-port/proxy a-url)))])
                                                (cons in out))))])
@@ -456,11 +456,11 @@
       thing]]
 
   [define [add-auth-to-header a-url headers]
-    [printf "Adding auth: ~a~~n~apass:~a~n" a-url headers [jrl-password a-url]]
+    ;[printf "Adding auth: ~a~~n~apass:~a~n" a-url headers [jrl-password a-url]]
     [if [jrl-username a-url]
         [letrec [[basic-auth [bytes-append #"Basic " [base64-encode [string->bytes/utf-8 [string-append [jrl-username a-url] ":" [jrl-password a-url]]] #""]]]
           [out [alist-cons "Authorization" basic-auth headers]]]
-          [printf "New headers: ~a~n" out]
+         ; [printf "New headers: ~a~n" out]
           out
           ]
         headers
@@ -478,22 +478,22 @@
                                                                                 
                                                                               (generic-one-shot a-url header payload ignore-body? (- retries 1)))
                                                                               [begin
-                                                                                [displayln "Dumping cache"]
+                                                                                ;[displayln "Dumping cache"]
                                                                                 (dump-cache)
                                                                                 (raise exn)]))))
                                                             
-                             (display (format "Sending Header:~s~nPayload:~a~n" header payload))
+                             ;(display (format "Sending Header:~s~nPayload:~a~n" header payload))
                               (call-with-semaphore sem 
                              (lambda () (call-with-values (lambda () (open-server a-url))
                                                (lambda (inp outp)
                                                  (send-request header payload outp)
                                                  
                                                  (let ([res (read-response inp ignore-body?)])
-                                                   [printf "Got response:~a~n" res]
+                                                   ;[printf "Got response:~a~n" res]
                                                    (if [not [equal? "keep-alive" [cdr [ftol(assoc "Connection" (fourth res))]]]]
                                                        (begin
-                                                         [displayln (assoc "Connection" (fourth res))]
-                                                         (displayln "Closing connection at request of server")
+                                                         ;[displayln (assoc "Connection" (fourth res))]
+                                                         ;(displayln "Closing connection at request of server")
                                                          (close-input-port inp)
                                                          (close-output-port outp)
                                                          
