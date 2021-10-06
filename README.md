@@ -1,5 +1,5 @@
 # racketProgs
-A collection of racket programs that are too small to have their own repository.  Generally they don't have UIs, the just start and do something.
+A collection of racket programs that are too small to have their own repository.  Generally they don't have UIs, they just start and do something.
 
 ## actinic * racket
 
