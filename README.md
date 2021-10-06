@@ -33,6 +33,10 @@ Connects to an IMAP mailbox, trains a Bayes filter based on the contents of your
 
 Uses PPI to print out all the subroutine names in a file
 
+## fetchbot * go
+
+A golang website ripper
+
 ## quonverter * quonverter
 
 Transpiles from a simple language into multiple target languages.  Written in itself
