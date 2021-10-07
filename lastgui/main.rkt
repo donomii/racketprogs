@@ -4,7 +4,7 @@
 [require srfi/1]
 [define m '[w "toplevel" [id "Toplevel container"] [type "toplevel"]
               [children
-               [w "A Test Window" [id "Test window"] [type "window"] [x 50] [y 50] [w 200] [h 200] [advancer window]
+               [w "A Test Window" [id "Test window"] [type "window"] [x 50] [y 50] [w 200] [h 200] [min-w 200][min-h 200][advancer window]
                   [children
                    [w "A big container" [type "container"] [advancer vertical] [children
                                                                                 [w "A h1container" [type "container"] [advancer horizontal][children
@@ -15,7 +15,7 @@
                                                                                                                                             [w "A handy little paragraph of text that should test the renderer a bit"
                                                                                                                                                [id "test text"][w 100] [h 200] [type "text"]]
                                                                                                                                             [w "OK" [id "ok button"] [type "button"]]]]]]] ]
-               [w "Another Test Window" [id "Another Test window"] [type "window"] [x 150] [y 150]  [w 400] [h 400]
+               [w "Another Test Window" [id "Another Test window"] [type "window"] [x 150] [y 150][min-w 200][min-h 200]  [w 400] [h 400]
                   [children
                    [w "A handy little paragraph of text that should test the renderer a bit"
                       [type "text"]]

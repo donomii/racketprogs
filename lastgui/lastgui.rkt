@@ -161,8 +161,8 @@
         [[equal? type "text"][letrec [
                                     
                                       [resizing? [s=f resizing downstate #f]]
-                                      [x2 [+ x   [max [+ w [if resizing? [* 0.5 [s= dragvecx state]] 0]] w]]]
-                                      [y2 [+ y [max  [+ h   [if resizing? [* 0.5[s= dragvecy state]] 0]] h]]]
+                                      [x2 [+ x   [max [+ w [if resizing? [* 0.5 [s= dragvecx state]] 0]] 50]]]
+                                      [y2 [+ y [max  [+ h   [if resizing? [* 0.5[s= dragvecy state]] 0]] 50]]]
                                       [nextPos  [advancer x y x2  y2]]
                                       [hover? [inside? mouse-x mouse-y x y x2 y2]]
                                       ]
@@ -229,8 +229,8 @@
                   ;[w [if resizing? [+ attrib-w [s= dragvecx state]] attrib-w]]
                   [w attrib-w]
                   [h [car [s=f h attribs '[50]]]]
-                  [x2 [+ x  [if resizing? [+ w [s= dragvecx state]] w]]]
-                  [y2 [+ y  [if resizing? [+ h [s= dragvecy state]] h]]]
+                  [x2 [+ x  [max [car [s=f min-w attribs '[50]]][if resizing? [+ w [s= dragvecx state]] w]]]]
+                  [y2 [+ y  [max [car [s=f min-h attribs '[50]]][if resizing? [+ h [s= dragvecy state]] h]]]]
                   [font-size 11]
                   [hover? [inside? mouse-x mouse-y x y x2 y2]]
                   [resize-hover? [inside? mouse-x mouse-y [- x2 font-size] [- y2 font-size] x2 y2]]
