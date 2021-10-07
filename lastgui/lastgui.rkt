@@ -112,7 +112,8 @@
 
   ;helper function to add to the attribs conslist
   [define [set-attrib key value attribs]
-    [cons [list key value] attribs]]
+    [delete-duplicates [cons  [list key value] attribs] ;Can't use alist-cons here because attribs isn't a proper conslist
+                       [lambda [x y] [equal? [car x] [car y]]]]]
 
   ;helper function to add to the state conslist
   [define [set-state key value attribs]
@@ -135,6 +136,7 @@
           [set-state 'drag-target resize-id state]
           state]]]
 
+
   ;the main render routine, is responsible for putting the graphics on the canvas
   ;returns [list bounds attribs state]
   ;
@@ -144,7 +146,9 @@
   [define [render data type attribs children t state parent-bounds downstate]
     ;[printf "Rendering ~a~nState: ~a~n" type state]
 
-    [letrec [[mouse-x [mx state]]
+    [letrec [
+[disabled [s=f disabled downstate #f]]
+             [mouse-x [mx state]]
              [mouse-y [my state]]
              [x [nx state]]
              [y  [ny state]]
@@ -152,17 +156,19 @@
              [font-size 11]
              [w [if [s=f w attribs #f] [car [s= w attribs]] [* font-size [string-length data]]]]
              [h [if [s=f h attribs #f] [car [s= h attribs]] [* font-size 2]]]
-                                   
-             [advancer [s=f advancer state #f]]]
+             [expansion-factor [car [s=f expand attribs '[0]]]]
+             [resizing? [s=f resizing downstate #f]]             
+             [advancer [s=f advancer state #f]]
+ [x2 [+ x   [max [+ w [if resizing? [* expansion-factor [s= dragvecx state]] 0]] 50]]]
+             ]
     
       ;[when [not id] [error [format "Error:  No id found for widget ~a~n" t]]]
     
       [cond
         [[equal? type "text"][letrec [
-                                    
-                                      [resizing? [s=f resizing downstate #f]]
-                                      [x2 [+ x   [max [+ w [if resizing? [* 0.5 [s= dragvecx state]] 0]] 50]]]
-                                      [y2 [+ y [max  [+ h   [if resizing? [* 0.5[s= dragvecy state]] 0]] 50]]]
+                                      
+                                      [x2 [+ x   [max [+ w [if resizing? [* expansion-factor [s= dragvecx state]] 0]] 50]]]
+                                      [y2 [+ y [max  [+ h   [if resizing? [* expansion-factor [s= dragvecy state]] 0]] 50]]]
                                       [nextPos  [advancer x y x2  y2]]
                                       [hover? [inside? mouse-x mouse-y x y x2 y2]]
                                       ]
@@ -191,7 +197,8 @@
                                          [y2 [ + y h]]
                                          [nextPos  [advancer x y x2  y2]]
                                          [hover? [inside? mouse-x mouse-y x y x2 y2]]]
-                                  [when [do-draw state]
+                                  
+                                  [when [and [do-draw state] [not disabled]]
                                     [if hover?
                                         [[df 'fill] 128 128 128 255]
                                         ([df 'fill] 255 255 255 0)
@@ -236,7 +243,7 @@
                   [resize-hover? [inside? mouse-x mouse-y [- x2 font-size] [- y2 font-size] x2 y2]]
                   ]
            [when [do-draw state]
-             [if hover?
+             [if [or resizing? dragging?]
                  [[df 'stroke] 255 128 128 255]
                  [[df 'stroke] 0 0 0 255]]
              [[df 'fill] 255]
@@ -271,26 +278,30 @@
 
       
         [[equal? type "popup"] [begin
-                                 [list [list x y x y] downstate attribs
+                                 [list [list x y x y]
+                                       [alist-cons 'disabled [s=f drag-target state #f] downstate] attribs
                                      
                                        [set-state 'nextx [startx state]
                                                   [set-state 'nexty [starty state] state]]]
                                  ]]
         [[equal? type "container"][letrec [
-                                           [horiz-expand? [s=f horiz-expand attribs #f]]
-                                           [resizing? [s=f resizing downstate #f]]
-                                           [x2 [+ x   [max [+ w [if resizing? [s= dragvecx state] 0]] w]]]
-                                           [y2 [+ y [max [+ h   [if resizing? [s= dragvecy state] 0]] h]]]
+                                           [x2 [+ x   [max [+ w [if resizing? [* expansion-factor [s= dragvecx state]] 0]] 50]]]
+                                           [y2 [+ y [max  [+ h   [if resizing? [* expansion-factor [s= dragvecy state]] 0]] 50]]]
                                            [nextPos  [list x y]]
                                            [hover? [inside? mouse-x mouse-y x y x2 y2]]
                                            ]
+                                    [when resizing?
+                                      [when [equal? [mouse-event state] 'release]
+                                        [set! w  [- x2 x]][set! h [- y2 y]]
+                                        [printf "Setting w ~a h ~a dvx ~a dvy ~a ~n" w h [s= dragvecx state] [s= dragvecy state]]
+                                        ]]
                                     [[df 'fill] 255]
                                     [[df 'stroke] 0 0 0 255]
                                     [[df 'rect] x y [- x2 x] [- y2 y] 5]
                                     [[df 'text-size] 11]
                                     [[df 'fill] 0]
                                     ;[[df 'text] data x y [- x2 x] [- y2 y] ]
-                                    [list [list x y x2 y2] downstate attribs
+                                    [list [list x y x2 y2] downstate [set-attrib 'h h [set-attrib 'w w [set-attrib 'y y [set-attrib 'x x attribs]]]]
                                    
                                           [set-state 'nextx [car nextPos] [set-state 'nexty [cadr nextPos] state] ]]]]
         [else [list parent-bounds downstate attribs state]]

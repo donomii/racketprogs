@@ -6,24 +6,24 @@
               [children
                [w "A Test Window" [id "Test window"] [type "window"] [x 50] [y 50] [w 200] [h 200] [min-w 200][min-h 200][advancer window]
                   [children
-                   [w "A big container" [type "container"] [advancer vertical] [children
-                                                                                [w "A h1container" [type "container"] [advancer horizontal][children
-                                                                                                                                          [w "A handy little paragraph of text that should test the renderer a bit"
-                                                                                                                                             [id "test text"] [type "text"][w 200] [h 100][advancer horizontal]]
+                   [w "A big container" [type "container"] [advancer vertical][w 200] [children
+                                                                                [w "A h1container" [type "container"] [w 100] [min-w 100][expand 0.5] [advancer horizontal][children
+                                                                                                                                          [w "She sells sea shells by the sea shore."
+                                                                                                                                             [id "test text"] [type "text"][w 100] [h 100][expand 0.5][advancer vertical]]
                                                                                                                                           [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
-                                                                                [w "A h2container" [type "container"] [advancer horizontal][children
-                                                                                                                                            [w "A handy little paragraph of text that should test the renderer a bit"
-                                                                                                                                               [id "test text"][w 100] [h 200] [type "text"]]
+                                                                                [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer horizontal][children
+                                                                                                                                            [w "Peter Piper picked a peck of pickled peppers."
+                                                                                                                                               [id "test text"][w 100][min-w 100] [h 100][expand 0.5] [type "text"]]
                                                                                                                                             [w "OK" [id "ok button"] [type "button"]]]]]]] ]
                [w "Another Test Window" [id "Another Test window"] [type "window"] [x 150] [y 150][min-w 200][min-h 200]  [w 400] [h 400]
                   [children
-                   [w "A handy little paragraph of text that should test the renderer a bit"
-                      [type "text"]]
-                   [w "Not OK" [id "not ok button"] [type "button"]]]]]
+                   [w "How much wood would a woodchuck chuck if a wood chuck could chuck wood."
+                      [type "text"] [w 400]]
+                   [w "Not OK" [id "not ok button"] [type "button"]]]]
                                                         
               [w "menu" [id "Popup menu"] [type "popup"][children
                                                          [w "Do thing" [type "button"] [id "do thing button"]]
-                                                         [w "Exit" [id "exit button"][type "button"]]]]]
+                                                         [w "Exit" [id "exit button"][type "button"]]]]]]
              
   ]
 
@@ -59,7 +59,7 @@
                      [do-draw . #t]   ;do draw
                      [button-down? . #f] ;Is the button currently down?
                      [advancer . vertical-advancer]
-                     [drag-target . 'drag-target]
+                     [drag-target . #f]
                      [dragvecx . 0]
                      [dragvecy . 0] ;Total drag vector, x and y
                      ]]
