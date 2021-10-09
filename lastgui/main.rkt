@@ -2,24 +2,38 @@
 [require "lastgui.rkt"]
 [require "spath.rkt"]
 [require srfi/1]
-[define m '[w "toplevel" [id "Toplevel container"] [type "toplevel"]
+
+[define frame-count 0]
+[define last-frame-count 0]
+[define last-frame-time (current-inexact-milliseconds) ]
+[define my-frame-rate 0]
+[define frame-rate 0]
+
+[define m `[w "toplevel" [id "Toplevel container"] [type "toplevel"]
               [children
+                [w "OK" [id "ok button"][advancer horizontal] [x 10] [y 10] [w 50] [h 50][type "button"]]
                [w "A Test Window" [id "Test window"] [type "window"] [x 50] [y 50] [w 200] [h 200] [min-w 200][min-h 200][advancer window]
                   [children
+                   
                    [w "A big container" [type "container"] [advancer vertical][w 200] [children
                                                                                 [w "A h1container" [type "container"] [w 100] [min-w 100][expand 0.5] [advancer horizontal][children
-                                                                                                                                          [w "She sells sea shells by the sea shore."
-                                                                                                                                             [id "test text"] [type "text"][w 100] [h 100][expand 0.5][advancer vertical]]
+                                                                                                                                          [w ,[lambda [] [format "Frame rate: ~a" frame-rate]]
+                                                                                                                                             [id "test text"] [type "text"][min-w 100][w 100] [h 100][expand 0.5][advancer vertical]]
                                                                                                                                           [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
                                                                                 [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer horizontal][children
                                                                                                                                             [w "Peter Piper picked a peck of pickled peppers."
                                                                                                                                                [id "test text"][w 100][min-w 100] [h 100][expand 0.5] [type "text"]]
                                                                                                                                             [w "OK" [id "ok button"] [type "button"]]]]]]] ]
-               [w "Another Test Window" [id "Another Test window"] [type "window"] [x 150] [y 150][min-w 200][min-h 200]  [w 400] [h 400]
+               [w "Another Test Window" [id "Another Test window"] [type "window"] [x 150] [y 150][min-w 300][min-h 200]  [w 300] [h 400]
                   [children
-                   [w "How much wood would a woodchuck chuck if a wood chuck could chuck wood."
-                      [type "text"] [w 400]]
-                   [w "Not OK" [id "not ok button"] [type "button"]]]]
+                   [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer vertical][children
+                   [w ,[map [lambda [x] [list x [format "dir/~a" x]]] [directory-list]]
+                      [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
+                   [w [[1 1] [2 2] [3 3] [4 4]]
+                      [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
+                   [w [[1 1] [2 2] [3 3] [4 4]]
+                      [type "list"] [expand 1/3][w 100][h 300][advancer horizontal]]]]
+                   [w "Quit" [id "exit"] [type "button"]]]]
                                                         
               [w "menu" [id "Popup menu"] [type "popup"][children
                                                          [w "Do thing" [type "button"] [id "do thing button"]]
@@ -35,7 +49,7 @@
 
 ;[display fill]
 ;[set-display-tree! m]
-(size 800 600) 
+(size 800 600)
 
 ;Handle sketch input events
 [define [on-mouse-pressed]
@@ -70,6 +84,13 @@
 [define [my-text data x y x2 y2]
 [text data x [+ y [/ [- y2 y]3]] [- x2 x] [- y2 y] ]
   ]
+[define [button-click id widget attribs]
+[printf "You clicked on button ~a: ~a~n" id attribs]
+  [when [equal? id "exit"]
+      [exit 0]]
+  ;[alist-cons 'children [cons '[w "OK" [id "ok button"] [x 10] [y 10] [w 50] [h 50][type "button"]] [s=f children attribs '[]]] attribs]
+  [alist-cons 'children `[[w "Yay" [id "free button"] [x 10] [y 10] [w 50] [h 50][advancer , horizontal-advancer][type "button"]]] attribs]
+  ]
 [define draw-funcs `[
                      [fill . ,fill]
                      [rect . ,rect]
@@ -77,10 +98,15 @@
                      [text-size . ,text-size]
                      [text . ,text]
                      [text-align . ,text-align]
+                     [button-click . ,button-click]
                      ]]
 [set-draw-funcs! draw-funcs]
 (define (draw)
-
+[set! frame-count [add1 frame-count]]
+  [when [> [- (current-inexact-milliseconds)  last-frame-time] 1000]
+    [set! frame-rate [* 1000 [/ [- frame-count last-frame-count] [- (current-inexact-milliseconds)  last-frame-time]]]]
+  [set! last-frame-time (current-inexact-milliseconds) ]
+  [set! last-frame-count frame-count]]
   ;clear the window
   [background 255]
 [when focused?
@@ -134,5 +160,7 @@
                      
 
   [set! persist-mouse-event #f]
+  
+(set-frame-rate! 30)
   
   )
