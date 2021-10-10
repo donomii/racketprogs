@@ -156,6 +156,30 @@
       ;[when [not id] [error [format "Error:  No id found for widget ~a~n" t]]]
     
       [cond
+        [[equal? type "toplevel"][letrec [
+                                      
+                                  
+                                      [dragging? [and [button-down? state] [equal? [s= drag-target state] [s= id attribs]]]]
+                                      
+                                     [dx [if dragging? [+ x [s= dragvecx state]] x]]
+                                     [dy [if dragging? [+ y [s= dragvecy state]] y]]
+                                     
+                                     
+                                      ]
+                             
+                                 [when [and dragging? [equal? [mouse-event state] 'release]]
+                                   [set! x  dx][set! y dy]
+                                   [printf "Setting x ~a y ~a dvx ~a dvy ~a ~n" x y [s= dragvecx state] [s= dragvecy state]]
+                                   ]
+                               [when dragging?
+                               [[df 'rect] dx dy w h 5]
+                              ]
+                               [list
+                                [list dx dy dx dy]
+                                downstate
+                                [set-attrib 'h h [set-attrib 'w w [set-attrib 'y [if [and dragging? [equal? [mouse-event state] 'release]] dy y] [set-attrib 'x [if [and dragging? [equal? [mouse-event state] 'release]] dx x]  attribs]]]]
+                                [set-drag-target-if [equal? [mouse-event state] 'press] id
+                                                    [new-advancer 'vertical [list dx dy dx dy] state] ]]]]
         [[equal? type "text"][letrec [
                                       
                                     
@@ -231,7 +255,7 @@
                                   
                                     [when [equal? [s= drag-target state] [s=f id attribs #f]]
                                       [when [equal? [mouse-event state] 'release]
-                                        [set! attribs [[df 'button-click]  [car [s=f id attribs '["You forgot to set an ID for this button"]]] t attribs]]
+                                        [set! attribs [[df 'button-click]   [s=f id attribs "You forgot to set an ID for this button"] t attribs]]
                                         ]]]
                                   [list [list x y x2 y2]
                                         downstate
@@ -396,9 +420,10 @@
                    [new-downstate [cadr alist]]
                    [new-attribs [caddr alist]]
                    [advancer [s= advancer state]]
-                   [nextPos  [apply advancer new-parent-bounds]]
+                   ;[nextPos  [apply advancer new-parent-bounds]]
                    ; ;[new-state [new-advancer [car [s=f advancer new-attribs '[#f #f]]] new-parent-bounds [cadddr alist]]]
-                   [new-state [set-state 'nx [car nextPos] [set-state 'ny [cadr nextPos] [cadddr alist]]]]
+                   ;[new-state [set-state 'nx [car nextPos] [set-state 'ny [cadr nextPos] [cadddr alist]]]]
+                   [new-state [cadddr alist]]
                    [children1 [assoc 'children new-attribs]]
                    [new-widget   [append `[w ,data ]  new-attribs]]
                  
@@ -406,7 +431,7 @@
             ;If there are children, render them now
             [if children1
                 ;Render them
-                [letrec [[new-alist [map-children [cdr children1] new-state new-parent-bounds new-downstate]]
+                [letrec [[new-alist [map-children [cdr children1] [new-advancer [car [s=f child-advancer new-attribs '[#f #f]]] new-parent-bounds new-state] new-parent-bounds new-downstate]]
                          [new-children [car new-alist]]
                          [new-state1 [cadr new-alist]]
                          [new-child-bounds [caddr new-alist]]
@@ -416,10 +441,10 @@
                   [set! new-parent-bounds [merge-bounds new-child-bounds new-parent-bounds]]
          
             
-                  [set! new-state1 [new-advancer [car [s=f advancer attribs '[#f #f]]] new-child-bounds new-state1]]
+                  [set! new-state1 [new-advancer [car [s=f advancer attribs '[#f #f]]] [if [s=f discard-child-position new-attribs '[#f]] new-parent-bounds new-child-bounds] new-state1]]
                   [list new-new-widget new-state1 new-child-bounds]]
                 [begin
-                  [set! new-state [new-advancer [car [s=f advancer attribs '[#f #f]]] new-parent-bounds new-state]]
+                  ;[set! new-state [new-advancer [car [s=f advancer attribs '[#f #f]]] new-parent-bounds new-state]]
                   [list [append `[w ,data ]  new-attribs] new-state new-parent-bounds]
                   ]]] ;FIXME use new attributes
           [list t state [list 0 0 0 0]] ;FIXME process mouse events without render

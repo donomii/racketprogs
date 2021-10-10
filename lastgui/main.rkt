@@ -9,10 +9,10 @@
 [define my-frame-rate 0]
 [define frame-rate 0]
 
-[define m `[w "toplevel" [id "Toplevel container"] [type "toplevel"]
+[define m `[w "toplevel" [id "Toplevel container"] [type "toplevel"] [x 0] [y 0]
               [children
-                [w "OK" [id "ok button"][advancer horizontal] [x 10] [y 10] [w 50] [h 50][type "button"]]
-               [w "A Test Window" [id "Test window"] [type "window"] [x 50] [y 50] [w 200] [h 200] [min-w 200][min-h 200][advancer window]
+                [w "OK" [id "ok button"][advancer horizontal] [x 10] [y 10] [w 50] [h 50][type "button"] [extra-data [1 2 [3 4] [x 10] [y 10] [w 50] [h 50]]]]
+               [w "A Test Window" [id "Test window"] [type "window"] [x 500] [y 500] [w 200] [h 200] [min-w 200][min-h 200][advancer window]
                   [children
                    
                    [w "A big container" [type "container"] [advancer vertical][w 200] [children
@@ -35,9 +35,11 @@
                       [type "list"] [expand 1/3][w 100][h 300][advancer horizontal]]]]
                    [w "Quit" [id "exit"] [type "button"]]]]
                                                         
-              [w "menu" [id "Popup menu"] [type "popup"][children
-                                                         [w "Do thing" [type "button"] [id "do thing button"]]
-                                                         [w "Exit" [id "exit button"][type "button"]]]]]]
+;              [w "menu" [id "Popup menu"] [type "popup"][children
+;                                                         [w "Do thing" [type "button"] [id "do thing button"]]
+;                                                         [w "Exit" [id "exit button"][type "button"]]]]
+
+              ]]
              
   ]
 
@@ -85,12 +87,20 @@
 [text data x [+ y [/ [- y2 y]3]] [- x2 x] [- y2 y] ]
   ]
 [define [button-click id widget attribs]
-[printf "You clicked on button ~a: ~a~n" id attribs]
+[printf "You clicked on button ~a: ~a~n" id widget]
   [when [equal? id "exit"]
       [exit 0]]
   ;[alist-cons 'children [cons '[w "OK" [id "ok button"] [x 10] [y 10] [w 50] [h 50][type "button"]] [s=f children attribs '[]]] attribs]
-  [alist-cons 'children `[[w "Yay" [id "free button"] [x 10] [y 10] [w 50] [h 50][advancer , horizontal-advancer][type "button"]]] attribs]
+  [let [[extra-d [car [s=f extra-data attribs '[[]]]]]]
+    [if [list? extra-d]
+  [alist-cons 'children [map [lambda [x] `[w ,[format "~a" [if [list? x] "*" x]] [id ,[format "button ~a" x]] [extra-data ,x][x 10] [y 10] [w 50] [h 50][discard-child-position #t][advancer vertical][child-advancer horizontal][type "button"]] ]
+                       
+                          extra-d] attribs]
+  attribs
+  
   ]
+             
+  ]]
 [define draw-funcs `[
                      [fill . ,fill]
                      [rect . ,rect]
@@ -112,8 +122,8 @@
 [when focused?
   [letrec [[alist [walk-widget-tree
                    m
-                   `[[nextx . 0];Current draw position
-                     [nexty . 0];Current draw position
+                   `[[nextx . ,[car [s=f x [cddr m] '[0]]]];Current draw position
+                     [nexty . ,[car [s=f y [cddr m] '[0]]]];Current draw position
                      [mx . ,mouse-x]
                      [my . ,mouse-y]  
                      [startx  .  ;Drag start x
@@ -145,6 +155,7 @@
     ]
   ]
   ; [printf "New state: ~a~n" last-state]
+  ;[printf "New widget tree: ~a~n" m]
   [if mouse-pressed  
       [set! button-down #t]
       [set! button-down #f]]
