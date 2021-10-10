@@ -1,10 +1,10 @@
 #lang sketching
-(require errortrace)
-(instrumenting-enabled #t)
-(profiling-enabled #t)
-(profiling-record-enabled #t)
-(profile-paths-enabled #t)
-(require profile)
+;(require errortrace)
+;(instrumenting-enabled #t)
+;(profiling-enabled #t)
+;(profiling-record-enabled #t)
+;(profile-paths-enabled #t)
+;(require profile)
 
 [require "lastgui.rkt"]
 [require "spath.rkt"]
@@ -124,13 +124,13 @@
 [text data x [+ y [/ [- y2 y]3]] [- x2 x] [- y2 y] ]
   ]
 [define [button-click id widget attribs]
-[printf "You clicked on button ~a: ~a~n" id widget]
+;[printf "You clicked on button ~a: ~a~n" id widget]
   [when [equal? id "exit"]
       [exit 0]]
   ;[alist-cons 'children [cons '[w "OK" [id "ok button"] [x 10] [y 10] [w 50] [h 50][type "button"]] [s=f children attribs '[]]] attribs]
   [let [[extra-d [car [s=f extra-data attribs '[[]]]]]]
     [if [list? extra-d]
-  [alist-cons 'children [map [lambda [x] `[w ,[format "~a" [if [list? x] "*" x]] [id ,[format "button ~a" x]] [extra-data ,x][x 10] [y 10] [w 50] [h 50][discard-child-position #t][advancer vertical][child-advancer horizontal][type "button"]] ]
+  [alist-cons 'children [map [lambda [x] `[w ,[format "~a" [if [list? x] [format "~a*" [car x]] x]] [id ,[format "button ~a" x]] [extra-data ,x][x 10] [y 10] [w 50] [h 50][discard-child-position #t][advancer vertical][child-advancer horizontal][type "button"]] ]
                        
                           extra-d] attribs]
   attribs
@@ -156,6 +156,8 @@
   [set! last-frame-count frame-count]]
   ;clear the window
   [background 255]
+  [when mouse-button [printf "Mouse button: ~a~n" mouse-button]
+    [printf "Mouse position: ~a~n"[list mouse-x mouse-y]]]
 [when focused?
   [letrec [[alist [walk-widget-tree
                    m
@@ -212,6 +214,6 @@
 (set-frame-rate! 30)
   
 ;[displayln (output-profile-results)]
-[displayln (get-profile-results)]
+;[displayln (get-profile-results)]
   
   )
