@@ -9,6 +9,7 @@
 [require "lastgui.rkt"]
 [require "spath.rkt"]
 [require srfi/1]
+[require "parse.rkt"]
 
 [define frame-count 0]
 [define last-frame-count 0]
@@ -18,37 +19,7 @@
 
 [define m `[w "toplevel" [id "Toplevel container"] [type "toplevel"] [x 0] [y 0]
               [children
-                [w "OK" [id "ok button"][advancer horizontal] [x 10] [y 10] [w 50] [h 50][type "button"] [extra-data `[w "toplevel" [id "Toplevel container"] [type "toplevel"] [x 0] [y 0]
-              [children
-                [w "OK" [id "ok button"][advancer horizontal] [x 10] [y 10] [w 50] [h 50][type "button"] [extra-data [1 2 [3 4] [x 10] [y 10] [w 50] [h 50]]]]
-               [w "A Test Window" [id "Test window"] [type "window"] [x 500] [y 500] [w 200] [h 200] [min-w 200][min-h 200][advancer window]
-                  [children
-                   
-                   [w "A big container" [type "container"] [advancer vertical][w 200] [children
-                                                                                [w "A h1container" [type "container"] [w 100] [min-w 100][expand 0.5] [advancer horizontal][children
-                                                                                                                                          [w ,[lambda [] [format "Frame rate: ~a" frame-rate]]
-                                                                                                                                             [id "test text"] [type "text"][min-w 100][w 100] [h 100][expand 0.5][advancer vertical]]
-                                                                                                                                          [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
-                                                                                [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer horizontal][children
-                                                                                                                                            [w "Peter Piper picked a peck of pickled peppers."
-                                                                                                                                               [id "test text"][w 100][min-w 100] [h 100][expand 0.5] [type "text"]]
-                                                                                                                                            [w "OK" [id "ok button"] [type "button"]]]]]]] ]
-               [w "Another Test Window" [id "Another Test window"] [type "window"] [x 150] [y 150][min-w 300][min-h 200]  [w 300] [h 400]
-                  [children
-                   [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer vertical][children
-                   [w ,[map [lambda [x] [list x [format "dir/~a" x]]] [directory-list]]
-                      [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
-                   [w [[1 1] [2 2] [3 3] [4 4]]
-                      [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
-                   [w [[1 1] [2 2] [3 3] [4 4]]
-                      [type "list"] [expand 1/3][w 100][h 300][advancer horizontal]]]]
-                   [w "Quit" [id "exit"] [type "button"]]]]
-                                                        
-;              [w "menu" [id "Popup menu"] [type "popup"][children
-;                                                         [w "Do thing" [type "button"] [id "do thing button"]]
-;                                                         [w "Exit" [id "exit button"][type "button"]]]]
-
-              ]]]]
+                [w "OK" [id "ok button"][advancer horizontal] [x 10] [y 10] [w 50] [h 50][type "button"] [extra-data ,[parse-go]]]
                [w "A Test Window" [id "Test window"] [type "window"] [x 500] [y 500] [w 200] [h 200] [min-w 200][min-h 200][advancer window]
                   [children
                    
@@ -130,7 +101,9 @@
   ;[alist-cons 'children [cons '[w "OK" [id "ok button"] [x 10] [y 10] [w 50] [h 50][type "button"]] [s=f children attribs '[]]] attribs]
   [let [[extra-d [car [s=f extra-data attribs '[[]]]]]]
     [if [list? extra-d]
-  [alist-cons 'children [map [lambda [x] `[w ,[format "~a" [if [list? x] [format "~a*" [car x]] x]] [id ,[format "button ~a" x]] [extra-data ,x][x 10] [y 10] [w 50] [h 50][discard-child-position #t][advancer vertical][child-advancer horizontal][type "button"]] ]
+  [alist-cons 'children [map
+                         [lambda [x]
+                           `[w ,[format "~a" [if [and [list? x] [not [equal? '[] x]]] [format "~a*" [car x]] x]] [id ,[format "button ~a" x]] [extra-data ,x][x 10] [y 10] [w 50] [h 50][discard-child-position #t][advancer vertical][child-advancer horizontal][type "button"]] ]
                        
                           extra-d] attribs]
   attribs
@@ -156,7 +129,7 @@
   [set! last-frame-count frame-count]]
   ;clear the window
   [background 255]
-  [when mouse-button [printf "Mouse button: ~a~n" mouse-button]
+  [when persist-mouse-event [printf "Mouse button: ~a~n" mouse-button]
     [printf "Mouse position: ~a~n"[list mouse-x mouse-y]]]
 [when focused?
   [letrec [[alist [walk-widget-tree
