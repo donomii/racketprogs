@@ -58,6 +58,18 @@ func main() {
 
 	trie.Visit(printItem)
 
+	pi := func(s string, v interface{}) bool {
+		count := v.(int)
+		if count > max {
+			max = count
+		}
+		if count > 5 {
+			fmt.Printf("%v: %q\n", v.(int), s)
+		}
+		return false
+	}
+	tr.Walk(pi)
+
 }
 
 func ingest(path string) {
@@ -65,6 +77,7 @@ func ingest(path string) {
 	Println("Ingesting", path)
 	fileb, _ := ioutil.ReadFile(path)
 	file := string(fileb)
+	file = strings.ReplaceAll(file, "\n\n", "\n")
 	file = strings.ReplaceAll(file, "\n", " NEWLINE ")
 	file = strings.ReplaceAll(file, "\t", " ")
 	file = strings.ReplaceAll(file, "\r", " ")
@@ -72,8 +85,8 @@ func ingest(path string) {
 	file = strings.ReplaceAll(file, "  ", " ")
 	file = strings.ReplaceAll(file, "  ", " ")
 	file = strings.ReplaceAll(file, "  ", " ")
-	keys := strings.Fields(file)
-	Println(keys)
+	keys := strings.Split(file, " ")
+	//Println(keys)
 
 	l := Min(len(keys), 100)
 	for i := 1; i < l-1; i = i + 1 {
