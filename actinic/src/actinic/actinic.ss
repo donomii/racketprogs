@@ -26,7 +26,7 @@
 ;=over
 
 
-(module actinic mzscheme
+(module actinic racket
   (provide
    
    websocket
@@ -237,12 +237,12 @@
   ;version:  a string indicating which version of the http protocol you want to use.  We recommend "1.1", but you can use "1.0" or even "0.9"
   (define create-request-line (lambda (http-method a-url http-version)
                                 ;[display (format "~a ~a HTTP/~a~a~aHost: ~a~a~a~a" http-method  [url-encode (jrl-path/proxy a-url)]  http-version #\return #\linefeed (jrl-server a-url) (if proxy (format ":~a" (jrl-port a-url)) "") #\return #\linefeed) ][newline]
-                                (format "~a ~a HTTP/~a~a~aHost: ~a~a~a~a" http-method  [url-encode (jrl-path/proxy a-url)]  http-version #\return #\linefeed (jrl-server a-url) (if proxy (format ":~a" (jrl-port a-url)) "") #\return #\linefeed)))
+                                (format "~a ~a HTTP/~a~a~aHost: ~a:~a~a~a~a" http-method  [url-encode (jrl-path/proxy a-url)]  http-version #\return #\linefeed (jrl-server a-url)(jrl-port a-url)  (if proxy (format ":~a" (jrl-port a-url)) "") #\return #\linefeed)))
   
   (define bytes-join (lambda (a-list glue-bytes)
-                       (if (equal? a-list ())
+                       (if (equal? a-list '())
                            #""
-                           (if (equal? (cdr a-list) ())
+                           (if (equal? (cdr a-list) '())
                                (car a-list)   
                                (bytes-append (car a-list) glue-bytes (bytes-join (cdr a-list) glue-bytes))))))
   ;=item (process-header lines)
@@ -482,7 +482,7 @@
                                                                                 (dump-cache)
                                                                                 (raise exn)]))))
                                                             
-                             ;(display (format "Sending Header:~s~nPayload:~a~n" header payload))
+                             (display (format "Sending Header:~s~nPayload:~a~n" header payload))
                               (call-with-semaphore sem 
                              (lambda () (call-with-values (lambda () (open-server a-url))
                                                (lambda (inp outp)
@@ -490,7 +490,7 @@
                                                  
                                                  (let ([res (read-response inp ignore-body?)])
                                                    ;[printf "Got response:~a~n" res]
-                                                   (if [not [equal? "keep-alive" [cdr [ftol(assoc "Connection" (fourth res))]]]]
+                                                   (when [not [equal? "keep-alive" [cdr [ftol(assoc "Connection" (fourth res))]]]]
                                                        (begin
                                                          ;[displayln (assoc "Connection" (fourth res))]
                                                          ;(displayln "Closing connection at request of server")
@@ -505,13 +505,13 @@
                              ))]))
   
   (define default-headers (lambda () `(
-                                       ("User-Agent" . "kadljfasoiewur")
+                                       ;("User-Agent" . "kadljfasoiewur")
                                        ;("Connection" . "close")
-                                       ("Accept" . "image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, application/x-shockwave-flash, */*")
-                                       ("Accept-Charset" . "utf-8,us-ascii;q=0.7,*;q=0.7")
+                                       ;("Accept" . "image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, application/x-shockwave-flash, */*")
+                                       ;("Accept-Charset" . "utf-8,us-ascii;q=0.7,*;q=0.7")
                                        ;("Accept-Encoding" . "gzip, deflate")
-                                       ("Accept-Language" . "en-au")
-                                       ("Content-Length" . "0"))))
+                                       ;("Accept-Language" . "en-au")
+                                       )))
   
   (define simple-query
     (case-lambda 
@@ -606,27 +606,7 @@
   ;If you need better control over the request, or you want to see the response, try the corresponding http-post call, listed below.
   (define simple-post 
     (lambda (a-url an-alist)
-      ;(display (format "Sending ~a~n" an-alist))
-      (let* ((payload 
-              (if (pair? an-alist)
-                  (string->bytes/utf-8 (string-join (map (lambda (a) 
-                                                           ;(display (format "Sending ~s~n" (cdr a)))
-                                                           (format "~a=~a" (post-encode (car a)) (post-encode (cdr a)))) an-alist) "&"))
-                  an-alist))
-             (payload-length (bytes-length payload)))
-        (let ((result (generic-one-shot a-url (build-header (create-request-line "POST"  a-url
-                                                                                 "1.1") 
-                                                            (cons 
-                                                             
-                                                             (if (pair? an-alist) `("Content-Type" . "application/x-www-form-urlencoded") `("Content-Type" . "application/octet-stream"))
-                                                             (cons 
-                                                              `("Content-Length" . ,(number->string payload-length))
-                                                              
-                                                              
-                                                              (default-headers))))
-                                        payload)))
-          ;(display result)
-          (http-success? result)))))
+      (fifth (http-post a-url an-alist))))
   
   
   
@@ -716,26 +696,34 @@
   ;Returns the usual convoluted structure.
   (define http-post 
     (case-lambda 
-      ((a-url params) (http-post a-url params #f #f))
-      ((a-url params header-opts) (http-post a-url params header-opts #f))                                 
+      ((a-url params) (http-post a-url params #f #""))
+      ((a-url params header-opts) (http-post a-url params header-opts #""))                                 
       ((a-url params header-opts payload)
       (if header-opts (set! header-opts (append header-opts (default-headers))) (set! header-opts (default-headers)))
-      (let ((real-payload (if payload payload
-                              (string->bytes/utf-8 (string-join (map (lambda (a) 
-                                                           ;(display (format "Sending ~s~n" (cdr a)))
-                                                           (format "~a=~a" (post-encode (car a)) (post-encode (cdr a)))) params) "&")))))
+      (set! header-opts  [add-auth-to-header a-url header-opts])
+      (letrec ((real-payload (if (>  (bytes-length payload) 0)
+                                 payload
+                                 (if (pair? payload)
+                                     (string->bytes/utf-8 (string-join (map (lambda (a) 
+                                                                              ; (display (format "Sending ~s~n" (cdr a)))
+                                                                              (format "~a=~a" (post-encode (car a)) (post-encode (cdr a)))) params) "&"))
+                                     payload)
+                                 )))
                               
                               
-                      (let ((payload-length (bytes-length payload)))
-                        (let ([pending-header (build-header (create-request-line "POST"  a-url "1.1") 
-                                                            (cons                                                              
-                                                             (if (pair? params) `("Content-Type" . "application/x-www-form-urlencoded") `("Content-Type" . "application/octet-stream"))
-                                                             (cons 
-                                                              `("Content-Length" . ,(number->string payload-length))                                
+                     
+                        (let ([pending-header (build-header (create-request-line "POST"  a-url "1.1")
+                                                            
+                                                           ; (cons                                                              
+                                                            ; (if (pair? params) `("Content-Type" . "application/x-www-form-urlencoded") `("Content-Type" . "application/octet-stream"))
+                                                             (reverse(cons 
+                                                              `("Content-Length" . ,(bytes-length real-payload))                                
                                                               header-opts)))])
-                          ;(display pending-header)
-                        (let ((result (generic-one-shot a-url pending-header (bytes-append payload (string->bytes/utf-8 (format "~a~a" #\return #\newline))))))
-                          result)))))))
+                         
+                         ; (printf "payload length ~a payload ~a~n" (bytes-length real-payload) real-payload)
+                        (let ((result (generic-one-shot a-url pending-header (bytes-append real-payload (string->bytes/utf-8 (format "~a~a" #\return #\newline))))))
+                         ; [displayln result]
+                          result))))))
   
   
   ;=item (http-trace url headers) - sends a TRACE request
@@ -776,7 +764,7 @@
                           
                           (map (lambda (c) 
                                  
-                                 (if (equal? (car c) s) (return (cdr c))))
+                                 (when (equal? (car c) s) (return (cdr c))))
                                (quote (
                                        (#\  .  "%20")
                                        (#\! .  "%21")
