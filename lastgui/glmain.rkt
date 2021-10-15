@@ -1,11 +1,8 @@
-#lang sketching
-(require (planet jaymccarthy/gl-world:2:1))
-;(require errortrace)
-;(instrumenting-enabled #t)
-;(profiling-enabled #t)
-;(profiling-record-enabled #t)
-;(profile-paths-enabled #t)
-;(require profile)
+#lang racket
+(require racket/draw)
+(require racket/date)
+; initialize the library
+(open-graphics)
 
 [require "lastgui.rkt"]
 [require "spath.rkt"]
@@ -60,9 +57,9 @@
 
 
 
-;[display fill]
-;[set-display-tree! m]
-(size 800 800)
+(define MainWindow 
+  (open-viewport "Jaarproject (2012-2013)" 800 800))
+
 
 ;Handle sketch input events
 [define [on-mouse-pressed]
@@ -92,11 +89,23 @@
                      ]]
 
 [define [my-circle x y w h]
-  (ellipse-mode 'corner)
-  [ellipse x y w h]]
+  
+  ((draw-ellipse MainWindow) (make-posn x y) w h)
+
+ ]
+
+[define [my-rect x y w h]
+
+  
+((draw-rectangle MainWindow)
+    (make-posn x y)
+  w h
+   )]
+
 [define [my-text data x y x2 y2]
 [text data x [+ y [/ [- y2 y]3]] [- x2 x] [- y2 y] ]
   ]
+
 [define [button-click id widget attribs]
 [printf "You clicked on button ~a: ~a~n" id widget]
   [cond
@@ -118,7 +127,7 @@
   ]]
 [define draw-funcs `[
                      [fill . ,fill]
-                     [rect . ,rect]
+                     [rect . ,my-rect]
                      [stroke . ,stroke]
                      [text-size . ,text-size]
                      [text . ,text]

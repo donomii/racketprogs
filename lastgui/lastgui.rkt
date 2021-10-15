@@ -255,7 +255,7 @@
                                   
                                     [when [equal? [s= drag-target state] [s=f id attribs #f]]
                                       [when [equal? [mouse-event state] 'release]
-                                        [set! attribs [[df 'button-click]   [s=f id attribs "You forgot to set an ID for this button"] t attribs]]
+                                        [set! attribs [[df 'button-click]   [car [s=f id attribs '["You forgot to set an ID for this button"]]] t attribs]]
                                         ]]]
                                   [list [list x y x2 y2]
                                         downstate
