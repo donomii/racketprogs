@@ -1,12 +1,9 @@
 #lang racket
-(require racket/draw)
-(require racket/date)
-; initialize the library
-(open-graphics)
+(require net/http-easy)
+ (require (prefix-in  srfi_ srfi/1 ))
 
 [require "lastgui.rkt"]
 [require "spath.rkt"]
-[require srfi/1]
 [require "parse.rkt"]
 
 [define frame-count 0]
@@ -57,10 +54,6 @@
 
 
 
-(define MainWindow 
-  (open-viewport "Jaarproject (2012-2013)" 800 800))
-
-
 ;Handle sketch input events
 [define [on-mouse-pressed]
   [set! persist-mouse-event 'press]]
@@ -88,22 +81,12 @@
                      [dragvecy . 0] ;Total drag vector, x and y
                      ]]
 
-[define [my-circle x y w h]
-  
-  ((draw-ellipse MainWindow) (make-posn x y) w h)
 
- ]
 
-[define [my-rect x y w h]
-
-  
-((draw-rectangle MainWindow)
-    (make-posn x y)
-  w h
-   )]
 
 [define [my-text data x y x2 y2]
-[text data x [+ y [/ [- y2 y]3]] [- x2 x] [- y2 y] ]
+   (get (format "http://localhost:8080/command/text(~a,~a,~a);" data x [+ y [/ [- y2 y]3]]  ))
+
   ]
 
 [define [button-click id widget attribs]
@@ -115,7 +98,7 @@
   ;[alist-cons 'children [cons '[w "OK" [id "ok button"] [x 10] [y 10] [w 50] [h 50][type "button"]] [s=f children attribs '[]]] attribs]
   [let [[extra-d [car [s=f extra-data attribs '[[]]]]]]
     [if [list? extra-d]
-  [alist-cons 'children [map
+  [srfi_alist-cons 'children [map
                          [lambda [x]
                            `[w ,[format "~a" [if [and [list? x] [not [equal? '[] x]]] [format "~a*" [car x]] x]] [id ,[format "button ~a" x]] [extra-data ,x][x 10] [y 10] [w 50] [h 50][discard-child-position #t][advancer vertical][child-advancer horizontal][type "button"]] ]
                        
@@ -125,13 +108,16 @@
   ]
              
   ]]
+
+[define background  (lambda(a b c d)(get (format "http://localhost:8080/command/background(~a,~a,~a,~a);" a b c d)))]
 [define draw-funcs `[
-                     [fill . ,fill]
-                     [rect . ,my-rect]
-                     [stroke . ,stroke]
-                     [text-size . ,text-size]
-                     [text . ,text]
-                     [text-align . ,text-align]
+                     [fill . ,(lambda(a b c d) (get (format "http://localhost:8080/command/fill(~a,~a,~a,~a);" a b c d)))]
+
+                     [rect . ,(lambda(a b c d e) (get (format "http://localhost:8080/command/rectangle(~a,~a,~a,~a);" a b c d)))]
+                     [stroke . ,(lambda(a b c d) (get (format "http://localhost:8080/command/stroke(~a,~a,~a,~a);" a b c d)))]
+                     [text-size . ,(lambda(a) (get (format "http://localhost:8080/command/textsize(~a);" a )))]
+                     [text . ,(lambda(a b c d e) (get (format "http://localhost:8080/command/text(`~a`,~a,~a);" a b c )))]
+                     [text-align . ,(lambda(a b) a)] ;,(lambda(a b c d) (get (format "http://localhost:8080/command/stroke(~a,~a,~a,~a);" a b c d)))]]
                      [button-click . ,button-click]
                      ]]
 [set-draw-funcs! draw-funcs]
@@ -142,24 +128,26 @@
   [set! last-frame-time (current-inexact-milliseconds) ]
   [set! last-frame-count frame-count]]
   ;clear the window
-  [background 255]
-  [when persist-mouse-event [printf "Mouse button: ~a~n" mouse-button]
-    [printf "Mouse position: ~a~n"[list mouse-x mouse-y]]]
-[when focused?
+  (get (format "http://localhost:8080/command/clear();"))
+  [background 255 255 0 255]
+   
+  ;[when persist-mouse-event [printf "Mouse button: ~a~n" mouse-button]
+ ;   [printf "Mouse position: ~a~n"[list mouse-x mouse-y]]]
+
   [letrec [[alist [walk-widget-tree
                    m
                    `[[nextx . ,[car [s=f x [cddr m] '[0]]]];Current draw position
                      [nexty . ,[car [s=f y [cddr m] '[0]]]];Current draw position
-                     [mx . ,mouse-x]
-                     [my . ,mouse-y]  
+                     [mx . 0]
+                     [my . 0]  
                      [startx  .  ;Drag start x
                                                            
                               ,[if [not button-down]
-                                   mouse-x
+                                   0
                                    [startx last-state]]]
                      ;Drag start y
                      [starty . ,[if [not button-down]
-                                    mouse-y
+                                   0
                                     [starty last-state]]]
                      ;Mouse event in progress? (false, press, release)
                      [mouse-event . ,persist-mouse-event]
@@ -167,8 +155,8 @@
                      [button-down? . ,button-down] ;Is the button currently down?
                      [advancer . ,vertical-advancer]
                      [drag-target . ,[s= drag-target last-state]]
-                     [dragvecx . ,[- mouse-x [startx last-state]]]
-                     [dragvecy . ,[- mouse-y [starty last-state]]] ;Total drag vector, x and y
+                     [dragvecx . ,[- 0 [startx last-state]]]
+                     [dragvecy . ,[- 0 [starty last-state]]] ;Total drag vector, x and y
                      ]
                    [list 0 0 0 0]
                    '[]]]
@@ -176,20 +164,20 @@
            [new-template [car alist]]
            ]
                                          
-    [set! last-state [delete-duplicates  new-state [lambda [x y] [equal? [car x] [car y]]]]]
+    [set! last-state [srfi_delete-duplicates  new-state [lambda [x y] [equal? [car x] [car y]]]]]
     [set! m new-template]
     ]
-  ]
+  
   ; [printf "New state: ~a~n" last-state]
   ;[printf "New widget tree: ~a~n" m]
-  [if mouse-pressed  
-      [set! button-down #t]
-      [set! button-down #f]]
+;  [if mouse-pressed  
+;      [set! button-down #t]
+;      [set! button-down #f]]
 
   [when [equal?  persist-mouse-event 'release]
   
-    [set! last-state [alist-cons 'drag-target #f last-state]]
-    [set! last-state [alist-cons 'resize-target #f last-state]]
+    [set! last-state [srfi_alist-cons 'drag-target #f last-state]]
+    [set! last-state [srfi_alist-cons 'resize-target #f last-state]]
     ]
   
                   
@@ -198,9 +186,10 @@
 
   [set! persist-mouse-event #f]
   
-(set-frame-rate! 30)
   
 ;[displayln (output-profile-results)]
 ;[displayln (get-profile-results)]
   
   )
+
+(draw)
