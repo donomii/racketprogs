@@ -1,5 +1,6 @@
 
 [module lastgui racket
+  [require web-server]
   [provide set-display-tree! set-draw-funcs! horizontal-advancer vertical-advancer  walk-widget-tree startx starty]
   (require srfi/1)
   [require (file "./spath.rkt")]

@@ -7,10 +7,32 @@
 ;(profile-paths-enabled #t)
 ;(require profile)
 
+
+
 [require "lastgui.rkt"]
 [require "spath.rkt"]
 [require srfi/1]
 [require "parse.rkt"]
+
+
+(require racket/match
+         web-server/http
+         web-server/servlet-dispatch
+         web-server/web-server)
+
+(define age [lambda [x] "alalala"])
+
+(define stop
+  (serve
+   #:dispatch (dispatch/servlet age)
+   #:listen-ip "127.0.0.1"
+   #:port 8000))
+
+(with-handlers ([exn:break? (lambda (e)
+                              (stop))])
+  (sync/enable-break never-evt))
+
+
 
 [define frame-count 0]
 [define last-frame-count 0]
