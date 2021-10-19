@@ -1,5 +1,4 @@
 #lang sketching
-(require (planet jaymccarthy/gl-world:2:1))
 ;(require errortrace)
 ;(instrumenting-enabled #t)
 ;(profiling-enabled #t)
@@ -15,23 +14,6 @@
 [require "parse.rkt"]
 
 
-(require racket/match
-         web-server/http
-         web-server/servlet-dispatch
-         web-server/web-server)
-
-(define age [lambda [x] "alalala"])
-
-(define stop
-  (serve
-   #:dispatch (dispatch/servlet age)
-   #:listen-ip "127.0.0.1"
-   #:port 8000))
-
-(with-handlers ([exn:break? (lambda (e)
-                              (stop))])
-  (sync/enable-break never-evt))
-
 
 
 [define frame-count 0]
@@ -40,39 +22,39 @@
 [define my-frame-rate 0]
 [define frame-rate 0]
 
-[define m `(w "toplevel" (children (w "OK" (id "ok button") (advancer horizontal) (x 10) (y 10) (w 50) (h 50) (type "button") (extra-data ("" ("package" "main" "import" ("\"fmt\"" "\"io/ioutil\"" "\"github.com/lu4p/astextract\"") "func" "main" () ("code" "," "_" ":" "=" "ioutil.ReadFile" ("\"astdump.go\"") "f" "," "err" ":" "=" "astextract.Parse" ("string" ("code")) "if" "err" "!" "=" "nil" ("panic" ("err")) "fmt.Printf" ("\"%+v\\n\"" "," "f"))) ""))) (w "A Test Window" (children (w "A big container" (children (w [lambda [] [format "Frame rate: ~a" frame-rate]] (children  (w "OK" (id "ok button") (type "button") (advancer vertical))) (h 22) (w 100) (y 485) (x 534) (type "container") (min-w 100) (expand 0.5) (advancer horizontal)) (w "A h2container" (children (w "Dump widgets" (h 100) (w 100) (y 485) (x 634) (id "DumpWidgetsLabel") (min-w 100) (expand 0.5) (type "text")) (w "OK" (children) (id "DumpWidgets") (type "button"))) (h 22) (w 100) (y 485) (x 634) (type "container") (min-w 100) (expand 0.5) (advancer horizontal))) (h 22) (w 200) (y 485) (x 534) (type "container") (advancer vertical))) (h 200) (w 200) (y 463) (x 534) (id "Test window") (type "window") (min-w 200) (min-h 200) (advancer window)) (w "Another Test Window" (children (w "A h2container" (children  (w ((1 1) (2 2) (3 3) (4 4)) (children (w "1" (id (1 1)) (type "button") (w 100) (h 20)) (w "2" (id (2 2)) (type "button") (w 100) (h 20)) (w "3" (id (3 3)) (type "button") (w 100) (h 20)) (w "4" (id (4 4)) (type "button") (w 100) (h 20))) (h 300) (w 100) (y 54) (x 568) (type "list") (expand 1/3) (advancer horizontal)) (w ((1 1) (2 2) (3 3) (4 4)) (children (w "1" (id (1 1)) (type "button") (w 100) (h 20)) (w "2" (id (2 2)) (type "button") (w 100) (h 20)) (w "3" (id (3 3)) (type "button") (w 100) (h 20)) (w "4" (id (4 4)) (type "button") (w 100) (h 20))) (h 300) (w 100) (y 54) (x 668) (type "list") (expand 1/3) (advancer horizontal))) (h 22) (w 100) (y 54) (x 468) (type "container") (min-w 100) (expand 0.5) (advancer vertical)) (w "Quit" (id "exit") (type "button"))) (h 400) (w 300) (y 32) (x 468) (id "Another Test window") (type "window") (min-w 300) (min-h 200))) (h 22) (w 88) (y 0) (x 0) (id "Toplevel container") (type "toplevel"))
+[define m `
 
-;  [w "toplevel" [id "Toplevel container"] [type "toplevel"] [x 0] [y 0]
-;              [children
-;                [w "OK" [id "ok button"][advancer horizontal] [x 10] [y 10] [w 50] [h 50][type "button"] [extra-data ,[parse-go]]]
-;               [w "A Test Window" [id "Test window"] [type "window"] [x 500] [y 500] [w 200] [h 200] [min-w 200][min-h 200][advancer window]
-;                  [children
-;                   
-;                   [w "A big container" [type "container"] [advancer vertical][w 200] [children
-;                                                                                [w "A h1container" [type "container"] [w 100] [min-w 100][expand 0.5] [advancer horizontal][children
-;                                                                                                                                          [w ,[lambda [] [format "Frame rate: ~a" frame-rate]]
-;                                                                                                                                             [id "test text"] [type "text"][min-w 100][w 100] [h 100][expand 0.5][advancer vertical]]
-;                                                                                                                                          [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
-;                                                                                [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer horizontal][children
-;                                                                                                                                            [w "Dump widgets"
-;                                                                                                                                               [id "DumpWidgetsLabel"][w 100][min-w 100] [h 100][expand 0.5] [type "text"]]
-;                                                                                                                                            [w "OK" [id "DumpWidgets"] [type "button"]]]]]]] ]
-;               [w "Another Test Window" [id "Another Test window"] [type "window"] [x 150] [y 150][min-w 300][min-h 200]  [w 300] [h 400]
-;                  [children
-;                   [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer vertical][children
-;                   [w ,[map [lambda [x] [list x [format "dir/~a" x]]] [directory-list]]
-;                      [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
-;                   [w [[1 1] [2 2] [3 3] [4 4]]
-;                      [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
-;                   [w [[1 1] [2 2] [3 3] [4 4]]
-;                      [type "list"] [expand 1/3][w 100][h 300][advancer horizontal]]]]
-;                   [w "Quit" [id "exit"] [type "button"]]]]
-;                                                        
-;;              [w "menu" [id "Popup menu"] [type "popup"][children
-;;                                                         [w "Do thing" [type "button"] [id "do thing button"]]
-;;                                                         [w "Exit" [id "exit button"][type "button"]]]]
-;
-;              ]]
+  [w "toplevel" [id "Toplevel container"] [type "toplevel"] [x 0] [y 0]
+              [children
+                [w "OK" [id "ok button"][advancer horizontal] [x 10] [y 10] [w 50] [h 50][type "button"] [extra-data ,[parse-go]]]
+               [w "A Test Window" [id "Test window"] [type "window"] [x 500] [y 500] [w 200] [h 200] [min-w 200][min-h 200][advancer window]
+                  [children
+                   
+                   [w "A big container" [type "container"] [advancer vertical][w 200] [children
+                                                                                [w "A h1container" [type "container"] [w 100] [min-w 100][expand 0.5] [advancer horizontal][children
+                                                                                                                                          [w ,[lambda [] [format "Frame rate: ~a" frame-rate]]
+                                                                                                                                             [id "test text"] [type "text"][min-w 100][w 100] [h 100][expand 0.5][advancer vertical]]
+                                                                                                                                          [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
+                                                                                [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer horizontal][children
+                                                                                                                                            [w "Dump widgets"
+                                                                                                                                               [id "DumpWidgetsLabel"][w 100][min-w 100] [h 100][expand 0.5] [type "text"]]
+                                                                                                                                            [w "OK" [id "DumpWidgets"] [type "button"]]]]]]] ]
+               [w "Another Test Window" [id "Another Test window"] [type "window"] [x 150] [y 150][min-w 300][min-h 200]  [w 300] [h 400]
+                  [children
+                   [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer vertical][children
+                   [w ,[map [lambda [x] [list x [format "dir/~a" x]]] [directory-list]]
+                      [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
+                   [w [[1 1] [2 2] [3 3] [4 4]]
+                      [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
+                   [w [[1 1] [2 2] [3 3] [4 4]]
+                      [type "list"] [expand 1/3][w 100][h 300][advancer horizontal]]]]
+                   [w "Quit" [id "exit"] [type "button"]]]]
+                                                        
+;              [w "menu" [id "Popup menu"] [type "popup"][children
+;                                                         [w "Do thing" [type "button"] [id "do thing button"]]
+;                                                         [w "Exit" [id "exit button"][type "button"]]]]
+
+              ]]
              
   ]
 
@@ -160,7 +142,7 @@
     [printf "Mouse position: ~a~n"[list mouse-x mouse-y]]]
 [when focused?
   [letrec [[alist [walk-widget-tree
-                   m
+                   m 
                    `[[nextx . ,[car [s=f x [cddr m] '[0]]]];Current draw position
                      [nexty . ,[car [s=f y [cddr m] '[0]]]];Current draw position
                      [mx . ,mouse-x]

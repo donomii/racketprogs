@@ -1,6 +1,5 @@
 
 [module lastgui racket
-  [require web-server]
   [provide set-display-tree! set-draw-funcs! horizontal-advancer vertical-advancer  walk-widget-tree startx starty]
   (require srfi/1)
   [require (file "./spath.rkt")]
@@ -134,6 +133,7 @@
   ;  [printf "Rendering widget: ~a~nState: ~a~n" type state]
 
     [letrec [
+           
              [disabled [s=f disabled downstate #f]]
              [mouse-x [mx state]]
              [mouse-y [my state]]
@@ -152,6 +152,12 @@
               ;[x2 [+ x   [max [+ w [if resizing? [* expansion-factor [s= dragvecx state]] 0]] 50]]]
               ;[y2 [+ y [max  [+ h   [if resizing? [* expansion-factor [s= dragvecy state]] 0]] 50]]]
               [hover? [inside? mouse-x mouse-y x y x2 y2]]
+
+                [draggable [or [s=f draggable downstate #f] [s=f draggable attribs #f]]]
+             [dragging? [and [button-down? state] [equal? [s=f drag-target state #f] [s=f id attribs #f]]]]
+              [dx [if dragging? [+ x [s= dragvecx state]] x]]
+                                     [dy [if dragging? [+ y [s= dragvecy state]] y]]
+             [drag-distance [if dragging? [+ [* dx dx] [* dy dy]] 0]]
              ]
     
       ;[when [not id] [error [format "Error:  No id found for widget ~a~n" t]]]
@@ -160,10 +166,9 @@
         [[equal? type "toplevel"][letrec [
                                       
                                   
-                                      [dragging? [and [button-down? state] [equal? [s= drag-target state] [s= id attribs]]]]
                                       
-                                     [dx [if dragging? [+ x [s= dragvecx state]] x]]
-                                     [dy [if dragging? [+ y [s= dragvecy state]] y]]
+                                      
+                                    
                                      
                                      
                                       ]
@@ -256,7 +261,13 @@
                                   
                                     [when [equal? [s= drag-target state] [s=f id attribs #f]]
                                       [when [equal? [mouse-event state] 'release]
+                                        [when draggable
+                                          [if [> [drag-distance dx dy] 10]
+                                             [begin  [set! x  dx][set! y dy]
+                                   [printf "Setting x ~a y ~a dvx ~a dvy ~a ~n" x y [s= dragvecx state] [s= dragvecy state]]]
                                         [set! attribs [[df 'button-click]   [car [s=f id attribs '["You forgot to set an ID for this button"]]] t attribs]]
+                                        ]
+                                          ]
                                         ]]]
                                   [list [list x y x2 y2]
                                         downstate
