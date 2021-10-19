@@ -148,7 +148,7 @@
              [advancer [car [s=f advancer attribs [list [s=f advancer state #f]]]]]
 
               [x2 [+ x  [max [car [s=f min-w attribs '[50]]] [+ w [if resizing? [* expansion-factor [s= dragvecx state]] 0]]]]]
-              [y2 [+ y  [max [car [s=f min-h attribs '[50]]] [+ h [if resizing? [* expansion-factor [s= dragvecy state]] 0]]]]]
+              [y2 [+ y  [max [car [s=f min-h attribs '[10]]] [+ h [if resizing? [* expansion-factor [s= dragvecy state]] 0]]]]]
               ;[x2 [+ x   [max [+ w [if resizing? [* expansion-factor [s= dragvecx state]] 0]] 50]]]
               ;[y2 [+ y [max  [+ h   [if resizing? [* expansion-factor [s= dragvecy state]] 0]] 50]]]
               [hover? [inside? mouse-x mouse-y x y x2 y2]]
@@ -163,15 +163,7 @@
       ;[when [not id] [error [format "Error:  No id found for widget ~a~n" t]]]
     
       [cond
-        [[equal? type "toplevel"][letrec [
-                                      
-                                  
-                                      
-                                      
-                                    
-                                     
-                                     
-                                      ]
+        [[equal? type "toplevel"][letrec []
                              
                                  [when [and dragging? [equal? [mouse-event state] 'release]]
                                    [set! x  dx][set! y dy]
@@ -186,12 +178,7 @@
                                 [set-attrib 'h h [set-attrib 'w w [set-attrib 'y [if [and dragging? [equal? [mouse-event state] 'release]] dy y] [set-attrib 'x [if [and dragging? [equal? [mouse-event state] 'release]] dx x]  attribs]]]]
                                 [set-drag-target-if [equal? [mouse-event state] 'press] id
                                                     [new-advancer 'vertical [list dx dy dx dy] state] ]]]]
-        [[equal? type "text"][letrec [
-                                      
-                                    
-                                      
-                                     
-                                      ]
+        [[equal? type "text"][letrec [ ]
                                [when resizing?
            
                                  [when [equal? [mouse-event state] 'release]
@@ -239,9 +226,8 @@
                                                     [set-state 'nextx x [set-state 'nexty y state] ]]]]]
         [[equal? type "button"] [letrec [
                                       
-                                         [x2 [+ x w]]
-                                         [y2 [ + y h]]
-                                         [hover? [inside? mouse-x mouse-y x y x2 y2]]]
+                                        
+                                         ]
                                   
                                   [when [and [do-draw state] [not disabled]]
                                     [if hover?
