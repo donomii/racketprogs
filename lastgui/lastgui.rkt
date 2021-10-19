@@ -153,12 +153,13 @@
              ;[y2 [+ y [max  [+ h   [if resizing? [* expansion-factor [s= dragvecy state]] 0]] 50]]]
              [hover? [inside? mouse-x mouse-y x y x2 y2]]
 
+             [button-down  [s=f button-down? state #f]]
              [drag-target [s=f drag-target state #f]]
              [draggable [or [s=f draggable downstate #f] [s=f draggable attribs #f]]]
-             [dragging? [and [button-down? state] [equal? [s=f drag-target state #f] [s=f id attribs #f]]]]
+             [dragging? [and [button-down? state] [equal? drag-target id]]]
              [dx [if dragging? [+ x [s= dragvecx state]] x]]
              [dy [if dragging? [+ y [s= dragvecy state]] y]]
-             [drag-distance [if dragging? [+ [* dx dx] [* dy dy]] 0]]
+             [drag-distance [if dragging? [sqrt [+ [* dx dx] [* dy dy]]] 0]]
              ]
     
       ;[when [not id] [error [format "Error:  No id found for widget ~a~n" t]]]
@@ -190,9 +191,9 @@
                                [[df 'stroke] 0 0 0 255]
                                [[df 'rect] x y [- x2 x] [- y2 y] 5]
                                [[df 'text-size] font-size]
-                               [[df 'fill] 0 0 0 0]
+                               [[df 'fill] 0 0 0 255]
                                [[df 'text-align] 'center 'center]
-                               [[df 'text] [if [procedure? data] [format "~a"[data]] [format "~a" data]] x [+ y [/ [- y2 y]3]] [- x2 x] [- y2 y] ]
+                               [[df 'text]  [format "~a" [if [procedure? data] [data] data]] x [+ y [/ [- y2 y]3]] [- x2 x] [- y2 y] ]
                                [list
                                 [list x y x2 y2]
                                 downstate
@@ -243,13 +244,13 @@
                                     [[df 'text-align] 'center 'center]
                                     [[df 'text] data x y w h]
                                     ]
-                                  [printf "Hover:~a id:~a mouse-event:~a drag-target:~a is drag-target:~a drag-distance:~a\n" hover? id [mouse-event state] drag-target [equal? drag-target id] drag-distance]
+                                  
                                   [when hover?
                                   
                                     [when [equal? drag-target id]
                                       [when [equal? [mouse-event state] 'release]
                                         [if draggable
-                                          [if [> [drag-distance dx dy] 10]
+                                          [if [> drag-distance 10]
                                               [begin  [set! x  dx][set! y dy]
                                                       [printf "Setting x ~a y ~a dvx ~a dvy ~a ~n" x y [s= dragvecx state] [s= dragvecy state]]]
                                               [set! attribs [[df 'button-click]   [car [s=f id attribs '["You forgot to set an ID for this button"]]] t attribs]]
@@ -265,7 +266,7 @@
         [[equal? type "window"]
          ;[printf "case: window~n"]
          [letrec [
-                  [dragging? [and [button-down? state] [equal? [s= drag-target state] [s= id attribs]]]]
+                  ;[dragging? [and [button-down? state] [equal? [s= drag-target state] [s= id attribs]]]]
                   [resizing? [and [button-down? state] [equal? [s= drag-target state] [format "~a-resize" [s= id attribs]]]]]
                   [orig-x [cadr[assoc 'x attribs]]]
                   [orig-y [cadr [assoc 'y attribs]]]
@@ -281,6 +282,7 @@
                   [hover? [inside? mouse-x mouse-y x y x2 y2]]
                   [resize-hover? [inside? mouse-x mouse-y [- x2 font-size] [- y2 font-size] x2 y2]]
                   ]
+           [printf "Hover:~a id:~s mouse-event:~a button-down:~a dragging:~a drag-target:~s is drag-target:~a drag-distance:~a\n" hover? id [mouse-event state] button-down dragging? drag-target [equal? drag-target id] drag-distance]
            [when [do-draw state]
              [if [or resizing? dragging?]
                  [[df 'stroke] 255 128 128 255]
