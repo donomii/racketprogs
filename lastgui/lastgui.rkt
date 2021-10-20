@@ -267,7 +267,7 @@
          ;[printf "case: window~n"]
          [letrec [
                   ;[dragging? [and [button-down? state] [equal? [s= drag-target state] [s= id attribs]]]]
-                  ;[resizing? [and [button-down? state] [equal? [s= drag-target state] [format "~a-resize" [s= id attribs]]]]]
+                  [resizing? [and button-down [equal? drag-target [format "~a-resize" id]]]]
                   [orig-x [cadr[assoc 'x attribs]]]
                   [orig-y [cadr [assoc 'y attribs]]]
                   [x [if dragging?  mouse-x  orig-x]]
@@ -282,7 +282,7 @@
                   [hover? [inside? mouse-x mouse-y x y x2 y2]]
                   [resize-hover? [inside? mouse-x mouse-y [- x2 font-size] [- y2 font-size] x2 y2]]
                   ]
-           [printf "Hover:~a id:~s mouse-event:~a button-down:~a dragging:~a drag-target:~s is drag-target:~a drag-distance:~a\n" hover? id [mouse-event state] button-down dragging? drag-target [equal? drag-target id] drag-distance]
+           [printf "Hover:~a resize-hover?:~a id:~s mouse-event:~a button-down:~a dragging:~a resizing:~a drag-target:~s is drag-target:~a drag-distance:~a\n" hover? resize-hover? id [mouse-event state] button-down dragging? resizing? drag-target [equal? drag-target id] drag-distance]
            [when [do-draw state]
              [if [or resizing? dragging?]
                  [[df 'stroke] 255 128 128 255]
