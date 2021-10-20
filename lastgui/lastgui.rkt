@@ -267,7 +267,7 @@
          ;[printf "case: window~n"]
          [letrec [
                   ;[dragging? [and [button-down? state] [equal? [s= drag-target state] [s= id attribs]]]]
-                  [resizing? [and [button-down? state] [equal? [s= drag-target state] [format "~a-resize" [s= id attribs]]]]]
+                  ;[resizing? [and [button-down? state] [equal? [s= drag-target state] [format "~a-resize" [s= id attribs]]]]]
                   [orig-x [cadr[assoc 'x attribs]]]
                   [orig-y [cadr [assoc 'y attribs]]]
                   [x [if dragging?  mouse-x  orig-x]]
