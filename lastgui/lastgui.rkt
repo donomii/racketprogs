@@ -137,9 +137,11 @@
              [disabled [s=f disabled downstate #f]]
              [mouse-x [mx state]]
              [mouse-y [my state]]
+              [detached [car [s=f detached attribs '[#f]]]]
              [x [nx state]]
              [y  [ny state]]
              [id [car [s=f id attribs '[#f]]]]
+             
              [font-size 11]
              [w [if [s=f w attribs #f] [car [s= w attribs]] [* font-size [string-length data]]]]
              [h [if [s=f h attribs #f] [car [s= h attribs]] [* font-size 2]]]
@@ -227,7 +229,8 @@
                                 [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
                                                     [set-state 'nextx x [set-state 'nexty y state] ]]]]]
         [[equal? type "button"] [letrec [
-                                      
+                                         [xx [if dragging?  mouse-x  x]]
+                                         [yy  [if dragging? mouse-y  y]]
                                         
                                          ]
                                   
@@ -238,11 +241,11 @@
                                     
                                         ]
                                     [[df 'stroke] 0 0 0 255]
-                                    [[df 'rect] x y  w   h 5]
+                                    [[df 'rect] xx yy  w   h 5]
                                     [[df 'text-size] font-size]
                                     [[df 'fill] 0 0 0 255]
                                     [[df 'text-align] 'center 'center]
-                                    [[df 'text] data x y w h]
+                                    [[df 'text] data xx yy w h]
                                     ]
                                   
                                   [when hover?
@@ -250,19 +253,19 @@
                                     [when [equal? drag-target id]
                                       [when [equal? [mouse-event state] 'release]
                                         [if draggable
-                                          [if [> drag-distance 10]
-                                              [begin  [set! x  dx][set! y dy]
-                                                      [printf "Setting x ~a y ~a dvx ~a dvy ~a ~n" x y [s= dragvecx state] [s= dragvecy state]]]
-                                              [set! attribs [[df 'button-click]   [car [s=f id attribs '["You forgot to set an ID for this button"]]] t attribs]]
-                                              ]
-                                          [set! attribs [[df 'button-click]   [or id "You forgot to set an ID for this button"] t attribs]]
-                                          ]
+                                            [if [> drag-distance 10]
+                                                [begin  ;[set! x  xx][set! y yy]
+                                                  [printf "Setting x ~a y ~a dvx ~a dvy ~a ~n" x y [s= dragvecx state] [s= dragvecy state]]]
+                                                [set! attribs [[df 'button-click]   [car [s=f id attribs '["You forgot to set an ID for this button"]]] t attribs]]
+                                                ]
+                                            [set! attribs [[df 'button-click]   [or id "You forgot to set an ID for this button"] t attribs]]
+                                            ]
                                         ]]]
-                                  [list [list x y x2 y2]
+                                  [list [list xx yy x2 y2]
                                         downstate
                                         attribs
                                         [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
-                                                            [new-advancer advancer [list x y x2 y2] state ] ]]]]
+                                                            [new-advancer advancer [list xx yy x2 y2] state ] ]]]]
         [[equal? type "window"]
          ;[printf "case: window~n"]
          [letrec [
@@ -282,7 +285,7 @@
                   [hover? [inside? mouse-x mouse-y x y x2 y2]]
                   [resize-hover? [inside? mouse-x mouse-y [- x2 font-size] [- y2 font-size] x2 y2]]
                   ]
-           [printf "Hover:~a resize-hover?:~a id:~s mouse-event:~a button-down:~a dragging:~a resizing:~a drag-target:~s is drag-target:~a drag-distance:~a\n" hover? resize-hover? id [mouse-event state] button-down dragging? resizing? drag-target [equal? drag-target id] drag-distance]
+           ;[printf "Hover:~a resize-hover?:~a id:~s mouse-event:~a button-down:~a dragging:~a resizing:~a drag-target:~s is drag-target:~a drag-distance:~a\n" hover? resize-hover? id [mouse-event state] button-down dragging? resizing? drag-target [equal? drag-target id] drag-distance]
            [when [do-draw state]
              [if [or resizing? dragging?]
                  [[df 'stroke] 255 128 128 255]
