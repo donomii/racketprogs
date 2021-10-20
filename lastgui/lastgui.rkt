@@ -137,9 +137,16 @@
              [disabled [s=f disabled downstate #f]]
              [mouse-x [mx state]]
              [mouse-y [my state]]
-              [detached [car [s=f detached attribs '[#f]]]]
-             [x [nx state]]
-             [y  [ny state]]
+             [detached [car [s=f detached attribs '[#f]]]]
+              
+             [x
+              [if detached
+                  [cadr [assoc 'x attribs]]
+                  [nx state]]]
+             [y
+              [if detached
+                  [cadr [assoc 'y attribs]]
+                  [ny state]]]
              [id [car [s=f id attribs '[#f]]]]
              
              [font-size 11]
@@ -229,8 +236,8 @@
                                 [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
                                                     [set-state 'nextx x [set-state 'nexty y state] ]]]]]
         [[equal? type "button"] [letrec [
-                                         [xx [if dragging?  mouse-x  x]]
-                                         [yy  [if dragging? mouse-y  y]]
+                                         [xx [if [and draggable dragging?]  mouse-x  x]]
+                                         [yy  [if [and draggable dragging?]  mouse-y  y]]
                                         
                                          ]
                                   
@@ -255,6 +262,7 @@
                                         [if draggable
                                             [if [> drag-distance 10]
                                                 [begin  ;[set! x  xx][set! y yy]
+                                                  [set! attribs [alist-cons 'detached '[#t] attribs]]
                                                   [printf "Setting x ~a y ~a dvx ~a dvy ~a ~n" x y [s= dragvecx state] [s= dragvecy state]]]
                                                 [set! attribs [[df 'button-click]   [car [s=f id attribs '["You forgot to set an ID for this button"]]] t attribs]]
                                                 ]
@@ -263,7 +271,7 @@
                                         ]]]
                                   [list [list xx yy x2 y2]
                                         downstate
-                                        attribs
+                                        [set-attrib 'y yy [set-attrib 'x xx attribs]]
                                         [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
                                                             [new-advancer advancer [list xx yy x2 y2] state ] ]]]]
         [[equal? type "window"]

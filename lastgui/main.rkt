@@ -26,7 +26,7 @@
 
   [w "toplevel" [id "Toplevel container"] [type "toplevel"] [x 0] [y 0][draggable #t]
               [children
-                [w "OK" [id "ok button"][draggable #t][advancer horizontal] [x 10] [y 10] [w 50] [h 50][type "button"] [extra-data ,[parse-go]]]
+                [w "OK" [id "ok button"][detached #t][draggable #t][advancer horizontal] [x 10] [y 10] [w 50] [h 50][type "button"] [extra-data ,[parse-go]]]
                [w "A Test Window" [id "Test window"] [draggable #t][type "window"] [x 500] [y 500] [w 200] [h 200] [min-w 200][min-h 200][advancer window]
                   [children
                    
