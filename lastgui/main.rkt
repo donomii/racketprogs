@@ -24,10 +24,10 @@
 
 [define m `
 
-  [w "toplevel" [id "Toplevel container"] [type "toplevel"] [x 0] [y 0][draggable #t]
+  [w "toplevel" [id "Toplevel container"] [type "toplevel"][dropzone #t]  [x 0] [y 0][draggable #t]
               [children
-                [w "OK" [id "ok button"][detached #t][draggable #t][advancer horizontal] [x 10] [y 10] [w 50] [h 50][type "button"] [extra-data ,[parse-go]]]
-               [w "A Test Window" [id "Test window"] [draggable #t][type "window"] [x 500] [y 500] [w 200] [h 200] [min-w 200][min-h 200][advancer window]
+                [w "Program" [id "ok button"][detached #t][draggable #t][advancer horizontal] [x 10] [y 10] [w 50] [h 50][type "button"] [extra-data  null ]] ;,[parse-go]]]
+               [w "A Test Window" [id "Test window"][dropzone #t] [draggable #t][type "window"] [x 500] [y 500] [w 200] [h 200] [min-w 200][min-h 200][advancer window]
                   [children
                    
                    [w "A big container" [type "container"] [advancer vertical][w 200] [children
@@ -39,7 +39,7 @@
                                                                                                                                             [w "Dump widgets"
                                                                                                                                                [id "DumpWidgetsLabel"][w 100][min-w 100] [h 100][expand 0.5] [type "text"]]
                                                                                                                                             [w "OK" [id "DumpWidgets"] [type "button"]]]]]]] ]
-               [w "Another Test Window" [id "Another Test window"] [draggable #t][type "window"] [x 150] [y 150][min-w 300][min-h 200]  [w 300] [h 400]
+               [w "Another Test Window" [id "Another Test window"][dropzone #t]  [draggable #t][type "window"] [x 150] [y 150][min-w 300][min-h 200]  [w 300] [h 400]
                   [children
                    [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer vertical][children
                    [w ,[map [lambda [x] [list x [format "dir/~a" x]]] [directory-list]]
@@ -138,8 +138,8 @@
   [set! last-frame-count frame-count]]
   ;clear the window
   [background 255]
-  [when persist-mouse-event [printf "Mouse button: ~a~n" mouse-button]
-    [printf "Mouse position: ~a~n"[list mouse-x mouse-y]]]
+  [when persist-mouse-event 1; [printf "Mouse button: ~a~n" mouse-button] [printf "Mouse position: ~a~n"[list mouse-x mouse-y]]
+    ]
 [when focused?
   [letrec [[alist [walk-widget-tree
                    m 
@@ -175,7 +175,9 @@
     [set! m new-template]
     ]
   ]
-  ; [printf "New state: ~a~n" last-state]
+   ;[printf "New state: ~a~n" last-state]
+  [when [s=f drop-target m #f] [printf "~a~n"[s=f 'drop-target m #f]]]
+  
   ;[printf "New widget tree: ~a~n" m]
   [if mouse-pressed  
       [set! button-down #t]

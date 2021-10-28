@@ -115,6 +115,13 @@
         [set-state 'drag-target id state]
         state]]
 
+    ;helper, sets srop target state if conditions are met
+  [define [set-drop-target-if droppable id state]
+    [if droppable
+        [begin [printf "Setting drop-target to ~a~n" id]
+        [set-state 'drop-target id state]]
+        state]]
+
   ;helper, sets drag state to id-resize if conditions are met
   [define [set-resize-target-if hover? id state]
     [let [[resize-id [format "~a-resize" id]]]
@@ -138,6 +145,7 @@
              [mouse-x [mx state]]
              [mouse-y [my state]]
              [detached [car [s=f detached attribs '[#f]]]]
+             [is-dropzone [car [s=f dropzone attribs '[#f]]]]
               
              [x
               [if detached
@@ -322,9 +330,10 @@
             [list x y x2 y2]
             [set-downstate 'resizing resizing? downstate]
             [set-attrib 'h h [set-attrib 'w w [set-attrib 'y y [set-attrib 'x x attribs]]]]
-            [set-resize-target-if [and resize-hover? [equal? [mouse-event state] 'press]] id
-                                  [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
-                                                      [new-advancer advancer [list x y x2  [+ y [* 2 font-size]]] state]] ]]]]
+            [set-drop-target-if [and is-dropzone hover?] id
+                                [set-resize-target-if [and resize-hover? [equal? [mouse-event state] 'press]] id
+                                                      [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
+                                                                          [new-advancer advancer [list x y x2  [+ y [* 2 font-size]]] state]] ]]]]]
 
 
       
