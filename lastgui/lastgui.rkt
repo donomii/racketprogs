@@ -115,12 +115,12 @@
         [set-state 'drag-target id state]
         state]]
 
-    ;helper, sets srop target state if conditions are met
+  ;helper, sets srop target state if conditions are met
   [define [set-drop-target-if droppable id state]
     [if droppable
-       [begin
-         ;[printf "Setting drop-target to ~a~n" id]
-        [set-state 'drop-target id state]]
+        [begin
+          ;[printf "Setting drop-target to ~a~n" id]
+          [set-state 'drop-target id state]]
         state]]
 
   ;helper, sets drag state to id-resize if conditions are met
@@ -182,7 +182,7 @@
       [when dragging?
         [set! state [alist-cons 'drag-redraw-func [lambda []
                                                     ;[printf "Redrawing object being dragged:~a~n" id]
-[render data type attribs children t state parent-bounds downstate]
+                                                    [render data type attribs children t state parent-bounds downstate]
                                                     ] state]]]
     
       ;[when [not id] [error [format "Error:  No id found for widget ~a~n" t]]]
