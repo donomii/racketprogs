@@ -21,18 +21,18 @@
 [define last-frame-time (current-inexact-milliseconds) ]
 [define my-frame-rate 0]
 [define frame-rate 0]
-
+[define file-list [directory-list]]
 [define m `
 
   [w "toplevel" [id "Toplevel container"] [type "toplevel"][dropzone #t]  [x 0] [y 0][draggable #t]
               [children
-                [w "Program" [id "ok button"][detached #t][draggable #t][advancer horizontal] [x 10] [y 10] [w 50] [h 50][type "button"] [extra-data  null ]] ;,[parse-go]]]
+                [w "Program" [id "Program button"][detached #t][draggable #t][advancer horizontal] [x 10] [y 10] [w 50] [h 50][type "button"] [extra-data  null ]] ;,[parse-go]]]
                [w "A Test Window" [id "Test window"][dropzone #t] [draggable #t][type "window"] [x 500] [y 500] [w 200] [h 200] [min-w 200][min-h 200][advancer window]
                   [children
                    
                    [w "A big container" [type "container"] [advancer vertical][w 200] [children
                                                                                 [w "A h1container" [type "container"] [w 100] [min-w 100][expand 0.5] [advancer horizontal][children
-                                                                                                                                          [w ,[lambda [] [format "Frame rate: ~a" frame-rate]]
+                                                                                                                                          [w ,[lambda [] [format "Frame rate: ~a" [round frame-rate]]]
                                                                                                                                              [id "test text"] [type "text"][min-w 100][w 100] [h 100][expand 0.5][advancer vertical]]
                                                                                                                                           [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
                                                                                 [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer horizontal][children
@@ -42,8 +42,8 @@
                [w "Another Test Window" [id "Another Test window"][dropzone #t]  [draggable #t][type "window"] [x 150] [y 150][min-w 300][min-h 200]  [w 300] [h 400]
                   [children
                    [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer vertical][children
-                   [w ,[map [lambda [x] [list x [format "dir/~a" x]]] [directory-list]]
-                      [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
+;                   [w ,[map [lambda [x] [list x [format "dir/~a" x]]] file-list]
+;                      [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
                    [w [[1 1] [2 2] [3 3] [4 4]]
                       [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
                    [w [[1 1] [2 2] [3 3] [4 4]]
@@ -173,10 +173,22 @@
                                          
     [set! last-state [delete-duplicates  new-state [lambda [x y] [equal? [car x] [car y]]]]]
     [set! m new-template]
+    [when [s=f drag-redraw-func new-state #f]
+      ;[printf "Redrawing drag object~n"]
+    [[s=f drag-redraw-func new-state #f]]
+      ]
+    [when [s=f drop-target new-state #f]
+      #f
+      ;[printf "Drop hover over:~a~n"[s=f drop-target new-state #f]]
+      ]
+    [when [and [equal? persist-mouse-event 'release] [s=f drop-target new-state #f]]
+      [printf "Dropped onto:~a~n"[s=f drop-target new-state #f]]]
     ]
   ]
    ;[printf "New state: ~a~n" last-state]
-  [when [s=f drop-target m #f] [printf "~a~n"[s=f 'drop-target m #f]]]
+  
+
+  
   
   ;[printf "New widget tree: ~a~n" m]
   [if mouse-pressed  
