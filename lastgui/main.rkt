@@ -38,7 +38,8 @@
                                                                               [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer horizontal][children
                                                                                                                                                                          [w "Dump widgets"
                                                                                                                                                                             [id "DumpWidgetsLabel"][w 100][min-w 100] [h 100][expand 0.5] [type "text"]]
-                                                                                                                                                                         [w "OK" [id "DumpWidgets"] [type "button"]]]]]]] ]
+                                                                                                                                                                         [w "OK" [id "DumpWidgets"] [type "button"]]]]]]]
+         ]
       [w "Another Test Window" [id "Another Test window"][dropzone #t]  [draggable #t][type "window"] [x 150] [y 150][min-w 300][min-h 200]  [w 300] [h 400]
          [children
           [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer vertical][children
@@ -120,6 +121,9 @@
         ]
              
     ]]
+[define [drop-handler onto obj]
+[printf "Dropped ~a onto ~a~n" obj onto]
+  ]
 [define draw-funcs `[
                      [fill . ,fill]
                      [rect . ,rect]
@@ -128,6 +132,7 @@
                      [text . ,text]
                      [text-align . ,text-align]
                      [button-click . ,button-click]
+                     [drop-callback . ,drop-handler]
                      ]]
 [set-draw-funcs! draw-funcs]
 (define (draw)
@@ -141,7 +146,7 @@
   [when persist-mouse-event 1; [printf "Mouse button: ~a~n" mouse-button] [printf "Mouse position: ~a~n"[list mouse-x mouse-y]]
     ]
   [when focused?
-    [letrec [[alist [walk-widget-tree
+    [letrec [[alist [do-frame
                      m 
                      `[[nextx . ,[car [s=f x [cddr m] '[0]]]];Current draw position
                        [nexty . ,[car [s=f y [cddr m] '[0]]]];Current draw position
@@ -173,16 +178,7 @@
                                          
       [set! last-state [delete-duplicates  new-state [lambda [x y] [equal? [car x] [car y]]]]]
       [set! m new-template]
-      [when [s=f drag-redraw-func new-state #f]
-        ;[printf "Redrawing drag object~n"]
-        [[s=f drag-redraw-func new-state #f]]
-        ]
-      [when [s=f drop-target new-state #f]
-        #f
-        ;[printf "Drop hover over:~a~n"[s=f drop-target new-state #f]]
-        ]
-      [when [and [equal? persist-mouse-event 'release] [s=f drop-target new-state #f]]
-        [printf "Dropped onto:~a~n"[s=f drop-target new-state #f]]]
+      
       ]
     ]
   ;[printf "New state: ~a~n" last-state]
@@ -195,11 +191,7 @@
       [set! button-down #t]
       [set! button-down #f]]
 
-  [when [equal?  persist-mouse-event 'release]
-  
-    [set! last-state [alist-cons 'drag-target #f last-state]]
-    [set! last-state [alist-cons 'resize-target #f last-state]]
-    ]
+
   
                   
 

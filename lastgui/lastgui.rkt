@@ -1,6 +1,6 @@
 
 [module lastgui racket
-  [provide set-display-tree! set-draw-funcs! horizontal-advancer vertical-advancer  walk-widget-tree startx starty]
+  [provide do-frame set-display-tree! set-draw-funcs! horizontal-advancer vertical-advancer  walk-widget-tree startx starty]
   (require srfi/1)
   [require (file "./spath.rkt")]
 
@@ -314,13 +314,15 @@
                  [[df 'stroke] 0 0 0 255]]
              [[df 'fill] 255 255 255 255]
              [[df 'rect] x y  [- x2 x] [- y2 y] 5]
+             
              [[df 'text-size] font-size]
-             [[df 'fill] 0 0 0 0]
+             [[df 'fill] 0 0 0 255]
+             [[df 'stroke] 0 0 0 255]
              [[df 'text-align] 'center 'center]
              [[df 'text] data  [+ x font-size]  y [- x2 x]  [- y2 y] ]
              [[df 'fill] 0 0 0 0]
-             [[df 'rect] [- x2 font-size] [- y2 font-size] font-size font-size 5]
-             [[df 'rect] x y font-size font-size 5]
+             [[df 'rect] [- x2 font-size] [- y2 font-size] font-size font-size 5] ; Resize handle
+             [[df 'rect] x y font-size font-size 5] ; Drag handle
              ]
            ; [printf "Hover:~a id:~a mouse-event:~a\n" hover? [assoc 'id attribs] [mouse-event state]]
                                 
@@ -480,6 +482,36 @@
 
 
 
+[define [do-frame t state parent-bounds downstate]
+  [letrec [[result [walk-widget-tree t state parent-bounds downstate]]
+           [new-state [cadr result]]
+           [new-template [car result]]
+           ]
+    [when [s=f drag-redraw-func new-state #f]
+      ;[printf "Redrawing drag object~n"]
+      [[s=f drag-redraw-func new-state #f]]
+      ]
+    [when [s=f drop-target new-state #f]
+      #f
+      ;[printf "Drop hover over:~a~n"[s=f drop-target new-state #f]]
+      ]
+    [when [and [equal? [mouse-event new-state] 'release] [s=f drop-target new-state #f]]
+
+      
+      [printf "Dropped onto:~a~n"[s=f drop-target new-state #f]]
+      [[df 'drop-callback ] [s=f drop-target new-state #f] [s=f drag-target new-state #f]]]
+
+
+    [when  [equal? [mouse-event new-state] 'release]
+  
+    [set! new-state [alist-cons 'drag-target #f new-state]]
+    [set! new-state [alist-cons 'resize-target #f new-state]]
+    ]
+    [list new-template new-state]
+    ]
+  ]
+
 
                                                            
   ]
+
