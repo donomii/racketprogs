@@ -241,22 +241,26 @@ func applyRuleTree(ruleTree, prev *RuleNode, keys []string, currentrule []string
 			return applyRuleTree(v, ruleTree,keys[1:], append (currentrule, k))
 		}
 		
-		if k=="**"{
-			return applyRuleTree(v, ruleTree,keys[1:], append (currentrule, k))
-		}
-		if k=="***" {
-			_, _,_,matchNext := applyRuleTree(v, ruleTree,keys[1:],append (currentrule, k))
-			//fmt.Println("Wildcard")
-			if matchNext {
-				//fmt.Println("Matched wildcard terminator")
-				return applyRuleTree(v, ruleTree,keys[1:],append (currentrule, k))
-				
-			} else {
-				return applyRuleTree(ruleTree, ruleTree,keys[1:],append (currentrule, k))
-			}
-		}
+
 
 	}
+
+			//FIXME Check these after the loop, they are accidentally matching when there is still a structural token that matches
+			if v,ok:=ruleTree.Patterns["**"];ok{
+				
+				return applyRuleTree(v, ruleTree,keys[1:], append (currentrule, "**"))
+			}
+			if v,ok:=ruleTree.Patterns["**"];ok {
+				_, _,_,matchNext := applyRuleTree(v, ruleTree,keys[1:],append (currentrule, "***"))
+				//fmt.Println("Wildcard")
+				if matchNext {
+					//fmt.Println("Matched wildcard terminator")
+					return applyRuleTree(v, ruleTree,keys[1:],append (currentrule, "***"))
+					
+				} else {
+					return applyRuleTree(ruleTree, ruleTree,keys[1:],append (currentrule, "***"))
+				}
+			}
 	//fmt.Println("Rule failed")
 	return nil, currentrule, ruleTree, false
 }
@@ -272,6 +276,10 @@ func applyRule(rule, keys []string) ([]string, bool) {
 		//fmt.Println("Rule failed")
 		return nil, false  //The rule ran past the end of the input
 	}
+
+	if rule[0] == keys [0] {
+		return applyRule(rule[1:], keys[1:])
+	}
 	if rule[0]=="***" {
 		//fmt.Println("Wildcard")
 		if rule[1] == keys [0] {
@@ -282,9 +290,6 @@ func applyRule(rule, keys []string) ([]string, bool) {
 		}
 	}
 	if rule[0] == "**" {
-		return applyRule(rule[1:], keys[1:])
-	}
-	if rule[0] == keys [0] {
 		return applyRule(rule[1:], keys[1:])
 	}
 	//fmt.Println("Rule failed")
