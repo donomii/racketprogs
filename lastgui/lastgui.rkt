@@ -316,8 +316,8 @@
              [[df 'rect] x y  [- x2 x] [- y2 y] 5]
              
              [[df 'text-size] font-size]
-             [[df 'fill] 0 0 0 255]
-             [[df 'stroke] 0 0 0 255]
+             [[df 'fill] 255 0 0 0]
+             [[df 'stroke] 255 0 0 255]
              [[df 'text-align] 'center 'center]
              [[df 'text] data  [+ x font-size]  y [- x2 x]  [- y2 y] ]
              [[df 'fill] 0 0 0 0]

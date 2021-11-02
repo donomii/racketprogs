@@ -122,7 +122,7 @@
              
     ]]
 [define [drop-handler onto obj]
-[printf "Dropped ~a onto ~a~n" obj onto]
+  [printf "Dropped ~a onto ~a~n" obj onto]
   ]
 [define draw-funcs `[
                      [fill . ,fill]

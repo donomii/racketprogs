@@ -2,6 +2,9 @@ package main
 
 import (
 	"log"
+	"fmt"
+		"net/http"
+	
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -38,38 +41,45 @@ func addThunk(thunk func()) {
 
 func clear() {
 	thunkList = []func(){}
-
 }
 
+func mytext(t string, a,b,c,d float64){
+	p5.Text(t,a,b+d)
+}
+func logErr(err error) {
+	if err != nil {
+		log.Printf(" error: %v\n", err)
+	}
+}
 func main() {
 
 	e := env.NewEnv()
 
-	err := e.Define("stroke", stroke)
-	err = e.Define("background", background)
-	err = e.Define("strokewidth", p5.StrokeWidth)
-	err = e.Define("fill", fill)
-	err = e.Define("ellipse", p5.Ellipse)
-	err = e.Define("arc", p5.Arc)
-	err = e.Define("rectangle", p5.Rect)
-	err = e.Define("triangle", p5.Triangle)
-	err = e.Define("color", col)
-	err = e.Define("clear", clear)
-	err = e.Define("textsize", p5.TextSize)
-	err = e.Define("text", p5.Text)
-	if err != nil {
-		log.Printf("define error: %v\n", err)
-	}
+	logErr(e.Define("stroke", stroke))
+	logErr( e.Define("background", background))
+	logErr( e.Define("strokewidth", p5.StrokeWidth))
+	logErr( e.Define("fill", fill))
+	logErr( e.Define("ellipse", p5.Ellipse))
+	logErr( e.Define("arc", p5.Arc))
+	logErr( e.Define("rectangle", p5.Rect))
+	logErr( e.Define("triangle", p5.Triangle))
+	logErr( e.Define("color", col))
+	logErr( e.Define("clear", clear))
+	logErr( e.Define("textsize", p5.TextSize))
+	logErr( e.Define("text", mytext))
+
 
 	r := gin.Default()
-
+	r.GET("/immediate/clear", func(c *gin.Context) {
+		clear()
+	})
 	r.GET("/command/:str", func(c *gin.Context) {
 		script := c.Param("str")
-		addThunk(func(s string) func() {
+		go addThunk(func(s string) func() {
 			return func() {
 
 				//log.Println("Drawing", script)
-				_, err = vm.Execute(e, nil, s)
+				_, err := vm.Execute(e, nil, s)
 				if err != nil {
 					log.Printf("execute error: %v while executing %v\n", err, s)
 				}
@@ -94,7 +104,52 @@ func setup() {
 	p5.Background(color.Gray{Y: 220})
 }
 
+var lastMouse string
 func draw() {
+
+
+
+	if p5.Event.Mouse.Pressed {
+		if p5.Event.Mouse.Buttons.Contain(p5.ButtonLeft) {
+			p5.Stroke(color.Black)
+			p5.Fill(color.RGBA{R: 255, A: 255})
+	}
+	resp, err := http.Get(fmt.Sprintf("http://localhost:8081/click?x=%v&y=%v&action=move",p5.Event.Mouse.Position.X,p5.Event.Mouse.Position.Y ))
+	if err == nil {
+		defer resp.Body.Close()
+	}
+	if lastMouse != "pressed" {
+		resp, err := http.Get(fmt.Sprintf("http://localhost:8081/click?x=%v&y=%v&action=press",p5.Event.Mouse.Position.X,p5.Event.Mouse.Position.Y ))
+		if err == nil {
+			defer resp.Body.Close()
+		}
+	}
+} else {
+	if lastMouse == "pressed" {
+	
+
+
+		    resp, err := http.Get(fmt.Sprintf("http://localhost:8081/click?x=%v&y=%v&action=release",p5.Event.Mouse.Position.X,p5.Event.Mouse.Position.Y ))
+		    if err == nil {
+				defer resp.Body.Close()
+		    }
+		}
+	}
+
+
+
+		if p5.Event.Mouse.Pressed {
+			lastMouse = "pressed"
+		} else {
+			lastMouse=""
+		}
+
+
+		    
+
+		
+
+
 	for _, f := range thunkList {
 		f()
 	}
