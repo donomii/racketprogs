@@ -1,56 +1,104 @@
 #lang racket
-(require net/http-easy)
+(displayln 'Start)
+(require (prefix-in easy. net/http-easy))
  (require (prefix-in  srfi_ srfi/1 ))
 
 [require "lastgui.rkt"]
 [require "spath.rkt"]
 [require "parse.rkt"]
+(displayln "RPC gui")
+(define url "http://localhost:8081/command/" )
+(define immediate-url "http://localhost:8081/immediate/" )
 
+(displayln "Start webserver")
+(require racket/match
+         web-server/http
+         web-server/servlet-dispatch
+         web-server/web-server)
+ (require web-server/http/request-structs)
+ (require web-server/http/bindings)
+
+
+;some more state
+[define button-down #f]
+[define persist-mouse-event #f]
+[define mouse-x 0]
+[define mouse-y 0]
+
+
+
+(define age [lambda [x]
+              (let (( b(request-bindings x)))
+                
+              (writeln b)
+              (cond 
+                ((equal? (cdr (assoc 'name b)) "buttonup" )
+;(displayln "Click")
+                 [set! persist-mouse-event 'release]
+                                                      (set! mouse-x (string->number(cdr (assoc 'x b))))
+                                                      (set! mouse-y (string->number(cdr (assoc 'y b))))
+                                                      )
+((equal? (cdr (assoc 'name b)) "buttondown" ) [set! persist-mouse-event 'press]
+                                        (set! mouse-x (string->number(cdr (assoc 'x b))))
+                                                      (set! mouse-y (string->number(cdr (assoc 'y b)))))
+((equal? (cdr (assoc 'name b)) "position" ) [set! persist-mouse-event #f]
+                                        (set! mouse-x (string->number(cdr (assoc 'x b))))
+                                                      (set! mouse-y (string->number(cdr (assoc 'y b)))))
+                )
+                (draw)
+)
+              
+              (response/full 200 #"" 0 #"application/json" '()  '(#"OK"))])
+(define stop
+  (displayln (serve
+   #:dispatch (dispatch/servlet age)
+   #:listen-ip "127.0.0.1"
+   #:port 8001)))
+
+
+(displayln "starting gui")
 [define frame-count 0]
 [define last-frame-count 0]
 [define last-frame-time (current-inexact-milliseconds) ]
 [define my-frame-rate 0]
 [define frame-rate 0]
 
-[define m `(w "toplevel" (children (w "OK" (id "ok button") (advancer horizontal) (x 10) (y 10) (w 50) (h 50) (type "button") (extra-data ("" ("package" "main" "import" ("\"fmt\"" "\"io/ioutil\"" "\"github.com/lu4p/astextract\"") "func" "main" () ("code" "," "_" ":" "=" "ioutil.ReadFile" ("\"astdump.go\"") "f" "," "err" ":" "=" "astextract.Parse" ("string" ("code")) "if" "err" "!" "=" "nil" ("panic" ("err")) "fmt.Printf" ("\"%+v\\n\"" "," "f"))) ""))) (w "A Test Window" (children (w "A big container" (children (w [lambda [] [format "Frame rate: ~a" frame-rate]] (children  (w "OK" (id "ok button") (type "button") (advancer vertical))) (h 22) (w 100) (y 485) (x 534) (type "container") (min-w 100) (expand 0.5) (advancer horizontal)) (w "A h2container" (children (w "Dump widgets" (h 100) (w 100) (y 485) (x 634) (id "DumpWidgetsLabel") (min-w 100) (expand 0.5) (type "text")) (w "OK" (children) (id "DumpWidgets") (type "button"))) (h 22) (w 100) (y 485) (x 634) (type "container") (min-w 100) (expand 0.5) (advancer horizontal))) (h 22) (w 200) (y 485) (x 534) (type "container") (advancer vertical))) (h 200) (w 200) (y 463) (x 534) (id "Test window") (type "window") (min-w 200) (min-h 200) (advancer window)) (w "Another Test Window" (children (w "A h2container" (children  (w ((1 1) (2 2) (3 3) (4 4)) (children (w "1" (id (1 1)) (type "button") (w 100) (h 20)) (w "2" (id (2 2)) (type "button") (w 100) (h 20)) (w "3" (id (3 3)) (type "button") (w 100) (h 20)) (w "4" (id (4 4)) (type "button") (w 100) (h 20))) (h 300) (w 100) (y 54) (x 568) (type "list") (expand 1/3) (advancer horizontal)) (w ((1 1) (2 2) (3 3) (4 4)) (children (w "1" (id (1 1)) (type "button") (w 100) (h 20)) (w "2" (id (2 2)) (type "button") (w 100) (h 20)) (w "3" (id (3 3)) (type "button") (w 100) (h 20)) (w "4" (id (4 4)) (type "button") (w 100) (h 20))) (h 300) (w 100) (y 54) (x 668) (type "list") (expand 1/3) (advancer horizontal))) (h 22) (w 100) (y 54) (x 468) (type "container") (min-w 100) (expand 0.5) (advancer vertical)) (w "Quit" (id "exit") (type "button"))) (h 400) (w 300) (y 32) (x 468) (id "Another Test window") (type "window") (min-w 300) (min-h 200))) (h 22) (w 88) (y 0) (x 0) (id "Toplevel container") (type "toplevel"))
+[define m 
 
-;  [w "toplevel" [id "Toplevel container"] [type "toplevel"] [x 0] [y 0]
-;              [children
-;                [w "OK" [id "ok button"][advancer horizontal] [x 10] [y 10] [w 50] [h 50][type "button"] [extra-data ,[parse-go]]]
-;               [w "A Test Window" [id "Test window"] [type "window"] [x 500] [y 500] [w 200] [h 200] [min-w 200][min-h 200][advancer window]
-;                  [children
-;                   
-;                   [w "A big container" [type "container"] [advancer vertical][w 200] [children
-;                                                                                [w "A h1container" [type "container"] [w 100] [min-w 100][expand 0.5] [advancer horizontal][children
-;                                                                                                                                          [w ,[lambda [] [format "Frame rate: ~a" frame-rate]]
-;                                                                                                                                             [id "test text"] [type "text"][min-w 100][w 100] [h 100][expand 0.5][advancer vertical]]
-;                                                                                                                                          [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
-;                                                                                [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer horizontal][children
-;                                                                                                                                            [w "Dump widgets"
-;                                                                                                                                               [id "DumpWidgetsLabel"][w 100][min-w 100] [h 100][expand 0.5] [type "text"]]
-;                                                                                                                                            [w "OK" [id "DumpWidgets"] [type "button"]]]]]]] ]
-;               [w "Another Test Window" [id "Another Test window"] [type "window"] [x 150] [y 150][min-w 300][min-h 200]  [w 300] [h 400]
-;                  [children
-;                   [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer vertical][children
-;                   [w ,[map [lambda [x] [list x [format "dir/~a" x]]] [directory-list]]
-;                      [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
-;                   [w [[1 1] [2 2] [3 3] [4 4]]
-;                      [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
-;                   [w [[1 1] [2 2] [3 3] [4 4]]
-;                      [type "list"] [expand 1/3][w 100][h 300][advancer horizontal]]]]
-;                   [w "Quit" [id "exit"] [type "button"]]]]
-;                                                        
-;;              [w "menu" [id "Popup menu"] [type "popup"][children
-;;                                                         [w "Do thing" [type "button"] [id "do thing button"]]
-;;                                                         [w "Exit" [id "exit button"][type "button"]]]]
-;
-;              ]]
+  `[w "toplevel" [id "Toplevel container"] [type "toplevel"] [x 0] [y 0]
+              [children
+                [w "OK" [id "ok button"][advancer horizontal] [x 10] [y 10] [w 50] [h 50][type "button"] [extra-data ,[parse-go]]]
+               [w "A Test Window" [id "Test window"] [type "window"] [x 500] [y 500] [w 200] [h 200] [min-w 200][min-h 200][advancer window]
+                  [children
+                   
+                   [w "A big container" [type "container"] [advancer vertical][w 200] [children
+                                                                                [w "A h1container" [type "container"] [w 100] [min-w 100][expand 0.5] [advancer horizontal][children
+                                                                                                                                          [w ,[lambda [] [format "Frame rate: ~a" frame-rate]]
+                                                                                                                                             [id "test text"] [type "text"][min-w 100][w 100] [h 100][expand 0.5][advancer vertical]]
+                                                                                                                                          [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
+                                                                                [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer horizontal][children
+                                                                                                                                            [w "Dump widgets"
+                                                                                                                                               [id "DumpWidgetsLabel"][w 100][min-w 100] [h 100][expand 0.5] [type "text"]]
+                                                                                                                                            [w "OK" [id "DumpWidgets"] [type "button"]]]]]]] ]
+               [w "Another Test Window" [id "Another Test window"] [type "window"] [x 150] [y 150][min-w 300][min-h 200]  [w 300] [h 400]
+                  [children
+                   [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer vertical][children
+                   [w ,[map [lambda [x] [list x [format "dir/~a" x]]] [directory-list]]
+                      [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
+                   [w [[1 1] [2 2] [3 3] [4 4]]
+                      [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
+                   [w [[1 1] [2 2] [3 3] [4 4]]
+                      [type "list"] [expand 1/3][w 100][h 300][advancer horizontal]]]]
+                   [w "Quit" [id "exit"] [type "button"]]]]
+                                                        
+;              [w "menu" [id "Popup menu"] [type "popup"][children
+;                                                         [w "Do thing" [type "button"] [id "do thing button"]]
+;                                                         [w "Exit" [id "exit button"][type "button"]]]]
+
+              ]]
              
   ]
 
-;some more state
-[define button-down #f]
-[define persist-mouse-event #f]
 
 
 
@@ -85,14 +133,14 @@
 
 
 [define [my-text data x y x2 y2]
-   (get (format "http://localhost:8080/command/text(~a,~a,~a);" data x [+ y [/ [- y2 y]3]]  ))
+   (easy.get (format "~atext(~a,~a,~a);" url data x [+ y [/ [- y2 y]3]]  ))
 
   ]
 
 [define [button-click id widget attribs]
 [printf "You clicked on button ~a: ~a~n" id widget]
   [cond
-    [[equal? id "exit"] [exit 0]]
+    [[equal? id "exit"] (easy.get (format "~aexit(0);" url))(exit 0)]
     [[equal? id "DumpWidgets"] [write m]]
     ]
   ;[alist-cons 'children [cons '[w "OK" [id "ok button"] [x 10] [y 10] [w 50] [h 50][type "button"]] [s=f children attribs '[]]] attribs]
@@ -109,15 +157,15 @@
              
   ]]
 
-[define background  (lambda(a b c d)(get (format "http://localhost:8080/command/background(~a,~a,~a,~a);" a b c d)))]
+[define background  (lambda(a b c d)(easy.get (format "~abackground(~a,~a,~a,~a);" url a b c d)))]
 [define draw-funcs `[
-                     [fill . ,(lambda(a b c d) (get (format "http://localhost:8080/command/fill(~a,~a,~a,~a);" a b c d)))]
+                     [fill . ,(lambda(a b c d) (easy.get (format "~afill(~a,~a,~a,~a);" url  a b c d)))]
 
-                     [rect . ,(lambda(a b c d e) (get (format "http://localhost:8080/command/rectangle(~a,~a,~a,~a);" a b c d)))]
-                     [stroke . ,(lambda(a b c d) (get (format "http://localhost:8080/command/stroke(~a,~a,~a,~a);" a b c d)))]
-                     [text-size . ,(lambda(a) (get (format "http://localhost:8080/command/textsize(~a);" a )))]
-                     [text . ,(lambda(a b c d e) (get (format "http://localhost:8080/command/text(`~a`,~a,~a);" a b c )))]
-                     [text-align . ,(lambda(a b) a)] ;,(lambda(a b c d) (get (format "http://localhost:8080/command/stroke(~a,~a,~a,~a);" a b c d)))]]
+                     [rect . ,(lambda(a b c d e) (easy.get (format "~arectangle(~a,~a,~a,~a);" url  a b c d)))]
+                     [stroke . ,(lambda(a b c d) (easy.get (format "~astroke(~a,~a,~a,~a);" url  a b c d)))]
+                     [text-size . ,(lambda(a) (easy.get (format "~atextsize(~a);" url  a )))]
+                     [text . ,(lambda(a b c d e) (easy.get (format "~atext(`~a`,~a,~a);" url  a b c )))]
+                     [text-align . ,(lambda(a b) a)] ;,(lambda(a b c d) (get (format "~astroke(~a,~a,~a,~a);" url  a b c d)))]]
                      [button-click . ,button-click]
                      ]]
 [set-draw-funcs! draw-funcs]
@@ -128,7 +176,7 @@
   [set! last-frame-time (current-inexact-milliseconds) ]
   [set! last-frame-count frame-count]]
   ;clear the window
-  (get (format "http://localhost:8080/command/clear();"))
+  (easy.get (format "~acommit" immediate-url))
   [background 255 255 0 255]
    
   ;[when persist-mouse-event [printf "Mouse button: ~a~n" mouse-button]
@@ -138,16 +186,16 @@
                    m
                    `[[nextx . ,[car [s=f x [cddr m] '[0]]]];Current draw position
                      [nexty . ,[car [s=f y [cddr m] '[0]]]];Current draw position
-                     [mx . 0]
-                     [my . 0]  
+                     [mx . ,mouse-x]
+                     [my . ,mouse-y]  
                      [startx  .  ;Drag start x
                                                            
                               ,[if [not button-down]
-                                   0
+                                   mouse-x
                                    [startx last-state]]]
                      ;Drag start y
                      [starty . ,[if [not button-down]
-                                   0
+                                   mouse-y
                                     [starty last-state]]]
                      ;Mouse event in progress? (false, press, release)
                      [mouse-event . ,persist-mouse-event]
@@ -155,8 +203,8 @@
                      [button-down? . ,button-down] ;Is the button currently down?
                      [advancer . ,vertical-advancer]
                      [drag-target . ,[s= drag-target last-state]]
-                     [dragvecx . ,[- 0 [startx last-state]]]
-                     [dragvecy . ,[- 0 [starty last-state]]] ;Total drag vector, x and y
+                     [dragvecx . ,[- mouse-x [startx last-state]]]
+                     [dragvecy . ,[- mouse-y [starty last-state]]] ;Total drag vector, x and y
                      ]
                    [list 0 0 0 0]
                    '[]]]
@@ -191,5 +239,9 @@
 ;[displayln (get-profile-results)]
   
   )
-
+(define [drawloop]
+  (displayln 'Drawing)
 (draw)
+  [drawloop])
+(draw)
+;[define drawthread [thread[drawloop]]]

@@ -1,5 +1,4 @@
 #lang sketching
-(require (planet jaymccarthy/gl-world:2:1))
 ;(require errortrace)
 ;(instrumenting-enabled #t)
 ;(profiling-enabled #t)
@@ -15,22 +14,6 @@
 [require "parse.rkt"]
 
 
-(require racket/match
-         web-server/http
-         web-server/servlet-dispatch
-         web-server/web-server)
-
-(define age [lambda [x] "alalala"])
-
-(define stop
-  (serve
-   #:dispatch (dispatch/servlet age)
-   #:listen-ip "127.0.0.1"
-   #:port 8000))
-
-(with-handlers ([exn:break? (lambda (e)
-                              (stop))])
-  (sync/enable-break never-evt))
 
 
 
