@@ -87,15 +87,15 @@
       [w "A Test Window" [id "Test window"][dropzone #t] [draggable #t][type "window"] [x 500] [y 500] [w 200] [h 200] [min-w 200][min-h 200][advancer window]
          [children
                    
-;          [w "A big container" [type "container"] [advancer vertical][w 200] [children
-;                                                                              [w "A h1container" [type "container"] [w 100] [min-w 100][expand 0.5] [advancer horizontal][children
-;                                                                                                                                                                          [w ,[lambda [] [format "Frame rate: ~a" [round frame-rate]]]
-;                                                                                                                                                                             [id "test text"] [type "text"][min-w 100][w 100] [h 100][expand 0.5][advancer vertical]]
-;                                                                                                                                                                          [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
-;                                                                              [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer horizontal][children
-;                                                                                                                                                                         [w "Dump widgets"
-;                                                                                                                                                                            [id "DumpWidgetsLabel"][w 100][min-w 100] [h 100][expand 0.5] [type "text"]]
-;                                                                                                                                                                         [w "OK" [id "DumpWidgets"] [type "button"]]]]]]
+          [w "A big container" [type "container"] [advancer vertical][w 200] [children
+                                                                              [w "A h1container" [type "container"] [w 100] [min-w 100][expand 0.5] [advancer horizontal][children
+                                                                                                                                                                          [w ,[lambda [] [format "Frame rate: ~a" [round frame-rate]]]
+                                                                                                                                                                             [id "test text"] [type "text"][min-w 100][w 100] [h 100][expand 0.5][advancer vertical]]
+                                                                                                                                                                          [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
+                                                                              [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer horizontal][children
+                                                                                                                                                                         [w "Dump widgets"
+                                                                                                                                                                            [id "DumpWidgetsLabel"][w 100][min-w 100] [h 100][expand 0.5] [type "text"]]
+                                                                                                                                                                         [w "OK" [id "DumpWidgets"] [type "button"]]]]]]
           ]
          ]
       [w "Another Test Window" [id "Another Test window"][dropzone #t]  [draggable #t][type "window"] [x 150] [y 150][min-w 300][min-h 200]  [w 300] [h 400]
