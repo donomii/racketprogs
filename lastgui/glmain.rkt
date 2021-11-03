@@ -2,11 +2,14 @@
 (displayln 'Start)
 (require (prefix-in easy. net/http-easy))
  (require (prefix-in  srfi_ srfi/1 ))
+(require net/uri-codec)
 
 [require "lastgui.rkt"]
 [require "spath.rkt"]
 [require "parse.rkt"]
 (displayln "RPC gui")
+
+(define batch-url "http://localhost:8083/batch" )
 (define url "http://localhost:8083/command/" )
 (define immediate-url "http://localhost:8083/immediate/" )
 (require racket/match
@@ -16,6 +19,22 @@
 (require web-server/http/request-structs)
 (require web-server/http/bindings)
 (define  persist-mouse-event #f)
+;(struct st (mx 
+;                     my . 0]  ;Current draw position
+;                     startx  . 0 ;Drag start x
+;                                                           
+;                              ]
+;                     ;Drag start y
+;                     starty . 0]
+;                     ;Mouse event in progress? (false, press, release)
+;                     mouse-event
+;;Actually send the draw commands
+;                     do-draw 
+;                     button-down?
+;                     advancer 
+;                     drag-target 
+;                     dragvecx 
+;                     dragvecy  ))
 (define button-down #f)
 (define age [lambda [req] 
 
@@ -68,15 +87,16 @@
       [w "A Test Window" [id "Test window"][dropzone #t] [draggable #t][type "window"] [x 500] [y 500] [w 200] [h 200] [min-w 200][min-h 200][advancer window]
          [children
                    
-          [w "A big container" [type "container"] [advancer vertical][w 200] [children
-                                                                              [w "A h1container" [type "container"] [w 100] [min-w 100][expand 0.5] [advancer horizontal][children
-                                                                                                                                                                          [w ,[lambda [] [format "Frame rate: ~a" [round frame-rate]]]
-                                                                                                                                                                             [id "test text"] [type "text"][min-w 100][w 100] [h 100][expand 0.5][advancer vertical]]
-                                                                                                                                                                          [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
-                                                                              [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer horizontal][children
-                                                                                                                                                                         [w "Dump widgets"
-                                                                                                                                                                            [id "DumpWidgetsLabel"][w 100][min-w 100] [h 100][expand 0.5] [type "text"]]
-                                                                                                                                                                         [w "OK" [id "DumpWidgets"] [type "button"]]]]]]]
+;          [w "A big container" [type "container"] [advancer vertical][w 200] [children
+;                                                                              [w "A h1container" [type "container"] [w 100] [min-w 100][expand 0.5] [advancer horizontal][children
+;                                                                                                                                                                          [w ,[lambda [] [format "Frame rate: ~a" [round frame-rate]]]
+;                                                                                                                                                                             [id "test text"] [type "text"][min-w 100][w 100] [h 100][expand 0.5][advancer vertical]]
+;                                                                                                                                                                          [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
+;                                                                              [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer horizontal][children
+;                                                                                                                                                                         [w "Dump widgets"
+;                                                                                                                                                                            [id "DumpWidgetsLabel"][w 100][min-w 100] [h 100][expand 0.5] [type "text"]]
+;                                                                                                                                                                         [w "OK" [id "DumpWidgets"] [type "button"]]]]]]
+          ]
          ]
       [w "Another Test Window" [id "Another Test window"][dropzone #t]  [draggable #t][type "window"] [x 150] [y 150][min-w 300][min-h 200]  [w 300] [h 400]
          [children
@@ -122,7 +142,7 @@
 [define [button-click id widget attribs]
   [printf "You clicked on button ~a: ~a~n" id widget]
   [cond
-    [[equal? id "exit"] (easy.get (format "~aexit(0);" url))(exit 0)]
+    [[equal? id "exit"] (aget (format "exit(0);" ))(exit 0)]
     [[equal? id "DumpWidgets"] [write m]]
     ]
   ;[alist-cons 'children [cons '[w "OK" [id "ok button"] [x 10] [y 10] [w 50] [h 50][type "button"]] [s=f children attribs '[]]] attribs]
@@ -141,18 +161,36 @@
 [define [drop-handler onto obj]
   [printf "Dropped ~a onto ~a~n" obj onto]
   ]
-[define background  (lambda(a b c d)(easy.get (format "~abackground(~a,~a,~a,~a);" url a b c d)))]
-[define draw-funcs `[
-                     [fill . ,(lambda(a b c d) (easy.get (format "~afill(~a,~a,~a,~a);" url  a b c d)))]
+;[define [aget url] [thread [lambda [] [easy.get url]]]]
+[define commands ""]
+[define [aget cmd]  [set! commands [string-append commands cmd]]]
 
-                     [rect . ,(lambda(a b c d e) (easy.get (format "~arectangle(~a,~a,~a,~a);" url a b c d)))]
-                     [stroke . ,(lambda(a b c d) (easy.get (format "~astroke(~a,~a,~a,~a);" url a b c d)))]
-                     [text-size . ,(lambda(a) (easy.get (format "~atextsize(~a);" url a )))]
-                     [text . ,(lambda(a b c d e) (easy.get (format "~atext(`~a`,~a,~a,~a,~a);" url a b c d e)))]
-                     [text-align . ,(lambda(a b) (easy.get (format "~atextalign(`~a`,`~a`);" url a b)))] ;,(lambda(a b c d) (get (format "http://localhost:8080/command/stroke(~a,~a,~a,~a);" a b c d)))]]
+;[define draw-funcs `[
+;                     [fill . ,(lambda(a b c d) (aget (format "~afill(~a,~a,~a,~a);" url  a b c d)))]
+;
+;                     [rect . ,(lambda(a b c d e) (aget (format "~arectangle(~a,~a,~a,~a);" url a b c d)))]
+;                     [stroke . ,(lambda(a b c d) (aget (format "~astroke(~a,~a,~a,~a);" url a b c d)))]
+;                     [text-size . ,(lambda(a) (aget (format "~atextsize(~a);" url a )))]
+;                     [text . ,(lambda(a b c d e) (aget (format "~atext(`~a`,~a,~a,~a,~a);" url a b c d e)))]
+;                     [text-align . ,(lambda(a b) (aget (format "~atextalign(`~a`,`~a`);" url a b)))] ;,(lambda(a b c d) (get (format "http://localhost:8080/command/stroke(~a,~a,~a,~a);" a b c d)))]]
+;                     [button-click . ,button-click]
+;                     [drop-callback . ,drop-handler]
+;                     ]]
+
+
+[define background  (lambda(a b c d)(aget (format "background(~a,~a,~a,~a);" a b c d)))]
+[define draw-funcs `[
+                     [fill . ,(lambda(a b c d) (aget (format "fill(~a,~a,~a,~a);"   a b c d)))]
+
+                     [rect . ,(lambda(a b c d e) (aget (format "rectangle(~a,~a,~a,~a);"  a b c d)))]
+                     [stroke . ,(lambda(a b c d) (aget (format "stroke(~a,~a,~a,~a);"  a b c d)))]
+                     [text-size . ,(lambda(a) (aget (format "textsize(~a);"  a )))]
+                     [text . ,(lambda(a b c d e) (aget (format "text(`~a`,~a,~a,~a,~a);"  a b c d e)))]
+                     [text-align . ,(lambda(a b) (aget (format "textalign(`~a`,`~a`);" a b)))] ;,(lambda(a b c d) (get (format "http://localhost:8080/command/stroke(~a,~a,~a,~a);" a b c d)))]]
                      [button-click . ,button-click]
                      [drop-callback . ,drop-handler]
                      ]]
+
 [set-draw-funcs! draw-funcs]
 
 
@@ -225,7 +263,11 @@
   
   ;[displayln (output-profile-results)]
   ;[displayln (get-profile-results)]
+  
+  ;[printf "Sending ~a~n" [format "~a~a" url (uri-encode commands)]]
+  [easy.post  batch-url  #:data commands]
   (easy.get (format "~acommit" immediate-url))
+  [set! commands ""]
   ;[displayln "Finish draw"]
 [printf "Draw completed in ~a milliseconds~n" (- (current-inexact-milliseconds) t)]
   ]

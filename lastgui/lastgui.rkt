@@ -194,7 +194,9 @@
                                      [printf "Setting x ~a y ~a dvx ~a dvy ~a ~n" x y [s= dragvecx state] [s= dragvecy state]]
                                      ]
                                    [when dragging?
+                                     [when [and [do-draw state] [not disabled]]
                                      [[df 'rect] dx dy w h 5]
+                                       ]
                                      ]
                                    [list
                                     [list dx dy dx dy]
@@ -209,6 +211,7 @@
                                    [set! w  [- x2 x]][set! h [- y2 y]]
                                    [printf "Setting w ~a h ~a dvx ~a dvy ~a ~n" w h [s= dragvecx state] [s= dragvecy state]]
                                    ]]
+                               [when [and [do-draw state] [not disabled]]
                                [[df 'fill] 255 255 255 255]
                                [[df 'stroke] 0 0 0 255]
                                [[df 'rect] x y [- x2 x] [- y2 y] 5]
@@ -216,6 +219,7 @@
                                [[df 'fill] 0 0 0 255]
                                [[df 'text-align] 'center 'center]
                                [[df 'text]  [format "~a" [if [procedure? data] [data] data]] x [+ y [/ [- y2 y]3]] [- x2 x] [- y2 y] ]
+                                 ]
                                [list
                                 [list x y x2 y2]
                                 downstate
@@ -234,12 +238,14 @@
                                    [set! w  [- x2 x]][set! h [- y2 y]]
                                    [printf "Setting w ~a h ~a dvx ~a dvy ~a ~n" w h [s= dragvecx state] [s= dragvecy state]]
                                    ]]
+                               [when [and [do-draw state] [not disabled]]
                                [[df 'fill] 255 255 255 255]
                                [[df 'stroke] 0 0 0 255]
                                [[df 'rect] x y [- x2 x] [- y2 y] 5]
                                [[df 'text-size] font-size]
                                [[df 'fill] 0 0 0 0]
                                [[df 'text-align] 'center 'center]
+                                 ]
                                ;[[df 'text] [if [procedure? data] [format "~a"[data]] [format "~a" data]] x [+ y [/ [- y2 y]3]] [- x2 x] [- y2 y] ]
                                ; [displayln [alist-cons 'children new-children [set-attrib 'h h [set-attrib 'w w [set-attrib 'y y [set-attrib 'x x attribs]]]]]]
                                [list
@@ -362,11 +368,13 @@
                                         [set! w  [- x2 x]][set! h [- y2 y]]
                                         [printf "Setting w ~a h ~a dvx ~a dvy ~a ~n" w h [s= dragvecx state] [s= dragvecy state]]
                                         ]]
+                                    [when [and [do-draw state] [not disabled]]
                                     [[df 'fill] 255 255 255 255]
                                     [[df 'stroke] 0 0 0 255]
                                     [[df 'rect] x y [- x2 x] [- y2 y] 5]
                                     [[df 'text-size] 11]
                                     [[df 'fill] 0 0 0 0]
+                                      ]
                                     ;[[df 'text] data x y [- x2 x] [- y2 y] ]
                                     [list [list x y x2 y2] downstate [set-attrib 'h h [set-attrib 'w w [set-attrib 'y y [set-attrib 'x x attribs]]]]
                                    

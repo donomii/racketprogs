@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,7 +20,7 @@ import (
 var thunkList []func() = []func(){}
 var newThunkList []func() = []func(){}
 var mu sync.Mutex
-var debug bool	
+var debug = true
 
 func col(r, g, b, a uint8) color.RGBA {
 	return color.RGBA{r, g, b, a}
@@ -123,6 +124,27 @@ func main() {
 
 			}
 		}(script))
+
+		c.Writer.Write([]byte("Command loaded"))
+	})
+
+	r.POST("/batch", func(c *gin.Context) {
+		script, err  := ioutil.ReadAll(c.Request.Body)
+		logErr(err)
+		if debug {
+		fmt.Println("Adding thunk ", string(script))
+		}
+		addThunk(func(s string) func() {
+			return func() {
+
+				//log.Println("Drawing", script)
+				_, err := vm.Execute(e, nil, s)
+				if err != nil {
+					log.Printf("execute error: %v while executing %v\n", err, s)
+				}
+
+			}
+		}(string(script)))
 
 		c.Writer.Write([]byte("Command loaded"))
 	})
