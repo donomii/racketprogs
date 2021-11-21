@@ -3,14 +3,14 @@ package main
 import (
 	"log"
 
-	. "github.com/donomii/pmoo"
+	. "./pmoolib"
 )
 
 //Writes the core objects to disk. Overwrites any that already exist.
 func initDB() {
 	log.Println("Overwriting core")
 	rootObj := Object{}
-	rootObj.Id = 1
+	rootObj.Id = "1"
 	rootObj.Properties = map[string]Property{}
 
 	rootObj.Properties["name"] = Property{Value: `root`}
@@ -39,7 +39,7 @@ func initDB() {
 
 	log.Println("Overwriting Player 1")
 	playerobj := Object{}
-	playerobj.Id = 2
+	playerobj.Id = "2"
 	playerobj.Properties = map[string]Property{}
 
 	playerobj.Properties["name"] = Property{Value: "Wizard"}
@@ -57,7 +57,7 @@ func initDB() {
 
 	log.Println("Overwriting oops")
 	oops := Object{}
-	oops.Id = 0
+	oops.Id = "0"
 	oops.Properties = map[string]Property{}
 
 	oops.Properties["player"] = Property{Value: `false`}
@@ -73,7 +73,7 @@ func initDB() {
 
 	log.Println("Overwriting First room")
 	room := Object{}
-	room.Id = 3
+	room.Id = "3"
 	room.Properties = map[string]Property{}
 
 	room.Properties["name"] = Property{Value: `The First Room`}
@@ -91,7 +91,7 @@ func initDB() {
 
 	log.Println("Overwriting genroom")
 	genroom := Object{}
-	genroom.Id = 4
+	genroom.Id = "4"
 	genroom.Properties = map[string]Property{}
 
 	genroom.Properties["name"] = Property{Value: `Generic Room`}
@@ -109,7 +109,7 @@ func initDB() {
 
 	log.Println("Overwriting generic player")
 	genplayer := Object{}
-	genplayer.Id = 5
+	genplayer.Id = "5"
 	genplayer.Properties = map[string]Property{}
 
 	genplayer.Properties["name"] = Property{Value: "Generic player"}
@@ -127,7 +127,7 @@ func initDB() {
 
 	log.Println("Overwriting generic thing")
 	genthing := Object{}
-	genthing.Id = 6
+	genthing.Id = "6"
 	genthing.Properties = map[string]Property{}
 
 	genthing.Properties["name"] = Property{Value: "Generic thing"}
@@ -145,7 +145,7 @@ func initDB() {
 
 	log.Println("Overwriting core object")
 	coreObj := Object{}
-	coreObj.Id = 7
+	coreObj.Id = "7"
 	coreObj.Properties = map[string]Property{}
 
 	coreObj.Properties["name"] = Property{Value: "Core"}

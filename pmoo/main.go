@@ -14,7 +14,8 @@ import (
 
 	"github.com/chzyer/readline"
 	"github.com/donomii/goof"
-	. "github.com/donomii/pmoo"
+	//. "github.com/donomii/pmoo"
+	. "./pmoolib"
 	"github.com/donomii/throfflib"
 	"github.com/traefik/yaegi/interp"
 )
@@ -92,8 +93,8 @@ func main() {
 	cmdProg := path.Base(os.Args[0])
 
 	flag.BoolVar(&init, "init", false, "Create basic objects.  Overwrites existing")
-	flag.BoolVar(&Cluster, "cluster", false, "Run in cluster mode.  See instructions.")
-	flag.BoolVar(&ClusterQueue, "clusterQ", false, "Run messages in cluster mode.  See instructions.")
+	flag.BoolVar(&Cluster, "cluster", false, "Run in cluster mode.  See instructions in README.")
+	flag.BoolVar(&ClusterQueue, "clusterQ", false, "Run messages in cluster mode.  See instructions in README.")
 	//flag.StringVar(&queueServer, "queue", "127.0.0.1:2888", "Location of queue server.")
 	flag.StringVar(&QueueServer, "queue", "http://127.0.0.1:8080", "Location of queue server.")
 	flag.StringVar(&Affinity, "affinity", "7", "Will process all messages with this affinity id.")
@@ -218,8 +219,9 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 	code := ""
 	defer func() {
 		if r := recover(); r != nil {
+			log.Println("Paniced:", r)
 			log.Println("Failed to eval:", player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr, "code:", code, r)
-			fmt.Println("stacktrace from panic in eval: \n" + string(debug.Stack()))
+			log.Println("stacktrace from panic in eval: \n" + string(debug.Stack()))
 		}
 	}()
 	verbStruct := GetVerbStruct(LoadObject(this), verb, 10)

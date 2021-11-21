@@ -1,7 +1,8 @@
 package main
 
 import (
-	. "github.com/donomii/pmoo"
+	//. "github.com/donomii/pmoo"
+	. "./pmoolib"
 	"github.com/donomii/throfflib"
 )
 
