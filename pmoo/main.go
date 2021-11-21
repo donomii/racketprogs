@@ -14,8 +14,10 @@ import (
 
 	"github.com/chzyer/readline"
 	"github.com/donomii/goof"
+
 	//. "github.com/donomii/pmoo"
 	. "./pmoolib"
+	pmoo "./pmoolib"
 	"github.com/donomii/throfflib"
 	"github.com/traefik/yaegi/interp"
 )
@@ -88,10 +90,11 @@ func main() {
 	var init bool
 	var RawTerm bool
 	var inQ chan *Message = make(chan *Message, 100)
-	SetQ(inQ)
 	player := "2"
 	cmdProg := path.Base(os.Args[0])
+	debug := false
 
+	flag.BoolVar(&debug, "debug", false, "Print log messages")
 	flag.BoolVar(&init, "init", false, "Create basic objects.  Overwrites existing")
 	flag.BoolVar(&Cluster, "cluster", false, "Run in cluster mode.  See instructions in README.")
 	flag.BoolVar(&ClusterQueue, "clusterQ", false, "Run messages in cluster mode.  See instructions in README.")
@@ -102,14 +105,21 @@ func main() {
 
 	flag.Parse()
 
-	if cmdProg == "p" {
+	if !debug {
 		log.SetOutput(ioutil.Discard)
+		}
+	
+	SetQ(inQ)
+
+	if cmdProg == "p" {
+
 		//fmt.Println("Single command mode")
 		dataDir := goof.HomeDirectory() + "/.pmoo/objects"
 		os.MkdirAll(dataDir, 0600)
 		SetDataDir(dataDir)
+		log.Println("Using MOO in", pmoo.DataDir)
 		QuitOnEmptyQueue = true
-		args := append(os.Args[1:], "", "", "")
+		args := append(flag.Args(), "", "", "")
 		RawMsg(Message{Player: player, This: "7", Verb: "%commandline", Args: args, Ticks: DefaultTicks})
 	} else {
 
@@ -126,6 +136,14 @@ func main() {
 				json.Unmarshal(b, &m)
 				Q <- &m
 			})
+			log.Println("Using MOO in cluster", QueueServer)
+		} else {
+			if !goof.Exists(pmoo.DataDir){
+				dataDir := goof.HomeDirectory() + "/.pmoo/objects"
+				os.MkdirAll(dataDir, 0600)
+				SetDataDir(dataDir)
+			}
+			log.Println("Using MOO in", pmoo.DataDir)
 		}
 
 		if init {
@@ -138,6 +156,7 @@ func main() {
 			go ReadLineInputHandler(inQ, player)
 		}
 	}
+	
 	MOOloop(inQ, player)
 }
 func MOOloop(inQ chan *Message, player string) {
