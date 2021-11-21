@@ -19,8 +19,9 @@ func GetChan(key string) chan []byte {
 }
 
 func main() {
-
+	StartKVstore()
 	chans = make(map[string]chan []byte)
+
 	r := gin.Default()
 
 	r.GET("/subscribe/:topic", func(c *gin.Context) {
