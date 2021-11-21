@@ -254,19 +254,7 @@
   ;   ;(with-handlers ([exn:fail? (lambda (exn) (display (format "Could not download ~a~n" a-url)))])
   ;(send markov insert-list  (regexp-split " +|\r\n|\r|\n" (text-get a-url)))
   ;     markov))
-  ;(urls-get "http://news.google.com/?ncl=http://www.theaustralian.news.com.au/common/story_page/0,5744,19965491%25255E31477,00.html&hl=en"))
-  
-  ;(display (text-get "http://babylon.alphacomplex.org"))
-  ;(display (text-get "http://www.penny-arcade.com"))
-  ;(display (text-get "http://www.icir.org/vern/papers/cdc-usenix-sec02/"))
-  ;(display (urls-get "http://reddit.com/"))
-  ;(display (text-get "http://www.penny-arcade.com"))
-  ;(display (urls-get "http://reddit.com/"))
-  ;(make-base-url "http://www.nsgalleries.com/hosted1/ns/gals/violet/index.php?id=101989")
-  ;(download-images "http://www.nsgalleries.com/hosted1/ns/gals/violet/index.php?id=101989")
-  ;(simple-get "http://clitlickinlesbians.com/ps_19465_I_1")
-  ;(download-images "http://clitlickinlesbians.com/ps_19465_I_1")
-  ;(download-images "http://www.18fu.com/02a16girlgir005/lustylezzies.htm")
+ 
   ;(exit)
   
   
@@ -310,17 +298,7 @@
                                       (display (format "Rejecting ~s~n" x))
                                       ))
                                 (urls-get a-url))))
-  
-  ;(download-links "http://www.nsgalleries.com/hosted1/ns/gals/violet/index.php?id=101989")
-  ;(simple-get "http://gallery.infemdom.com/?403/0/4/17/754")
-  ;(download-links "http://gallery.infemdom.com/?403/0/4/17/754")
-  ;(download-links "http://www.damseldiary.com/free/bo/madison/1/428")
-  ;(download-links "http://free.lesbian-strapon.com/lesbian/strapon-domination2/sex/strapgip/")
-  ;(download-links "http://www.lesbiangirls.ws/z0199h/freesixlistvideos.html")
-  ;(download-links "http://tgp.lezdom.com/01/CE_Morrigan_Delilah_Again_4/NTAwNDA6Mjo5/")
-  ;(download-links "http://sisterseduction.be/out.php?t=1.0.73.2180&url=http%3A%2F%2Ffree.straponall.com%2Fstrapon%2Ffemdom%2Fact%2Fclan%2F&link=Main_2")
-  ;(simple-get "http://sisterseduction.be/out.php?t=1.0.73.2180&url=http%3A%2F%2Ffree.straponall.com%2Fstrapon%2Ffemdom%2Fact%2Fclan%2F&link=Main_2")
-  
+ 
   
   
   (define rip-page (lambda (a-url maxdepth depth)
@@ -366,8 +344,6 @@
           ;(write links)
           (thread (lambda () (map next-page (srfi-take  links (quotient (length links) 2)))))
           (thread (lambda () (map next-page (srfi-drop  links (quotient (length links) 2)))))))))
-  ;(thread (lambda () (rip-page "http://fusker.usanurse.org/index.php?method=random&17129" 1 0)))
-  ;(thread (lambda () (history-rip "C:\\Documents and Settings\\aarrr\\Application Data\\Mozilla\\Firefox\\Profiles\\zr81kls3.default\\history.dat" 1 0)))
   ;(rip-page "http://dir.yahoo.com/Arts/Visual_Arts/Computer_Generated/Graphics/" 2 0)
   ;(rip-page "http://reddit.com/" 2 0)
   ;(rip-page "http://commons.wikimedia.org/w/index.php?title=Category:PD_Old" 2 0)
@@ -376,8 +352,7 @@
   
   ;[display [shtml-get "http://www.reddit.com/r/gaming/comments/jv0hi/modernday_assassins_creed/"]]
   ;[pretty-write  [map [sxpath "//div/div/../../.."] [srfi-take  ((sxpath "//div/div[@class='noncollapsed']/form[@class='usertext']/..") [shtml-get "http://www.reddit.com/r/gaming/comments/jv0hi/modernday_assassins_creed/"]) 10]]]
-  ;[pretty-write  [filter [lambda [x] ] ((sxpath "//a") [shtml-get "http://www.reddit.com/r/gaming/comments/jv0hi/modernday_assassins_creed/"]) 10]]]
-  
+
   [define find-root-comments [lambda [alist]
                                [filter [lambda [x] [equal? #f [cadr x]]] alist]
                                ]]
@@ -599,9 +574,6 @@
                  ]]
   
   ;[sxpath-extract-comment-divs [shtml-cache-get "http://www.reddit.com/r/reddit.com/comments/jxdp5/voltaire_when_asked_on_his_deathbed_to_renounce/"]]
-  
-   ;[exit]
-  ;[bytes->string/utf-8[simple-get "http://www.reddit.com/comments/70ehq/obama_to_palindont_mock_the_constitution_dont/.json"]]
   [define [genexample a-func . in-list] [format "(~a ~a) -> ~s" [object-name a-func] [string-concatenate [map [lambda [x] [format "~s" x]] in-list]] [apply a-func in-list]]]
   [define [genexample-l a-func a-list] [apply genexample [cons a-func a-list]]]
   [define [genexamples a-func  example-list] [map [lambda [x] [genexample-l a-func x]] example-list]]
@@ -738,8 +710,6 @@ subreddit_id,is_self,permalink,name,url,downs,ups) VALUES (?,?,?,?,?,?,?,?,?,?,?
                                     ;                  [lambda [a b] [> [cdr a] [cdr b]]]] 1000] 1000]]
                                     
                                     #f]]]
-  ;[simple-get "http://www.reddit.com/r/gaming/comments/k6ohd/nice_valve_thanks_for_the_suggestion/abc1010.json"]
-  ;[suck]
   [process-data]
   ;[hash->list tags-to-hrefs] 
   ;[pretty-write ((sxpath "//p[@class='title']/..") [shtml-get "http://www.reddit.com/"])]
@@ -757,7 +727,6 @@ subreddit_id,is_self,permalink,name,url,downs,ups) VALUES (?,?,?,?,?,?,?,?,?,?,?
   ;    (thread (file-rip "C:\\Documents and Settings\\aarrr\\Application Data\\Mozilla\\Firefox\\Profiles\\zr81kls3.default\\bookmarks.html" 1 0))
   
   ;(display (simple-trace "http://reddit.com/"))
-  ;(display (simple-trace "http://alphacomplex.org/"))
   ;(display 
   
   ; (threaded-map download-links

@@ -1,208 +1,524 @@
-#lang sketching
-
-[define m '[w "toplevel" [id "Toplevel container"] [type "toplevel"]
-              [children
-               [w "A Test Window" [id "Test window"] [type "window"] [x 50] [y 50]
-                  [children
-                   [w "A handy little paragraph of text that should test the renderer a bit"
-                      [id "test text"] [type "text"]]
-                   [w "OK" [id "ok button"] [type "button"]]]]]
-                                                        
-               [w "menu" [id "Popup menu"] [type "popup"][children
-                                                          [w "Do thing" [type "button"] [id "do thing button"]]
-                                                          [w "Exit" [id "exit button"][type "button"]]]]
-             
-               ]]
-
-[define [mx x] [car x]]
-[define [my x] [cadr x]]
-[define [startx x] [caddr x]]
-[define [starty x] [cadddr x]]
-[define [mouse-event x] [cadr [cdddr x]]]
-[define [do-draw x] [caddr [cdddr x]]]
-[define [button-down? x] [cadddr [cdddr x]]]
-[define [advancer x y x2 y2] [list x y2]]
-
-[define last-state '[0 0 0 0 #f]]
-
-[define [inside? mx my x1 y1 x2 y2]
-  [and
-   [and [> mx x1] [< mx x2]]
-   [and [> my y1] [< my y2]]
-   ]]
+[module lastgui racket
+  [provide do-frame set-display-tree! set-draw-funcs! horizontal-advancer vertical-advancer  walk-widget-tree startx starty]
+  (require srfi/1)
+  [require (file "./spath.rkt")]
 
 
-[define button-down #f]
-[define persist-mouse-event #f]
-[define [button-click id]
-  [printf "Clicked on button: ~a~n" id]
-  [exit 0]]
+  ;lastgui is an experiment in creating a portable, simple, and useful gui.  To achieve this, lastgui is a library, not a framework.  The surrounding program
+  ;provides a window, the draw routines and a description of the gui, and lastgui renders onto the canvas provided.  Input is collected by the program using
+  ;whatever native libraries, then passed into lastgui to be processed.
 
+  ;In order to actually make progress, I'm focussing on simple, effective solutions rather than complex complete solutions.  So lastgui contains significantly fewer features
+  ;and less polish than other toolkits.
 
-[define [want-to-render? t state]
-  [letrec [
-           [ data [cadr t]]
-           [attribs [cddr t]]
-           [type [cadr [assoc 'type attribs]]]
-           [children [assoc 'children attribs]]]
-    [if [equal? type "popup"]
-        [or [button-down? state] [mouse-event state]]
-        #t
-        ]
+  ;Lastgui is not specifically a immediate or delayed mode gui, the best way to put it might be "state separated".  The widget tree defines the layout, and usually doesn't change
+  ;(unless you change the layout by dragging a window or something else).  The state variable holds the between-frames state - mouse clicks and movements, drag state, etc.  It is
+  ;recreated on every frame, sometimes using data from the previous state.
+
+ 
+
+  [define draw-funcs '[]]
+  [define [set-draw-funcs! funcs]
+    [set! draw-funcs funcs]]
+  [define [df name]
+    [cdr [assoc name draw-funcs ]]]
+  ;[error [format "~a not defined in ~a" name draw-funcs]]
+  [define display-tree '[]]
+
+  [define [set-display-tree! tree]
+    [set! display-tree tree]
     ]
 
-  ]
 
+  ; Some helper functions to deal with state
+  [define [mx x] [s= mx x]]
+  [define [my x] [s= my x]]
+  [define [nx x] [s= nextx x]]
+  [define [ny x] [s= nexty x]]
+  [define [startx x] [s= startx x]]
+  [define [starty x] [s= starty x]]
+  [define [mouse-event x] [s= mouse-event x]]
+  [define [do-draw x] [s= do-draw x]]
+  [define [button-down? x] [s= button-down?  x]]
+  [define [get-attribs x] [cddr x]]
 
-[define [render data type attribs children t state]
-  [printf "Rendering ~a~nState: ~a~n" type state]
-
-  [letrec [[x [mx state]]
-           [y  [my state]]]
-    
-    [cond
-      [[equal? type "text"][letrec [
-                                       [x2 [+ x 100]]
-                                       [y2 [ + y 100]]]
-                             [fill 255]
-                             [stroke 0 0 0 255]
-                                  [rect x y  x2   y2]
-                                  [text-size 11]
-                                  [fill 0]
-                                  [text data x y x2 y2 ]
-                                  [list [car [advancer x y x2  y2]] [cadr [advancer x y x2  y2]] [startx state] [starty state] [mouse-event state] [do-draw state] advancer]]]
-      [[equal? type "button"] [letrec [
-                                       [x2 [+ x 50]]
-                                       [y2 [ + y 15]]
-                                       [hover? [inside? mouse-x mouse-y x y x2 y2]]]
-                                [when [do-draw state]
-                                  [if hover?
-                                      [fill 128 128 128 255]
-                                      (fill 255 255 255 0)
-                                    
-                                      ]
-                                  [stroke 0 0 0 255]
-                                  [rect x y  50   11]
-                                  [text-size 11]
-                                  [fill 0]
-                                  [text data x y ]
-                                  ]
-                                [printf "Hover:~a id:~a mouse-event:~a\n" hover? [assoc 'id attribs] [mouse-event state]]
-                                [when hover?
-                                  [when [assoc 'id attribs]
-                                    [when [equal? [mouse-event state] 'release]
-                                      [button-click [cadr [assoc 'id attribs]]]
-                                      ]]]
-                                
-                                [list [car [advancer x y x2  y2]] [cadr [advancer x y x2  y2]] [startx state] [starty state] [mouse-event state] [do-draw state] advancer]]]
-      [[equal? type "window"] [letrec [
-                                       [x [cadr[assoc 'x attribs]]]
-                                       [y [cadr [assoc 'y attribs]]]
-                                       [x2 [+ x 200]]
-                                       [y2 [ + y 200]]
-                                       [hover? [inside? mouse-x mouse-y x y x2 y2]]]
-                                [when [do-draw state]
-                                  [if hover?
-                                      [stroke 255 128 128 255]
-                                      [stroke 0 0 0 255]
-                                    
-                                      ]
-                                  [fill 255]
-                                  [rect x y  x2 y2]
-                                  [text-size 11]
-                                  [fill 0]
-                                  [text data [/ [+ x x2] 2] y ]
-                                  ]
-                                [printf "Hover:~a id:~a mouse-event:~a\n" hover? [assoc 'id attribs] [mouse-event state]]
-                                [when hover?
-                                  [when [assoc 'id attribs]
-                                    [when [equal? [mouse-event state] 'release]
-                                      [button-click [cadr [assoc 'id attribs]]]
-                                      ]]]
-                                
-                                [list [car [advancer x y x2  [+ y 22]]] [cadr [advancer x y x2  [+ y 22]]] [startx state] [starty state] [mouse-event state] [do-draw state] [button-down? state] advancer]]]
-      [[equal? type "popup"] [begin
-                               [list [startx state] [starty state] [startx state] [starty state] [mouse-event state] [do-draw state] [button-down? state] advancer]
-                               ]]
-      [else state]
-    
-  
-      ]
+  ;The advancers.  At the moment, layout is performed by specifying which side of the current widget to draw the next widget on.
+  [define [vertical-advancer x y x2 y2] [list x y2]]
+  [define [horizontal-advancer x y x2 y2] [list x2 y]]
+  [define [new-advancer name bounds state]
+    ;[when name
+    ;[printf "Advancer: ~a Bounds: ~a~n" name bounds]]
+    [let [[res
+           [if [procedure? name]
+               [let [[nextPos  [name  [first bounds]  [second bounds]  [third bounds]   [fourth bounds]]]]
+                 [set-state 'nextx [car nextPos] [set-state 'nexty [cadr nextPos] state]]]
+               [cond
+                 ;Place the next widget under the title bar
+                 [[equal? name 'window][set-state 'nextx [first bounds] [set-state 'nexty [+ 22 [second bounds]] state]]]
+                 ;Place the next widget to the top right of the current one
+                 [[equal? name 'horizontal][set-state 'nextx [third bounds] [set-state 'nexty [second bounds] state]]]
+                 ;Place the next widget to the bottom left of the current one
+                 [[equal? name 'vertical][set-state 'nextx [first bounds] [set-state 'nexty [fourth bounds] state]]]
+                 [else state]
       
+                 ]]]]
+      ;[printf "Advanced: ~a~n" res]
+      res]]
+
+
+                                                           
+
+
+  ;is mx, my inside the box x1,y1-x2,y2
+  [define [inside? mx my x1 y1 x2 y2]
+    [and
+     [and [> mx x1] [< mx x2]]
+     [and [> my y1] [< my y2]]
+     ]]
+
+
+
+
+
+  [define [want-to-render? t state]
+    [letrec [
+             [ data [cadr t]]
+             [attribs [cddr t]]
+             [type [cadr [assoc 'type attribs]]]
+             [children [assoc 'children attribs]]]
+      [if [equal? type "popup"]
+          [or [button-down? state] [mouse-event state]]
+          #t
+          ]
+      ]
+
     ]
 
-  ]
+ 
+  ;helper function to add to the attribs conslist
+  [define [set-attrib key value attribs]
+    [delete-duplicates [cons  [list key value] attribs] ;Can't use alist-cons here because attribs isn't a proper conslist
+                       [lambda [x y] [equal? [car x] [car y]]]]]
 
-[define [fold-children children state]
-  ;  [display "fold-children"]
-  ;  [displayln children]
-  ;  [display "State:"]
-  ;  [displayln state]
-  [if [< [length children] 1]
-      state
-      [fold-children [cdr children] [parse-tree [car children] state]]
+  ;helper function to add to the state conslist
+  [define [set-state key value attribs]
+    [cons [cons key value] attribs]]
+
+  ;helper function to add to the downstate conslist
+  [define [set-downstate key value attribs]
+    [cons [cons key value] attribs]]
+
+  ;helper, sets drag state if conditions are met
+  [define [set-drag-target-if hover? id state]
+    [if hover?
+        [set-state 'drag-target id state]
+        state]]
+
+  ;helper, sets srop target state if conditions are met
+  [define [set-drop-target-if droppable id state]
+    [if droppable
+        [begin
+          ;[printf "Setting drop-target to ~a~n" id]
+          [set-state 'drop-target id state]]
+        state]]
+
+  ;helper, sets drag state to id-resize if conditions are met
+  [define [set-resize-target-if hover? id state]
+    [let [[resize-id [format "~a-resize" id]]]
+      [if hover?
+          [set-state 'drag-target resize-id state]
+          state]]]
+
+
+  ;the main render routine, is responsible for putting the graphics on the canvas
+  ;returns [list bounds attribs state]
+  ;
+  ; bounds - a bounding box for the last draw operation
+  ; attribs - the attributes for the current widget, including things like position, scroll position, and widget state
+  ; state - the ephemeral state
+  [define [render data type attribs children t state parent-bounds downstate]
+    ;  [printf "Rendering widget: ~a~nState: ~a~n" type state]
+
+    [letrec [
+           
+             [disabled [s=f disabled downstate #f]]
+             [mouse-x [mx state]]
+             [mouse-y [my state]]
+             [detached [car [s=f detached attribs '[#f]]]]
+             [is-dropzone [car [s=f dropzone attribs '[#f]]]]
+              
+             [x
+              [if detached
+                  [cadr [assoc 'x attribs]]
+                  [nx state]]]
+             [y
+              [if detached
+                  [cadr [assoc 'y attribs]]
+                  [ny state]]]
+             [id [car [s=f id attribs '[#f]]]]
+             
+             [font-size 11]
+             [w [if [s=f w attribs #f] [car [s= w attribs]] [* font-size [string-length data]]]]
+             [h [if [s=f h attribs #f] [car [s= h attribs]] [* font-size 2]]]
+             [expansion-factor [car [s=f expand attribs '[0]]]]
+             [resizing? [s=f resizing downstate #f]]             
+             [advancer [car [s=f advancer attribs [list [s=f advancer state #f]]]]]
+
+             [x2 [+ x  [max [car [s=f min-w attribs '[50]]] [+ w [if resizing? [* expansion-factor [s= dragvecx state]] 0]]]]]
+             [y2 [+ y  [max [car [s=f min-h attribs '[10]]] [+ h [if resizing? [* expansion-factor [s= dragvecy state]] 0]]]]]
+             ;[x2 [+ x   [max [+ w [if resizing? [* expansion-factor [s= dragvecx state]] 0]] 50]]]
+             ;[y2 [+ y [max  [+ h   [if resizing? [* expansion-factor [s= dragvecy state]] 0]] 50]]]
+             [hover? [inside? mouse-x mouse-y x y x2 y2]]
+
+             [button-down  [s=f button-down? state #f]]
+             [drag-target [s=f drag-target state #f]]
+             [draggable [or [s=f draggable downstate #f] [s=f draggable attribs #f]]]
+             [dragging? [and [button-down? state] [equal? drag-target id]]]
+             [dx [if dragging? [+ x [s= dragvecx state]] x]]
+             [dy [if dragging? [+ y [s= dragvecy state]] y]]
+             [drag-distance [if dragging? [sqrt [+ [* dx dx] [* dy dy]]] 0]]
+             ]
+      [when dragging?
+        [set! state [alist-cons 'drag-redraw-func [lambda []
+                                                    ;[printf "Redrawing object being dragged:~a~n" id]
+                                                    [render data type attribs children t state parent-bounds downstate]
+                                                    ] state]]]
+    
+      ;[when [not id] [error [format "Error:  No id found for widget ~a~n" t]]]
+    
+      [cond
+        [[equal? type "toplevel"][letrec []
+                             
+                                   [when [and dragging? [equal? [mouse-event state] 'release]]
+                                     [set! x  dx][set! y dy]
+                                     [printf "Setting x ~a y ~a dvx ~a dvy ~a ~n" x y [s= dragvecx state] [s= dragvecy state]]
+                                     ]
+                                   [when dragging?
+                                     [when [and [do-draw state] [not disabled]]
+                                     [[df 'rect] dx dy w h 5]
+                                       ]
+                                     ]
+                                   [list
+                                    [list dx dy dx dy]
+                                    downstate
+                                    [set-attrib 'h h [set-attrib 'w w [set-attrib 'y [if [and dragging? [equal? [mouse-event state] 'release]] dy y] [set-attrib 'x [if [and dragging? [equal? [mouse-event state] 'release]] dx x]  attribs]]]]
+                                    [set-drag-target-if [equal? [mouse-event state] 'press] id
+                                                        [new-advancer 'vertical [list dx dy dx dy] state] ]]]]
+        [[equal? type "text"][letrec [ ]
+                               [when resizing?
+           
+                                 [when [equal? [mouse-event state] 'release]
+                                   [set! w  [- x2 x]][set! h [- y2 y]]
+                                   [printf "Setting w ~a h ~a dvx ~a dvy ~a ~n" w h [s= dragvecx state] [s= dragvecy state]]
+                                   ]]
+                               [when [and [do-draw state] [not disabled]]
+                               [[df 'fill] 255 255 255 255]
+                               [[df 'stroke] 0 0 0 255]
+                               [[df 'rect] x y [- x2 x] [- y2 y] 5]
+                               [[df 'text-size] font-size]
+                               [[df 'fill] 0 0 0 255]
+                               [[df 'text-align] 'center 'center]
+                               [[df 'text]  [format "~a" [if [procedure? data] [data] data]] x [+ y [/ [- y2 y]3]] [- x2 x] [- y2 y] ]
+                                 ]
+                               [list
+                                [list x y x2 y2]
+                                downstate
+                                [set-attrib 'h h [set-attrib 'w w [set-attrib 'y y [set-attrib 'x x attribs]]]]
+                                [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
+                                                    [new-advancer advancer [list x y x2 y2] state] ]]]]
+        [[equal? type "list"][letrec [
+                                      
+                                    
+                                     
+                                      [new-children [map [lambda [x] `[ w ,[format "~a" [car x]] [id ,x] [type "button"] [w ,w] [h 20]]] data]]
+                                      ]
+                               [when resizing?
+           
+                                 [when [equal? [mouse-event state] 'release]
+                                   [set! w  [- x2 x]][set! h [- y2 y]]
+                                   [printf "Setting w ~a h ~a dvx ~a dvy ~a ~n" w h [s= dragvecx state] [s= dragvecy state]]
+                                   ]]
+                               [when [and [do-draw state] [not disabled]]
+                               [[df 'fill] 255 255 255 255]
+                               [[df 'stroke] 0 0 0 255]
+                               [[df 'rect] x y [- x2 x] [- y2 y] 5]
+                               [[df 'text-size] font-size]
+                               [[df 'fill] 0 0 0 0]
+                               [[df 'text-align] 'center 'center]
+                                 ]
+                               ;[[df 'text] [if [procedure? data] [format "~a"[data]] [format "~a" data]] x [+ y [/ [- y2 y]3]] [- x2 x] [- y2 y] ]
+                               ; [displayln [alist-cons 'children new-children [set-attrib 'h h [set-attrib 'w w [set-attrib 'y y [set-attrib 'x x attribs]]]]]]
+                               [list
+                                [list x y x2 y2]
+                                downstate
+                                [alist-cons 'children new-children[set-attrib 'h h [set-attrib 'w w [set-attrib 'y y [set-attrib 'x x attribs]]]]]
+                                [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
+                                                    [set-state 'nextx x [set-state 'nexty y state] ]]]]]
+        [[equal? type "button"] [letrec [
+                                         [xx [if [and draggable dragging?]  mouse-x  x]]
+                                         [yy  [if [and draggable dragging?]  mouse-y  y]]
+                                        
+                                         ]
+                                  
+                                  [when [and [do-draw state] [not disabled]]
+                                    [if hover?
+                                        [[df 'fill] 128 128 128 255]
+                                        ([df 'fill] 255 255 255 0)
+                                    
+                                        ]
+                                    [[df 'stroke] 0 0 0 255]
+                                    [[df 'rect] xx yy  w   h 5]
+                                    [[df 'text-size] font-size]
+                                    [[df 'fill] 0 0 0 255]
+                                    [[df 'text-align] 'center 'center]
+                                    [[df 'text] data xx yy w h]
+                                    ]
+                                  
+                                  [when hover?
+                                  
+                                    [when [equal? drag-target id]
+                                      [when [equal? [mouse-event state] 'release]
+                                        [if draggable
+                                            [if [> drag-distance 10]
+                                                [begin  ;[set! x  xx][set! y yy]
+                                                  [set! attribs [alist-cons 'detached '[#t] attribs]]
+                                                  [printf "Setting x ~a y ~a dvx ~a dvy ~a ~n" x y [s= dragvecx state] [s= dragvecy state]]]
+                                                [set! attribs [[df 'button-click]   [car [s=f id attribs '["You forgot to set an ID for this button"]]] t attribs]]
+                                                ]
+                                            [set! attribs [[df 'button-click]   [or id "You forgot to set an ID for this button"] t attribs]]
+                                            ]
+                                        ]]]
+                                  [list [list xx yy x2 y2]
+                                        downstate
+                                        [set-attrib 'y yy [set-attrib 'x xx attribs]]
+                                        [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
+                                                            [new-advancer advancer [list xx yy x2 y2] state ] ]]]]
+        [[equal? type "window"]
+         ;[printf "case: window~n"]
+         [letrec [
+                  ;[dragging? [and [button-down? state] [equal? [s= drag-target state] [s= id attribs]]]]
+                  [resizing? [and button-down [equal? drag-target [format "~a-resize" id]]]]
+                  [orig-x [cadr[assoc 'x attribs]]]
+                  [orig-y [cadr [assoc 'y attribs]]]
+                  [x [if dragging?  mouse-x  orig-x]]
+                  [y  [if dragging? mouse-y  orig-y]]
+                  [attrib-w [car [s=f w attribs '[50]]]]
+                  ;[w [if resizing? [+ attrib-w [s= dragvecx state]] attrib-w]]
+                  [w attrib-w]
+                  [h [car [s=f h attribs '[50]]]]
+                  [x2 [+ x  [max [car [s=f min-w attribs '[50]]][if resizing? [+ w [s= dragvecx state]] w]]]]
+                  [y2 [+ y  [max [car [s=f min-h attribs '[50]]][if resizing? [+ h [s= dragvecy state]] h]]]]
+                  [font-size 11]
+                  [hover? [inside? mouse-x mouse-y x y x2 y2]]
+                  [resize-hover? [inside? mouse-x mouse-y [- x2 font-size] [- y2 font-size] x2 y2]]
+                  ]
+           ;[printf "Hover:~a resize-hover?:~a id:~s mouse-event:~a button-down:~a dragging:~a resizing:~a drag-target:~s is drag-target:~a drag-distance:~a\n" hover? resize-hover? id [mouse-event state] button-down dragging? resizing? drag-target [equal? drag-target id] drag-distance]
+           [when [do-draw state]
+             [if [or resizing? dragging?]
+                 [[df 'stroke] 255 128 128 255]
+                 [[df 'stroke] 0 0 0 255]]
+             [[df 'fill] 255 255 255 255]
+             [[df 'rect] x y  [- x2 x] [- y2 y] 5]
+             
+             [[df 'text-size] font-size]
+             [[df 'fill] 255 0 0 0]
+             [[df 'stroke] 255 0 0 255]
+             [[df 'text-align] 'center 'center]
+             [[df 'text] data  [+ x font-size]  y [- x2 x]  [- y2 y] ]
+             [[df 'fill] 0 0 0 0]
+             [[df 'rect] [- x2 font-size] [- y2 font-size] font-size font-size 5] ; Resize handle
+             [[df 'rect] x y font-size font-size 5] ; Drag handle
+             ]
+           ; [printf "Hover:~a id:~a mouse-event:~a\n" hover? [assoc 'id attribs] [mouse-event state]]
+                                
+           [when resize-hover?
+             [when [assoc 'id attribs]
+               [when [equal? [mouse-event state] 'release]
+               
+                 [set! w  [- x2 x]][set! h [- y2 y]]
+                 [set! resize-hover? #f]
+                 ]]]
+         
+           [list
+            [list x y x2 y2]
+            [set-downstate 'resizing resizing? downstate]
+            [set-attrib 'h h [set-attrib 'w w [set-attrib 'y y [set-attrib 'x x attribs]]]]
+            [set-drop-target-if [and is-dropzone hover?] id
+                                [set-resize-target-if [and resize-hover? [equal? [mouse-event state] 'press]] id
+                                                      [set-drag-target-if [and hover? [equal? [mouse-event state] 'press]] id
+                                                                          [new-advancer advancer [list x y x2  [+ y [* 2 font-size]]] state]] ]]]]]
+
+
+      
+        [[equal? type "popup"] [begin
+                                 [list [list x y x y]
+                                       [alist-cons 'disabled [s=f drag-target state #f] downstate] attribs
+                                     
+                                       [set-state 'nextx [startx state]
+                                                  [set-state 'nexty [starty state] state]]]
+                                 ]]
+        [[equal? type "container"][letrec [
+                                           [x2 [+ x   [max [+ w [if resizing? [* expansion-factor [s= dragvecx state]] 0]] 50]]]
+                                           [y2 [+ y [max  [+ h   [if resizing? [* expansion-factor [s= dragvecy state]] 0]] 50]]]
+                                           [nextPos  [list x y]]
+                                           [hover? [inside? mouse-x mouse-y x y x2 y2]]
+                                           ]
+                                    [when resizing?
+                                      [when [equal? [mouse-event state] 'release]
+                                        [set! w  [- x2 x]][set! h [- y2 y]]
+                                        [printf "Setting w ~a h ~a dvx ~a dvy ~a ~n" w h [s= dragvecx state] [s= dragvecy state]]
+                                        ]]
+                                    [when [and [do-draw state] [not disabled]]
+                                    [[df 'fill] 255 255 255 255]
+                                    [[df 'stroke] 0 0 0 255]
+                                    [[df 'rect] x y [- x2 x] [- y2 y] 5]
+                                    [[df 'text-size] 11]
+                                    [[df 'fill] 0 0 0 0]
+                                      ]
+                                    ;[[df 'text] data x y [- x2 x] [- y2 y] ]
+                                    [list [list x y x2 y2] downstate [set-attrib 'h h [set-attrib 'w w [set-attrib 'y y [set-attrib 'x x attribs]]]]
+                                   
+                                          [set-state 'nextx [car nextPos] [set-state 'nexty [cadr nextPos] state] ]]]]
+        [else [list parent-bounds downstate attribs state]]
+    
   
+        ]
+      
+      ]
+
+    ]
+
+  ;find the smallest box that covers both bounding boxes
+  [define [merge-bounds b1 b2]
+    [list
+     [if [< [first b1]  [first b2]]  [first b1]  [first b2]]
+     [if [< [second b1] [second b2]] [second b1] [second b2]]
+     [if [> [third b1]  [third b2]]  [third b1]  [third b2]]
+     [if [> [fourth b1] [fourth b2]] [fourth b1] [fourth b2]]
+     ]
+    ]
+
+  ;find the smallest box that covers both bounding boxes horizontally
+  [define [merge-bounds-horiz b1 b2]
+    [list
+     [if [< [first b1]  [first b2]]  [first b1]  [first b2]]
+     [second b1]
+     [third b2]
+     [fourth b2]
+     ]
+    ]
+
+  ;draw the children for a widget
+  ;returns [list new-widget-tree state bounds]
+  ;
+  ; new-widget-tree - a widget tree, possibly identical to the input tree
+  ; state - the ephemeral state
+  ; bounds - a box covering all of the rendered children
+  [define [map-children children state parent-bounds downstate]
+    ;[printf "Child list: ~a~n" children]
+    [let [[out-bounds parent-bounds]]
+      [let [[new-widget-tree  [map [lambda [c]
+                                     ;[printf "Mapping ~a~n" [second c]]
+                                     [letrec [[alist [walk-widget-tree c state parent-bounds downstate]]
+                                              [new-widget [car alist]]
+                                              [new-state [cadr alist]]
+                                              [new-bounds [caddr alist]]]
+                                       ;[printf "Merging old bounds ~a with ~a (~a)" out-bounds  [cddr  new-widget] new-bounds]
+                                       [set! new-bounds [merge-bounds new-bounds out-bounds]]
+                                       [set! out-bounds [merge-bounds new-bounds out-bounds]]
+                                       [set! state new-state]
+                                       new-widget
+                                       ]] children]]]
+        ;[printf "Returning children: ~a~n" returns]
+        [list new-widget-tree state out-bounds]
+        ]]]
+
+  [define [get-child-pressures children]
+    [letrec [[pressures [map [lambda [c] [car [s=f pressures [get-attribs c] '[1]]] children]]]
+             [total [fold + 0 pressures]]
+             [percentages [map [lambda [c] [/ c total]]]]]
+      percentages
       ]]
 
-[define [parse-tree t state]
-  ; [printf "Parsetree ~a~nState: ~a~n" t state]
-  [letrec [
-           [ data [cadr t]]
-           [attribs [cddr t]]
-           [type [cadr [assoc 'type attribs]]]
-           [children [assoc 'children attribs]]]
-    ;Used to enable/disable widgets
-    [if [want-to-render? t state]
-        ;render sub tree
-        [let [[new-state [render data type attribs children t state]]]
-          ;If there are children
-          [when children
-            ;Render them
-            [fold-children [cdr children] new-state]]
-          ;[printf "Parsetree after children ~a~nNew state: ~a~n" t new-state]
-          new-state
-          ]
-        state]]]
+  ;walk the widget tree, drawing each widget from top down
+  [define [walk-widget-tree t state parent-bounds downstate]
+    ;[printf "Parsetree ~a~nState: ~a~n~n" t state]
+    [letrec [
+             [ data [cadr t]]
+             [attribs [cddr t]]
+             [type [cadr [assoc 'type attribs]]]
+             [children [assoc 'children attribs]]
+             ]
+      ;Used to enable/disable widgets
+      [if [want-to-render? t state]
+          ;first, render the current widget
+          [letrec [[alist [render data type attribs children t state parent-bounds downstate]]
+                   [new-parent-bounds [car alist]]
+                   [new-downstate [cadr alist]]
+                   [new-attribs [caddr alist]]
+                   [advancer [s= advancer state]]
+                   ;[nextPos  [apply advancer new-parent-bounds]]
+                   ; ;[new-state [new-advancer [car [s=f advancer new-attribs '[#f #f]]] new-parent-bounds [cadddr alist]]]
+                   ;[new-state [set-state 'nx [car nextPos] [set-state 'ny [cadr nextPos] [cadddr alist]]]]
+                   [new-state [cadddr alist]]
+                   [children1 [assoc 'children new-attribs]]
+                   [new-widget   [append `[w ,data ]  new-attribs]]
+                 
+                   ]
+            ;If there are children, render them now
+            [if children1
+                ;Render them
+                [letrec [[new-alist [map-children [cdr children1] [new-advancer [car [s=f child-advancer new-attribs '[#f #f]]] new-parent-bounds new-state] new-parent-bounds new-downstate]]
+                         [new-children [car new-alist]]
+                         [new-state1 [cadr new-alist]]
+                         [new-child-bounds [caddr new-alist]]
+                         [new-new-attribs [delete-duplicates [cons [cons 'children new-children]   new-attribs] [lambda [x y] [equal? [car x] [car y]]]]]
+                         [new-new-widget   [append `[w ,data ]  new-new-attribs]]]
+                  ;[printf "~nNew widget ~a~nNew state: ~a~nNew children ~a~n~n" new-new-widget new-state1 new-children]
+                  [set! new-parent-bounds [merge-bounds new-child-bounds new-parent-bounds]]
+         
+            
+                  [set! new-state1 [new-advancer [car [s=f advancer attribs '[#f #f]]] [if [s=f discard-child-position new-attribs '[#f]] new-parent-bounds new-child-bounds] new-state1]]
+                  [list new-new-widget new-state1 new-child-bounds]]
+                [begin
+                  ;[set! new-state [new-advancer [car [s=f advancer attribs '[#f #f]]] new-parent-bounds new-state]]
+                  [list [append `[w ,data ]  new-attribs] new-state new-parent-bounds]
+                  ]]] ;FIXME use new attributes
+          [list t state [list 0 0 0 0]] ;FIXME process mouse events without render
+          ]]]
 
 
 
-(size 640 480) 
+[define [do-frame t state parent-bounds downstate]
+  [letrec [[result [walk-widget-tree t state parent-bounds downstate]]
+           [new-state [cadr result]]
+           [new-template [car result]]
+           ]
+    [when [s=f drag-redraw-func new-state #f]
+      ;[printf "Redrawing drag object~n"]
+      [[s=f drag-redraw-func new-state #f]]
+      ]
+    [when [s=f drop-target new-state #f]
+      #f
+      ;[printf "Drop hover over:~a~n"[s=f drop-target new-state #f]]
+      ]
+    [when [and [equal? [mouse-event new-state] 'release] [s=f drop-target new-state #f]]
 
-[define [on-mouse-pressed]
-  [set! persist-mouse-event 'press]]
+      
+      [printf "Dropped onto:~a~n"[s=f drop-target new-state #f]]
+      [[df 'drop-callback ] [s=f drop-target new-state #f] [s=f drag-target new-state #f]]]
 
-[define [on-mouse-released]
-  [set! persist-mouse-event 'release]
-  [displayln "Mouse button released"]]
+
+    [when  [equal? [mouse-event new-state] 'release]
   
-(define (draw)
+    [set! new-state [alist-cons 'drag-target #f new-state]]
+    [set! new-state [alist-cons 'resize-target #f new-state]]
+    ]
+    [list new-template new-state]
+    ]
+  ]
 
-  [background 255]
 
-  [set! last-state [letrec [[new-state [parse-tree m [list mouse-x mouse-y  ;Current draw position
-                                                           ;Drag start x
-                                                           [if [not button-down]
-                                                               mouse-x
-                                                               [startx last-state]]
-                                                           ;Drag start y
-                                                           [if [not button-down]
-                                                               mouse-y
-                                                               [starty last-state]]
-                                                           ;Mouse event in progress? (false, press, release)
-                                                           persist-mouse-event
-                                                           #t   ;do draw
-                                                           button-down ;Is the button currently down?
-                                                           advancer]]]]
-                                         
-                     new-state]]
-  [when mouse-pressed  
-    [set! button-down #t]]
+                                                           
+  ]
 
-  
-                    
-
-                     
-
-  [set! persist-mouse-event #f]
-  
-  )

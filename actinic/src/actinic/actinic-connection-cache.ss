@@ -27,7 +27,7 @@
         (lambda (a-key a-val )
           
           ;(semaphore-wait sem)
-          [displayln [format "Adding key ~a~n" a-key]]
+          ;[displayln [format "Adding key ~a~n" a-key]]
           (hash-table-put! cache a-key a-val)
           (trim-cache)
           ;(semaphore-post sem)

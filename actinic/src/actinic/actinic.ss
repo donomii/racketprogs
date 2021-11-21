@@ -26,7 +26,7 @@
 ;=over
 
 
-(module actinic mzscheme
+(module actinic racket
   (provide
    
    websocket
@@ -58,7 +58,9 @@
    
    ;actinic-run-tests
    )
-  
+
+   (require net/base64)
+[require   racket/port]
   (require (lib "string.ss"))
   (require (lib "string.ss" "srfi" "13"))
   (require (lib "selector.ss" "srfi" "1"))
@@ -126,15 +128,18 @@
   ;=item (winnow-alist assoc-list)
   ;
   ;Removes duplicate keys from an association list. The first key in the list is kept, any duplicate keys after that are thrown out.
-  (define winnow-alist (lambda (alist)
-                         (let ((new-list (list)))
-                           (map 
-                            (lambda (x) (if (pair? x) 
-                                            (if (not (assoc (car x) new-list)) 
-                                                (begin
-                                                  (set! new-list (cons x new-list))))))
-                            alist)
-                           new-list)))
+  (define winnow-alist delete-duplicates)
+
+
+;    (lambda (alist)
+;                         (let ((new-list (list)))
+;                           (map 
+;                            (lambda (x) (if (pair? x) 
+;                                            (if (not (assoc (car x) new-list)) 
+;                                                (begin
+;                                                  (set! new-list (cons x new-list))))))
+;                            alist)
+;                           new-list)))
   ;=back
   ;
   ;=head2 JRLs - urls, actinic style
@@ -232,12 +237,12 @@
   ;version:  a string indicating which version of the http protocol you want to use.  We recommend "1.1", but you can use "1.0" or even "0.9"
   (define create-request-line (lambda (http-method a-url http-version)
                                 ;[display (format "~a ~a HTTP/~a~a~aHost: ~a~a~a~a" http-method  [url-encode (jrl-path/proxy a-url)]  http-version #\return #\linefeed (jrl-server a-url) (if proxy (format ":~a" (jrl-port a-url)) "") #\return #\linefeed) ][newline]
-                                (format "~a ~a HTTP/~a~a~aHost: ~a~a~a~a" http-method  [url-encode (jrl-path/proxy a-url)]  http-version #\return #\linefeed (jrl-server a-url) (if proxy (format ":~a" (jrl-port a-url)) "") #\return #\linefeed)))
+                                (format "~a ~a HTTP/~a~a~aHost: ~a:~a~a~a~a" http-method  [url-encode (jrl-path/proxy a-url)]  http-version #\return #\linefeed (jrl-server a-url)(jrl-port a-url)  (if proxy (format ":~a" (jrl-port a-url)) "") #\return #\linefeed)))
   
   (define bytes-join (lambda (a-list glue-bytes)
-                       (if (equal? a-list ())
+                       (if (equal? a-list '())
                            #""
-                           (if (equal? (cdr a-list) ())
+                           (if (equal? (cdr a-list) '())
                                (car a-list)   
                                (bytes-append (car a-list) glue-bytes (bytes-join (cdr a-list) glue-bytes))))))
   ;=item (process-header lines)
@@ -377,24 +382,26 @@
                                                          (close-input-port (car v))
                                                          (close-output-port (cdr v)))))))
   (define read-response
-    (lambda (a-port head-hack?)
+    (lambda (a-port ignore-body?)
       (with-handlers (((lambda (exn) #t) (lambda (exn) 
                        ;(display (format "Error reading response: ~a~n" (exn-message exn)))
                                            (dump-cache)
                                            (raise exn))))
       (let ([header-lines (read-header a-port)])
       ;(write header-lines)
-      (let* (        [top-line (if (> (string-length (car header-lines)) 3)  (regexp-split " +" (car header-lines)) (error (format "Bad read on header ~a" header-lines)))]
+      (let* ( [top-line (if (> (string-length (car header-lines)) 3)  (regexp-split " +" (car header-lines)) (error (format "Bad read on header ~a" header-lines)))]
               [header-fields (process-header (cdr header-lines))]
               [body-length (assoc "Content-Length" header-fields)]
-              [body (if head-hack? #"" (if body-length (read-body a-port (string->number (cdr body-length))) 
-                                           (if (equal? "chunked" (cdr (assoc "Transfer-Encoding" header-fields)))
+              [body (if ignore-body?
+                        #"Body not read"
+                        (if body-length (read-body a-port (string->number (cdr body-length))) 
+                                           (if (equal? "chunked" (cdr [ftol (assoc "Transfer-Encoding" header-fields)]))
                                                (begin
-                                                 
+                                                 ;[printf "Decoding chunked body"]
                                                  (let ([res (process-chunks a-port)])
                                                    ;(dump-cache)
                                                    res))
-                                               #"" )))])
+                                               [port->string a-port] )))])
         ;(write header-fields)
         ;(write body)
         ;(newline)
@@ -423,11 +430,11 @@
                                            (lambda ()
                                              (let-values ([(in out)
                                                            (begin
-                                                             (display (format "Could not find an open socket for ~a, opening a new one~n" (make-socket-cache-key a-url)))
+                                                             ;(display (format "Could not find an open socket for ~a, opening a new one~n" (make-socket-cache-key a-url)))
                                                            ((if  (equal? (jrl-scheme a-url) "http")
                               tcp-connect
                               [begin
-                                [displayln [format "Opening https connection to server ~a port ~a" (jrl-server/proxy a-url) (jrl-port/proxy a-url)]]
+                                ;[displayln [format "Opening https connection to server ~a port ~a" (jrl-server/proxy a-url) (jrl-port/proxy a-url)]]
                                 ssl-connect])
                          (jrl-server/proxy a-url) (jrl-port/proxy a-url)))])
                                                (cons in out))))])
@@ -443,54 +450,78 @@
                       
                       ))))]]
   
+[define [ftol thing]
+  [if [equal? thing #f]
+      '[#f]
+      thing]]
+
+  [define [add-auth-to-header a-url headers]
+    ;[printf "Adding auth: ~a~~n~apass:~a~n" a-url headers [jrl-password a-url]]
+    [if [jrl-username a-url]
+        [letrec [[basic-auth [bytes-append #"Basic " [base64-encode [string->bytes/utf-8 [string-append [jrl-username a-url] ":" [jrl-password a-url]]] #""]]]
+          [out [alist-cons "Authorization" basic-auth headers]]]
+         ; [printf "New headers: ~a~n" out]
+          out
+          ]
+        headers
+        ]
+    ]
   
   (define generic-one-shot (case-lambda 
                              [(a-url header payload) (generic-one-shot a-url header payload #f)]
-                             [(a-url header payload head-hack?) (generic-one-shot a-url header payload head-hack? 3)]
-                             [(a-url header payload head-hack? retries)
+                             [(a-url header payload ignore-body?) (generic-one-shot a-url header payload ignore-body? 3)]
+                             [(a-url header payload ignore-body? retries)
                                                          (with-handlers (((lambda (exn) #t) 
                                                                           (lambda (exn)
                                                                           (if (> retries 0)
                                                                               (begin
                                                                                 
-                                                                              (generic-one-shot a-url header payload head-hack? (- retries 1)))
+                                                                              (generic-one-shot a-url header payload ignore-body? (- retries 1)))
                                                                               [begin
-                                                                                [displayln "Dumping cache"]
+                                                                                ;[displayln "Dumping cache"]
                                                                                 (dump-cache)
                                                                                 (raise exn)]))))
-                             ;(display (format "Sending ~a ~a ~n" header payload))
+                                                            
+                             (display (format "Sending Header:~s~nPayload:~a~n" header payload))
                               (call-with-semaphore sem 
                              (lambda () (call-with-values (lambda () (open-server a-url))
                                                (lambda (inp outp)
                                                  (send-request header payload outp)
                                                  
-                                                 (let ([res (read-response inp head-hack?)])
-                                                   (if [not [equal? "keep-alive" [cdr (assoc "Connection" (fourth res))]]]
+                                                 (let ([res (read-response inp ignore-body?)])
+                                                   ;[printf "Got response:~a~n" res]
+                                                   (when [not [equal? "keep-alive" [cdr [ftol(assoc "Connection" (fourth res))]]]]
                                                        (begin
-                                                         [displayln (assoc "Connection" (fourth res))]
-                                                         (displayln "Closing connection at request of server")
+                                                         ;[displayln (assoc "Connection" (fourth res))]
+                                                         ;(displayln "Closing connection at request of server")
                                                          (close-input-port inp)
                                                          (close-output-port outp)
                                                          
-                                                       (send [thread-cell-ref socket-cache] delete (make-socket-cache-key a-url)))
+                                                       (send [thread-cell-ref socket-cache] delete (make-socket-cache-key a-url))
+                                                       res)
                                                        )
-                                                   res))))
+                                                   res)))
+                               )
                              ))]))
   
   (define default-headers (lambda () `(
-                                       ("User-Agent" . "kadljfasoiewur")
+                                       ;("User-Agent" . "kadljfasoiewur")
                                        ;("Connection" . "close")
-                                       ("Accept" . "image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, application/x-shockwave-flash, */*")
-                                       ("Accept-Charset" . "utf-8,us-ascii;q=0.7,*;q=0.7")
+                                       ;("Accept" . "image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, application/x-shockwave-flash, */*")
+                                       ;("Accept-Charset" . "utf-8,us-ascii;q=0.7,*;q=0.7")
                                        ;("Accept-Encoding" . "gzip, deflate")
-                                       ("Accept-Language" . "en-au")
-                                       ("Content-Length" . "0"))))
+                                       ;("Accept-Language" . "en-au")
+                                       )))
   
   (define simple-query
     (case-lambda 
-      [(a-method a-url a-header-list a-body) (simple-query a-method a-url a-header-list a-body 'head-hack)]
-      [(a-method a-url a-header-list a-body head-hack?)
-      (generic-one-shot a-url (build-header (create-request-line a-method  a-url "1.1") (winnow-alist (cons a-header-list (default-headers)))) a-body head-hack?)]))
+      [(a-method a-url a-header-list a-body) (simple-query a-method a-url a-header-list a-body #f)]
+      [(a-method a-url a-header-list a-body ignore-body?)
+      (generic-one-shot
+       a-url
+       (build-header (create-request-line a-method  a-url "1.1") (winnow-alist [add-auth-to-header a-url (append a-header-list (default-headers))]))
+       a-body
+       ignore-body?)]))
   ;=back
   ;
   ;=head2 Simple Calls
@@ -575,27 +606,7 @@
   ;If you need better control over the request, or you want to see the response, try the corresponding http-post call, listed below.
   (define simple-post 
     (lambda (a-url an-alist)
-      ;(display (format "Sending ~a~n" an-alist))
-      (let* ((payload 
-              (if (pair? an-alist)
-                  (string->bytes/utf-8 (string-join (map (lambda (a) 
-                                                           ;(display (format "Sending ~s~n" (cdr a)))
-                                                           (format "~a=~a" (post-encode (car a)) (post-encode (cdr a)))) an-alist) "&"))
-                  an-alist))
-             (payload-length (bytes-length payload)))
-        (let ((result (generic-one-shot a-url (build-header (create-request-line "POST"  a-url
-                                                                                 "1.1") 
-                                                            (cons 
-                                                             
-                                                             (if (pair? an-alist) `("Content-Type" . "application/x-www-form-urlencoded") `("Content-Type" . "application/octet-stream"))
-                                                             (cons 
-                                                              `("Content-Length" . ,(number->string payload-length))
-                                                              
-                                                              
-                                                              (default-headers))))
-                                        payload)))
-          ;(display result)
-          (http-success? result)))))
+      (fifth (http-post a-url an-alist))))
   
   
   
@@ -617,7 +628,7 @@
       (let* ((payload-length (bytes-length a-bytestring)))
         (let ((result (generic-one-shot a-url (build-header (create-request-line "PUT"  a-url
                                                                                  "1.1") 
-                                                            (cons `(("Content-Length" . ,(number->string payload-length)))(default-headers)))
+                                                            (alist-cons "Content-Length" (number->string payload-length) (default-headers)))
                                         a-bytestring )))
           (http-success? result)))))
   
@@ -666,7 +677,11 @@
       ((a-url params) (http-get a-url params '()))
       ((a-url params header-args)
         ;(db 2 (format "http-get - Getting ~s~n" (stringify a-url)))
-        (generic-one-shot a-url (build-header (create-request-line "GET"  a-url "1.1")  (cons header-args (default-headers))) #f))))
+        (simple-query
+         "GET"
+         a-url
+          [if header-args (append header-args (default-headers)) (default-headers)]
+         #f))))
   
   ;=item (http-post url parameters headers payload) - sends a POST request
   ;
@@ -681,26 +696,34 @@
   ;Returns the usual convoluted structure.
   (define http-post 
     (case-lambda 
-      ((a-url params) (http-post a-url params #f #f))
-      ((a-url params header-opts) (http-post a-url params header-opts #f))                                 
+      ((a-url params) (http-post a-url params #f #""))
+      ((a-url params header-opts) (http-post a-url params header-opts #""))                                 
       ((a-url params header-opts payload)
       (if header-opts (set! header-opts (append header-opts (default-headers))) (set! header-opts (default-headers)))
-      (let ((real-payload (if payload payload
-                              (string->bytes/utf-8 (string-join (map (lambda (a) 
-                                                           ;(display (format "Sending ~s~n" (cdr a)))
-                                                           (format "~a=~a" (post-encode (car a)) (post-encode (cdr a)))) params) "&")))))
+      (set! header-opts  [add-auth-to-header a-url header-opts])
+      (letrec ((real-payload (if (>  (bytes-length payload) 0)
+                                 payload
+                                 (if (pair? payload)
+                                     (string->bytes/utf-8 (string-join (map (lambda (a) 
+                                                                              ; (display (format "Sending ~s~n" (cdr a)))
+                                                                              (format "~a=~a" (post-encode (car a)) (post-encode (cdr a)))) params) "&"))
+                                     payload)
+                                 )))
                               
                               
-                      (let ((payload-length (bytes-length payload)))
-                        (let ([pending-header (build-header (create-request-line "POST"  a-url "1.1") 
-                                                            (cons                                                              
-                                                             (if (pair? params) `("Content-Type" . "application/x-www-form-urlencoded") `("Content-Type" . "application/octet-stream"))
-                                                             (cons 
-                                                              `("Content-Length" . ,(number->string payload-length))                                
+                     
+                        (let ([pending-header (build-header (create-request-line "POST"  a-url "1.1")
+                                                            
+                                                           ; (cons                                                              
+                                                            ; (if (pair? params) `("Content-Type" . "application/x-www-form-urlencoded") `("Content-Type" . "application/octet-stream"))
+                                                             (reverse(cons 
+                                                              `("Content-Length" . ,(bytes-length real-payload))                                
                                                               header-opts)))])
-                          ;(display pending-header)
-                        (let ((result (generic-one-shot a-url pending-header (bytes-append payload (string->bytes/utf-8 (format "~a~a" #\return #\newline))))))
-                          result)))))))
+                         
+                         ; (printf "payload length ~a payload ~a~n" (bytes-length real-payload) real-payload)
+                        (let ((result (generic-one-shot a-url pending-header (bytes-append real-payload (string->bytes/utf-8 (format "~a~a" #\return #\newline))))))
+                         ; [displayln result]
+                          result))))))
   
   
   ;=item (http-trace url headers) - sends a TRACE request
@@ -741,7 +764,7 @@
                           
                           (map (lambda (c) 
                                  
-                                 (if (equal? (car c) s) (return (cdr c))))
+                                 (when (equal? (car c) s) (return (cdr c))))
                                (quote (
                                        (#\  .  "%20")
                                        (#\! .  "%21")

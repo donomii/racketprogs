@@ -10,13 +10,14 @@ verb.throff #1.create is " SetProp o ^name iobjstr *> SetProp o ^owner player *>
 verb.goscript #1.alias is "p:=GetProperty(dobj, `aliases`,10);v:=p.Value+`,`+iobjstr; SetProperty(dobj, `aliases`,v);SaveObject(dobj)"
 verb.throff #1.move is " MoveObj dobj iobj "
 verb.throff #1.take is " MoveObj dobj player "
+verb.throff #1.drop is " MoveObj dobj GetProp [ player ^location ] "
 verb.throff #5.introduce is "PRINTLN ( [ Hello, my name is ] GetProp dobj   ^name )"
 //goscript #1.dig is "newRoom:=ToStr(iobj.Id);if newRoom==`` {newRoom=Clone(`4`);SetProp(newRoom, `owner`, playerid);SetProp(newRoom, `name`, iobjstr);};o:=Clone(`6`);SetProp(o, `owner`, playerid);SetProp(o, `name`, dobjstr);SetProp(o, `exit_target`, newRoom);v:=GetVerb(o, `exit_verb`);SetVerb(o, dobjstr, v);MoveObj(o, GetProp(playerid, `location`)); "
 verb.throff #1.dig is " MoveObj exit GetProp player ^location *> SetThroffVerb exit dobjstr verb *> SetThroffVerb exit iobjstr verb *> SetThroffVerb exit ^exit verb *> BIND verb => GetVerb exit ^exit_verb *> SetProp exit ^name dobjstr *> SetProp exit ^exit_target newRoom *> SetProp exit ^owner player *> BIND exit => Clone 6 WHEN EQUAL iobj [] [ *> SetProp newRoom  ^owner player *> SetProp newRoom ^name  iobjstr ] *> BIND newRoom =>  IF EQUAL iobj [] [ Clone 4 ] iobj "
 verb.throff #1.do_exit is "MoveObj player GetProp this ^exit_target"
 verb.throff #1.exit_verb is "Msg player this ^do_exit [] [] [] "
 verb.throff #1.findverb is "PRINTLN GetVerb iobjstr dobjstr"
-verb.throff #1.tell is " Msg this this ^notify  STRING-CONCATENATE dobj dobjstr [ ] [ ] "
+verb.throff #1.tell is " Msg this this ^notify  ( dobj dobjstr iobj iobjstr ) [ ] [ ] "
 verb.throff #1.whisper is " IF EQUAL  ->STRING  [ ]  ->STRING  dobj  [  Msg 7 player ^tell A[ [ You can't see ] dobjstr [ here ] ]A [ ] [ ]  ]  [ Msg this dobj ^tell  iobjstr [ ] [ ] ]    "
 verb.throff #1.notify is " *> IF EQUAL GetProp player ^prefix_notify ^true THEN [ *> PRINTLN ( GetProp player ^name ^: dobj dobjstr ) ] ELSE [ *> PRINTLN ( dobj dobjstr ) ] "
 verb.throff #1.hello1 is " PRINTLN [ HELLO WORLD ] "
@@ -25,11 +26,12 @@ verb.throff #1.debugParser is "  PRINTLN A[ ^player: player ]A PRINTLN A[ ^this:
 verb.throff #4.go is " WHEN EQUAL dobjstr GetProp this ^name [ MoveObj player this ] "
 
 create $thing named shell
-verb.throff shell.ls is " Msg this player ^tell DIRECTORY-LIST  IF EQUAL dobjstr [] THEN [ ^. ] ELSE [ dobjstr ]  [] [] "
- verb.throff shell.; is " Msg this player ^tell SHELL args  [] [] "
- verb.throff shell.? is " Msg this player ^tell args [] [] "
+verb.throff shell.ls is " Msg this player ^tell DIRECTORY-LIST  IF EQUAL args [] THEN [ ^. ] ELSE [ args ]  [] [] "
+verb.throff shell.; is " Msg this player ^tell SHELL args  [] [] "
+verb.throff shell.? is " Msg this player ^tell args [] [] "
+verb.throff shell.t is " Msg this player ^tell RUNSTRING args ENVIRONMENTOF [ THIS ] "
                    
-
+verb.throff #1.find is " FINDOBJECT dobjstr "
 
 // PRINTLN A[ ^player: player ]A PRINTLN A[ ^this: this ]A PRINTLN  A[ ^verb: verb ]A PRINTLN   A[ ^dobjstr: dobjstr ]A PRINTLN A[ ^dpropstr: dpropstr ]A PRINTLN  A[ ^prepstr: prepstr ]A  PRINTLN A[ ^iobjstr: iobjstr ]A   PRINTLN A[ ^ipropstr: ipropstr ]A PRINTLN [ ] 
 //goscript #4.look is "Println(GetProp(this, `name`));Println(GetProp(this, `description`));for _,o := range VisibleObjects(player){Println(`You see`,GetProp(o, `name`), `here.`)}"
