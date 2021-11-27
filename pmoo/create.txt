@@ -1,10 +1,11 @@
+verb.throff #1.notify is " *> IF EQUAL GetProp player ^prefix_notify ^true THEN [ *> PRINTLN ( GetProp player ^name ^: dobj dobjstr ) ] ELSE [ *> PRINTLN ( dobj dobjstr ) ] "
+verb.throff #1.tell is " Msg this this ^notify  ( dobj dobjstr iobj iobjstr ) [ ] [ ] "
+verb.throff #4.look is "     *> ITERATE [ +> Msg this player ^tell ( ^You ^see   GetProp o  ^name  ^here. ) [] [] +> ARG o => ] +> VisibleObjects player *> Msg this player ^tell GetProp this ^description [] [] *> Msg this player ^tell  GetProp this ^name [] [] "
 verb.throff #1.property is "SetProp dobj dpropstr iobjstr"
-
 verb.throff #2.describe is " *> Msg this player ^tell +> GetProp dobj ^description "
 verb.throff #1.shutdown is "EXIT 0"
 verb.throff #1.examine is "PRINTLN A[ FormatObject dobj ]A"
 
-verb.throff #4.look is "     *> ITERATE [ +> Msg this player ^tell ( ^You ^see   GetProp o  ^name  ^here. ) [] [] +> ARG o => ] +> VisibleObjects player *> Msg this player ^tell GetProp this ^description [] [] *> Msg this player ^tell  GetProp this ^name [] [] "
 verb.throff #1.clone is " SetProp o ^name iobjstr *> SetProp o ^owner player *> MoveObj o GetProp player ^location  *> BIND o => Clone dobj "
 verb.throff #1.create is " SetProp o ^name iobjstr *> SetProp o ^owner player *> MoveObj o GetProp player ^location  *> BIND o => Clone dobj "
 verb.goscript #1.alias is "p:=GetProperty(dobj, `aliases`,10);v:=p.Value+`,`+iobjstr; SetProperty(dobj, `aliases`,v);SaveObject(dobj)"
@@ -17,9 +18,7 @@ verb.throff #1.dig is " MoveObj exit GetProp player ^location *> SetThroffVerb e
 verb.throff #1.do_exit is "MoveObj player GetProp this ^exit_target"
 verb.throff #1.exit_verb is "Msg player this ^do_exit [] [] [] "
 verb.throff #1.findverb is "PRINTLN GetVerb iobjstr dobjstr"
-verb.throff #1.tell is " Msg this this ^notify  ( dobj dobjstr iobj iobjstr ) [ ] [ ] "
 verb.throff #1.whisper is " IF EQUAL  ->STRING  [ ]  ->STRING  dobj  [  Msg 7 player ^tell A[ [ You can't see ] dobjstr [ here ] ]A [ ] [ ]  ]  [ Msg this dobj ^tell  iobjstr [ ] [ ] ]    "
-verb.throff #1.notify is " *> IF EQUAL GetProp player ^prefix_notify ^true THEN [ *> PRINTLN ( GetProp player ^name ^: dobj dobjstr ) ] ELSE [ *> PRINTLN ( dobj dobjstr ) ] "
 verb.throff #1.hello1 is " PRINTLN [ HELLO WORLD ] "
 verb.throff #1.recycle is "MoveObj dobj 0"
 verb.throff #1.debugParser is "  PRINTLN A[ ^player: player ]A PRINTLN A[ ^this: this ]A PRINTLN  A[ ^verb: verb.throff ]A PRINTLN   A[ ^dobjstr: dobjstr ]A PRINTLN A[ ^dpropstr: dpropstr ]A PRINTLN  A[ ^prepstr: prepstr ]A  PRINTLN A[ ^iobjstr: iobjstr ]A   PRINTLN A[ ^ipropstr: ipropstr ]A PRINTLN [ ]  "
