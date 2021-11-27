@@ -66,6 +66,7 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 		//fmt.Print ("\033[31m»\033[0m ")
 		text, err := l.Readline()
 		if err != nil {
+			log.Println("Error:", err)
 			os.Exit(1)
 		}
 		text = strings.TrimSuffix(text, "\r\n")
@@ -108,7 +109,7 @@ func main() {
 	if !debug {
 		log.SetOutput(ioutil.Discard)
 		}
-	
+
 	SetQ(inQ)
 
 	if cmdProg == "p" {
@@ -156,7 +157,7 @@ func main() {
 			go ReadLineInputHandler(inQ, player)
 		}
 	}
-	
+
 	MOOloop(inQ, player)
 }
 func MOOloop(inQ chan *Message, player string) {
@@ -210,7 +211,7 @@ func MOOloop(inQ chan *Message, player string) {
 		thisObj, _ := VerbSearch(LoadObject(player), verb)
 
 		if thisObj == nil {
-			msg := fmt.Sprintf("Verb %v not found!\n", verb)
+			msg := fmt.Sprintf("Verb '%v' not found!\n", verb)
 			RawMsg(Message{From: "7", Player: player, Verb: "notify", Dobjstr: msg, Ticks: m.Ticks - 100})
 
 		} else {
