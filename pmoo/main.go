@@ -1,6 +1,7 @@
 package main
 
 import (
+	"time"
 	"bufio"
 	"encoding/json"
 	"flag"
@@ -47,27 +48,37 @@ func listVerbs(player string) func(string) []string {
 
 func ReadLineInputHandler(queue chan *Message, player string) {
 
+	var completer = readline.NewPrefixCompleter(
+		readline.PcItemDynamic(listVerbs(player)))
+
+	l, err := readline.NewEx(&readline.Config{
+		Prompt:          "",
+		HistoryFile:     "/tmp/readline.tmp",
+		AutoComplete:    completer,
+		InterruptPrompt: "^C",
+		EOFPrompt:       "exit",
+
+		HistorySearchFold: true,
+	})
+	if err != nil {
+		panic(err)
+	}
 	for {
-		var completer = readline.NewPrefixCompleter(
-			readline.PcItemDynamic(listVerbs(player)))
-
-		l, err := readline.NewEx(&readline.Config{
-			Prompt:          "",
-			HistoryFile:     "/tmp/readline.tmp",
-			AutoComplete:    completer,
-			InterruptPrompt: "^C",
-			EOFPrompt:       "exit",
-
-			HistorySearchFold: true,
-		})
-		if err != nil {
-			panic(err)
-		}
-		//fmt.Print ("\033[31m»\033[0m ")
+		fmt.Print ("\033[31m»\033[0m ")
 		text, err := l.Readline()
+		if batch {
+			fmt.Print(text)
+		}
+		if batch {
+			for len(queue) > 0 {
+				log.Println("Waiting on queue", len(queue), "/", cap(queue))
+				time.Sleep(18 * time.Millisecond)
+			}
+		}
+
 		if err != nil {
-			log.Println("Error:", err)
-			os.Exit(1)
+			log.Println("Readline error:", err,"Exiting once queue is empty")
+			QuitOnEmptyQueue = true
 		}
 		text = strings.TrimSuffix(text, "\r\n")
 		text = strings.TrimSuffix(text, "\n")
@@ -78,13 +89,13 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 			//Console is always the wizard, at least for now
 			InputMsg("2", "7", "input", text)
 		}
-		l.Close()
 	}
-
+	l.Close()
 }
 
 var Affinity string
 var QuitOnEmptyQueue bool
+var batch bool
 
 func main() {
 	etcdServer := ""
@@ -97,6 +108,7 @@ func main() {
 
 	flag.BoolVar(&debug, "debug", false, "Print log messages")
 	flag.BoolVar(&init, "init", false, "Create basic objects.  Overwrites existing")
+	flag.BoolVar(&batch, "batch", false, "Batch mode.  Wait for each command to finish before starting next.")
 	flag.BoolVar(&Cluster, "cluster", false, "Run in cluster mode.  See instructions in README.")
 	flag.BoolVar(&ClusterQueue, "clusterQ", false, "Run messages in cluster mode.  See instructions in README.")
 	//flag.StringVar(&queueServer, "queue", "127.0.0.1:2888", "Location of queue server.")
@@ -149,6 +161,7 @@ func main() {
 
 		if init {
 			initDB()
+			os.Exit(0)
 		}
 
 		if RawTerm {
