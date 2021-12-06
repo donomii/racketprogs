@@ -64,6 +64,8 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 		panic(err)
 	}
 	for {
+		completer = readline.NewPrefixCompleter(
+		readline.PcItemDynamic(listVerbs(player)))
 		fmt.Print ("\033[31m»\033[0m ")
 		text, err := l.Readline()
 		if batch {
