@@ -19,16 +19,24 @@
          mzlib/defmacro
          json
          )
+         [require suffixtree]
+(require pfds/trie)
 [require [prefix-in http- net/http-easy]]
 (require "old.rkt" "spath.rkt")
+(require "editboxsupport.rkt")
+(require "support.rkt")
 ;(require (planet "htmlprag.ss" ("neil" "htmlprag.plt" 1 3)))
 [define vars [make-hash [get-preference 'vars [lambda [] [list]]]]]
+
+
 
 ;[define vars [make-hash]]
 
 [defmacro dox args [cadr args]]
 [defmacro myset args `[set! ,[car args] ,[cdr args]]]
-(application:current-app-name "Helpful Editor")
+(application:current-app-name "Commentary")
+
+[define debug [lambda args [displayln [apply format args]]]]
 
 [define [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
   [close-input-port stderr-pipe]
@@ -74,35 +82,15 @@ also be a code definition or the results of a function.  Portals can also nest:
                ; FIXME add actions like ["keybindings" . ,[lambda [x] [pop-keybindings]]]
                ]]
 [define welcome-text 
-  "Welcome to the Helpful Editor, the revolutionary editor that blah blah blah.  
-Put the cursor inside the word below and press Control + Up
+  "Welcome to Commentary.
 
-word
+Commentary is a pluggable framework to combine the output of multiple search tools
+and plugins in a convenient way.
 
-Or highlight any text and press:
+You can type text on the left here, and the plugins will add their commentary on the right.
 
-Control + S to run it on the command line (Shell-out)
- - Control + Down will paste the text in the box into parent document
+You will see different options depending on whether you put the cursor on a word or if you select some text.
 
-Control + E to eval as scheme code
- - Control + Down will paste the result of the eval into the parent document
-
-Control + M to convert an sexpr to a mexpr
- - Control + Down will paste the result of the eval into the parent document
-
-Control + K to edit the keybindings (currently not saved)
-
-
-
-or
-
-Control + B to edit the highlighted variable name
-
-There are some important built-in variables that you will probably want to change.  
-Remember you can highlight them here or on any other page, and press Control + B to edit.  Try it now:
-
-scheme-project-files  - Force these files to be loaded
-perl-project-files    - Force these files to be loaded as well as any auto-detected libraries
 
 "]
 [define get-tvar  [lambda [tvar-name] [hash-ref vars tvar-name [lambda [] #f]]]]
@@ -110,31 +98,17 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 [unless [get-tvar "welcome-text"] [set-tvar! "welcome-text" welcome-text]]
 [unless [get-tvar "current-filename"] [set-tvar! "current-filename" "no file"]]
 
-[define command-output [lambda [a-command] [letrec [[pipes [process a-command]]
-                                                    [stdout [car pipes]]]
-                                             [read-string 99999 stdout]]]]
+
 [define [highlight-active? a-text]
   [letrec [
            [highlight-start [send a-text get-start-position]]
            [hightlight-end [send a-text get-end-position]]]
     [not [eq? highlight-start hightlight-end]]]]
 
-[define get-word [lambda [a-text]  [letrec [
-                                            [highlight-start [send a-text get-start-position]]
-                                            [hightlight-end [send a-text get-end-position]]]
-                                     [if [not [eq? highlight-start hightlight-end]]
-                                         [send a-text get-text highlight-start hightlight-end]
-                                         [letrec [[startbox [box highlight-start]] 
-                                                  [endbox [box hightlight-end]]  
-                                                  [start (send a-text find-wordbreak startbox #f 'selection)]
-                                                  [end (send a-text find-wordbreak #f endbox  'selection)]]
-                                           [send a-text get-text [unbox startbox] [unbox endbox]]]]]]]
 
-[define zap-word [lambda [a-text]  [letrec [[startbox [box [send a-text get-start-position]]] 
-                                            [endbox [box [send a-text get-start-position]]] 
-                                            [start (send a-text find-wordbreak startbox #f 'selection)]
-                                            [end (send a-text find-wordbreak #f endbox  'selection)]]
-                                     [send a-text kill 0 [unbox startbox] [unbox endbox]]]]]
+
+
+
 [define viewport-data '[]]
 ;  [define add-viewport [the-viewport name ]]
 [define viewports '[]]
@@ -143,6 +117,8 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 [define shutdown-funcs '[]]
 [define num 0]
 [define seqnum [lambda [] [set! num [add1 num]][format "~a" num]]]
+
+;Create left text area
 [define my-frame% [class frame% 
                     [super-new]
                    
@@ -150,7 +126,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                               [[text [send t get-text 0 9999999]]]
                                                             ;[set-tvar! "welcome-text" text]
                                                             [put-preferences '[vars] [list [hash->list vars]] ][exit]]]]]]
-
+;Create right text area class
 [define my-frame2% [class frame% 
                      [super-new]
                      [define/augment on-close [lambda args [letrec 
@@ -158,7 +134,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                              ;[set-tvar! "welcome-text" text]
                                                              [put-preferences '[vars] [list [hash->list vars]] ][exit]]]]]]
 
-
+;
 (define editor-window [dox "Make new frame" (new my-frame% [label (application:current-app-name)]
                                                  [width 800]
                                                  [height 600])])
@@ -174,6 +150,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 [send mydelta  set-family 'modern]
 [send mydelta  set-face #f]
 
+;Left editor widget class
 (define my-editor-text% [class scheme:text%
                           [super-new]
                           [define/override on-default-event [lambda [event]
@@ -202,6 +179,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                    
                           ])
 
+;Create right editor widget
 (define my-commentary-text% [class scheme:text%
                               [super-new]
                   
@@ -211,7 +189,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                               ])
 
 
-
+;Adds an image to an editor
 (define image-callback-snip% [class image-snip%
                                [super-new]
                                [field [data #f]]
@@ -278,7 +256,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 [send t set-max-undo-history 50]
 [send t insert welcome-text]
 ;text% is relentless in its desire to apply ANY style other than the one I want
-[define force-fucking-style [lambda [a-text]
+[define force-style [lambda [a-text]
                               [send [send t get-wordbreak-map] set-map #\- [list 'selection]]
                               [send [send t get-wordbreak-map] set-map #\_ [list 'selection]]
                               [define slist [send t get-style-list]]
@@ -288,14 +266,9 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                               [send t change-style  mydelta 0 1]
                               [send t set-styles-sticky #t]
                               ]]
-[force-fucking-style t]
+[force-style t]
 [define a-keymap [send t get-keymap]]
-[define longest-length [lambda [a-list] 
-                         [let [[longest 0]]
-                           [map [lambda [s] [when [> [string-length s] longest]
-                                              [set! longest [string-length s]]]] 
-                                a-list]
-                           longest]]]
+
 [define rebuild-let [lambda [defs-list code]
                       [let [[str-port [open-output-string]]]
                         [display [format "(let ("] str-port]
@@ -365,35 +338,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                               
                                               
                                               [add-shutdown-func new-box close-f]]  shutdown-funcs]]]]]]
-;Three functions.  The first loads the text for the snip, the second is called after loading, and the third is called on shutdown
-[define [make-extra-pop-func f middle-f close-f] [lambda [t e]
-                                                   [letrec [[untrimmed-word [get-word t]]
-                                                            [word [regexp-replace* "\\[|\\]|\\(|\\)" untrimmed-word ""]]
-                                                            ]
-                                                     ;[display [format "Found word: ~a~n" word]]
-                                      
-                                                     [begin 
-                                                       [let [[new-box [new editor-snip% [max-width 600] [max-height 300]]]
-                                                             [new-text [new my-editor-text%]]]
-                                          
-                                                         [let [[replacement-text [f new-box word]]]
-                                                           [when replacement-text
-                                                             [zap-word t]
-                                              
-                                              
-                                                             ;[let [[new-box [send t on-new-box 'text]]]
-                                                             [send new-box set-editor new-text]
-                                                             [send t insert new-box]
-                                                             [set! viewports-name [cons [cons new-box word]  viewports-name]]
-                                              
-                                              
-                                                             [send [send new-box get-editor] insert  [regexp-replace* "\r" replacement-text ""]]
-                                                             [send [send new-box get-editor] set-caret-owner #f 'global]
-                                                             [insert-keybindings [send new-box get-editor]]
-                                                             [middle-f new-box word]
-                                              
-                                              
-                                                             [add-shutdown-func new-box close-f]]  shutdown-funcs]]]]]]
+
 
 
 
@@ -469,81 +414,9 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                                        [set! defs [eval-string the-text]]
                                                                           
                                                                        ""]]]]
-[define [do-csearch word] [command-output [string-concatenate `["csearch " ,word " | head -100"]]]]
-[define pop-csearch  [make-extra-pop-func [lambda [a-box word] [write "popping csearch"]
-                                            ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
-                                            [do-csearch word]
-                                         
-                                            ]
-
-                                          [lambda [a-snip word]
-                                            [letrec [[editor [send a-snip get-editor]]
-                                                     [text [send editor get-text]]
-                                                     ;[position [send editor find-string word 'forward 'start 'eof #t #f]]
-                                                     [position [string-contains text word ]]
-                                                     ]
-                                              ;[display text]
-                                              [thread [lambda []
-                                                        [sleep 5]
-                                                        [printf "Found word '~s' at ~a\n" word position]
-                                                        [send editor set-position [+ 200 position]]
-                                                        [send editor set-position position]
-                                                        ;[send editor refresh]
-                                           
-                                                     
-                                                        [send editor scroll-to-position position #f [+ 100 position]]
-                                                        [printf "Canvas: ~a\n" [send editor get-canvases]]
-                                                        ]]
-                                              ]
-      
-                                            ]
-                                    
-                                          [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]]
-                                                                                [display [format "closing ~a~n" var-name]]
-                                                                                ;[eval-string the-set!]
-                                                                          
-
-                                                                                var-name]]]]
+[define [do-csearch word] [command-output [string-concatenate `[csearch-path " " ,word " | head -100"]]]]
 
 
-[define pop-ctag  [make-extra-pop-func [lambda [a-box word] [write "popping ctags"]
-                                         ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
-                                         [let [[tag-data [find-ctag word [load-ctags-file "tags"]]]]
-                                           [if [empty? tag-data]
-                                               #f
-                                               [begin
-                                          
-                                                 [file->string [second [first tag-data ]]]]]
-                                           ]]
-
-                                       [lambda [a-snip word]
-                                         [letrec [[editor [send a-snip get-editor]]
-                                                  [text [send editor get-text]]
-                                                  ;[position [send editor find-string word 'forward 'start 'eof #t #f]]
-                                                  [position [string-contains text word ]]
-                                                  ]
-                                           ;[display text]
-                                           [thread [lambda []
-                                                     [sleep 5]
-                                                     [printf "Found word '~s' at ~a\n" word position]
-                                                     [send editor set-position [+ 200 position]]
-                                                     [send editor set-position position]
-                                                     ;[send editor refresh]
-                                           
-                                                     
-                                                     [send editor scroll-to-position position #f [+ 100 position]]
-                                                     [printf "Canvas: ~a\n" [send editor get-canvases]]
-                                                     ]]
-                                           ]
-      
-                                         ]
-                                    
-                                       [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]]
-                                                                             ;[display [format "closing ~a~n" var-name]]
-                                                                             ;[eval-string the-set!]
-                                                                          
-
-                                                                             var-name]]]]
 
 [define [shutdown-dispatcher b e] [ letrec [[snip [send  [send b get-admin] get-snip]]
                                             [t [send [send snip get-admin] get-editor]]
@@ -554,63 +427,15 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 
 
 
-[define def-names [lambda [a-list]
-                    [map car a-list]]]
 
-[define [make-open-selection f close-f] [lambda [t e] 
-                                          [letrec [[some-text [send t get-text [send t get-start-position] [send t get-end-position]]]
-                                                   
-                                                   [new-box [send t on-new-box 'text]]
-                                                   ]
-                                            
-                                            
-                                            [send new-box set-editor [new my-editor-text%]]
-                                            [force-fucking-style [send new-box get-editor]]
-                                            [send t insert new-box]
-                                            [set! viewports-name [cons [cons new-box some-text]  viewports-name]]
-                                            
-                                            
-                                            [send [send new-box get-editor] insert   [regexp-replace* "\r" [format "~a" [f t new-box some-text]] ""]]
-                                            [send [send new-box get-editor] set-caret-owner #f 'global]
-                                            ;[send [send new-box get-editor] tabify-all]
-                                            [insert-keybindings [send new-box get-editor]]
-                                            
-                                            [add-shutdown-func new-box close-f]]]]
 
-[define open-mexpr [make-open-selection [lambda [parent child text] [statements->mexpr  [read [open-input-string text]]]] 
-                                        [lambda [parent child text] text]]]
+
+
+
 [define close-viewport [make-shutdown-func [lambda [parent child text] text]]]
 [define abort-viewport [make-shutdown-func [lambda [parent child text] ""]]]
-[define close-let [make-shutdown-func [lambda [parent child text]
-                                        [write "Closing let"] [newline]
-                                        [letrec [
-                                                 [bits [regexp-split #rx"\n---\n\n" text]]
-                                                 [defs [car bits]]
-                                                 [code [cadr bits]]
-                                                 [def-lines [regexp-split #rx"\n" defs]]
-                                                 [def-pairs [map [lambda [l] [regexp-split #rx":" l]] def-lines]]
-                                                 
-                                                 ]
-                                          [write def-pairs]
-                                          
-                                          [rebuild-let def-pairs code]
-                                          
-                                          ]]]]
-[define open-let1 [make-open-selection [lambda [parent child some-text]
-                                         
-                                         [letrec [[a-list [read [open-input-string some-text]]]
-                                                  [defs [cadr a-list]]
-                                                  [code [cddr a-list]]
-                                                  [temp-str ""]
-                                                  
-                                                  [defs-maxlength [longest-length [map symbol->string [def-names defs]]]]]
-                                           ;[display defs-maxlength]
-                                           
-                                           [string-append  
-                                            [strip-brackets  defs defs-maxlength]
-                                            "\n---\n\n"
-                                            [statements->mexpr code]
-                                            ]]] close-let] ]
+
+
 
 
 
@@ -630,18 +455,11 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 ;[new button% [label "Open viewport"] [parent f] [callback ]]
 
 
-;[define open-html [make-open-selection [lambda [parent child text] [pretty-format [html->shtml   text]]]
-;                                         [lambda [parent child text] [display "converting to html..."] [shtml->html text][shtml->html [read [open-input-string text]]]]]]
-[define system-command [make-open-selection [lambda [parent child some-text] [command-output some-text]]
-                                            [lambda [parent child text] text]]]
-
-[define eval-selection [make-open-selection [lambda [parent child some-text] [eval-string some-text]]
-                                            [lambda [parent child text] text]]]
 
 
 (define button-pane (new horizontal-panel% [parent editor-window]))
 (send button-pane stretchable-height #f)
-[new button% [label "Close viewport"] [parent button-pane] [callback close-let]]
+;[new button% [label "Close viewport"] [parent button-pane] [callback close-let]]
 
 [new button% [label "Cindex"] [parent button-pane] [callback [lambda [a b] [cindex-directory [get-directory]]]]]
 
@@ -658,10 +476,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                                     [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]]]
                                     ]]]]
 
-[define open-file [make-open-selection
-                   [lambda [parent child some-text] 
-                     [letrec [[a-text  [file->string some-text]]]
-                       a-text]] close-let] ]
+
 
 ; Ideally, we would be able to display these to the user, let them edit, then read them back
 [define [set-keybindings a-keymap]
@@ -672,27 +487,26 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
   [send a-keymap add-function "pop-listvars" pop-listvars]
   [send a-keymap add-function "pop-keybindings" pop-keybindings]
   [send a-keymap add-function "pop-defs" pop-defs]
-  [send a-keymap add-function "pop-ctag" pop-ctag]
   
-  [send a-keymap add-function "pop-csearch" pop-csearch]
+ ; [send a-keymap add-function "pop-csearch" pop-csearch]
   
   [send a-keymap add-function "close-viewport" close-viewport]
   [send a-keymap add-function "abort-viewport" abort-viewport]
   
   [send a-keymap add-function "pop-viewport" pop-viewport]
-  [send a-keymap add-function "open-let" open-let1]
+ ; [send a-keymap add-function "open-let" open-let1]
 
-  [send a-keymap add-function "eval-selection" eval-selection]
-  [send a-keymap add-function "open-mexpr" open-mexpr]
+ ; [send a-keymap add-function "eval-selection" eval-selection]
+ ; [send a-keymap add-function "open-mexpr" open-mexpr]
   
   ;[send a-keymap add-function "open-html" open-html]
   
-  [send a-keymap add-function "system-command" system-command]
+ ; [send a-keymap add-function "system-command" system-command]
   
   [send a-keymap add-function "shutdown-dispatcher" shutdown-dispatcher]
   [send a-keymap add-function "pop-command-viewport" pop-command-viewport]
   [send a-keymap map-function "c:down" "shutdown-dispatcher"]
-  [send a-keymap add-function "open-file" open-file]
+  ;[send a-keymap add-function "open-file" open-file]
   ;[send a-keymap map-function "c:," "close-let"]
   
   [map [lambda [definition]
@@ -710,7 +524,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 (define last-file-name #f)
 (define mb (new menu-bar% [parent editor-window]))
 (define m-file (new menu% [label "File"] [parent mb]))
-[new menu-item% [label "Open..."] [parent m-file] [callback [lambda args [load-file [get-file]]]] [shortcut #\o]]
+[new menu-item% [label "Open..."] [parent m-file] [callback [lambda args [load-file [path->string [get-file]]]]] [shortcut #\o]]
 [new menu-item% [label "Open Scheme"] [parent m-file] [callback [lambda args [load-scheme-file [get-file]]]] [shortcut #\o]]
 [new menu-item% [label "Open Perl"] [parent m-file] [callback [lambda args [load-perl-file [get-file]]]] [shortcut #\o]]
 [new menu-item% [label "Save..."] [parent m-file] [callback [lambda args [save-file last-file-name]]] [shortcut #\a]]
@@ -726,14 +540,91 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 ;[write viewports]
 ; Show the frame by calling its show method
 
+
+[define [slurp-file a-path]
+(port->string (open-input-file a-path) #:close? #t)
+  ]
+
 [define load-file [lambda  [a-path]
                     [send t erase]
                            
-                    [let  [[file-source [call-with-input-file a-path [lambda [in] [read-string 999999 in]] #:mode 'text]]]
+                    [let  [[file-source [slurp-file a-path]]]
                       (set! last-file-name a-path)
                       [send t insert file-source]]
                     [set-tvar! "current-filename" a-path]
                     ]]
+
+[define [process-lines f a-path]
+                    
+    (for ([l (in-lines (open-input-file a-path))])
+      (f l)
+      [displayln "---"]
+      (newline))]
+
+[define ctg [list->vector [file->lines "tags"]]]
+
+
+
+[define [find-start a-vec cmp a-pos]
+[debug "find-start: ~a ~a ~a\n" a-pos [vector-ref a-vec [sub1 a-pos ]] [vector-ref a-vec a-pos]]
+[if [and [> a-pos 0] [cmp [vector-ref a-vec [sub1 a-pos ]] [vector-ref a-vec a-pos]  ]]
+  [find-start a-vec cmp [sub1 a-pos]]
+  a-pos
+  ]
+]
+
+[define [find-end a-vec cmp a-pos] ;FIXME missing the last one
+[debug "find-end: ~a ~a, ~a\n" a-pos [vector-ref a-vec  a-pos] [vector-ref a-vec [add1 a-pos]]]
+[if [and 
+      [< a-pos [- [vector-length a-vec] 2]] 
+      [cmp [vector-ref a-vec a-pos]  [vector-ref a-vec [add1 a-pos]]]]
+    [begin
+    [printf "Keep\n"]
+    [find-end a-vec cmp [add1 a-pos]]]
+    [begin
+    [printf "Don't keep\n" ]
+    a-pos]
+  ]
+]
+
+[define [binary-search a-vec search-term]
+
+  (define loop [lambda (low high mid last-mid)
+  
+    (let  [[mid-val  (vector-ref a-vec mid)]]
+    [printf "In bin search: ~a ~a ~a ~a\n" low high mid mid-val]
+    [printf "Comparing ~a to ~a\n" search-term mid-val]
+    (cond 
+      [(equal? mid last-mid) mid]
+      [(string<? mid-val search-term)  (loop mid high  [ceiling (/ (+ mid high) 2)] mid)]
+      [(string>? mid-val search-term)  (loop low mid   [ceiling (/ (+ low mid)  2)] mid)]
+      [else mid]))])
+  [loop 0 (vector-length a-vec) [floor (/ (vector-length a-vec) 2) ] -1 ]
+]
+[define [make-cmp search-term ]
+[lambda [ a-str b-str]
+  [let [
+      [a [car [string-split  a-str #px"\t+|\\s+" ]]]
+      [b [car [string-split  b-str #px"\t+|\\s+" ]]]]
+        [printf "is cmp a: ~a a prefix of b: ~a?\n" a b]
+        [string-prefix? search-term b]]]]
+
+[define [binary-search-all-matches a-vec search-term]
+  [letrec [
+        [pos [binary-search a-vec search-term]]
+        [start [find-start a-vec [make-cmp search-term] pos]]
+        [end [find-end a-vec [make-cmp search-term] pos]]
+        [matches (vector-copy a-vec start end)]]
+    [printf "Found ~a matches\n" (vector-length matches)]
+    matches]
+  ]
+
+
+
+[printf "Bin search: ~a\n" [binary-search-all-matches ctg "API"]]
+
+
+
 [define load-scheme-file [lambda  [a-path]
                            [send t erase]
                            [read-accept-reader #t]
@@ -751,21 +642,17 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                                              [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]
                                                                              ]]]]
                      input-files]]]
+
+[define csearch-path "/Users/jeremyprice/go/bin/csearch"]
 [define csearch [lambda [a-string]
                   [if  [< [string-length a-string] 4] ""
-                       [shell-out [format "/Users/jeremyprice/go/bin/csearch -f \\.go\\$ -n ~a | head -100"  a-string]
+                       [shell-out [format "~a -f \\.go\\$ -n ~a | head -100" csearch-path a-string]
                                   [lambda [ stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
                                     [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]
                                     ]]
                        ]]]
 
-[define tagsearch [lambda [a-string]
-                    [if [< [string-length a-string] 4] ""
-                        [shell-out [format "grep \"~a\" tags | head -100" a-string]
-                                   [lambda [ stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
-                                     [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]
-                                     ]]
-                        ]]]
+
 [define [status some-text] [send editor-window set-status-text some-text]]
 [define load-perl-file [lambda  [a-path]
                          [send t erase]
@@ -786,6 +673,14 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 [define [find-ctag name ctags] [filter [lambda [x] [equal? name [car x]]] ctags]]
 [define [load-ctags-file a-path] [map [lambda [x] [string-split  x #px"\t+|\\s+" ]] [file->lines a-path] ]]
 
+
+[define tagsearch [lambda [a-string]
+                    [if [< [string-length a-string] 4] ""
+                        [shell-out [format "grep \"~a\" tags | head -100" a-string]
+                                   [lambda [ stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
+                                     [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]
+                                     ]]
+                        ]]]
 [define [grep-ctags-file a-term]
   [if [eq? a-term ""] '()
       [map [lambda [x] [string-split  x #px"\t+|\\s+" ]] [string-split
@@ -795,7 +690,13 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
                                                                 output]]
                                                           "\n"] ]]]
 
+[define [binsearch-ctags-file a-term]
+[printf "Binearching for ~a\n" a-term]
+  [if [eq? a-term ""] '()
+      [map [lambda [x] [string-split  x #px"\t+|\\s+" ]] [vector->list [binary-search-all-matches ctg a-term] ]]]]
+
 [define [format-ctags-results results]
+  [debug "Formatting ctags results: ~a" results]
   [map [lambda [tag-data]
          [letrec [
                   [tag [first tag-data]]
@@ -811,7 +712,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 
 ;/Users/jeremyprice/racketProgs/the-helpful-editor/editor.scm:439:[define pop-keybindings  [make-pop-func [lambda [a-box word] [write "popping keybindings"]
 [define [format-csearch-results tag results]
-  ;[displayln [format "Formatting csearch results ~a~n" results]]
+  [debug [format "Formatting csearch results ~a~n" results]]
   [if [eq? eof results] '[]
       [map [lambda [line]
              [letrec [
@@ -889,7 +790,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
            [sections [string-split wikitext [format "\n=="]]]
            [wanted [filter [lambda [str] [regexp-match "Noun|Verb|Adjective|Adverb" str]] sections]]
            [text [string-join wanted [format "\n"]]]
-           ]
+           ]  
     ; [display [dict? json-results]]
     ;[display [dict-ref json-results 'parse]]
     ; [display [spath '[ parse] json-results]]
@@ -904,7 +805,7 @@ perl-project-files    - Force these files to be loaded as well as any auto-detec
 [define [render-jump-to-file word commentary editor]
   [letrec [[tag-list [if [highlight-active? editor]
                          [format-csearch-results word [csearch word]]
-                         [format-ctags-results [find-ctag word [grep-ctags-file word]]]]]]
+                         [format-ctags-results  [binsearch-ctags-file word]]]]]
     [if [empty? tag-list]
         [format "No results found for ~a" word]
         [begin
