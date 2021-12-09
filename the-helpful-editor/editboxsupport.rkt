@@ -154,4 +154,74 @@
                                                                           
 
                                                                                 var-name]]]]
+
+
+;;; [define pop-command-viewport  [make-pop-func [lambda [new-box word]
+;;;                                                [write "Creating command box"]
+;;;                                                [set! viewports-name [cons [cons new-box word]  viewports-name]]
+;;;                                                ""
+;;;                                                ]
+;;;                                              [lambda [parent child text]  [write "closing command box"](with-input-from-string text
+;;;                                                                                                          (lambda () (eval (read))))]]]
+
+;;; [define pop-varedit  [make-pop-func [lambda [a-box word] [write "popping varedit"]
+;;;                                       ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
+;;;                                       [pretty-format [hash-ref vars word [lambda [] "unknown"]]]]
+                                    
+;;;                                     [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
+;;;                                                                                  [the-set! [format "(set! ~a [quote ~a])" var-name the-text]]]
+;;;                                                                           ;[display [format "Evalling ~a~n" the-set!]]
+;;;                                                                           ;[eval-string the-set!]
+                                                                          
+;;;                                                                           [hash-set! vars var-name [read [open-input-string the-text]]]
+;;;                                                                           ""]]]]
+;;; [define pop-listvars  [make-pop-func [lambda [a-box word] [write "popping listvars"]
+;;;                                        ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
+;;;                                        [pretty-format [hash-keys vars ]]
+;;;                                        ]
+                                    
+;;;                                      [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
+;;;                                                                                   [the-set! [format "(set! ~a [quote ~a])" var-name the-text]]]
+;;;                                                                            ;[display [format "Evalling ~a~n" the-set!]]
+;;;                                                                            ;[eval-string the-set!]
+                                                                          
+;;;                                                                            [hash-set! vars var-name [read [open-input-string the-text]]]
+;;;                                                                            ""]]]]
+
+;;; [define pop-keybindings  
+;;; [make-pop-func 
+;;; [lambda [a-box word] [write "popping keybindings"]
+;;;                                           ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
+;;;                                           [format "`~a" [pretty-format keymaps]]
+;;;                                           ]
+                                    
+;;;                                         [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
+;;;                                                                                      ]
+;;;                                                                               ;[display [format "closing ~a~n" var-name]]
+;;;                                                                               ;[eval-string the-set!]
+                                                                          
+
+;;;                                                                               [set! keymaps [eval-string the-text]]
+;;;                                                                               [map [lambda [definition]
+;;;                                                                                      ;[display [format "Binding ~a to ~a~n" [first definition] [second definition]]]
+;;;                                                                                      [send a-keymap map-function [first definition] [second definition]]]
+;;;                                                                                    keymaps]
+;;;                                                                               [insert-keybindings t]
+;;;                                                                               ""]]]]
+
+
+;;; [define pop-defs  [make-pop-func [lambda [a-box word] [write "popping defs"]
+;;;                                    ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
+;;;                                    [format "`~a" [pretty-format defs]]
+;;;                                    ]
+                                    
+;;;                                  [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
+;;;                                                                               ]
+;;;                                                                        ;[display [format "closing ~a~n" var-name]]
+;;;                                                                        ;[eval-string the-set!]
+                                                                          
+
+;;;                                                                        [set! defs [eval-string the-text]]
+                                                                          
+;;;                                                                        ""]]]] 
   )

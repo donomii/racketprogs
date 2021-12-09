@@ -19,7 +19,7 @@
          mzlib/defmacro
          json
          )
-         [require suffixtree]
+[require suffixtree]
 (require pfds/trie)
 [require [prefix-in http- net/http-easy]]
 (require "old.rkt" "spath.rkt")
@@ -27,7 +27,11 @@
 (require "support.rkt")
 ;(require (planet "htmlprag.ss" ("neil" "htmlprag.plt" 1 3)))
 [define vars [make-hash [get-preference 'vars [lambda [] [list]]]]]
+[define undo-stack '()]
+[define undo-pos-stack '()]
 
+[define undo-forward-stack '()]
+[define undo-forward-pos-stack '()]
 
 
 ;[define vars [make-hash]]
@@ -36,7 +40,8 @@
 [defmacro myset args `[set! ,[car args] ,[cdr args]]]
 (application:current-app-name "Commentary")
 
-[define debug [lambda args [displayln [apply format args]]]]
+;[define debug [lambda args [displayln [apply format args]]]]
+[define debug [lambda args #f]]
 
 [define [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
   [close-input-port stderr-pipe]
@@ -123,14 +128,14 @@ You will see different options depending on whether you put the cursor on a word
                     [super-new]
                    
                     [define/augment on-close [lambda args [letrec 
-                                                              [[text [send t get-text 0 9999999]]]
+                                                              [[text [send left-text-editor get-text 0 9999999]]]
                                                             ;[set-tvar! "welcome-text" text]
                                                             [put-preferences '[vars] [list [hash->list vars]] ][exit]]]]]]
 ;Create right text area class
 [define my-frame2% [class frame% 
                      [super-new]
                      [define/augment on-close [lambda args [letrec 
-                                                               [[text [send t get-text 0 9999999]]]
+                                                               [[text [send left-text-editor get-text 0 9999999]]]
                                                              ;[set-tvar! "welcome-text" text]
                                                              [put-preferences '[vars] [list [hash->list vars]] ][exit]]]]]]
 
@@ -144,8 +149,43 @@ You will see different options depending on whether you put the cursor on a word
 [send editor-window create-status-line]
 (define hpane (new horizontal-pane% [parent editor-window]))
 
-(define c (new editor-canvas% [parent hpane]))
-(define commentary-window-canvas (new editor-canvas% [parent hpane]))
+(define left-editor-canvas (new editor-canvas% [parent hpane]))
+[define right-panel (new vertical-panel%	 
+                         [parent hpane]		 
+                         [enabled #t])]
+[define settings-panel (new vertical-panel%	 
+                            [parent right-panel]		 
+                            [enabled #t])]
+[set-tvar! "settings-panel-active" #t]
+
+[define source-dirs-text [new text%]]
+[define source-dirs-canvas [new editor-canvas% [parent settings-panel] [line-count 3]]]
+
+                          
+(send source-dirs-canvas set-editor source-dirs-text)
+
+[define [get-source-dirs]
+  [string-split  [send source-dirs-text get-text 0 'eof #t #f] "\n"]
+  ]
+
+
+(define modules-panel (new horizontal-panel% [parent settings-panel]
+                           [alignment '(center center)]))
+
+[map [lambda [a-module-name]
+       [set-tvar! a-module-name #t]
+       (new check-box%	 
+            [label a-module-name]	 
+            [parent modules-panel]
+            [value #t]
+            [callback [lambda [a-box a-event]
+                        [printf "Module ~a is ~a\n" a-module-name [send a-box get-value]]
+                        [set-tvar! a-module-name [send a-box get-value]]
+                        ]])]
+     '["wiktionary" "search" "tags"]]  ;TODO Split out csearch for fulltext search?
+
+
+(define commentary-window-canvas (new editor-canvas% [parent right-panel]))
 [define mydelta (make-object style-delta% )]
 [send mydelta  set-family 'modern]
 [send mydelta  set-face #f]
@@ -221,12 +261,18 @@ You will see different options depending on whether you put the cursor on a word
                            [define/override on-event [lambda [dc x y ex ey event]
                                                        [super on-event  dc x y ex ey event]
                                                        [when [send event get-left-down]
-                                                         [displayln [format "Scrolling to ~s of ~s ~n" [second data] (send t num-scroll-lines)]]
-                                                         [send t erase]
-                                                         [send t insert [file->string [first data]]]
+                                                       
+                                                         [displayln [format "Scrolling to ~s of ~s ~n" [second data] (send left-text-editor num-scroll-lines)]]
+                                                         [set! undo-stack [cons (send left-text-editor get-flattened-text) undo-stack]]
+                                                         [set! undo-pos-stack [cons (send left-text-editor get-start-position) undo-pos-stack]]
+                                                         [printf "Saved undo point\n"]
+                                                         [send left-text-editor erase]
+                                                         [send left-text-editor insert [file->string [first data]]]
                                                          [set-tvar! "current-filename"  [first data]]
-                                                         [send t scroll-to-position [second data]]
+                                                         [send left-text-editor scroll-to-position [second data]]
                                                          [send editor-window set-label [get-tvar "current-filename"]]
+                                                         [send left-text-editor set-position [third data]]
+                                                         [send [send left-text-editor get-canvas] focus]
                                                          ]
                                                        ]]
                            [define/override on-char [lambda [dc x y ex ey event]
@@ -235,39 +281,47 @@ You will see different options depending on whether you put the cursor on a word
                                                       [super on-char  dc x y ex ey event]
                                                      
                                                       [displayln [format "Scrolling to ~s~n" [second data]]]
-                                                      [send t erase]
-                                                      [send t insert [file->string [first data]]]
+                                                      [set! undo-stack [cons (send left-text-editor get-flattened-text) undo-stack]]
+                                                      [set! undo-pos-stack [cons (send left-text-editor get-start-position) undo-pos-stack]]
+                                                      [printf "Saved undo point\n"]
+                                                      [send left-text-editor erase]
+                                                      [send left-text-editor insert [file->string [first data]]]
                                                       [set-tvar! "current-filename"  [first data]]
-                                                      [send t scroll-to-position [second data]]
+                                                      [send left-text-editor scroll-to-position [second data]]
                                                       [send editor-window set-label [get-tvar "current-filename"]]
+                                                      [send left-text-editor set-position  [third data]]
+                                                      [send [send left-text-editor get-canvas] focus]
                                                       ]]
                            ;[define/augment after-insert [lambda [start end] [write "aaaa"][send this change-style mydelta start end]]]
                            ;[define/augment after-insert [lambda [start end] ]]
                    
                            ])
 
-(define t (new my-editor-text%))
+(define left-text-editor (new my-editor-text%))
+
 (define commentary-text (new text%))
-[send t auto-wrap #t]
+
+[send left-text-editor auto-wrap #t]
 [send commentary-text auto-wrap #t]
-(send c set-editor t)
-[send commentary-window-canvas set-editor commentary-text]
+(send left-editor-canvas set-editor left-text-editor)
 (send commentary-window-canvas set-editor commentary-text)
-[send t set-max-undo-history 50]
-[send t insert welcome-text]
+[send left-text-editor set-max-undo-history 50]
+[send left-text-editor insert welcome-text]
+(send [send left-text-editor get-canvas] force-display-focus #t) 
+(send  [send commentary-text get-canvas] allow-scroll-to-last #f)
 ;text% is relentless in its desire to apply ANY style other than the one I want
 [define force-style [lambda [a-text]
-                              [send [send t get-wordbreak-map] set-map #\- [list 'selection]]
-                              [send [send t get-wordbreak-map] set-map #\_ [list 'selection]]
-                              [define slist [send t get-style-list]]
-                              [send t set-paste-text-only #f]
-                              [send slist new-named-style "J" [send slist find-or-create-style [send slist basic-style] mydelta]]
+                      [send [send left-text-editor get-wordbreak-map] set-map #\- [list 'selection]]
+                      [send [send left-text-editor get-wordbreak-map] set-map #\_ [list 'selection]]
+                      [define slist [send left-text-editor get-style-list]]
+                      [send left-text-editor set-paste-text-only #f]
+                      [send slist new-named-style "J" [send slist find-or-create-style [send slist basic-style] mydelta]]
                               
-                              [send t change-style  mydelta 0 1]
-                              [send t set-styles-sticky #t]
-                              ]]
-[force-style t]
-[define a-keymap [send t get-keymap]]
+                      [send left-text-editor change-style  mydelta 0 1]
+                      [send left-text-editor set-styles-sticky #t]
+                      ]]
+[force-style left-text-editor]
+[define a-keymap [send left-text-editor get-keymap]]
 
 [define rebuild-let [lambda [defs-list code]
                       [let [[str-port [open-output-string]]]
@@ -348,72 +402,6 @@ You will see different options depending on whether you put the cursor on a word
                                                               [if linked [cdr linked] #f]]]
                                     [lambda [parent child text] [cdr [assq child viewports-name]]]]]
 
-[define pop-command-viewport  [make-pop-func [lambda [new-box word]
-                                               [write "Creating command box"]
-                                               [set! viewports-name [cons [cons new-box word]  viewports-name]]
-                                               ""
-                                               ]
-                                             [lambda [parent child text]  [write "closing command box"](with-input-from-string text
-                                                                                                         (lambda () (eval (read))))]]]
-
-[define pop-varedit  [make-pop-func [lambda [a-box word] [write "popping varedit"]
-                                      ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
-                                      [pretty-format [hash-ref vars word [lambda [] "unknown"]]]]
-                                    
-                                    [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
-                                                                                 [the-set! [format "(set! ~a [quote ~a])" var-name the-text]]]
-                                                                          ;[display [format "Evalling ~a~n" the-set!]]
-                                                                          ;[eval-string the-set!]
-                                                                          
-                                                                          [hash-set! vars var-name [read [open-input-string the-text]]]
-                                                                          ""]]]]
-[define pop-listvars  [make-pop-func [lambda [a-box word] [write "popping listvars"]
-                                       ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
-                                       [pretty-format [hash-keys vars ]]
-                                       ]
-                                    
-                                     [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
-                                                                                  [the-set! [format "(set! ~a [quote ~a])" var-name the-text]]]
-                                                                           ;[display [format "Evalling ~a~n" the-set!]]
-                                                                           ;[eval-string the-set!]
-                                                                          
-                                                                           [hash-set! vars var-name [read [open-input-string the-text]]]
-                                                                           ""]]]]
-
-[define pop-keybindings  [make-pop-func [lambda [a-box word] [write "popping keybindings"]
-                                          ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
-                                          [format "`~a" [pretty-format keymaps]]
-                                          ]
-                                    
-                                        [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
-                                                                                     ]
-                                                                              ;[display [format "closing ~a~n" var-name]]
-                                                                              ;[eval-string the-set!]
-                                                                          
-
-                                                                              [set! keymaps [eval-string the-text]]
-                                                                              [map [lambda [definition]
-                                                                                     ;[display [format "Binding ~a to ~a~n" [first definition] [second definition]]]
-                                                                                     [send a-keymap map-function [first definition] [second definition]]]
-                                                                                   keymaps]
-                                                                              [insert-keybindings t]
-                                                                              ""]]]]
-
-
-[define pop-defs  [make-pop-func [lambda [a-box word] [write "popping defs"]
-                                   ;[set! viewports-name [cons [cons a-box word]  viewports-name]]
-                                   [format "`~a" [pretty-format defs]]
-                                   ]
-                                    
-                                 [lambda [parent a-textbox the-text] [letrec [[var-name [cdr [assq a-textbox viewports-name]]]
-                                                                              ]
-                                                                       ;[display [format "closing ~a~n" var-name]]
-                                                                       ;[eval-string the-set!]
-                                                                          
-
-                                                                       [set! defs [eval-string the-text]]
-                                                                          
-                                                                       ""]]]]
 [define [do-csearch word] [command-output [string-concatenate `[csearch-path " " ,word " | head -100"]]]]
 
 
@@ -462,19 +450,47 @@ You will see different options depending on whether you put the cursor on a word
 ;[new button% [label "Close viewport"] [parent button-pane] [callback close-let]]
 
 [new button% [label "Cindex"] [parent button-pane] [callback [lambda [a b] [cindex-directory [get-directory]]]]]
+[new button% [label "Settings"] [parent button-pane] [callback [lambda [a b] [show-settings]]]]
+[new button% [label "Back"] [parent button-pane] [callback [lambda [a b] 
+                                                             [printf "undo-pos-stack: ~a~n" undo-pos-stack]
+                                                             [when [not [empty? undo-stack]]
+                                                               [set! undo-forward-stack [cons (send left-text-editor get-flattened-text) undo-forward-stack]]
+                                                               [set! undo-forward-pos-stack [cons (send left-text-editor get-start-position) undo-forward-pos-stack]]
+                                                          
+
+                                                               [send left-text-editor erase]
+                                                               [send left-text-editor insert [first undo-stack]]
+                                                               [set! undo-stack [cdr undo-stack]]
+
+                                                               [send left-text-editor set-position [first undo-pos-stack]]
+                                                               [set! undo-pos-stack [cdr undo-pos-stack]]]]]]
+[new button% [label "Forwards"] [parent button-pane] [callback [lambda [a b] 
+                                                                 [printf "undo-forward-pos-stack: ~a~n" undo-forward-pos-stack]
+                                                                 [when [not [empty? undo-forward-stack]]
+                                                                   [set! undo-stack [cons (send left-text-editor get-flattened-text) undo-stack]]
+                                                                   [set! undo-pos-stack [cons (send left-text-editor get-start-position) undo-pos-stack]]
+                                                         
+
+                                                                   [send left-text-editor erase]
+                                                                   [send left-text-editor insert [first undo-forward-stack]]
+                                                                   [set! undo-forward-stack [cdr undo-forward-stack]]
+
+                                                                   [send left-text-editor set-position [first undo-forward-pos-stack]]
+                                                                   [set! undo-forward-pos-stack [cdr undo-forward-pos-stack]]]]]]
+    
 
 [define [cindex-directory a-dir]
-[let [[cmd [format "/Users/jeremyprice/go/bin/cindex \"~a\"" a-dir]]]
-  [displayln cmd]
-  [shell-out cmd [lambda [ stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
+  [let [[cmd [format "/Users/jeremyprice/go/bin/cindex \"~a\"" a-dir]]]
+    [displayln cmd]
+    [shell-out cmd [lambda [ stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
 
-                                                                              [send commentary-text erase]
+                     [send commentary-text erase]
                                                                
                                                                     
-                                                                    [send commentary-text insert [format "~a" 
+                     [send commentary-text insert [format "~a" 
 
-                                                                    [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]]]
-                                    ]]]]
+                                                          [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]]]
+                     ]]]]
 
 
 
@@ -482,29 +498,28 @@ You will see different options depending on whether you put the cursor on a word
 [define [set-keybindings a-keymap]
   [send a-keymap add-function "close-varedit" shutdown-dispatcher]
   
-  [send a-keymap add-function "pop-varedit" pop-varedit]
+  ;;; [send a-keymap add-function "pop-varedit" pop-varedit]
+  ;;; [send a-keymap add-function "pop-listvars" pop-listvars]
+  ;;; [send a-keymap add-function "pop-keybindings" pop-keybindings]
+  ;;; [send a-keymap add-function "pop-defs" pop-defs]
   
-  [send a-keymap add-function "pop-listvars" pop-listvars]
-  [send a-keymap add-function "pop-keybindings" pop-keybindings]
-  [send a-keymap add-function "pop-defs" pop-defs]
-  
- ; [send a-keymap add-function "pop-csearch" pop-csearch]
+  ; [send a-keymap add-function "pop-csearch" pop-csearch]
   
   [send a-keymap add-function "close-viewport" close-viewport]
   [send a-keymap add-function "abort-viewport" abort-viewport]
   
   [send a-keymap add-function "pop-viewport" pop-viewport]
- ; [send a-keymap add-function "open-let" open-let1]
+  ; [send a-keymap add-function "open-let" open-let1]
 
- ; [send a-keymap add-function "eval-selection" eval-selection]
- ; [send a-keymap add-function "open-mexpr" open-mexpr]
+  ; [send a-keymap add-function "eval-selection" eval-selection]
+  ; [send a-keymap add-function "open-mexpr" open-mexpr]
   
   ;[send a-keymap add-function "open-html" open-html]
   
- ; [send a-keymap add-function "system-command" system-command]
+  ; [send a-keymap add-function "system-command" system-command]
   
   [send a-keymap add-function "shutdown-dispatcher" shutdown-dispatcher]
-  [send a-keymap add-function "pop-command-viewport" pop-command-viewport]
+  ;[send a-keymap add-function "pop-command-viewport" pop-command-viewport]
   [send a-keymap map-function "c:down" "shutdown-dispatcher"]
   ;[send a-keymap add-function "open-file" open-file]
   ;[send a-keymap map-function "c:," "close-let"]
@@ -515,7 +530,7 @@ You will see different options depending on whether you put the cursor on a word
        keymaps]
   ]
 
-[insert-keybindings t]
+[insert-keybindings left-text-editor]
 [insert-keybindings commentary-text]
 (send editor-window show #t)
 ;(send commentary-window show #t)
@@ -524,12 +539,14 @@ You will see different options depending on whether you put the cursor on a word
 (define last-file-name #f)
 (define mb (new menu-bar% [parent editor-window]))
 (define m-file (new menu% [label "File"] [parent mb]))
-[new menu-item% [label "Open..."] [parent m-file] [callback [lambda args [load-file [path->string [get-file]]]]] [shortcut #\o]]
-[new menu-item% [label "Open Scheme"] [parent m-file] [callback [lambda args [load-scheme-file [get-file]]]] [shortcut #\o]]
-[new menu-item% [label "Open Perl"] [parent m-file] [callback [lambda args [load-perl-file [get-file]]]] [shortcut #\o]]
-[new menu-item% [label "Save..."] [parent m-file] [callback [lambda args [save-file last-file-name]]] [shortcut #\a]]
-[new menu-item% [label "Save As..."] [parent m-file] [callback [lambda args [save-file [put-file]]]] [shortcut #\a]]
-[new menu-item% [label "Exit"] [parent m-file] [callback [lambda args [put-preferences '[vars] [list [hash->list vars]] ][exit]]] [shortcut #\q]]
+[begin 
+  [new menu-item% [label "Open..."] [parent m-file] [callback [lambda args [load-file [path->string [get-file]]]]] [shortcut #\o]]
+  [new menu-item% [label "Open Scheme"] [parent m-file] [callback [lambda args [load-scheme-file [get-file]]]] [shortcut #\o]]
+  [new menu-item% [label "Open Perl"] [parent m-file] [callback [lambda args [load-perl-file [get-file]]]] [shortcut #\o]]
+  [new menu-item% [label "Save..."] [parent m-file] [callback [lambda args [save-file last-file-name]]] [shortcut #\a]]
+  [new menu-item% [label "Save As..."] [parent m-file] [callback [lambda args [save-file [put-file]]]] [shortcut #\a]]
+  [new menu-item% [label "Exit"] [parent m-file] [callback [lambda args [put-preferences '[vars] [list [hash->list vars]] ][exit]]] [shortcut #\q]]
+  ""]
 (define m-edit (new menu% [label "Edit"] [parent mb]))
 (define m-font (new menu% [label "Font"] [parent mb]))
 ;(append-editor-file-menu-items m-file #f)
@@ -542,96 +559,96 @@ You will see different options depending on whether you put the cursor on a word
 
 
 [define [slurp-file a-path]
-(port->string (open-input-file a-path) #:close? #t)
+  (port->string (open-input-file a-path) #:close? #t)
   ]
 
 [define load-file [lambda  [a-path]
-                    [send t erase]
+                    [send left-text-editor erase]
                            
                     [let  [[file-source [slurp-file a-path]]]
                       (set! last-file-name a-path)
-                      [send t insert file-source]]
+                      [send left-text-editor insert file-source]]
                     [set-tvar! "current-filename" a-path]
                     ]]
 
 [define [process-lines f a-path]
                     
-    (for ([l (in-lines (open-input-file a-path))])
-      (f l)
-      [displayln "---"]
-      (newline))]
+  (for ([l (in-lines (open-input-file a-path))])
+    (f l)
+    [displayln "---"]
+    (newline))]
 
 [define ctg [list->vector [file->lines "tags"]]]
 
 
 
 [define [find-start a-vec cmp a-pos]
-[debug "find-start: ~a ~a ~a\n" a-pos [vector-ref a-vec [sub1 a-pos ]] [vector-ref a-vec a-pos]]
-[if [and [> a-pos 0] [cmp [vector-ref a-vec [sub1 a-pos ]] [vector-ref a-vec a-pos]  ]]
-  [find-start a-vec cmp [sub1 a-pos]]
-  a-pos
+  [debug "find-start: ~a ~a ~a\n" a-pos [vector-ref a-vec [sub1 a-pos ]] [vector-ref a-vec a-pos]]
+  [if [and [> a-pos 0] [cmp [vector-ref a-vec [sub1 a-pos ]] [vector-ref a-vec a-pos]  ]]
+      [find-start a-vec cmp [sub1 a-pos]]
+      a-pos
+      ]
   ]
-]
 
 [define [find-end a-vec cmp a-pos] ;FIXME missing the last one
-[debug "find-end: ~a ~a, ~a\n" a-pos [vector-ref a-vec  a-pos] [vector-ref a-vec [add1 a-pos]]]
-[if [and 
-      [< a-pos [- [vector-length a-vec] 2]] 
-      [cmp [vector-ref a-vec a-pos]  [vector-ref a-vec [add1 a-pos]]]]
-    [begin
-    [printf "Keep\n"]
-    [find-end a-vec cmp [add1 a-pos]]]
-    [begin
-    [printf "Don't keep\n" ]
-    a-pos]
+  [debug "find-end: ~a ~a, ~a\n" a-pos [vector-ref a-vec  a-pos] [vector-ref a-vec [add1 a-pos]]]
+  [if [and 
+       [< a-pos [- [vector-length a-vec] 2]] 
+       [cmp [vector-ref a-vec a-pos]  [vector-ref a-vec [add1 a-pos]]]]
+      [begin
+        [debug "Keep\n"]
+        [find-end a-vec cmp [add1 a-pos]]]
+      [begin
+        [debug "Don't keep\n" ]
+        a-pos]
+      ]
   ]
-]
 
 [define [binary-search a-vec search-term]
 
   (define loop [lambda (low high mid last-mid)
   
-    (let  [[mid-val  (vector-ref a-vec mid)]]
-    [printf "In bin search: ~a ~a ~a ~a\n" low high mid mid-val]
-    [printf "Comparing ~a to ~a\n" search-term mid-val]
-    (cond 
-      [(equal? mid last-mid) mid]
-      [(string<? mid-val search-term)  (loop mid high  [ceiling (/ (+ mid high) 2)] mid)]
-      [(string>? mid-val search-term)  (loop low mid   [ceiling (/ (+ low mid)  2)] mid)]
-      [else mid]))])
+                 (let  [[mid-val  (vector-ref a-vec mid)]]
+                   [debug "In bin search: ~a ~a ~a ~a\n" low high mid mid-val]
+                   [debug "Comparing ~a to ~a\n" search-term mid-val]
+                   (cond 
+                     [(equal? mid last-mid) mid]
+                     [(string<? mid-val search-term)  (loop mid high  [ceiling (/ (+ mid high) 2)] mid)]
+                     [(string>? mid-val search-term)  (loop low mid   [ceiling (/ (+ low mid)  2)] mid)]
+                     [else mid]))])
   [loop 0 (vector-length a-vec) [floor (/ (vector-length a-vec) 2) ] -1 ]
-]
+  ]
 [define [make-cmp search-term ]
-[lambda [ a-str b-str]
-  [let [
-      [a [car [string-split  a-str #px"\t+|\\s+" ]]]
-      [b [car [string-split  b-str #px"\t+|\\s+" ]]]]
-        [printf "is cmp a: ~a a prefix of b: ~a?\n" a b]
-        [string-prefix? search-term b]]]]
+  [lambda [ a-str b-str]
+    [let [
+          [a [car [string-split  a-str #px"\t+|\\s+" ]]]
+          [b [car [string-split  b-str #px"\t+|\\s+" ]]]]
+      [debug "is cmp a: ~a a prefix of b: ~a?\n" a b]
+      [string-prefix? search-term b]]]]
 
 [define [binary-search-all-matches a-vec search-term]
   [letrec [
-        [pos [binary-search a-vec search-term]]
-        [start [find-start a-vec [make-cmp search-term] pos]]
-        [end [find-end a-vec [make-cmp search-term] pos]]
-        [matches (vector-copy a-vec start end)]]
-    [printf "Found ~a matches\n" (vector-length matches)]
+           [pos [binary-search a-vec search-term]]
+           [start [find-start a-vec [make-cmp search-term] pos]]
+           [end [find-end a-vec [make-cmp search-term] pos]]
+           [matches (vector-copy a-vec start end)]]
+    [debug "Found ~a matches\n" (vector-length matches)]
     matches]
   ]
 
 
 
-[printf "Bin search: ~a\n" [binary-search-all-matches ctg "API"]]
+[debug "Bin search: ~a\n" [binary-search-all-matches ctg "API"]]
 
 
 
 [define load-scheme-file [lambda  [a-path]
-                           [send t erase]
+                           [send left-text-editor erase]
                            [read-accept-reader #t]
                            [set! defs [get-multi-defs [cons a-path [hash-ref vars "project-files" [lambda [] '[]]]]]]
                            [let  [[file-source [call-with-input-file a-path [lambda [in] [read-string 999999 in]] #:mode 'text]]]
                              (set! last-file-name a-path)
-                             [send t insert file-source]]
+                             [send left-text-editor insert file-source]]
                            [pretty-write defs]]]
 [define [get-perl-multi-defs input-files]
   [apply append [map [lambda [a-path]
@@ -655,10 +672,10 @@ You will see different options depending on whether you put the cursor on a word
 
 [define [status some-text] [send editor-window set-status-text some-text]]
 [define load-perl-file [lambda  [a-path]
-                         [send t erase]
+                         [send left-text-editor erase]
                          [read-accept-reader #t]
                          [let  [[file-source [call-with-input-file a-path [lambda [in] [read-string 999999 in]] #:mode 'text]]]
-                           [send t insert file-source]
+                           [send left-text-editor insert file-source]
                            [set! defs [get-perl-multi-defs [cons a-path [hash-ref vars "perl-project-files" [lambda [] '[]]]]]]
                            
                            [write defs]]
@@ -668,7 +685,7 @@ You will see different options depending on whether you put the cursor on a word
                       [call-with-atomic-output-file
                        a-path
                        [lambda [a-port another-path]
-                         [display [send t get-text 0 9999999] a-port]]]]]]
+                         [display [send left-text-editor get-text 0 9999999] a-port]]]]]]
 
 [define [find-ctag name ctags] [filter [lambda [x] [equal? name [car x]]] ctags]]
 [define [load-ctags-file a-path] [map [lambda [x] [string-split  x #px"\t+|\\s+" ]] [file->lines a-path] ]]
@@ -691,7 +708,7 @@ You will see different options depending on whether you put the cursor on a word
                                                           "\n"] ]]]
 
 [define [binsearch-ctags-file a-term]
-[printf "Binearching for ~a\n" a-term]
+  [printf "Binearching for ~a\n" a-term]
   [if [eq? a-term ""] '()
       [map [lambda [x] [string-split  x #px"\t+|\\s+" ]] [vector->list [binary-search-all-matches ctg a-term] ]]]]
 
@@ -768,16 +785,27 @@ You will see different options depending on whether you put the cursor on a word
 [define [render-search word commentary editor direction]
   [let [[snp [make-object image-callback-snip% "Skip to" ]]]
     ;[set-field! data snp [list [second  tag-data ]   char-position]]
-    [set-field! callback snp [lambda [dc x y ex ey event]
-                               [let [[next [send editor find-string word direction [if [eq? direction 'forward]
-                                                                                       [add1 [send editor get-start-position]]
-                                                                                       [sub1 [send editor get-start-position]]]]]]
-                                 [displayln [format "Skipping to ~a" next]]
-                                 [send editor scroll-to-position next]
-                                 [send editor set-position next]]]]
-    [send snp set-flags '[ handles-events ]]
-    [send commentary insert snp]
-    [send commentary insert [format "Skip ~a to next ~a" direction word ]]
+    [let [[next [send editor find-string word direction [if [eq? direction 'forward]
+                                                            [add1 [send editor get-start-position]]
+                                                            [sub1 [send editor get-start-position]]]]]]
+      [if next 
+          [begin 
+            [set-field! callback snp [lambda [dc x y ex ey event]
+                               
+                                       [begin [displayln [format "Skipping to ~a" next]]
+                                              [send editor scroll-to-position next]
+                                              [send editor set-position next]]
+                                 
+                                       ]
+                        ]
+                                 
+                                 
+            [send snp set-flags '[ handles-events ]]
+            [send commentary insert snp]
+            [send commentary insert [format "Skip ~a to next ~a" direction word ]]
+            ]
+          [printf "No more matches\n"]
+          ]]
                      
     ]]
 
@@ -813,21 +841,28 @@ You will see different options depending on whether you put the cursor on a word
                  [letrec [
                           [text [file->string [second  tag-data ]]]
                           [line-number [third  tag-data ]]
-                          [ out [format "~a" [extract-line text line-number]]]
+                          [ sample [format "~a" [extract-line text line-number]]]
                           [char-position [line->position text [- line-number 5] 0 0]]
+                          [real-position [line->position text line-number 0 0]]
                           ]
                    ;[displayln [format "line-number: ~a" line-number]]
-                   [send commentary insert out]
-                                                                       
-                   ;[send editor insert     [make-object string-snip% "Load"  ]]
-                   [send commentary insert "\n"]
-                   [let [[snp [make-object image-jump-snip% [format "Load file: ~a" [list [second  tag-data ] line-number ] ] ]]]
-                     [set-field! data snp [list [second  tag-data ]   char-position]] 
+                   
+                   [let [[snp [make-object image-jump-snip% "jump-16.png" ]]]
+                     [set-field! data snp [list [second  tag-data ]   char-position real-position]] 
                      [send snp set-flags '[ handles-events ]]
                      [send commentary insert snp]
-                     [send commentary insert [format "Load: ~a" [list [second  tag-data ] line-number ] ]]
+                     [send commentary insert [string-trim-both sample]]
+                                                                       
+                     ;[send editor insert     [make-object string-snip% "Load"  ]]
+                     [send commentary insert "\n"]
+                     [send commentary insert 
+                           [format "~a"  
+                                   [list
+                                    [car [reverse [string-split  [second  tag-data ]  "/" ]]]
+                                    line-number
+                                    [second  tag-data ]]]]
                      [send commentary insert "\n\n"]
-                     out
+                     sample
                      ]]
                  ] tag-list]
           ""
@@ -836,18 +871,55 @@ You will see different options depending on whether you put the cursor on a word
     ]
   ]
 
+
+[define [show-settings]
+  [begin
+    [when [not [get-tvar "settings-panel-active"]]
+      [send [send settings-panel get-parent] add-child settings-panel]
+      [send settings-panel enable #t]
+      [send settings-panel show #t]
+      [set-tvar! "settings-panel-active" #t]]]
+  ]
+
+[define [hide-settings]
+  [begin
+    [when  [get-tvar "settings-panel-active"]
+      [send settings-panel enable #f]
+      [send settings-panel show #f]
+      [send [send settings-panel get-parent] delete-child settings-panel]
+      [set-tvar! "settings-panel-active" #f]]
+
+    ]
+  ]
+
+
 [define [comment-callback editor commentary type event word]
 
+  [if [and  [find [lambda [x] [equal? word x]] '["setting" "setttings" "config" "configuration" "prefs" "preferences" "options"]]]
+      [show-settings]
+      [hide-settings]]
+
+  (send editor begin-edit-sequence	 #f #f)
+  [send right-panel show #f]
+  [send right-panel enable #f]
+  ;[render-settings word commentary editor]
   ;[display [format "->~a<-" csearch-list]]
   ;[display commentary]
   [render-filename word commentary editor]
   [send commentary insert "\n\n"]
-  [render-search word commentary editor 'forward]
-  [render-search word commentary editor 'backward]
-  [send commentary insert "\n\n"]
-  [render-wiktionary word commentary editor]
-  [render-jump-to-file word commentary editor]
-           
+  [when [get-tvar "search"]
+    [render-search word commentary editor 'forward]
+    [render-search word commentary editor 'backward]
+    [send commentary insert "\n\n"]]
+  [when [get-tvar "wiktionary"]
+    [render-wiktionary word commentary editor]]
+  [when [get-tvar "tags"]
+    [render-jump-to-file word commentary editor]]
+  [send commentary set-position 0]
+  [send commentary scroll-to-position 0]
+  [send right-panel show #t]
+  [send right-panel enable #t]
+  (send editor end-edit-sequence)
   ""
   ]
 
