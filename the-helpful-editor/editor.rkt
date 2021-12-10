@@ -28,11 +28,14 @@
 (require "support.rkt")
 ;(require (planet "htmlprag.ss" ("neil" "htmlprag.plt" 1 3)))
 [define vars [make-hash [get-preference 'vars [lambda [] [list]]]]]
+[printf "Loaded prefs: ~a\n" vars]
 [define undo-stack '()]
 [define undo-pos-stack '()]
+[define undo-filename-stack '()]
 
 [define undo-forward-stack '()]
 [define undo-forward-pos-stack '()]
+[define undo-forward-filename-stack '()]
 
 
 ;[define vars [make-hash]]
@@ -101,7 +104,11 @@ You will see different options depending on whether you put the cursor on a word
 "]
 [define get-tvar  [lambda [tvar-name] [hash-ref vars tvar-name [lambda [] #f]]]]
 [define get-tvar-fail  [lambda [tvar-name fail-thunk] [hash-ref vars tvar-name fail-thunk]]]
-[define set-tvar! [lambda [tvar-name a-value] [hash-set! vars tvar-name a-value]]]
+[define set-tvar! [lambda [tvar-name a-value]
+                    [hash-set! vars tvar-name a-value]
+                    [printf "Saving tvars ~a\n" vars]
+                    [put-preferences '[vars] [list [hash->list vars]] ]
+                    ]]
 [unless [get-tvar "welcome-text"] [set-tvar! "welcome-text" welcome-text]]
 [unless [get-tvar "current-filename"] [set-tvar! "current-filename" "no file"]]
 
@@ -180,8 +187,8 @@ You will see different options depending on whether you put the cursor on a word
      [callback [lambda [a b]
                  ;[printf "~a\n" [format [send gotags-refresh-field get-value] "./"]]
                  ;[printf "~a\n" [command-output [format [send gotags-refresh-field get-value] "~/"]]]
-                 [printf "Gotags command: ~a\n" [append (list "./gotags" "-R" "-f" "tags") [string-split [send source-dirs-text get-text] "\n"]]]
-                 [printf "~a\n" (apply system* [append (list "./gotags" "-R" "-f" "tags") [string-split [send source-dirs-text get-text] "\n"]])]
+                 [debug "Gotags command: ~a\n" [append (list "./gotags" "-R" "-f" "tags") [string-split [send source-dirs-text get-text] "\n"]]]
+                 [debug "~a\n" (apply system* [append (list "./gotags" "-R" "-f" "tags") [string-split [send source-dirs-text get-text] "\n"]])]
                  [map  [lambda [x] [cindex-directory x] ]  [string-split [send source-dirs-text get-text] "\n"]]
                  ;[printf "~a\n"[format [send csearch-refresh-field get-value] "~/"]]
                  ;[printf "~a\n" [command-output [format [send csearch-refresh-field get-value] "./"]]]
@@ -199,11 +206,13 @@ You will see different options depending on whether you put the cursor on a word
                            [alignment '(center center)]))
 
 [map [lambda [a-module-name]
-       [set-tvar! a-module-name #t]
+       
+       [printf "Initialising ~a to ~a from ~a\n" a-module-name [get-tvar-fail  a-module-name #t] vars ]
        (new check-box%	 
             [label a-module-name]	 
             [parent modules-panel]
-            [value #t]
+            
+            [value [get-tvar-fail a-module-name #t]]
             [callback [lambda [a-box a-event]
                         [printf "Module ~a is ~a\n" a-module-name [send a-box get-value]]
                         [set-tvar! a-module-name [send a-box get-value]]
@@ -280,6 +289,11 @@ You will see different options depending on whether you put the cursor on a word
                    
                                ])
 
+[define [set-filename! fname]
+  [set-tvar! "current-filename"  fname]
+  [send editor-window set-label [get-tvar "current-filename"]]
+  ]
+
 (define image-jump-snip% [class image-snip%
                            [super-new]
                            [field [data #f]]
@@ -291,13 +305,18 @@ You will see different options depending on whether you put the cursor on a word
                                                          [displayln [format "Scrolling to ~s of ~s ~n" [second data] (send left-text-editor num-scroll-lines)]]
                                                          [set! undo-stack [cons (send left-text-editor get-flattened-text) undo-stack]]
                                                          [set! undo-pos-stack [cons (send left-text-editor get-start-position) undo-pos-stack]]
+                                                         [set! undo-filename-stack [cons [get-tvar "current-filename"] undo-filename-stack]]
                                                          [printf "Saved undo point\n"]
                                                          [send left-text-editor erase]
                                                          [send left-text-editor insert [file->string [first data]]]
-                                                         [set-tvar! "current-filename"  [first data]]
+                                                         [set-filename! [first data]]
+                                                         
                                                          [send left-text-editor scroll-to-position [second data]]
-                                                         [send editor-window set-label [get-tvar "current-filename"]]
+                                                         
                                                          [send left-text-editor set-position [third data]]
+                                                         [send left-text-editor highlight-range
+                                                               [third data]
+                                                               [send left-text-editor find-newline  'forward  [third data] [+ 100 [third data]]] "light blue"]
                                                          [send [send left-text-editor get-canvas] focus]
                                                          ]
                                                        ]]
@@ -312,9 +331,8 @@ You will see different options depending on whether you put the cursor on a word
                                                       [printf "Saved undo point\n"]
                                                       [send left-text-editor erase]
                                                       [send left-text-editor insert [file->string [first data]]]
-                                                      [set-tvar! "current-filename"  [first data]]
+                                                      [set-filename! [first data]]
                                                       [send left-text-editor scroll-to-position [second data]]
-                                                      [send editor-window set-label [get-tvar "current-filename"]]
                                                       [send left-text-editor set-position  [third data]]
                                                       [send [send left-text-editor get-canvas] focus]
                                                       ]]
@@ -482,27 +500,54 @@ You will see different options depending on whether you put the cursor on a word
                                                              [when [not [empty? undo-stack]]
                                                                [set! undo-forward-stack [cons (send left-text-editor get-flattened-text) undo-forward-stack]]
                                                                [set! undo-forward-pos-stack [cons (send left-text-editor get-start-position) undo-forward-pos-stack]]
+                                                               [set! undo-forward-filename-stack [cons [get-tvar "current-filename"] undo-forward-filename-stack]]
                                                           
 
                                                                [send left-text-editor erase]
                                                                [send left-text-editor insert [first undo-stack]]
+                                                               [set-filename! [first undo-filename-stack]]
                                                                [set! undo-stack [cdr undo-stack]]
 
                                                                [send left-text-editor set-position [first undo-pos-stack]]
-                                                               [set! undo-pos-stack [cdr undo-pos-stack]]]]]]
+                                                               [set! undo-pos-stack [cdr undo-pos-stack]]
+[set! undo-filename-stack [cdr undo-filename-stack]]
+                                                               ]]]]
+
+              [define [count-chars str char pos count]
+                [if [equal? [string-length str] pos]
+                    count
+                [count-chars str char [add1 pos] [if [char=? char [string-ref str pos]]
+                                                     [add1 count]
+                                                     count]]]]
+[new button% 
+[label "Open in visual code"] 
+[parent button-pane] 
+[callback [lambda [a b]
+
+  [open-visual-code
+    [get-tvar "current-filename" ]
+    [letrec [[text [send left-text-editor get-text 0 [send left-text-editor get-start-position]]]
+    [lines [count-chars text #\newline 0 0]]]
+      [printf "Counted ~a lines in ~a\n" lines text]
+      lines]]]]]
+
+
+
 [new button% [label "Forwards"] [parent button-pane] [callback [lambda [a b] 
                                                                  [printf "undo-forward-pos-stack: ~a~n" undo-forward-pos-stack]
                                                                  [when [not [empty? undo-forward-stack]]
                                                                    [set! undo-stack [cons (send left-text-editor get-flattened-text) undo-stack]]
                                                                    [set! undo-pos-stack [cons (send left-text-editor get-start-position) undo-pos-stack]]
-                                                         
+                                                                   [set! undo-filename-stack [cons [get-tvar "current-filename"] undo-filename-stack]]
 
                                                                    [send left-text-editor erase]
                                                                    [send left-text-editor insert [first undo-forward-stack]]
+                                                                   [set-filename! [first undo-forward-filename-stack]]
                                                                    [set! undo-forward-stack [cdr undo-forward-stack]]
 
                                                                    [send left-text-editor set-position [first undo-forward-pos-stack]]
-                                                                   [set! undo-forward-pos-stack [cdr undo-forward-pos-stack]]]]]]
+                                                                   [set! undo-forward-pos-stack [cdr undo-forward-pos-stack]]
+                                                                   [set! undo-forward-filename-stack [cdr undo-forward-filename-stack]]]]]]
     
 
 [define [cindex-directory a-dir]
@@ -594,7 +639,7 @@ You will see different options depending on whether you put the cursor on a word
                     [let  [[file-source [slurp-file a-path]]]
                       (set! last-file-name a-path)
                       [send left-text-editor insert file-source]]
-                    [set-tvar! "current-filename" a-path]
+                    [set-filename! a-path]
                     ]]
 
 [define [process-lines f a-path]
@@ -915,6 +960,10 @@ You will see different options depending on whether you put the cursor on a word
     ]
   ]
 
+[define [render-search-term word commentary editor]
+  [send commentary insert [format "Searching for ->~a<-\n\n" word]]
+  ]
+
 
 [define [comment-callback editor commentary type event word]
 
@@ -929,6 +978,7 @@ You will see different options depending on whether you put the cursor on a word
   ;[render-settings word commentary editor]
   ;[display [format "->~a<-" csearch-list]]
   ;[display commentary]
+                                                [render-search-term word commentary editor]
   [render-filename word commentary editor]
   [send commentary insert "\n\n"]
   [when [get-tvar "search"]
@@ -949,6 +999,9 @@ You will see different options depending on whether you put the cursor on a word
   ""
   ]
 
+[define [open-visual-code filename linenumber]
+[system* "/Applications/Visual Studio Code.app/Contents/MacOS/Electron" [format "~a:~a" filename [add1 linenumber]]  "--goto"]
+  ]
 
 
 
