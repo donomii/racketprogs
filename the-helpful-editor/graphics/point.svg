@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg5"
+   inkscape:export-filename="/Users/jeremyprice/racketprogs/the-helpful-editor/jump.png"
+   inkscape:export-xdpi="18.418335"
+   inkscape:export-ydpi="18.418335"
+   inkscape:version="1.1 (c4e8f9e, 2021-05-24)"
+   sodipodi:docname="point.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.5077862"
+     inkscape:cx="-17.723995"
+     inkscape:cy="460.82387"
+     inkscape:window-width="1312"
+     inkscape:window-height="792"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <ellipse
+       style="fill:#000000;fill-rule:evenodd;stroke-width:0.233233"
+       id="path35"
+       cx="-109.92848"
+       cy="135.99475"
+       rx="22.261023"
+       ry="23.968435"
+       inkscape:export-filename="/Users/jeremyprice/racketprogs/the-helpful-editor/jump-16.png"
+       inkscape:export-xdpi="4.6312847"
+       inkscape:export-ydpi="4.6312847"
+       transform="scale(-1,1)" />
+    <path
+       style="fill:#000000;stroke:#000000;stroke-width:0.282372px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 97.552991,92.226315 c -55.786626,48.457895 3.560849,88.057895 3.560849,88.057895 L 39.985945,142.24737 Z"
+       id="path578"
+       sodipodi:nodetypes="cccc"
+       inkscape:export-filename="/Users/jeremyprice/racketprogs/the-helpful-editor/jump-16.png"
+       inkscape:export-xdpi="4.6312847"
+       inkscape:export-ydpi="4.6312847" />
+  </g>
+</svg>

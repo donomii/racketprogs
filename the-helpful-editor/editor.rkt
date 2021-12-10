@@ -19,6 +19,7 @@
          mzlib/defmacro
          json
          )
+[require anaphoric]
 [require suffixtree]
 (require pfds/trie)
 [require [prefix-in http- net/http-easy]]
@@ -99,6 +100,7 @@ You will see different options depending on whether you put the cursor on a word
 
 "]
 [define get-tvar  [lambda [tvar-name] [hash-ref vars tvar-name [lambda [] #f]]]]
+[define get-tvar-fail  [lambda [tvar-name fail-thunk] [hash-ref vars tvar-name fail-thunk]]]
 [define set-tvar! [lambda [tvar-name a-value] [hash-set! vars tvar-name a-value]]]
 [unless [get-tvar "welcome-text"] [set-tvar! "welcome-text" welcome-text]]
 [unless [get-tvar "current-filename"] [set-tvar! "current-filename" "no file"]]
@@ -157,8 +159,8 @@ You will see different options depending on whether you put the cursor on a word
                             [parent right-panel]		 
                             [enabled #t])]
 [set-tvar! "settings-panel-active" #t]
-
 [define source-dirs-text [new text%]]
+[send source-dirs-text insert [get-tvar-fail "source-dirs" [lambda [] "./\n"]]]
 [define source-dirs-canvas [new editor-canvas% [parent settings-panel] [line-count 3]]]
 
                           
@@ -168,6 +170,30 @@ You will see different options depending on whether you put the cursor on a word
   [string-split  [send source-dirs-text get-text 0 'eof #t #f] "\n"]
   ]
 
+(define source-buttons-panel (new horizontal-panel% [parent settings-panel]
+                                  [alignment '(center center)]))
+ 
+[new button% [label "Add source"] [parent source-buttons-panel]
+     [callback [lambda [a b] [send source-dirs-text insert [string-append  [aif [get-directory] [path->string it] "./\n"] "\n"]]]]]
+
+[new button% [label "Refresh"] [parent source-buttons-panel]
+     [callback [lambda [a b]
+                 ;[printf "~a\n" [format [send gotags-refresh-field get-value] "./"]]
+                 ;[printf "~a\n" [command-output [format [send gotags-refresh-field get-value] "~/"]]]
+                 [printf "Gotags command: ~a\n" [append (list "./gotags" "-R" "-f" "tags") [string-split [send source-dirs-text get-text] "\n"]]]
+                 [printf "~a\n" (apply system* [append (list "./gotags" "-R" "-f" "tags") [string-split [send source-dirs-text get-text] "\n"]])]
+                 [map  [lambda [x] [cindex-directory x] ]  [string-split [send source-dirs-text get-text] "\n"]]
+                 ;[printf "~a\n"[format [send csearch-refresh-field get-value] "~/"]]
+                 ;[printf "~a\n" [command-output [format [send csearch-refresh-field get-value] "./"]]]
+                 ]]]
+
+;[define gotags-refresh-field [new text-field% [label "tags command"] [parent settings-panel] [init-value "./gotags -R -f tags ~a"] ]]
+[define max-results-field [new text-field% [label "Max Results"] [parent settings-panel] [init-value [get-tvar-fail "max-results" [lambda [] "50"]]] ]]
+[define [get-max-results] [string->number [send max-results-field get-value]]]
+;[define csearch-refresh-field [new text-field% [label "csearch command"] [parent settings-panel] [init-value "./cindex ~a"] ]]
+[define wiktionary-api-field [new text-field% [label "wiktionary api"] [parent settings-panel]
+                                  [init-value
+                                   [get-tvar-fail "wiktionary-api" [lambda [] "https://en.wiktionary.org/w/api.php?action=parse&page=~a&prop=wikitext&formatversion=2&format=json"] ]]]]
 
 (define modules-panel (new horizontal-panel% [parent settings-panel]
                            [alignment '(center center)]))
@@ -402,7 +428,7 @@ You will see different options depending on whether you put the cursor on a word
                                                               [if linked [cdr linked] #f]]]
                                     [lambda [parent child text] [cdr [assq child viewports-name]]]]]
 
-[define [do-csearch word] [command-output [string-concatenate `[csearch-path " " ,word " | head -100"]]]]
+[define [do-csearch word] [command-output [string-concatenate `[csearch-path " " ,word " | head -" [send max-results-field get-value]]]]]
 
 
 
@@ -449,7 +475,7 @@ You will see different options depending on whether you put the cursor on a word
 (send button-pane stretchable-height #f)
 ;[new button% [label "Close viewport"] [parent button-pane] [callback close-let]]
 
-[new button% [label "Cindex"] [parent button-pane] [callback [lambda [a b] [cindex-directory [get-directory]]]]]
+;[new button% [label "Cindex"] [parent button-pane] [callback [lambda [a b] [cindex-directory [get-directory]]]]]
 [new button% [label "Settings"] [parent button-pane] [callback [lambda [a b] [show-settings]]]]
 [new button% [label "Back"] [parent button-pane] [callback [lambda [a b] 
                                                              [printf "undo-pos-stack: ~a~n" undo-pos-stack]
@@ -480,7 +506,7 @@ You will see different options depending on whether you put the cursor on a word
     
 
 [define [cindex-directory a-dir]
-  [let [[cmd [format "/Users/jeremyprice/go/bin/cindex \"~a\"" a-dir]]]
+  [let [[cmd [format "./cindex \"~a\"" a-dir]]]
     [displayln cmd]
     [shell-out cmd [lambda [ stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
 
@@ -541,8 +567,8 @@ You will see different options depending on whether you put the cursor on a word
 (define m-file (new menu% [label "File"] [parent mb]))
 [begin 
   [new menu-item% [label "Open..."] [parent m-file] [callback [lambda args [load-file [path->string [get-file]]]]] [shortcut #\o]]
-  [new menu-item% [label "Open Scheme"] [parent m-file] [callback [lambda args [load-scheme-file [get-file]]]] [shortcut #\o]]
-  [new menu-item% [label "Open Perl"] [parent m-file] [callback [lambda args [load-perl-file [get-file]]]] [shortcut #\o]]
+  ;  [new menu-item% [label "Open Scheme"] [parent m-file] [callback [lambda args [load-scheme-file [get-file]]]] [shortcut #\o]]
+  ;  [new menu-item% [label "Open Perl"] [parent m-file] [callback [lambda args [load-perl-file [get-file]]]] [shortcut #\o]]
   [new menu-item% [label "Save..."] [parent m-file] [callback [lambda args [save-file last-file-name]]] [shortcut #\a]]
   [new menu-item% [label "Save As..."] [parent m-file] [callback [lambda args [save-file [put-file]]]] [shortcut #\a]]
   [new menu-item% [label "Exit"] [parent m-file] [callback [lambda args [put-preferences '[vars] [list [hash->list vars]] ][exit]]] [shortcut #\q]]
@@ -590,8 +616,11 @@ You will see different options depending on whether you put the cursor on a word
       ]
   ]
 
-[define [find-end a-vec cmp a-pos] ;FIXME missing the last one
-  [debug "find-end: ~a ~a, ~a\n" a-pos [vector-ref a-vec  a-pos] [vector-ref a-vec [add1 a-pos]]]
+[define [find-end a-vec cmp a-pos] ;FIXME missing the last one, crashes if cursor at end
+  [debug "find-end: ~a ~a, ~a\n"
+         a-pos
+         [vector-ref a-vec  a-pos]
+         [vector-ref a-vec [min [sub1 [vector-length a-vec]] [add1 a-pos]]]]
   [if [and 
        [< a-pos [- [vector-length a-vec] 2]] 
        [cmp [vector-ref a-vec a-pos]  [vector-ref a-vec [add1 a-pos]]]]
@@ -642,25 +671,9 @@ You will see different options depending on whether you put the cursor on a word
 
 
 
-[define load-scheme-file [lambda  [a-path]
-                           [send left-text-editor erase]
-                           [read-accept-reader #t]
-                           [set! defs [get-multi-defs [cons a-path [hash-ref vars "project-files" [lambda [] '[]]]]]]
-                           [let  [[file-source [call-with-input-file a-path [lambda [in] [read-string 999999 in]] #:mode 'text]]]
-                             (set! last-file-name a-path)
-                             [send left-text-editor insert file-source]]
-                           [pretty-write defs]]]
-[define [get-perl-multi-defs input-files]
-  [apply append [map [lambda [a-path]
-                       [read-from-string [shell-out "perl extract_subs.pl" [lambda [ stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
-                                                                             [send editor-window set-status-text [format "Loading ~a" a-path]]
-                                                                             [display a-path stdin-pipe]
-                                                                             [newline stdin-pipe]
-                                                                             [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]
-                                                                             ]]]]
-                     input-files]]]
 
-[define csearch-path "/Users/jeremyprice/go/bin/csearch"]
+
+[define csearch-path "./csearch"]
 [define csearch [lambda [a-string]
                   [if  [< [string-length a-string] 4] ""
                        [shell-out [format "~a -f \\.go\\$ -n ~a | head -100" csearch-path a-string]
@@ -671,15 +684,7 @@ You will see different options depending on whether you put the cursor on a word
 
 
 [define [status some-text] [send editor-window set-status-text some-text]]
-[define load-perl-file [lambda  [a-path]
-                         [send left-text-editor erase]
-                         [read-accept-reader #t]
-                         [let  [[file-source [call-with-input-file a-path [lambda [in] [read-string 999999 in]] #:mode 'text]]]
-                           [send left-text-editor insert file-source]
-                           [set! defs [get-perl-multi-defs [cons a-path [hash-ref vars "perl-project-files" [lambda [] '[]]]]]]
-                           
-                           [write defs]]
-                         [status [format "Loaded ~a" a-path]]]]
+
 [define save-file [lambda [a-path]
                     [when a-path
                       [call-with-atomic-output-file
@@ -708,9 +713,17 @@ You will see different options depending on whether you put the cursor on a word
                                                           "\n"] ]]]
 
 [define [binsearch-ctags-file a-term]
-  [printf "Binearching for ~a\n" a-term]
+  [debug "Binearching for ~a\n" a-term]
   [if [eq? a-term ""] '()
       [map [lambda [x] [string-split  x #px"\t+|\\s+" ]] [vector->list [binary-search-all-matches ctg a-term] ]]]]
+
+[define [take-at-most a-list a-number]
+  [if [<= a-number 0]
+      '()
+      [if [null? a-list]
+          '()
+          [cons (car a-list) [take-at-most (cdr a-list) (sub1 a-number)]]
+          ]]]
 
 [define [format-ctags-results results]
   [debug "Formatting ctags results: ~a" results]
@@ -722,7 +735,7 @@ You will see different options depending on whether you put the cursor on a word
                   ]
            [list tag filename line-number]
            ]]
-       results]
+       [take-at-most results [get-max-results] ]]
         
         
   ]
@@ -768,11 +781,13 @@ You will see different options depending on whether you put the cursor on a word
 [define [line->position text target-line linecount current-pos]
   [if [> linecount target-line]
       current-pos
-      [let [[letter [string-ref text current-pos]]]
+      [if [equal? text ""]
+          0
+          [let [[letter [string-ref text current-pos]]]
         [if [equal? #\newline letter]
             [line->position text target-line [add1 linecount] [add1 current-pos]]
             [line->position text target-line linecount [add1 current-pos]]]
-        ]
+        ]]
       ]
   ]
 
@@ -783,7 +798,13 @@ You will see different options depending on whether you put the cursor on a word
   ]
   
 [define [render-search word commentary editor direction]
-  [let [[snp [make-object image-callback-snip% "Skip to" ]]]
+  [if [equal? word ""]
+      ""
+      [begin
+  [debug "Searching ~a for ~a\n" direction word]
+  [let [[snp [make-object image-callback-snip% [if [eq? direction 'forward]
+                                                   "graphics/jump-16.png"
+                                                   "graphics/left-16.png" ]]]]
     ;[set-field! data snp [list [second  tag-data ]   char-position]]
     [let [[next [send editor find-string word direction [if [eq? direction 'forward]
                                                             [add1 [send editor get-start-position]]
@@ -802,12 +823,12 @@ You will see different options depending on whether you put the cursor on a word
                                  
             [send snp set-flags '[ handles-events ]]
             [send commentary insert snp]
-            [send commentary insert [format "Skip ~a to next ~a" direction word ]]
+            [send commentary insert [format "Skip ~a to next '~a'" direction word ]]
             ]
-          [printf "No more matches\n"]
+          [debug "No more matches\n"]
           ]]
                      
-    ]]
+    ]]]]
 
 
 [define [render-wiktionary word commentary editor ]
@@ -847,7 +868,7 @@ You will see different options depending on whether you put the cursor on a word
                           ]
                    ;[displayln [format "line-number: ~a" line-number]]
                    
-                   [let [[snp [make-object image-jump-snip% "jump-16.png" ]]]
+                   [let [[snp [make-object image-jump-snip% "graphics/jump-16.png" ]]]
                      [set-field! data snp [list [second  tag-data ]   char-position real-position]] 
                      [send snp set-flags '[ handles-events ]]
                      [send commentary insert snp]
@@ -888,6 +909,8 @@ You will see different options depending on whether you put the cursor on a word
       [send settings-panel show #f]
       [send [send settings-panel get-parent] delete-child settings-panel]
       [set-tvar! "settings-panel-active" #f]]
+    [set-tvar! "source-dirs" [send source-dirs-text get-text]]
+    [set-tvar! "wiktionary-api" [send wiktionary-api-field get-value]]
 
     ]
   ]
@@ -895,27 +918,30 @@ You will see different options depending on whether you put the cursor on a word
 
 [define [comment-callback editor commentary type event word]
 
-  [if [and  [find [lambda [x] [equal? word x]] '["setting" "setttings" "config" "configuration" "prefs" "preferences" "options"]]]
+  [if [and  [find [lambda [x] [equal? word x]] '["setting" "settings" "config" "configuration" "prefs" "preferences" "options"]]]
       [show-settings]
       [hide-settings]]
 
   (send editor begin-edit-sequence	 #f #f)
   [send right-panel show #f]
   [send right-panel enable #f]
+  (call-with-exception-handler [lambda [x] x] [lambda [] 
   ;[render-settings word commentary editor]
   ;[display [format "->~a<-" csearch-list]]
   ;[display commentary]
   [render-filename word commentary editor]
   [send commentary insert "\n\n"]
   [when [get-tvar "search"]
+     [render-search word commentary editor 'backward]
     [render-search word commentary editor 'forward]
-    [render-search word commentary editor 'backward]
     [send commentary insert "\n\n"]]
   [when [get-tvar "wiktionary"]
+    [send commentary insert "--- wiktionary ---\n\n"]
     [render-wiktionary word commentary editor]]
   [when [get-tvar "tags"]
+    [send commentary insert "--- ctags / csearch ---\n\n"]
     [render-jump-to-file word commentary editor]]
-  [send commentary set-position 0]
+  [send commentary set-position 0]])
   [send commentary scroll-to-position 0]
   [send right-panel show #t]
   [send right-panel enable #t]

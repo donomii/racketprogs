@@ -154,7 +154,33 @@
                                                                           
 
                                                                                 var-name]]]]
+;[define load-scheme-file [lambda  [a-path editor]
+;                           [send editor erase]
+;                           [read-accept-reader #t]
+;                           ;[set! defs [get-multi-defs [cons a-path [hash-ref vars "project-files" [lambda [] '[]]]]]]
+;                           [let  [[file-source [call-with-input-file a-path [lambda [in] [read-string 999999 in]] #:mode 'text]]]
+;                             (set! last-file-name a-path)
+;                             [send left-text-editor insert file-source]]
+;                           [pretty-write defs]]]
+;[define [get-perl-multi-defs input-files]
+;  [apply append [map [lambda [a-path]
+;                       [read-from-string [shell-out "perl extract_subs.pl" [lambda [ stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
+;                                                                             [send editor-window set-status-text [format "Loading ~a" a-path]]
+;                                                                             [display a-path stdin-pipe]
+;                                                                             [newline stdin-pipe]
+;                                                                             [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc]
+;                                                                             ]]]]
+;                     input-files]]]
 
+;  [define load-perl-file [lambda  [a-path editor]
+;                         [send editor erase]
+;                         [read-accept-reader #t]
+;                         [let  [[file-source [call-with-input-file a-path [lambda [in] [read-string 999999 in]] #:mode 'text]]]
+;                           [send editor insert file-source]
+;                           [set! defs [get-perl-multi-defs [cons a-path [hash-ref vars "perl-project-files" [lambda [] '[]]]]]]
+;                           
+;                           [write defs]]
+;                         [status [format "Loaded ~a" a-path]]]]
 
 ;;; [define pop-command-viewport  [make-pop-func [lambda [new-box word]
 ;;;                                                [write "Creating command box"]

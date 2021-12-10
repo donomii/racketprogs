@@ -3,6 +3,7 @@
 
 [define command-output [lambda [a-command] [letrec [[pipes [process a-command]]
                                                     [stdout [car pipes]]]
+                                             [[fifth pipes] 'wait]
                                              [read-string 99999 stdout]]]]
 
   [define [eval-string str] (eval (call-with-input-string str read))]
