@@ -44,8 +44,8 @@
 [defmacro myset args `[set! ,[car args] ,[cdr args]]]
 (application:current-app-name "Commentary")
 
-;[define debug [lambda args [displayln [apply format args]]]]
-[define debug [lambda args #f]]
+[define debug [lambda args [displayln [apply format args]]]]
+;[define debug [lambda args #f]]
 
 [define [handler-capture-output stdout-pipe stdin-pipe proc-id stderr-pipe control-proc] 
   [close-input-port stderr-pipe]
@@ -301,6 +301,7 @@ You will see different options depending on whether you put the cursor on a word
                            [define/override on-event [lambda [dc x y ex ey event]
                                                        [super on-event  dc x y ex ey event]
                                                        [when [send event get-left-down]
+                                                         [let [[target [sub1 [third data]]]]
                                                        
                                                          [displayln [format "Scrolling to ~s of ~s ~n" [second data] (send left-text-editor num-scroll-lines)]]
                                                          [set! undo-stack [cons (send left-text-editor get-flattened-text) undo-stack]]
@@ -311,15 +312,15 @@ You will see different options depending on whether you put the cursor on a word
                                                          [send left-text-editor insert [file->string [first data]]]
                                                          [set-filename! [first data]]
                                                          
-                                                         [send left-text-editor scroll-to-position [second data]]
+                                                         [send left-text-editor scroll-to-position target]
                                                          
-                                                         [send left-text-editor set-position [third data]]
+                                                         [send left-text-editor set-position target]
                                                          [send left-text-editor highlight-range
-                                                               [third data]
-                                                               [send left-text-editor find-newline  'forward  [third data] [+ 100 [third data]]] "light blue"]
+                                                               target
+                                                               [send left-text-editor find-newline  'forward  target [+ 100 [third data]]] "light blue"]
                                                          [send [send left-text-editor get-canvas] focus]
                                                          ]
-                                                       ]]
+                                                       ]]]
                            [define/override on-char [lambda [dc x y ex ey event]
                                                      
                                                     
@@ -519,17 +520,7 @@ You will see different options depending on whether you put the cursor on a word
                 [count-chars str char [add1 pos] [if [char=? char [string-ref str pos]]
                                                      [add1 count]
                                                      count]]]]
-[new button% 
-[label "Open in visual code"] 
-[parent button-pane] 
-[callback [lambda [a b]
 
-  [open-visual-code
-    [get-tvar "current-filename" ]
-    [letrec [[text [send left-text-editor get-text 0 [send left-text-editor get-start-position]]]
-    [lines [count-chars text #\newline 0 0]]]
-      [printf "Counted ~a lines in ~a\n" lines text]
-      lines]]]]]
 
 
 
@@ -548,6 +539,18 @@ You will see different options depending on whether you put the cursor on a word
                                                                    [send left-text-editor set-position [first undo-forward-pos-stack]]
                                                                    [set! undo-forward-pos-stack [cdr undo-forward-pos-stack]]
                                                                    [set! undo-forward-filename-stack [cdr undo-forward-filename-stack]]]]]]
+
+[new button% 
+[label "Open in visual code"] 
+[parent button-pane] 
+[callback [lambda [a b]
+
+  [open-visual-code
+    [get-tvar "current-filename" ]
+    [letrec [[text [send left-text-editor get-text 0 [send left-text-editor get-start-position]]]
+    [lines [count-chars text #\newline 0 0]]]
+      [printf "Counted ~a lines in ~a\n" lines text]
+      lines]]]]]
     
 
 [define [cindex-directory a-dir]
@@ -655,9 +658,9 @@ You will see different options depending on whether you put the cursor on a word
 
 [define [find-start a-vec cmp a-pos]
   [debug "find-start: ~a ~a ~a\n" a-pos [vector-ref a-vec [sub1 a-pos ]] [vector-ref a-vec a-pos]]
-  [if [and [> a-pos 0] [cmp [vector-ref a-vec [sub1 a-pos ]] [vector-ref a-vec a-pos]  ]]
+  [if [and [> a-pos 0] [cmp [vector-ref a-vec a-pos]  ]]
       [find-start a-vec cmp [sub1 a-pos]]
-      a-pos
+      [add1 a-pos]
       ]
   ]
 
@@ -668,13 +671,13 @@ You will see different options depending on whether you put the cursor on a word
          [vector-ref a-vec [min [sub1 [vector-length a-vec]] [add1 a-pos]]]]
   [if [and 
        [< a-pos [- [vector-length a-vec] 2]] 
-       [cmp [vector-ref a-vec a-pos]  [vector-ref a-vec [add1 a-pos]]]]
+       [cmp [vector-ref a-vec a-pos]]]
       [begin
         [debug "Keep\n"]
         [find-end a-vec cmp [add1 a-pos]]]
       [begin
         [debug "Don't keep\n" ]
-        a-pos]
+        [sub1 a-pos]]
       ]
   ]
 
@@ -693,21 +696,22 @@ You will see different options depending on whether you put the cursor on a word
   [loop 0 (vector-length a-vec) [floor (/ (vector-length a-vec) 2) ] -1 ]
   ]
 [define [make-cmp search-term ]
-  [lambda [ a-str b-str]
+  [lambda [a-str-line]
     [let [
-          [a [car [string-split  a-str #px"\t+|\\s+" ]]]
-          [b [car [string-split  b-str #px"\t+|\\s+" ]]]]
-      [debug "is cmp a: ~a a prefix of b: ~a?\n" a b]
-      [string-prefix? search-term b]]]]
+          [a [car [string-split  a-str-line #px"\t+|\\s+" ]]]]
+      [debug "is cmp  ~a a prefix of  ~a?\n" search-term a]
+      [string-prefix? a search-term ]]]]
 
 [define [binary-search-all-matches a-vec search-term]
   [letrec [
            [pos [binary-search a-vec search-term]]
            [start [find-start a-vec [make-cmp search-term] pos]]
-           [end [find-end a-vec [make-cmp search-term] pos]]
-           [matches (vector-copy a-vec start end)]]
-    [debug "Found ~a matches\n" (vector-length matches)]
-    matches]
+           [end [find-end a-vec [make-cmp search-term] pos]]]
+    [if [> start end]
+        [vector] ; Empty vector
+           (vector-copy a-vec start end)]
+    
+    ]
   ]
 
 
@@ -909,7 +913,7 @@ You will see different options depending on whether you put the cursor on a word
                           [line-number [third  tag-data ]]
                           [ sample [format "~a" [extract-line text line-number]]]
                           [char-position [line->position text [- line-number 5] 0 0]]
-                          [real-position [line->position text line-number 0 0]]
+                          [real-position [max 0 [add1 [line->position text [sub1 line-number] 0 0]]]]
                           ]
                    ;[displayln [format "line-number: ~a" line-number]]
                    
