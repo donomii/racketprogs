@@ -36,7 +36,7 @@ The back/forwards buttons at the bottom work like a web browser, allowing you to
 
 You can change the directories that Commentary indexes in the settings panel.  Add one directory per line, then press refresh to re-index them all.
 
-Commentary works with external programs, so you can control them directly if you want more control over what gets displayed.
+Commentary works with external programs, so you can run them directly if you want more control over what gets displayed.
 
 ### Ctags
 
