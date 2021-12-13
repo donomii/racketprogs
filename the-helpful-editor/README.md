@@ -2,7 +2,7 @@
 
 Commentary is an experimental source code browser that is designed to help me work with modern software projects.  Modern projects often contain 100,000+ lines of source code, and the existing tools are just not capable of coping with that scale.
 
-Commentary assists by providing a two-pane view.  On the left is the code, on the right is a list of suggestions from the program.
+Commentary assists by providing a two-pane view.  On the left is the code, on the right is a list of suggestions from the Commentary.
 
 ## Features
 
