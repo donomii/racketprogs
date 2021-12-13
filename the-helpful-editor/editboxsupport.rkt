@@ -1,7 +1,193 @@
 (module editboxsupport racket
-[require srfi/13 mzlib/string "support.rkt"  mred framework]
+[require srfi/13  "support.rkt"  mred framework]
    (provide )
+[define viewport-data '[]]
+;  [define add-viewport [the-viewport name ]]
+[define viewports '[]]
+[define viewports-start-len '[]]
+[define viewports-name '[]]
+[define shutdown-funcs '[]]
 
+  ; Create a sequence of unique numbers
+[define num 0]
+[define seqnum [lambda [] [set! num [add1 num]][format "~a" num]]]
+
+  ;
+;[insert-keybindings left-text-editor]
+;[insert-keybindings commentary-text]
+  
+;[define a-keymap [send left-text-editor get-keymap]]
+
+[define keymaps
+  `[
+    ["c:r" "close-varedit" "Close variable viewport"]
+    ["c:b" "pop-varedit" "Open variable viewport"]
+    ["c:n" "pop-listvars" "Open viewport and list variables"]
+    ["c:l" "open-let" "dunno"]
+    ["c:e" "eval-selection" "Run selection in scheme evaluator"]
+    ["c:up" "pop-viewport" "Open empty viewport"]
+    ["c:m" "open-mexpr" "Open m-expression"]
+    ["c:h" "open-html" "Open html"]
+    ["c:s" "system-command"  "Shell out"]
+    ["c:down" "shutdown-dispatcher" "Close the viewport and run the default action on the text"]
+    ["c:k" "pop-keybindings" "Open viewport and show keybindings"]
+    ["c:d" "pop-defs" "Open viewport and show definitions"]
+    ["c:t" "pop-ctag" "Open viewport and show ctag"]
+    ["c:o" "open-file" "Open file"]
+    ["c:t" "pop-csearch" "Open viewport and show csearch"]
+    ]
+  ]
+
+; Ideally, we would be able to display these to the user, let them edit, then read them back
+[define [set-keybindings a-keymap]
+  [send a-keymap add-function "close-varedit" shutdown-dispatcher]
+  
+  ;;; [send a-keymap add-function "pop-varedit" pop-varedit]
+  ;;; [send a-keymap add-function "pop-listvars" pop-listvars]
+  ;;; [send a-keymap add-function "pop-keybindings" pop-keybindings]
+  ;;; [send a-keymap add-function "pop-defs" pop-defs]
+  
+  ; [send a-keymap add-function "pop-csearch" pop-csearch]
+  
+  [send a-keymap add-function "close-viewport" close-viewport]
+  [send a-keymap add-function "abort-viewport" abort-viewport]
+  
+  [send a-keymap add-function "pop-viewport" pop-viewport]
+  ; [send a-keymap add-function "open-let" open-let1]
+
+  ; [send a-keymap add-function "eval-selection" eval-selection]
+  ; [send a-keymap add-function "open-mexpr" open-mexpr]
+  
+  ;[send a-keymap add-function "open-html" open-html]
+  
+  ; [send a-keymap add-function "system-command" system-command]
+  
+  [send a-keymap add-function "shutdown-dispatcher" shutdown-dispatcher]
+  ;[send a-keymap add-function "pop-command-viewport" pop-command-viewport]
+  [send a-keymap map-function "c:down" "shutdown-dispatcher"]
+  ;[send a-keymap add-function "open-file" open-file]
+  ;[send a-keymap map-function "c:," "close-let"]
+  
+  [map [lambda [definition]
+         ;[display [format "Binding ~a to ~a~n" [first definition] [second definition]]]
+         [send a-keymap map-function [first definition] [second definition]]]
+       keymaps]
+  ]
+
+  [define rebuild-let [lambda [defs-list code]
+                      [let [[str-port [open-output-string]]]
+                        [display [format "(let ("] str-port]
+                        [map [lambda [a-def] [when [> [length a-def] 1] [display [format "(~a ~a)\n" [car a-def] [cadr a-def]] str-port]]] defs-list]
+                        [display [format ")\n~a)" code] str-port]
+                        [get-output-string str-port]
+                        ]]]
+
+  [define insert-keybindings [lambda [a-text] [let [[ a-keymap [new keymap:aug-keymap%]]]
+                                              
+                                              [set-keybindings a-keymap]
+                                              
+                                              [send [send a-text get-keymap] chain-to-keymap a-keymap    #t]
+                                              ;[write  [send a-keymap get-map-function-table]]
+                                              
+                                              ;[write [send [send a-text get-keymap] get-map-function-table]]
+                                              ;[send t set-keymap a-keymap]
+                                              
+                                              
+                                              ;[write [send [car (send a-keymap get-chained-keymaps)] ]]
+                                              ]]]
+
+  
+
+  [define [add-shutdown-func an-editor l] [set! shutdown-funcs [cons [cons an-editor
+                                                                         [make-shutdown-func l]]  shutdown-funcs]]]
+;[send t set-clickback 0 3 [lambda [atext x y] [display "CLicky!"][newline]]]
+
+
+[define [shutdown-dispatcher b e] [ letrec [[snip [send  [send b get-admin] get-snip]]
+                                            [t [send [send snip get-admin] get-editor]]
+                                            [ed-snip [send snip get-editor]]
+                                            [shutdown-func   [cdr [assq snip shutdown-funcs]]]]
+                                     [shutdown-func b e]]]
+
+
+
+
+
+
+
+
+
+  
+[define [make-shutdown-func f]
+  [lambda [b e]  
+    [letrec [[snip [send  [send b get-admin] get-snip]]
+             [t [send [send snip get-admin] get-editor]]
+             [ed-snip [send snip get-editor]]
+             [text [f t snip [send ed-snip get-text 0 9999999]]]
+             [name [cdr [assq snip viewports-name]]]
+             [start [send t get-snip-position snip]]
+             [end [add1 start]]]
+      [send t kill 0 start end]
+      [newline]
+      [send t set-position start 'same]
+      [send t insert text]]]
+  ]
+
+  
+[define close-viewport [make-shutdown-func [lambda [parent child text] text]]]
+[define abort-viewport [make-shutdown-func [lambda [parent child text] ""]]]
+
+
+
+; The first function prepares to open the box.  The return value is placed in the box
+; The second function closes the box
+[define [make-pop-func f close-f] [lambda [t e editor-class%]
+                                    [letrec [[untrimmed-word [get-word t]]
+                                             [word [regexp-replace* "\\[|\\]|\\(|\\)" untrimmed-word ""]]
+                                             ]
+                                      ;[display [format "Found word: ~a~n" word]]
+                                      
+                                      [begin 
+                                        [let [[new-box [new editor-snip% [left-margin 20][max-width 40] [max-height 40]]]
+                                              [new-text [new editor-class%]]]
+                                          
+                                          [let [[replacement-text [f new-box word]]]
+                                            [when replacement-text
+                                              [zap-word t]
+                                              
+                                              
+                                              ;[let [[new-box [send t on-new-box 'text]]]
+                                              [send new-box set-editor new-text]
+                                              [send t insert new-box]
+                                              [set! viewports-name [cons [cons new-box word]  viewports-name]]
+                                              
+                                              
+                                              [send [send new-box get-editor] insert  [regexp-replace* "\r" replacement-text ""]]
+                                              [send [send new-box get-editor] set-caret-owner #f 'global]
+                                              [insert-keybindings [send new-box get-editor]]
+                                              
+                                              
+                                              [add-shutdown-func new-box close-f]]  shutdown-funcs]]]]]]
+
+
+[define defs '[["word" . 
+                       "The Helpful Editor will open a text portal when you press Control + Up.  Exactly 
+what appears in the portal depends on context.  Here it is just text, but it can 
+also be a code definition or the results of a function.  Portals can also nest:
+
+> Nesting <
+
+(Control + Up on 'Nesting')"]
+               ["Nesting" . "Portals can nest as deeply as you like.  To close a portal, press Control + Down"]
+               ; FIXME add actions like ["keybindings" . ,[lambda [x] [pop-keybindings]]]
+               ]]
+
+
+[define pop-viewport [make-pop-func [lambda [new-box word]  [letrec [[linked [assoc word defs]]]
+                                                              [set! viewports-name [cons [cons new-box word]  viewports-name]]
+                                                              [if linked [cdr linked] #f]]]
+                                    [lambda [parent child text] [cdr [assq child viewports-name]]]]]
+  
   ;Return longest string from a list
   [define longest-string [lambda [a-list] 
                          [let [[longest 0]]
