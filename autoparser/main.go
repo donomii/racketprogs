@@ -19,7 +19,7 @@ func main() {
 	for _, v := range fl {
 		l = append(l, Node{v, "", nil})
 	}
-	r, _ := treeify(l, false)
+	r, _, _ := treeify(l, false)
 	printTree(r)
 }
 
@@ -31,7 +31,7 @@ func printTree(t []Node) {
 			if v.Str == "" {
 				fmt.Print(v.Raw)
 			} else {
-				fmt.Print("\"", v.Str, "\"")
+				fmt.Print("\"|", v.Str, "|\"")
 			}
 		default:
 
@@ -60,48 +60,63 @@ func match(s string, l []Node) bool {
 	return false
 }
 
-func treeify(in []Node, str bool) ([]Node, []Node) {
-	o := []Node{}
+func treeify(in []Node, strMode bool) ([]Node, []Node, int) {
+	output := []Node{}
+	accum := []Node{}
 	for i := 0; i < len(in); i++ {
 		v := in[i]
+		//Move into accum
 		if match("import", in[i:]) || match("type", in[i:]) || match("func", in[i:]) {
-			o = append(o, Node{"", "🛑", nil})
+			output = append(output, Node{"", "🛑", accum})
+			accum = []Node{}
 			/*
 				llist := o
 				o = []Node{Node{"", "", llist}}
 			*/
 		}
 		switch v.Raw {
-		case "\"":
-			if str {
-				return o, in[i+1:]
+		case "\\":
+			vv := in[i+1]
+			if strMode {
+
+				accum = append(accum, Node{"", vv.Raw, nil})
 			} else {
-				sublist, _ := treeify(in[i+1:], true)
-				i = i + len(sublist)
-				o = append(o, Node{"", joinStr(sublist), nil})
+				accum = append(accum, Node{vv.Raw, "", nil})
+			}
+			i = i + 1
+		case "\"":
+			if strMode {
+				return accum, in[i+1:], i
+			} else {
+				var sublist []Node
+				sublist, in, i = treeify(in[i+1:], true)
+				i = -1
+				//i = i + len(sublist) + 1
+				accum = append(accum, Node{"\"", joinStr(sublist), nil})
 			}
 		case "{":
 			fallthrough
 		case "(":
-			sublist, rest := treeify(in[i+1:], false)
-			in = rest
+			var sublist []Node
+			sublist, in, i = treeify(in[i+1:], false)
+
 			i = -1
-			o = append(o, Node{"", "", sublist})
+			accum = append(accum, Node{"", "", sublist})
 		case "}":
 			fallthrough
 		case ")":
-			return o, in[i+1:]
+			return append(output, accum...), in[i+1:], i
 		default:
-			if str {
+			if strMode {
 
-				o = append(o, Node{"", v.Raw, nil})
+				accum = append(accum, Node{"", v.Raw, nil})
 			} else {
-				o = append(o, Node{v.Raw, "", nil})
+				accum = append(accum, Node{v.Raw, "", nil})
 			}
 		}
 
 	}
-	return o, []Node{}
+	return append(output, Node{"", "🛑", accum}), []Node{}, -1
 }
 
 func loadFile(path string) string {
