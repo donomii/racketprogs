@@ -20,9 +20,15 @@ To use commentary, you can use a binary release, or install the following:
 
 The binaries for gotags and csearch must be placed in the same directory as Commentary.
 
+You can install everything by running 'make'.
+
 Start commentary with 
 
     racket editor.rkt
+    
+or
+    
+    make run
 
 ## Use
 
