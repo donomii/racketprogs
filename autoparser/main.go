@@ -19,7 +19,7 @@ func main() {
 	for _, v := range fl {
 		l = append(l, Node{v, "", nil})
 	}
-	r, _, _ := treeify(l, false)
+	r, _, _ := groupify(l, false)
 	printTree(r)
 }
 
@@ -60,58 +60,63 @@ func match(s string, l []Node) bool {
 	return false
 }
 
-func treeify(in []Node, strMode bool) ([]Node, []Node, int) {
+func groupify(in []Node, strMode bool) ([]Node, []Node, int) {
 	output := []Node{}
 	accum := []Node{}
 	for i := 0; i < len(in); i++ {
 		v := in[i]
-		//Move into accum
-		if match("import", in[i:]) || match("type", in[i:]) || match("func", in[i:]) {
-			output = append(output, Node{"", "🛑", accum})
-			accum = []Node{}
-			/*
-				llist := o
-				o = []Node{Node{"", "", llist}}
-			*/
-		}
-		switch v.Raw {
-		case "\\":
-			vv := in[i+1]
-			if strMode {
-
+		if strMode {
+			switch v.Raw {
+			case "\\":
+				vv := in[i+1]
 				accum = append(accum, Node{"", vv.Raw, nil})
-			} else {
-				accum = append(accum, Node{vv.Raw, "", nil})
-			}
-			i = i + 1
-		case "\"":
-			if strMode {
+				i = i + 1
+			case "\"":
 				return accum, in[i+1:], i
-			} else {
+			default:
+
+				accum = append(accum, Node{"", v.Raw, nil})
+			}
+		} else {
+			switch v.Raw {
+			case "\\":
+				vv := in[i+1]
+
+				accum = append(accum, Node{vv.Raw, "", nil})
+
+				i = i + 1
+			case "\"":
+
 				var sublist []Node
-				sublist, in, i = treeify(in[i+1:], true)
+				sublist, in, i = groupify(in[i+1:], true)
 				i = -1
 				//i = i + len(sublist) + 1
 				accum = append(accum, Node{"\"", joinStr(sublist), nil})
-			}
-		case "{":
-			fallthrough
-		case "(":
-			var sublist []Node
-			sublist, in, i = treeify(in[i+1:], false)
 
-			i = -1
-			accum = append(accum, Node{"", "", sublist})
-		case "}":
-			fallthrough
-		case ")":
-			return append(output, accum...), in[i+1:], i
-		default:
-			if strMode {
+			case "{":
+				fallthrough
+			case "(":
+				var sublist []Node
+				sublist, in, i = groupify(in[i+1:], false)
 
-				accum = append(accum, Node{"", v.Raw, nil})
-			} else {
+				i = -1
+				accum = append(accum, Node{"", "", sublist})
+			case "}":
+				fallthrough
+			case ")":
+				return append(output, accum...), in[i+1:], i
+			default:
+
+				if match("import", in[i:]) || match("type", in[i:]) || match("func", in[i:]) {
+					//There are several different situations here
+					// 1.Capture the accumulator (e.g. we are in a list)
+					// 2.Capture the next next subtree (or more), join with the current node
+					//   e.g. a type or function definition, or aprocedure call
+					output = append(output, Node{"", "🛑", accum})
+					accum = []Node{}
+				}
 				accum = append(accum, Node{v.Raw, "", nil})
+
 			}
 		}
 
