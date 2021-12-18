@@ -20,6 +20,7 @@ func main() {
 		l = append(l, Node{v, "", nil})
 	}
 	r, _, _ := groupify(l, false)
+	r = keywordBreak(r, []string{"import", "type", "func"})
 	//Need to split on spaces and merge beforedoing binops
 	//s := groupBinops(Node{"", "", r})
 	printTree(r)
@@ -27,16 +28,14 @@ func main() {
 
 func printTree(t []Node) {
 	for _, v := range t {
-		switch v.List {
-
-		case nil:
+		if v.List == nil {
 			if v.Str == "" {
 				fmt.Print(v.Raw)
 			} else {
-				fmt.Print("\"|", v.Str, "|\"")
+				fmt.Print("『", v.Str, "』")
 			}
-		default:
 
+		} else {
 			fmt.Print("「")
 			printTree(v.List)
 			fmt.Print("」")
@@ -51,9 +50,20 @@ func joinStr(in []Node) string {
 	}
 	return o
 }
+
+func joinRaw(in []Node) string {
+	o := ""
+	for _, v := range in {
+		o = o + v.Raw
+	}
+	return o
+}
 func match(s string, l []Node) bool {
-	if len(l) == 0 || len(s) == 0 {
+	if len(s) == 0 {
 		return true
+	}
+	if len(l) == 0 {
+		return false
 	}
 	//fmt.Println("Comparing ", s[0:1], "with", l[0].Raw)
 	if s[0:1] == l[0].Raw {
@@ -71,59 +81,79 @@ func groupify(in []Node, strMode bool) ([]Node, []Node, int) {
 			switch v.Raw {
 			case "\\":
 				vv := in[i+1]
-				accum = append(accum, Node{"", vv.Raw, nil})
+				accum = append(accum, vv)
 				i = i + 1
 			case "\"":
 				return accum, in[i+1:], i
-			default:
 
-				accum = append(accum, Node{"", v.Raw, nil})
+			default:
+				accum = append(accum, v)
 			}
 		} else {
 			switch v.Raw {
 			case "\\":
 				vv := in[i+1]
-
-				accum = append(accum, Node{vv.Raw, "", nil})
-
+				accum = append(accum, vv)
 				i = i + 1
 			case "\"":
-
 				var sublist []Node
 				sublist, in, i = groupify(in[i+1:], true)
 				i = -1
-				//i = i + len(sublist) + 1
-				accum = append(accum, Node{"\"", joinStr(sublist), nil})
+				fmt.Printf("Found string: %s\n", joinRaw(sublist))
+				n := Node{Str: joinRaw(sublist)}
+				fmt.Printf("Found node: %+v\n", n)
+				accum = append(accum, n)
 
+			case "[":
+				fallthrough
 			case "{":
 				fallthrough
 			case "(":
 				var sublist []Node
 				sublist, in, i = groupify(in[i+1:], false)
-
 				i = -1
 				accum = append(accum, Node{"", "", sublist})
+			case "]":
+				fallthrough
 			case "}":
 				fallthrough
 			case ")":
 				return append(output, accum...), in[i+1:], i
-			default:
 
-				if match("import", in[i:]) || match("type", in[i:]) || match("func", in[i:]) {
-					//There are several different situations here
-					// 1.Capture the accumulator (e.g. we are in a list)
-					// 2.Capture the next next subtree (or more), join with the current node
-					//   e.g. a type or function definition, or aprocedure call
-					output = append(output, Node{"", "🛑", accum})
-					accum = []Node{}
-				}
-				accum = append(accum, Node{v.Raw, "", nil})
+			default:
+				accum = append(accum, v)
 
 			}
 		}
 
 	}
-	return append(output, Node{"", "🛑", accum}), []Node{}, -1
+	return append(output, accum...), []Node{}, -1
+}
+
+func keywordBreak(in []Node, keywords []string) []Node {
+	output := []Node{}
+	accum := []Node{}
+	for i := 0; i < len(in); i++ {
+		v := in[i]
+		if v.List == nil {
+			for _, keyword := range keywords {
+				if match(keyword, in[i:]) {
+					//There are several different situations here
+					// 1.Capture the accumulator (e.g. we are in a list)
+					// 2.Capture the next next subtree (or more), join with the current node
+					//   e.g. a type or function definition, or aprocedure call
+					output = append(output, Node{"", "🛑", accum})
+					//accum = []Node{}
+					accum = []Node{{"", "🛑", nil}}
+					continue
+				}
+			}
+			accum = append(accum, v)
+		} else {
+			accum = append(accum, Node{"", "", keywordBreak(v.List, keywords)})
+		}
+	}
+	return append(output, accum...)
 }
 
 func groupBinops(in Node) Node {
