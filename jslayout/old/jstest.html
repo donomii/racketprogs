@@ -1,0 +1,242 @@
+<html>
+<script src="jquery.js"></script>
+<script src="jQueryRotateCompressed.js"></script>
+
+<script>
+
+var top_pos = 0;
+var objs = [];
+//var textarr = "This is a demo of a newline manual layout engine in Javascript.".split(/\s+/);  
+var textarr = "WIDTH if (this.myAngle) { newline return this.height() + 20; newline } else { newline return this.width() + 20; newline };".split(/\s+/);  
+//var circarr = "It can arrange text in ways that ordinary HTML cannot.".split(/\s+/);
+
+var viewportWidth = $(window).width()-200;
+var viewportHeight = $(window).height()-200;
+var mousePageCoords = [500,500];
+var mouseClientCoords = [0,0];
+function createDiv(htmlStr) {
+    var frag = document.createDocumentFragment(),
+        temp = document.createElement('div');
+    temp.innerHTML = htmlStr;
+    while (temp.firstChild) {
+        frag.appendChild(temp.firstChild);
+    }
+    document.body.insertBefore(frag, document.body.childNodes[0]);
+    return temp;
+}
+
+
+
+
+function gObj (someText, index) {
+this.index = index;
+this.top=400;
+this.left=10;
+this.oldLeft=0;
+this.oldTop=0;
+this.myAngle=0;
+this.redrawMe=2;
+this.circle=0;
+this.t=this.index;
+this.value=someText;
+this.fragment = $("<div style='font-size:200%;display:block;position: absolute;left:100px;top:100px'>" + someText + "</div>");
+
+$("body").append(this.fragment);
+var thisObj = this;
+this.width=function() { return this.fragment.width();};
+this.height=function() { return this.fragment.height();};
+
+this.vwidth=function() { 
+if (this.myAngle) {
+return this.height()+20;
+} else {
+return this.width()+20;};
+}
+
+this.vheight=function() { 
+if (this.myAngle) {
+return this.width();
+} else {
+return this.height();};}
+
+this.vtop=function() { if (this.myAngle) {
+//return this.top +this.height()/2 - this.width()/2;
+return this.fragment.offset().top;
+
+} else {
+return this.top;}};
+
+this.vleft=function() { if (this.myAngle) {
+//return this.left + this.width()/2 - this.height()/2;
+return this.fragment.offset().left;
+} else {
+return this.left;};}
+
+
+this.setText = function (someText) {
+this.fragment.remove();
+this.fragment = $("<div style=' position: absolute;left:100px;top:100px'>" + someText + "</div>");
+  this.redrawMe=2;
+};
+
+this.reposition = function () {
+
+};
+
+
+this.overlaps = function (anindex) {
+if (anindex==this.index){return 0;}
+if (anindex==0){return 0;}
+
+var x11=thisObj.vleft();
+var y11=thisObj.vtop();
+var x12=x11+thisObj.vwidth();
+var y12=y11+thisObj.vheight();
+var x21=objs[anindex].vleft();
+var y21=objs[anindex].vtop();
+var x22=x21+objs[anindex].vwidth();
+var y22=y21+objs[anindex].vheight();
+
+var x_overlap = Math.max(0, Math.min(x12,x22) - Math.max(x11,x21))
+var y_overlap = Math.max(0, Math.min(y12,y22) - Math.max(y11,y21));
+//alert([anindex,x21,y21,x_overlap,y_overlap]);
+return x_overlap*y_overlap;
+};
+
+this.overlapsAny = function () {
+var overLaps=0;
+objs.forEach(function(o){if (o.overlaps(thisObj.index)){overLaps+=o.overlaps(thisObj.index);}});
+return overLaps;
+};
+
+this.rePosition = function (tries) {
+if (tries--<0) {return 0;}
+if (thisObj.overlapsAny()) {alert([thisObj.index, thisObj.left, thisObj.overlapsAny()]);thisObj.left=thisObj.vleft()+5;thisObj.rePosition(tries)}
+};
+
+this.runObj = function () {
+  //$("processing").rotate(-90);
+ if (thisObj.value.match(/.\(/)) {
+ thisObj.fragment.css({ "font-weight" : " bold"});
+  thisObj.fragment.css({ "font-size" : "200%"});
+  
+ }
+ if (thisObj.redrawMe ){
+  thisObj.redrawMe--;
+  if(thisObj.index==0) { 
+  thisObj.myAngle=-90; 
+  thisObj.fragment.attr("position", "fixed");
+  thisObj.fragment.rotate(thisObj.myAngle);
+  thisObj.fragment.css({"color" : "orange"});  
+  thisObj.fragment.css({ "font-weight" : " bold"});
+  thisObj.fragment.css({ "font-size" : "300%"});
+  //thisObj.top=this.fragment.offset().top + 400;
+  //thisObj.left=this.fragment.offset().left;
+  }
+ 
+ //$( "#processing" ).text( "object : " + thisObj.index );
+  
+  //alert([thisObj.value,objs[thisObj.index].left ]);
+  //if (index>0) {alert([thisObj.value,objs[thisObj.index].left,objs[thisObj.index].top ]);}
+  if (thisObj.index>0) {
+      thisObj.left = objs[thisObj.index-1].vleft();// + objs[thisObj.index-1].vwidth();
+      thisObj.top = objs[thisObj.index-1].vtop() ;
+   }
+   if(thisObj.index==1) {
+  //thisObj.left = objs[thisObj.index-1].vleft();
+  //thisObj.top = objs[thisObj.index-1].vtop();
+   
+   }
+       thisObj.rePosition(100);
+  if (thisObj.value=='newline') {
+	thisObj.fragment.css("display", "none");
+  	thisObj.left=1;
+	thisObj.top=objs[thisObj.index-1].vtop() + thisObj.vheight();
+   
+  }
+        
+      //thisObj.left = thisObj.left + 20*(thisObj.left - mousePageCoords[0])/Math.abs(thisObj.left - mousePageCoords[0]);
+      //thisObj.top += 
+      if (thisObj.left + thisObj.width() > viewportWidth) {
+	thisObj.left=1;
+	thisObj.top=objs[thisObj.index-1].vtop + thisObj.vheight();
+      }
+  
+  //var dist = Math.sqrt((thisObj.top - mousePageCoords[1])*(thisObj.top - mousePageCoords[1]) + (thisObj.left - mousePageCoords[0])*(thisObj.left - mousePageCoords[0]));
+  //alert(dist);
+  //alert([thisObj.value, thisObj.left ]);
+  if (!(thisObj.left==thisObj.oldLeft)) {
+  thisObj.fragment.css("left" , "" + thisObj.left );//+ (thisObj.left - mousePageCoords[0])/Math.abs((thisObj.left - mousePageCoords[0]))* Math.round(150/dist)+"px");
+  thisObj.oldLeft=thisObj.left;
+  }
+  if (!(thisObj.top==thisObj.oldTop)) {
+  thisObj.fragment.css( "top" , "" + thisObj.top );//+ (thisObj.top - mousePageCoords[1])/Math.abs((thisObj.top - mousePageCoords[1]))* Math.round(50/dist) +"px");
+  thisObj.oldTop=thisObj.top
+  }
+  if (thisObj.top>viewportHeight) {
+      thisObj.fragment.attr("display", "hidden");
+  } else {
+      thisObj.fragment.attr("display", "block");
+  }
+  //alert([thisObj.value, thisObj.left]);
+}
+};
+
+//setInterval(this.runObj, 5000);
+
+}
+// You can use native DOM methods to insert the fragment:
+var loopI=0;
+function loopAll () {
+
+//objs.forEach(function (anObj) { anObj.runObj(); } );
+for (var j=0;j<1;j++){
+objs[loopI++].runObj();
+if (!(loopI<objs.length)) {loopI=0;}
+setTimeout(loopAll, 400);
+}
+}
+
+function assignText (start) {
+for (var j = 0; j<1000 ; j++) {
+objs[j].setText(textarr[j+start]);
+}
+}
+
+function start() {
+textarr.forEach(function (aText, index) { objs.push(new gObj(aText, index));} );
+//circarr.forEach(function (aText, index) { var o = new gObj(aText, index); o.circle=1;objs.push(o);} );
+//for ( var j=0;  j<1000; j++ ) { objs.push(new gObj("gObj", j));}
+//assignText(0);
+loopAll();
+$(window).resize(function() {
+viewportWidth = $(window).width();
+viewportHeight = $(window).height();
+});
+
+$("body").mousemove(function(e){
+      //alert(e);
+      var event=e;
+      mousePageCoords = [ e.pageX , e.pageY ];
+      //alert(mousePageCoords);
+      mouseClientCoords = [ e.clientX , e.clientY ];
+      var pageCoords = "( " + event.pageX + ", " + event.pageY + " )";
+  var clientCoords = "( " + event.clientX + ", " + event.clientY + " )";
+  //$( "span:first" ).text( "( event.pageX, event.pageY ) : " + pageCoords );
+  //$( "span:last" ).text( "( event.clientX, event.clientY ) : " + clientCoords );
+     });
+    
+setTimeout(mainLoop, 10);
+}
+
+function mainLoop () {
+
+setTimeout(mainLoop, 10);
+}
+
+</script>
+<body onload="start();">
+
+</body>
+<span>X</span><div id="processing" style="display:none;rotate:-90;">OBJECT</div><span>Y</span>
+</html>

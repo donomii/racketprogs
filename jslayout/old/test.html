@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" class="client-nojs">
+<head>
+<title>Test</title>
+
+<body >
+		<div id="out"><script>
+		native_string_to_atom = function (a_string) { return make_atom({ data: a_string});}
+		show = function (an_obj) {alert(JSON.stringify(an_obj));}
+		resolve = function (an_atom, a_continuation) {
+		//show(a_continuation);
+		if (a_continuation.environment.data[an_atom.data] ) { return 1; }
+		return 0;
+		}
+		dispatch = function (an_atom, a_continuation) { 
+			func = a_continuation.environment.data[an_atom.data];
+		  if ( func  ) {
+		       return func(an_atom, a_continuation);
+		  }
+		 }
+		copy = function (an_obj) {return JSON.parse(JSON.stringify(an_obj));}
+		make_atom = function (a_hash) { return a_hash; }
+		new_continuation = function(){ var con =  make_atom({ building_function: [], flag: {endLambda: '[', building_lambda:0}, environment: [], data : [], instructions : [], 				namespaces : make_atom(
+				{data : 
+					{ 'root' : make_atom({data : {}})}})});
+		con["environment"] = con.namespaces.data.root; 
+		return con;
+					};
+make_continuation = function(some_flags, a_building_function, some_data, some_instructions, namespaces, an_environment ){ return make_atom({building_function: a_building_function, flag: some_flags, environment: an_environment, data : some_data, instructions : some_instructions, namespaces : make_atom({data : { 'root' : make_atom({data : {}})}})}); };
+		engine_step = function (a_continuation) {
+		//alert(JSON.stringify(copy(a_continuation["instructions"])));
+		  var data = copy(a_continuation["data"]);
+		  var instructions = copy(a_continuation["instructions"]);
+		  //alert(JSON.stringify(instructions));
+		  var return_continuation = a_continuation;
+		  //If there are instructions left to process
+		  if(instructions.length > 0 ) {
+		    //show(instructions);
+		    var instr = instructions.shift();
+		    var temp_con = make_continuation(a_continuation.flag, a_continuation.building_function, data, instructions, a_continuation.namespaces, a_continuation.environment);
+		    // First check if it is one of the super-special characters
+		    if(instr.data == temp_con.flag.endLambda) {
+			temp_con.flag.building_lambda-=1;;
+			//Check if we just completed a function
+			if (temp_con.flag.building_lambda == 0) {
+				temp_con.instructions.unshift(make_atom({data : "ASSEMBLE-LAMBDA"}));
+			}
+		    }
+		    else {
+		    //If we are building a function
+		    if ( temp_con.flag.building_lambda > 0 ) {
+			//unshift the atom onto the currently building function
+			temp_con.building_function.unshift(instr);
+		    }
+		    else {	
+		    //If it is bound in the namespace
+		    if(resolve(instr, temp_con)) {
+		      //Activate the bound function or datum
+		      temp_con = dispatch(instr, temp_con);
+		    } else {
+		      //It's either data or a syntax error, depending on the mode
+		      temp_con.data.unshift(instr);
+		      
+		      
+		    }
+		    }
+                    }
+		  }
+		  return temp_con;
+		}
+			add_native_function = function (a_continuation, a_string, a_function_pointer) {return a_continuation.environment.data[a_string] = a_function_pointer;}  ;
+		
+		var con = new_continuation();
+		add_native_function (con, "print", function(an_atom, b_continuation){
+			arg = b_continuation.data.shift();
+			document.write(arg.data);
+			return b_continuation;
+});
+		add_native_function (con, "ASSEMBLE-LAMBDA", function(an_atom, b_continuation){
+			 b_continuation.data.unshift(make_atom({data: b_continuation.building_function}));
+			return b_continuation;
+});
+		add_native_function(con, "call", function(an_atom, b_continuation){
+		        arg = b_continuation.data.shift();
+			show(arg);
+		    for (var i=0,len=arg.data.length; i<len; i++)
+		    { 
+			b_continuation.instructions.unshift ( arg.data[i] ) ;
+		     }
+			show(b_continuation);
+			return b_continuation;
+		});
+		add_native_function(con, "parse", function(an_atom, b_continuation){
+		        arg = b_continuation.data.shift();
+			show(arg);
+			var a_list = make_atom({ data: arg.data.split(" ").map(function(x){return ({data: x})})});
+	        b_continuation.data.unshift(a_list);
+		  
+			return b_continuation;
+		});
+		add_native_function(con, "start_lambda", function(an_atom, b_continuation){
+		        b_continuation.flag.building_lambda++;
+			return b_continuation;
+		});
+		add_native_function(con, "end_lambda", function(an_atom, b_continuation){
+		        b_continuation.flag.building_lambda--;
+			return b_continuation;
+		});
+		prepString = function (a_string, a_continuation) { 
+		  a_continuation.data.unshift({ data: a_string });
+		  a_continuation.instructions.unshift({ data: "call"});
+		  a_continuation.instructions.unshift({ data: "parse"});
+		  return a_continuation;
+		};
+		  interpreterLoop = function (a_continuation) {
+		    while(a_continuation.instructions.length>0) {
+		      document.write(JSON.stringify(a_continuation));
+		document.write("<br/><br/>");
+		      a_continuation = engine_step(a_continuation);
+		    }
+		  };
+		 con=prepString("call [ test print ItWorks! start_lambda print <br/> print World print Hello", con);
+		  interpreterLoop(con);
+
+		
+		</script></div>
+</body>
+</html>
