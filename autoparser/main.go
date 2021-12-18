@@ -20,6 +20,8 @@ func main() {
 		l = append(l, Node{v, "", nil})
 	}
 	r, _, _ := groupify(l, false)
+	//Need to split on spaces and merge beforedoing binops
+	//s := groupBinops(Node{"", "", r})
 	printTree(r)
 }
 
@@ -53,7 +55,7 @@ func match(s string, l []Node) bool {
 	if len(l) == 0 || len(s) == 0 {
 		return true
 	}
-	fmt.Println("Comparing ", s[0:1], "with", l[0].Raw)
+	//fmt.Println("Comparing ", s[0:1], "with", l[0].Raw)
 	if s[0:1] == l[0].Raw {
 		return match(s[1:], l[1:])
 	}
@@ -122,6 +124,32 @@ func groupify(in []Node, strMode bool) ([]Node, []Node, int) {
 
 	}
 	return append(output, Node{"", "🛑", accum}), []Node{}, -1
+}
+
+func groupBinops(in Node) Node {
+	accum := []Node{}
+	if in.List == nil {
+
+		return in
+	} else {
+		for i := 0; i < len(in.List); i++ {
+			v := in.List[i]
+
+			if match("==", in.List[i:]) {
+				fmt.Printf("Found ==\n")
+				first := in.List[i-1]
+				second := in.List[i+1]
+				firstret := groupBinops(first)
+				secondret := groupBinops(second)
+				return Node{"", "", []Node{v,
+					firstret,
+					secondret}}
+			}
+			accum = append(accum, groupBinops(v))
+		}
+	}
+
+	return Node{"", "", accum}
 }
 
 func loadFile(path string) string {
