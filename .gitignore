@@ -1,4 +1,5 @@
 *.bak
+*~
 actinic/src/actinic/compiled/*
 fetchbot/rip/*
 fetchbot/ripper.exe
