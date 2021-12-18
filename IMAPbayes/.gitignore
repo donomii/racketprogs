@@ -1,0 +1,14 @@
+
+*.perl
+
+config.perl
+
+*.bak
+
+log
+
+nnet_email
+
+*.net
+
+*.perl
