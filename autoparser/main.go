@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -13,16 +14,18 @@ type Node struct {
 }
 
 func main() {
-	f := loadFile("main.go")
+	fname := flag.String("f", "main.go", "File to parse")
+	flag.Parse()
+	f := loadFile(*fname)
 	fl := strings.Split(f, "")
 	l := []Node{}
 	for _, v := range fl {
 		l = append(l, Node{v, "", nil})
 	}
 	r, _, _ := groupify(l, false)
-	r = keywordBreak(r, []string{"import", "type", "func"})
+	r = keywordBreak(r, []string{"import", "type", "func", "\n"})
 	//Need to split on spaces and merge beforedoing binops
-	//s := groupBinops(Node{"", "", r})
+	r = groupBinops(r)
 	printTree(r)
 }
 
@@ -156,30 +159,33 @@ func keywordBreak(in []Node, keywords []string) []Node {
 	return append(output, accum...)
 }
 
-func groupBinops(in Node) Node {
+func groupBinops(in []Node) []Node {
 	accum := []Node{}
-	if in.List == nil {
 
-		return in
-	} else {
-		for i := 0; i < len(in.List); i++ {
-			v := in.List[i]
+	for i := 0; i < len(in); i++ {
+		v := in[i]
 
-			if match("==", in.List[i:]) {
-				fmt.Printf("Found ==\n")
-				first := in.List[i-1]
-				second := in.List[i+1]
-				firstret := groupBinops(first)
-				secondret := groupBinops(second)
-				return Node{"", "", []Node{v,
-					firstret,
-					secondret}}
+		if match(":=", in[i:]) {
+			fmt.Printf("Found ==\n")
+			first := in[0:i]
+			second := in[i+1:] //FIXME need to skip length of match
+			firstret := groupBinops(first)
+			secondret := groupBinops(second)
+			v.Raw = "define"
+			return []Node{v,
+				{List: firstret},
+				{List: secondret},
 			}
-			accum = append(accum, groupBinops(v))
+
+		}
+		if v.List == nil {
+			accum = append(accum, v)
+		} else {
+			accum = append(accum, Node{List: groupBinops(v.List)})
 		}
 	}
 
-	return Node{"", "", accum}
+	return accum
 }
 
 func loadFile(path string) string {
