@@ -18,13 +18,15 @@ func main() {
 	fname := flag.String("f", "main.go", "File to parse")
 	flag.Parse()
 	f := loadFile(*fname)
-	fmt.Println("Parsing file:", f)
+	//fmt.Println("Parsing file:", f)
 	fl := strings.Split(f, "")
 	l := []Node{}
 	for _, v := range fl {
 		l = append(l, Node{v, "", nil})
 	}
-	r, _, _ := groupify(l, false)
+	r, _ := stringify(l, "//", "\n", "\\", "")
+	printTree(r, 0, false)
+	r, _, _ = groupify(r, "")
 	r = keywordBreak(r, []string{"import", "type", "func", "\n"})
 	r = mergeNonWhiteSpace(r)
 	r = stripNL(r)
@@ -51,6 +53,20 @@ func containsLists(l []Node, max int) bool {
 	return count > max
 }
 
+//Count the number of elements in a tree
+func countTree(t []Node) int {
+	count := 0
+	for _, v := range t {
+		if v.List != nil {
+			count = count + countTree(v.List)
+		} else {
+			count = count + 1
+		}
+	}
+	return count
+}
+
+//)))
 func printTree(t []Node, indent int, newlines bool) {
 	for _, v := range t {
 		if v.List == nil {
@@ -65,8 +81,11 @@ func printTree(t []Node, indent int, newlines bool) {
 
 		} else {
 			if containsLists(v.List, 3) {
-				fmt.Print("\n")
-				printIndent(indent+1, "_")
+				if countTree(v.List) > 50 {
+
+					fmt.Print("\n")
+					printIndent(indent+1, "_")
+				}
 				fmt.Print("(")
 				printTree(v.List, indent+2, true)
 				print("\n")
@@ -114,19 +133,59 @@ func match(s string, l []Node) bool {
 	}
 	return false
 }
+func stringify(in []Node, start, end, escape, strMode string) ([]Node, []Node) {
+	accum := []Node{}
+	for i := 0; i < len(in); i++ {
+		v := in[i]
+		if v.List != nil {
+			var ret []Node
+			ret, in = stringify(v.List, start, end, escape, strMode)
+			i = -1
+			accum = append(accum, Node{List: ret})
+		} else {
+			if strMode != "" {
+				switch {
+				case match(escape, in[i:]):
+					vv := in[i+len(escape)]
+					accum = append(accum, vv)
+					i = i + len(escape)
+				case match(end, in[i:]):
+					return accum, in[i+len(end):]
 
-func groupify(in []Node, strMode bool) ([]Node, []Node, int) {
+				default:
+					accum = append(accum, v)
+				}
+			} else {
+				switch {
+				case match(start, in[i:]):
+					var sublist []Node
+					sublist, in = stringify(in[i+len(start):], start, end, escape, end)
+					i = -1
+					//fmt.Printf("Found string: %s\n", joinRaw(sublist))
+					n := Node{Str: joinRaw(sublist)}
+					//fmt.Printf("Found node: %+v\n", n)
+					accum = append(accum, n)
+
+				default:
+					accum = append(accum, v)
+				}
+			}
+		}
+	}
+	return accum, []Node{}
+}
+func groupify(in []Node, strMode string) ([]Node, []Node, int) {
 	output := []Node{}
 	accum := []Node{}
 	for i := 0; i < len(in); i++ {
 		v := in[i]
-		if strMode {
+		if strMode != "" {
 			switch v.Raw {
 			case "\\":
 				vv := in[i+1]
 				accum = append(accum, vv)
 				i = i + 1
-			case "\"":
+			case strMode:
 				return accum, in[i+1:], i
 
 			default:
@@ -140,7 +199,7 @@ func groupify(in []Node, strMode bool) ([]Node, []Node, int) {
 				i = i + 1
 			case "\"":
 				var sublist []Node
-				sublist, in, i = groupify(in[i+1:], true)
+				sublist, in, i = groupify(in[i+1:], "\"")
 				i = -1
 				//fmt.Printf("Found string: %s\n", joinRaw(sublist))
 				n := Node{Str: joinRaw(sublist)}
@@ -153,7 +212,7 @@ func groupify(in []Node, strMode bool) ([]Node, []Node, int) {
 				fallthrough
 			case "(":
 				var sublist []Node
-				sublist, in, i = groupify(in[i+1:], false)
+				sublist, in, i = groupify(in[i+1:], strMode)
 				i = -1
 				accum = append(accum, Node{"", "", sublist})
 			case "]":
