@@ -1,7 +1,7 @@
 all: deps build install
 
 deps:
-	go get -u -v "github.com/google/uuid" "github.com/gin-gonic/gin" "github.com/philippgille/gokv/badgerdb" "github.com/donomii/throfflib"
+	go get -v "github.com/google/uuid" "github.com/gin-gonic/gin" "github.com/philippgille/gokv/badgerdb" "github.com/donomii/throfflib"
 
 clean:
 	rm -r build
@@ -15,9 +15,9 @@ build: *.go
 	cd build && cat ../create.txt | ./pmoo --batch --debug
 
 install: build
-	cp pmoo ~/.local/bin/
-	cp pmoo ~/.local/bin/p
-	cp queue ~/.local/bin/
+	cp build/pmoo ~/.local/bin/
+	cp build/pmoo ~/.local/bin/p
+	cp build/queue ~/.local/bin/
 
 run:
 	./pmoo

@@ -222,7 +222,6 @@ func MOOloop(inQ chan *Message, player string) {
 		dobj, dpropstr := ParseDo(dobjstr, player)
 		iobj, ipropstr := ParseDo(iobjstr, player)
 
-		log.Printf("Searching for verb '%v' in '%v'", verb, player)
 		thisObj, _ := VerbSearch(LoadObject(player), verb)
 
 		if thisObj == nil {
