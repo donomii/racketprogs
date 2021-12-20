@@ -184,7 +184,7 @@ func LoadObject(id string) *Object {
 		return FetchObject(QueueServer, id)
 	} else {
 		name := DataDir + "/" + id + ".json"
-		log.Println("Loading '" + name+"'")
+		//log.Println("Loading '" + name+"'")
 		file, err := ioutil.ReadFile(name)
 		if err != nil {
 			log.Println("Failed to load"+ name)
@@ -218,7 +218,7 @@ func GetPropertyStruct(o *Object, name string, timeout int) *Property {
 	if o == nil {
 		return nil
 	}
-	log.Printf("Searching %v\n", fmt.Sprintf("%v", o.Id))
+	log.Printf("Searching for property %v in %v\n", name,  o.Id)
 	val, ok := o.Properties[name]
 	if ok {
 		if val.Verb {
@@ -261,13 +261,25 @@ func GetVerb(objstr, name string) string {
 }
 
 func GetVerbStruct(o *Object, name string, timeout int) *Property {
+	if o == nil {
+		return nil
+	}
+	log.Printf("Searching for verb '%v' in '%v'", name, o.Id)
 	//log.Println(o)
 	if timeout < 1 {
 		log.Printf("Timeout while looking up %v on %v\n", name, o.Id)
 		return nil
 	}
-	if o == nil {
-		return nil
+
+	val, ok := o.Properties[name]
+	if ok {
+		if val.Verb {
+			log.Printf("Found %v in %v", name, o.Id)
+		return &val
+		}
+		//Property is not a verb.  Maybe we should stop here anyway?
+	} else {
+		//log.Printf("Verb not found in %v", o.Properties)
 	}
 
 	parentProp, ok := o.Properties["parent"]
@@ -276,22 +288,13 @@ func GetVerbStruct(o *Object, name string, timeout int) *Property {
 		panic(fmt.Sprintf("No parent for %v when looking for verb %v in %v", o.Id, name, o.Id))
 	}
 	parent := parentProp.Value
-
-	val, ok := o.Properties[name]
-	if ok {
-		if !val.Verb {
-			//fmt.Printf("Can't find verb '%v', but could find property '%v'\n", name, name)
-			//return nil
-			return GetVerbStruct(LoadObject(parent), name, timeout-1)
-		}
-		return &val
-	}
-
 	//log.Printf("Searching %v, then parent %v\n", fmt.Sprintf("%v", o.Id), parent)
 	//Object points to itself, time to quit
-	if parent == fmt.Sprintf("%v", o.Id) {
+	if parent == o.Id {
+		log.Printf("No more parents to search.  Search failed\n")
 		return nil
 	}
+
 	return GetVerbStruct(LoadObject(parent), name, timeout-1)
 }
 
@@ -564,19 +567,22 @@ func BuildDefinitions(player, this, verb, dobj, dpropstr, prepositionStr, iobj, 
 }
 
 func VerbSearch(o *Object, aName string) (*Object, *Property) {
-	log.Println("Searching for verb", aName, "in",o)
+	log.Println("Searching for verb", aName, "in",o.Id)
 	locId := GetPropertyStruct(o, "location", 10).Value
 	loc := LoadObject(locId)
 	roomContents := SplitStringList(GetPropertyStruct(loc, "contents", 10).Value)
 	playerContents := SplitStringList(GetPropertyStruct(o, "contents", 10).Value)
-	contents := append([]string{ToStr(o.Id), locId}, roomContents...)
+	contents := append([]string{o.Id, locId}, roomContents...)
 	contents = append(contents, playerContents...)
 	for _, objId := range contents {
+		if objId != "" {
+		log.Println("Loading object from contents: '"+ objId+"'")
 		obj := LoadObject(objId)
 		nameProp := GetVerbStruct(obj, aName, 10)
 		if nameProp != nil {
 			return obj, nameProp
 		}
+	}
 	}
 
 	log.Printf("Failed to find verb %v here!\n", aName)
@@ -604,9 +610,10 @@ func VerbList(player string) []string {
 	loc := LoadObject(locId)
 	roomContents := SplitStringList(GetPropertyStruct(loc, "contents", 10).Value)
 	playerContents := SplitStringList(GetPropertyStruct(o, "contents", 10).Value)
-	contents := append([]string{ToStr(o.Id), locId}, roomContents...)
+	contents := append([]string{o.Id, locId}, roomContents...)
 	contents = append(contents, playerContents...)
 	for _, objId := range contents {
+		log.Println("Loading object from contents:", objId)
 		obj := LoadObject(objId)
 		for name, s := range obj.Properties {
 			if s.Verb {
@@ -625,14 +632,17 @@ func NameSearch(o *Object, aName, player string) (*Object, *Property) {
 	contents := SplitStringList(GetPropertyStruct(loc, "contents", 10).Value)
 	playerContents := SplitStringList(GetPropertyStruct(LoadObject(player), "contents", 10).Value)
 	contents = append(contents, playerContents...)
-	log.Println("Found contents", contents)
-	contents = append([]string{locId, ToStr(o.Id)}, contents...)
+	contents = append([]string{o.Id, locId}, contents...)
+	log.Println("Searching these objects:", contents)
 	for _, objId := range contents {
-		obj := LoadObject(objId)
-		nameProp := GetPropertyStruct(obj, "name", 10)
-		if nameProp != nil {
-			if nameProp.Value == aName {
-				return obj, nameProp
+		if objId != "" {
+			log.Printf("Searching in %v", objId)
+			obj := LoadObject(objId)
+			nameProp := GetPropertyStruct(obj, "name", 10)
+			if nameProp != nil {
+				if nameProp.Value == aName {
+					return obj, nameProp
+				}
 			}
 		}
 	}
@@ -644,7 +654,7 @@ func NameSearch(o *Object, aName, player string) (*Object, *Property) {
 
 func ParseDo(s string, playerId string) (string, string) {
 	s = strings.Trim(s, " \n\r")
-	log.Printf("Parsing '%v', len: %v\n", []byte(s), len(s))
+	log.Printf("Parsing '%v', len: %v\n", string([]byte(s)), len(s))
 	if playerId == "" {
 		return "", ""
 	}
@@ -674,7 +684,7 @@ func ParseDo(s string, playerId string) (string, string) {
 		return objstr, ""
 	}
 
-	//It's an object number
+	//It's an object id
 	if len(s) > 0 && s[0] == '#' {
 		s = s[1:]
 		log.Println("Splitting", s, "on", ".")
@@ -690,6 +700,7 @@ func ParseDo(s string, playerId string) (string, string) {
 	}
 
 	//Note that only the object has to exist.  The property might not have been created yet
+	//FIXME this is not a good way to handle it.  Users need error messages
 	ss := strings.Split(s, ".")
 	if ss[0] == "me" {
 		return playerId, ss[1]
@@ -698,14 +709,16 @@ func ParseDo(s string, playerId string) (string, string) {
 		return GetPropertyStruct(LoadObject(playerId), "location", 10).Value, ss[1]
 	}
 	//It might be the name of an object somewhere close
-	log.Printf("Namesearch for '%v' in '%v'\n", ss[0], playerId)
+	log.Printf("Checking to see if the object of the sentence is a named object in the room or inventory.  Namesearch for '%v' in '%v'\n", ss[0], playerId)
 	foundObj, _ := NameSearch(LoadObject(playerId), ss[0], playerId)
 	if foundObj != nil {
 		if len(ss) > 1 {
-			return ToStr(foundObj.Id), ss[1]
+			return foundObj.Id, ss[1]
+		} else {
+			return foundObj.Id, ""
 		}
-		return ToStr(foundObj.Id), ""
 	}
+	log.Printf("No object found, assuming it is something else")
 
 	return "", ""
 }
