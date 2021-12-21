@@ -5,6 +5,7 @@
 # e.g. ./imap imap.gmail.com:993 username@gmail.com password | perl json.pl emails
 
 use strict;
+use lib ".";
 use JSON;
 use LWP::Simple;
 use Data::Dumper;
