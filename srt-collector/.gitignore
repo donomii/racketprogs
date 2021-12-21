@@ -1,0 +1,14 @@
+
+*.json
+
+*.sqlite
+
+*.hi
+
+*.old
+
+*.o
+
+srt2json
+
+main
