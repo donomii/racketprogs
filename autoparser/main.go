@@ -25,6 +25,7 @@ func main() {
 		l = append(l, Node{v, "", nil})
 	}
 	r, _ := stringify(l, "//", "\n", "\\", "")
+	r, _ = stringify(r, "\"", "\"", "\\", "")
 	printTree(r, 0, false)
 	r, _, _ = groupify(r, "")
 	r = keywordBreak(r, []string{"import", "type", "func", "\n"})
@@ -66,7 +67,7 @@ func countTree(t []Node) int {
 	return count
 }
 
-//)))
+// lalala))) ululu
 func printTree(t []Node, indent int, newlines bool) {
 	for _, v := range t {
 		if v.List == nil {
