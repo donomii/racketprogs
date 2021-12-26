@@ -29,7 +29,7 @@ func main() {
 		tree := autoparser.ParseTcl(f)
 		fmt.Printf("%+v\n", tree)
 		wholeTree = tree
-		fmt.Printf("treeReduce: %+v\n", treeReduce(tree))
+		fmt.Printf("treeReduce: %+v\n", treeReduce(tree, nil))
 		autoparser.PrintTree(tree, 0, false)
 		json := TreeToJson(tree)
 
@@ -63,7 +63,7 @@ func ato(s string) int {
 func N(s string) autoparser.Node {
 	return autoparser.Node{Str: s}
 }
-func eval(command []string, tree []autoparser.Node) autoparser.Node {
+func eval(command []string, parent *autoparser.Node) autoparser.Node {
 	if len(command) == 0 {
 		return autoparser.Node{}
 	}
@@ -92,6 +92,7 @@ func eval(command []string, tree []autoparser.Node) autoparser.Node {
 			return N(fmt.Sprintf("%v", res))
 		}
 	case "saveInterpreter":
+		*parent = autoparser.Node{"", "", nil, "VOID"}
 		os.WriteFile(args[0], []byte(TreeToJson(wholeTree)), 0644)
 	default:
 		fmt.Printf("Unknown command: %s, attempting shell\n", f)
@@ -99,14 +100,14 @@ func eval(command []string, tree []autoparser.Node) autoparser.Node {
 		return N(res)
 	}
 
-	return autoparser.Node{}
+	return autoparser.Node{Note: "VOID"}
 }
-func treeReduce(t []autoparser.Node) autoparser.Node {
+func treeReduce(t []autoparser.Node, parent *autoparser.Node) autoparser.Node {
 	out := []autoparser.Node{}
 	for i, v := range t {
 		switch {
 		case v.List != nil:
-			atom := treeReduce(v.List)
+			atom := treeReduce(v.List, &t[i])
 			out = append(out, atom)
 			t[i] = atom
 		default:
@@ -124,13 +125,14 @@ func treeReduce(t []autoparser.Node) autoparser.Node {
 
 	//Run command
 	command := ListToArray(out)
-	return eval(command, t)
+	return eval(command, parent)
 }
 
 func TreeToJson(t []autoparser.Node) string {
 	out := ""
 	for _, v := range t {
 		switch {
+		case v.Note == "VOID":
 		case v.List != nil:
 			out = out + "[" + TreeToJson(v.List) + "]"
 		case v.Raw != "":
@@ -201,6 +203,6 @@ func shell() {
 
 		line = strings.TrimSpace(line)
 		tree := autoparser.ParseTcl(line)
-		fmt.Printf("Result: %+v\n", NodeToString(treeReduce(tree)))
+		fmt.Printf("Result: %+v\n", NodeToString(treeReduce(tree, nil)))
 	}
 }
