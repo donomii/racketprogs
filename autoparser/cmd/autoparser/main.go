@@ -3,7 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/chzyer/readline"
 	"github.com/donomii/goof"
+	"io"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -12,30 +15,42 @@ import (
 )
 
 var globals map[string]string = map[string]string{}
+var wholeTree []autoparser.Node
 
 func main() {
-	fname := flag.String("f", "main.go", "File to parse")
+	fname := flag.String("f", "main.go", "File to execute")
+	wantShell := flag.Bool("shell", false, "Run interactive shell")
 	flag.Parse()
-	f := autoparser.LoadFile(*fname)
-	tree := autoparser.ParseTcl(f)
-	fmt.Printf("treeReduce: %+v\n", treeReduce(tree))
-	autoparser.PrintTree(tree, 0, false)
-	json := TreeToJson(tree)
+	if *wantShell {
+		shell()
+	} else {
 
-	fmt.Println(json)
+		f := autoparser.LoadFile(*fname)
+		tree := autoparser.ParseTcl(f)
+		fmt.Printf("%+v\n", tree)
+		wholeTree = tree
+		fmt.Printf("treeReduce: %+v\n", treeReduce(tree))
+		autoparser.PrintTree(tree, 0, false)
+		json := TreeToJson(tree)
+
+		fmt.Println(json)
+	}
 }
 
+func NodeToString(v autoparser.Node) string {
+	if v.Raw == "" {
+		return v.Str
+	} else {
+		return v.Raw
+	}
+}
 func ListToArray(l []autoparser.Node) []string {
 	out := []string{}
 	for _, v := range l {
 		if v.List != nil {
 			panic("ListToArray: List cannot be converted to array")
 		}
-		if v.Raw == "" {
-			out = append(out, v.Str)
-		} else {
-			out = append(out, v.Raw)
-		}
+		out = append(out, NodeToString(v))
 	}
 	return out
 }
@@ -48,7 +63,7 @@ func ato(s string) int {
 func N(s string) autoparser.Node {
 	return autoparser.Node{Str: s}
 }
-func eval(command []string) autoparser.Node {
+func eval(command []string, tree []autoparser.Node) autoparser.Node {
 	if len(command) == 0 {
 		return autoparser.Node{}
 	}
@@ -76,6 +91,8 @@ func eval(command []string) autoparser.Node {
 		} else {
 			return N(fmt.Sprintf("%v", res))
 		}
+	case "saveInterpreter":
+		os.WriteFile(args[0], []byte(TreeToJson(wholeTree)), 0644)
 	default:
 		fmt.Printf("Unknown command: %s, attempting shell\n", f)
 		res, _ := goof.QC(command)
@@ -86,24 +103,28 @@ func eval(command []string) autoparser.Node {
 }
 func treeReduce(t []autoparser.Node) autoparser.Node {
 	out := []autoparser.Node{}
-	for _, v := range t {
+	for i, v := range t {
 		switch {
 		case v.List != nil:
-			out = append(out, treeReduce(v.List))
+			atom := treeReduce(v.List)
+			out = append(out, atom)
+			t[i] = atom
 		default:
+			var atom autoparser.Node
 			if strings.HasPrefix(v.Raw, "$") {
 				fmt.Printf("Globals: %+v\n", globals)
-				out = append(out, N(globals[v.Raw[1:]]))
+				atom = N(globals[v.Raw[1:]])
 			} else {
-				out = append(out, v)
+				atom = v
 			}
+			out = append(out, atom)
+			t[i] = atom
 		}
 	}
 
 	//Run command
 	command := ListToArray(out)
-	fmt.Print("Evaluating: ", command, "\n")
-	return eval(command)
+	return eval(command, t)
 }
 
 func TreeToJson(t []autoparser.Node) string {
@@ -122,4 +143,64 @@ func TreeToJson(t []autoparser.Node) string {
 
 	}
 	return out
+}
+
+// Function constructor - constructs new function for listing given directory
+func listFiles(path string) func(string) []string {
+	return func(line string) []string {
+		names := make([]string, 0)
+		files, _ := ioutil.ReadDir(path)
+		for _, f := range files {
+			names = append(names, f.Name())
+		}
+		return names
+	}
+}
+
+func listPathExecutables(path string) func(string) []string {
+	return func(line string) []string {
+		return []string{}
+	}
+}
+
+func listBuiltins() func(string) []string {
+	return func(line string) []string {
+		return []string{"puts", "+", "loadfile", "set", "run"}
+	}
+}
+func shell() {
+	var completer = readline.NewPrefixCompleter(
+		readline.PcItem("mode"),
+		readline.PcItemDynamic(listPathExecutables("."),
+			readline.PcItemDynamic(listFiles("./"))),
+		readline.PcItemDynamic(listBuiltins(),
+			readline.PcItemDynamic(listFiles("./"))),
+	)
+	l, err := readline.NewEx(&readline.Config{
+		Prompt:          "\033[31m»\033[0m ",
+		HistoryFile:     "/tmp/readline.tmp",
+		AutoComplete:    completer,
+		InterruptPrompt: "^C",
+		EOFPrompt:       "exit",
+	})
+	if err != nil {
+		panic(err)
+	}
+	defer l.Close()
+	for {
+		line, err := l.Readline()
+		if err == readline.ErrInterrupt {
+			if len(line) == 0 {
+				break
+			} else {
+				continue
+			}
+		} else if err == io.EOF {
+			break
+		}
+
+		line = strings.TrimSpace(line)
+		tree := autoparser.ParseTcl(line)
+		fmt.Printf("Result: %+v\n", NodeToString(treeReduce(tree)))
+	}
 }

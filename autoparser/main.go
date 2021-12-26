@@ -11,12 +11,13 @@ type Node struct {
 	Raw  string
 	Str  string
 	List []Node
+	Note string
 }
 
 func NewTree(s string) []Node {
 	l := []Node{}
 	for _, v := range strings.Split(s, "") {
-		l = append(l, Node{v, "", nil})
+		l = append(l, Node{v, "", nil, ""})
 	}
 	return l
 }
@@ -34,6 +35,23 @@ func ParseGo(f string) []Node {
 	r = StripWhiteSpace(r)
 	//Need to split on spaces and merge before doing binops
 	r = GroupBinops(r)
+	//PrintTree(r, 0, false)
+	return r
+	//fmt.Printf("%+v\n", r)
+}
+
+func ParseTcl(f string) []Node {
+
+	l := NewTree(f)
+	r, _ := Stringify(l, "#", "\n", "\\", "")
+	r, _ = Stringify(r, "\"", "\"", "\\", "")
+	//PrintTree(r, 0, false)
+	r, _, _ = Groupify(r)
+	r = KeywordBreak(r, []string{"\n"})
+	r = MergeNonWhiteSpace(r)
+	r = StripNL(r)
+	r = StripWhiteSpace(r)
+	StripEmptyLists(r)
 	//PrintTree(r, 0, false)
 	return r
 	//fmt.Printf("%+v\n", r)
@@ -184,14 +202,20 @@ func Groupify(in []Node) ([]Node, []Node, int) {
 
 		switch v.Raw {
 		case "[":
-			fallthrough
+			var sublist []Node
+			sublist, in, i = Groupify(in[i+1:])
+			i = -1
+			accum = append(accum, Node{v.Raw, v.Str, sublist, "["}) //Use the opening parenthesis to identify the list
 		case "{":
-			fallthrough
+			var sublist []Node
+			sublist, in, i = Groupify(in[i+1:])
+			i = -1
+			accum = append(accum, Node{v.Raw, v.Str, sublist, "{"}) //Use the opening parenthesis to identify the list
 		case "(":
 			var sublist []Node
 			sublist, in, i = Groupify(in[i+1:])
 			i = -1
-			accum = append(accum, Node{"", "", sublist})
+			accum = append(accum, Node{v.Raw, v.Str, sublist, "("}) //Use the opening parenthesis to identify the list
 		case "]":
 			fallthrough
 		case "}":
@@ -220,7 +244,7 @@ func KeywordBreak(in []Node, keywords []string) []Node {
 					// 1.Capture the accumulator (e.g. we are in a list)
 					// 2.Capture the next next subtree (or more), join with the current node
 					//   e.g. a type or function definition, or aprocedure call
-					output = append(output, Node{"", "🛑", accum})
+					output = append(output, Node{v.Raw, v.Str, accum, keyword})
 					accum = []Node{}
 					//accum = []Node{{"", "🛑", nil}}
 					break
@@ -228,7 +252,7 @@ func KeywordBreak(in []Node, keywords []string) []Node {
 			}
 			accum = append(accum, v)
 		} else {
-			accum = append(accum, Node{"", "", KeywordBreak(v.List, keywords)})
+			accum = append(accum, Node{v.Raw, v.Str, KeywordBreak(v.List, keywords), v.Note})
 		}
 	}
 	return append(output, accum...)
@@ -287,7 +311,7 @@ func MergeNonWhiteSpace(in []Node) []Node {
 				}
 			}
 		} else {
-			accum = append(accum, Node{"", "", MergeNonWhiteSpace(v.List)})
+			accum = append(accum, Node{v.Raw, v.Str, MergeNonWhiteSpace(v.List), v.Note})
 		}
 	}
 
@@ -307,7 +331,24 @@ func StripNL(in []Node) []Node {
 				accum = append(accum, v)
 			}
 		} else {
-			accum = append(accum, Node{"", "", StripNL(v.List)})
+			accum = append(accum, Node{v.Raw, v.Str, StripNL(v.List), v.Note})
+		}
+	}
+	return append(output, accum...)
+}
+
+func StripEmptyLists(in []Node) []Node {
+	output := []Node{}
+	accum := []Node{}
+	for i := 0; i < len(in); i++ {
+		v := in[i]
+		if v.List == nil {
+			accum = append(accum, v)
+		} else {
+			if len(v.List) == 0 {
+			} else {
+				accum = append(accum, Node{v.Raw, v.Str, StripNL(v.List), v.Note})
+			}
 		}
 	}
 	return append(output, accum...)
@@ -326,7 +367,7 @@ func StripWhiteSpace(in []Node) []Node {
 				accum = append(accum, v)
 			}
 		} else {
-			accum = append(accum, Node{"", "", StripWhiteSpace(v.List)})
+			accum = append(accum, Node{v.Raw, v.Str, StripWhiteSpace(v.List), v.Note})
 		}
 	}
 	return append(output, accum...)
