@@ -48,8 +48,9 @@ func ParseTcl(f string) []Node {
 	//PrintTree(r, 0, false)
 	r, _, _ = Groupify(r)
 	r = KeywordBreak(r, []string{"\n"})
-	r = MergeNonWhiteSpace(r)
 	r = StripNL(r)
+	r = MergeNonWhiteSpace(r)
+	
 	r = StripWhiteSpace(r)
 	StripEmptyLists(r)
 	//PrintTree(r, 0, false)
