@@ -71,6 +71,8 @@ func eval(command []string, parent *autoparser.Node) autoparser.Node {
 	f := command[0]
 	args := command[1:]
 	switch f {
+	case "cd":
+		os.Chdir(args[0])
 	case "+":
 		return N(fmt.Sprintf("%v", ato(args[0])+ato(args[1])))
 	case "puts":
