@@ -179,7 +179,7 @@ func eval(command []autoparser.Node, parent *autoparser.Node) autoparser.Node {
 			}
 			fmt.Println()
 		case "loadfile":
-			b, _ := os.ReadFile(S(args[0]))
+			b, _ := ioutil.ReadFile(S(args[0]))
 			return N(string(b))
 		case "set":
 			if len(args) == 2 {
@@ -228,7 +228,7 @@ func eval(command []autoparser.Node, parent *autoparser.Node) autoparser.Node {
 			funcs := FunctionsToTcl(functions)
 			code := funcs + "\n\n" + rest
 			fmt.Printf("Function defs: %v\n\nRemaining code: %v\n", funcs, rest)
-			os.WriteFile(S(args[0]), []byte(code), 0644)
+			ioutil.WriteFile(S(args[0]), []byte(code), 0644)
 		default:
 			fmt.Printf("Unknown command: '%s', attempting shell\n", f)
 			stringCommand, err := ListToString(command)
