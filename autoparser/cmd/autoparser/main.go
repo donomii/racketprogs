@@ -4,12 +4,19 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"time"
+
 	"io"
 	"io/ioutil"
+	"os/signal"
+
 	"log"
 	"os"
 	"strconv"
 	"strings"
+	"syscall"
+
+	//"github.com/lmorg/readline"
 
 	"github.com/chzyer/readline"
 	"github.com/donomii/goof"
@@ -348,6 +355,28 @@ func listBuiltins() func(string) []string {
 	}
 }
 func shell() {
+	go func() {
+		for {
+			time.Sleep(time.Second * 5)
+			fmt.Println("Trapping signals")
+			sigchan := make(chan os.Signal)
+			signal.Notify(sigchan,
+				syscall.SIGHUP,
+				syscall.SIGINT,
+				syscall.SIGTERM,
+				syscall.SIGQUIT)
+				fmt.Println("Waiting for signal")
+				for {
+			<-sigchan
+			//log.Println("Program killed !")
+			
+			// do last actions and wait for all write operations to end
+			fmt.Println("Ignoring interrupt")
+				}
+			//os.Exit(0)
+		}
+	} ()
+	
 	var completer = readline.NewPrefixCompleter(
 		readline.PcItem("mode"),
 		readline.PcItemDynamic(listPathExecutables("."),
@@ -359,7 +388,7 @@ func shell() {
 		Prompt:          "\033[31m»\033[0m ",
 		HistoryFile:     "/tmp/readline.tmp",
 		AutoComplete:    completer,
-		InterruptPrompt: "^C",
+		//InterruptPrompt: "^C",
 		EOFPrompt:       "exit",
 	})
 	if err != nil {
@@ -369,11 +398,13 @@ func shell() {
 	for {
 		line, err := l.Readline()
 		if err == readline.ErrInterrupt {
-			if len(line) == 0 {
+			fmt.Println("XSH ignoring interrupt")
+/*			if len(line) == 0 {
 				break
 			} else {
 				continue
 			}
+			*/
 		} else if err == io.EOF {
 			break
 		}
@@ -382,4 +413,21 @@ func shell() {
 		tree := autoparser.ParseTcl(line)
 		fmt.Printf("Result: %+v\n", NodeToString(treeReduce(tree, nil)))
 	}
+	
+	/*
+	for {
+		rl := readline.NewInstance()
+	
+		for {
+			line, err := rl.Readline()
+			
+			if err != nil {
+				fmt.Println("Error:", err)
+				return
+			}
+	
+			fmt.Printf("You just typed: %s\n", line)
+		}
+	}
+	*/
 }
