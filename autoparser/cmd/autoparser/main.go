@@ -166,7 +166,7 @@ func eval(command []autoparser.Node, parent *autoparser.Node) autoparser.Node {
 	} else {
 		switch f {
 		case "cd":
-			os.Chdir(args[0])
+			os.Chdir(S(args[0]))
 		case "\n":
 			//Fuck
 			return autoparser.Node{Note: "VOID"}
