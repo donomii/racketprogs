@@ -9,11 +9,15 @@ import (
 	"io/ioutil"
 	"runtime"
 
+	"github.com/nsf/termbox-go"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 
+"github.com/mattn/go-runewidth"
+
+	"github.com/pterm/pterm"
 	//"github.com/lmorg/readline"
 
 	"github.com/chzyer/readline"
@@ -23,6 +27,7 @@ import (
 )
 
 var guardianPath string
+
 type function struct {
 	Name string
 	Args []autoparser.Node
@@ -42,19 +47,29 @@ func drintf(formatStr string, args ...interface{}) {
 	}
 }
 func main() {
-	bindir :=goof.ExecutablePath()
-	if runtime.GOOS =="windows"{
+	bindir := goof.ExecutablePath()
+	if runtime.GOOS == "windows" {
 		guardianPath = bindir + "/guardian.exe"
-	}else {
+	} else {
 		guardianPath = bindir + "/guardian"
 	}
-	
-	fname := flag.String("f", "example.xsh", "Script file to execute")
-	shellOpt := flag.Bool("shell", false, "Run interactive shell")
+
+
+	/*
+		fname := flag.String("f", "example.xsh", "Script file to execute")
+		shellOpt := flag.Bool("shell", false, "Run interactive shell")
+	*/
 	resumeFile := flag.String("r", "", "Resume from file")
 	flag.BoolVar(&wantDebug, "debug", false, "Enable debug output")
 	flag.Parse()
-	wantShell=*shellOpt
+	//wantShell=*shellOpt
+	var fname string
+	if len(flag.Args()) > 0 {
+		fname = flag.Arg(0)
+	} else {
+		wantShell = true
+	}
+
 	switch {
 	case *resumeFile != "":
 		fmt.Println("Resuming from file: ", *resumeFile)
@@ -72,7 +87,7 @@ func main() {
 		shell()
 	default:
 
-		f := autoparser.LoadFile(*fname)
+		f := autoparser.LoadFile(fname)
 		tree := autoparser.ParseTcl(f)
 		drintf("%+v\n", tree)
 		wholeTree = tree
@@ -167,7 +182,7 @@ func runWithGuardian(cmd []string) error {
 	cmd = append([]string{guardianPath}, cmd...)
 	return goof.QCI(cmd)
 }
-func void ()autoparser.Node{
+func void() autoparser.Node {
 	return autoparser.Node{Note: "VOID"}
 }
 func eval(command []autoparser.Node, parent *autoparser.Node) autoparser.Node {
@@ -185,10 +200,23 @@ func eval(command []autoparser.Node, parent *autoparser.Node) autoparser.Node {
 		drintf("Calling function %+v\n", nbod)
 		return treeReduce(nbod, parent)
 	} else {
-		if f == "" { return void()}
+		if f == "" {
+			return void()
+		}
 		switch f {
 		case "cd":
-			os.Chdir(S(args[0]))
+			switch {
+			case len(args) == 0:
+				os.Setenv("OLDPWD", os.Getenv("PWD"))
+				os.Chdir(os.Getenv("HOME"))
+			case S(args[0]) == "-":
+				oldpwd := os.Getenv("OLDPWD")
+				os.Setenv("OLDPWD", os.Getenv("PWD"))
+				os.Chdir(oldpwd)
+			default:
+				os.Setenv("OLDPWD", os.Getenv("PWD"))
+				os.Chdir(S(args[0]))
+			}
 		case "\n":
 			//Fuck
 			return autoparser.Node{Note: "VOID"}
@@ -243,6 +271,12 @@ func eval(command []autoparser.Node, parent *autoparser.Node) autoparser.Node {
 				Args: args[1].List,
 				Body: args[2].List,
 			}
+		case "exit":
+			if len(args) == 0 {
+				os.Exit(0)
+			} else {
+				os.Exit(ato(S(args[0])))
+			}
 
 		case "saveInterpreter":
 			*parent = autoparser.Node{"", "", nil, "VOID"}
@@ -263,7 +297,7 @@ func eval(command []autoparser.Node, parent *autoparser.Node) autoparser.Node {
 				if wantShell {
 					err = runWithGuardian(stringCommand)
 				} else {
-					
+
 					res, err = goof.QC(stringCommand)
 				}
 				if err == nil {
@@ -285,8 +319,8 @@ func treeReduce(t []autoparser.Node, parent *autoparser.Node) autoparser.Node {
 	out := []autoparser.Node{}
 	for i, v := range t {
 		switch {
-		case v.Note =="#":
-		case v.Raw=="#":
+		case v.Note == "#":
+		case v.Raw == "#":
 		case v.List != nil:
 			if v.Note == "[" || v.Note == "\n" || v.Note == ";" {
 
@@ -299,9 +333,25 @@ func treeReduce(t []autoparser.Node, parent *autoparser.Node) autoparser.Node {
 			}
 		default:
 			var atom autoparser.Node
-			if strings.HasPrefix(v.Raw, "$") {
-				drintf("Globals: %+v\n", globals)
-				atom = N(globals[v.Raw[1:]])
+			if strings.HasPrefix(S(v), "$") {
+				drintf("Found variable: %+v\n", S(v))
+				vname := S(v)[1:]
+				drintf("Fetching %v from Globals: %+v\n", vname, globals)
+				if vname == "" {
+					fmt.Println("$ must preceed a variable name")
+					
+				} else {
+					if _, ok := globals[vname]; ok {
+						atom = N(globals[vname])
+					} else {
+						if val := os.Getenv(vname); val != "" {
+							atom = N(val)
+						} else {
+							fmt.Printf("Variable '%v' not found\n", vname)
+						}
+					}
+				}
+
 			} else {
 				atom = v
 			}
@@ -374,9 +424,14 @@ func listBuiltins() func(string) []string {
 		return []string{"puts", "+", "loadfile", "set", "run"}
 	}
 }
+func tbprint(x, y int, fg, bg termbox.Attribute, msg string) {
+	for _, c := range msg {
+		termbox.SetCell(x, y, c, fg, bg)
+		x += runewidth.RuneWidth(c)
+	}
+}
 func shell() {
 
-	
 	var completer = readline.NewPrefixCompleter(
 		readline.PcItem("mode"),
 		readline.PcItemDynamic(listPathExecutables("."),
@@ -384,50 +439,71 @@ func shell() {
 		readline.PcItemDynamic(listBuiltins(),
 			readline.PcItemDynamic(listFiles("./"))),
 	)
+
 	l, err := readline.NewEx(&readline.Config{
-		Prompt:          "\033[31m»\033[0m ",
-		HistoryFile:     "/tmp/readline.tmp",
-		AutoComplete:    completer,
+		Prompt:       "\033[31m»\033[0m ",
+		HistoryFile:  "/tmp/readline.tmp",
+		AutoComplete: completer,
 		//InterruptPrompt: "^C",
-		EOFPrompt:       "exit",
+		EOFPrompt: "exit",
 	})
 	if err != nil {
 		panic(err)
 	}
 	defer l.Close()
+
+	// Print a large text with differently colored letters.
+	pterm.DefaultBigText.WithLetters(
+		pterm.NewLettersFromStringWithStyle("X", pterm.NewStyle(pterm.FgCyan)),
+		pterm.NewLettersFromStringWithStyle("Shelll", pterm.NewStyle(pterm.FgLightMagenta))).
+		Render()
+
+			header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgRed))
+
+
+
 	for {
+
+	
+		// Print the header centered in your terminal.
+		//      ┌ Use the default CenterPrinter
+		//      │              ┌ Print a string ending with a new line
+		//      │              │      ┌ Use our new header to format the input string
+		pterm.DefaultCenter.Println(header.Sprint(goof.Cwd()))
+	
 		line, err := l.Readline()
 		if err == readline.ErrInterrupt {
 			fmt.Println("XSH ignoring interrupt")
-/*			if len(line) == 0 {
-				break
-			} else {
-				continue
-			}
+			/*			if len(line) == 0 {
+							break
+						} else {
+							continue
+						}
 			*/
 		} else if err == io.EOF {
 			break
 		}
+		
 
 		line = strings.TrimSpace(line)
 		tree := autoparser.ParseTcl(line)
 		fmt.Printf("Result: %+v\n", NodeToString(treeReduce(tree, nil)))
 	}
-	
+
 	/*
-	for {
-		rl := readline.NewInstance()
-	
 		for {
-			line, err := rl.Readline()
-			
-			if err != nil {
-				fmt.Println("Error:", err)
-				return
+			rl := readline.NewInstance()
+
+			for {
+				line, err := rl.Readline()
+
+				if err != nil {
+					fmt.Println("Error:", err)
+					return
+				}
+
+				fmt.Printf("You just typed: %s\n", line)
 			}
-	
-			fmt.Printf("You just typed: %s\n", line)
 		}
-	}
 	*/
 }
