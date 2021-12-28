@@ -4,17 +4,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"time"
 
 	"io"
 	"io/ioutil"
-	"os/signal"
 
 	"log"
 	"os"
 	"strconv"
 	"strings"
-	"syscall"
 
 	//"github.com/lmorg/readline"
 
@@ -156,21 +153,10 @@ func FunctionsToTcl(functions map[string]function) string {
 	}
 	return out
 }
-
-func QuickCommandInteractivePrep(strs []string) (*subprocpipes, *exec.Cmd) {
-	cmd := exec.Command(strs[0], strs[1:]...)
-	stdinreader, stdinwriter := io.Pipe()
-	outreader, outwriter := io.Pipe()
-	errreader, errwriter := io.Pipe()
-	//go io.Copy(stdinwriter, os.Stdin)
-	go CopyFilter(os.Stdin, stdinwriter)
-	go io.Copy(os.Stdout, outreader)
-	go io.Copy(os.Stderr, errreader)
-	cmd.Stdin = stdinreader
-	cmd.Stdout = outwriter
-	cmd.Stderr = errwriter
-	sub := subprocpipes{stdinwriter, outreader, errreader}
-	return &sub, cmd
+func runWithGuardian(cmd []string) error {
+	drintf("Launching guardian for %+v\n", cmd)
+	cmd = append([]string{"./guardian"}, cmd...)
+	return goof.QCI(cmd)
 }
 func void ()autoparser.Node{
 	return autoparser.Node{Note: "VOID"}
@@ -257,7 +243,8 @@ func eval(command []autoparser.Node, parent *autoparser.Node) autoparser.Node {
 			fmt.Printf("Function defs: %v\n\nRemaining code: %v\n", funcs, rest)
 			ioutil.WriteFile(S(args[0]), []byte(code), 0644)
 		default:
-			fmt.Printf("Unknown command: '%s', attempting shell\n", f)
+			//fixme warn user on verbose?
+			//fmt.Printf("Unknown command: '%s', attempting shell\n", f)
 			stringCommand, err := ListToString(command)
 			if err != nil {
 				return autoparser.Node{Note: "VOID"}
@@ -265,7 +252,7 @@ func eval(command []autoparser.Node, parent *autoparser.Node) autoparser.Node {
 				var res string
 				var err error
 				if wantShell {
-					err = goof.QCI(stringCommand)
+					err = runWithGuardian(stringCommand)
 				} else {
 					
 					res, err = goof.QC(stringCommand)
@@ -379,27 +366,7 @@ func listBuiltins() func(string) []string {
 	}
 }
 func shell() {
-	go func() {
-		for {
-			time.Sleep(time.Second * 5)
-			fmt.Println("Trapping signals")
-			sigchan := make(chan os.Signal)
-			signal.Notify(sigchan,
-				syscall.SIGHUP,
-				syscall.SIGINT,
-				syscall.SIGTERM,
-				syscall.SIGQUIT)
-				fmt.Println("Waiting for signal")
-				for {
-			<-sigchan
-			//log.Println("Program killed !")
-			
-			// do last actions and wait for all write operations to end
-			fmt.Println("Ignoring interrupt")
-				}
-			//os.Exit(0)
-		}
-	} ()
+
 	
 	var completer = readline.NewPrefixCompleter(
 		readline.PcItem("mode"),
