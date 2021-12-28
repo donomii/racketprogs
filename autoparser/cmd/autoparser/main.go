@@ -7,6 +7,7 @@ import (
 
 	"io"
 	"io/ioutil"
+	"runtime"
 
 	"log"
 	"os"
@@ -21,6 +22,7 @@ import (
 	autoparser "../.."
 )
 
+var guardianPath string
 type function struct {
 	Name string
 	Args []autoparser.Node
@@ -40,6 +42,13 @@ func drintf(formatStr string, args ...interface{}) {
 	}
 }
 func main() {
+	bindir :=goof.ExecutablePath()
+	if runtime.GOOS =="windows"{
+		guardianPath = bindir + "/guardian.exe"
+	}else {
+		guardianPath = bindir + "/guardian"
+	}
+	
 	fname := flag.String("f", "example.xsh", "Script file to execute")
 	shellOpt := flag.Bool("shell", false, "Run interactive shell")
 	resumeFile := flag.String("r", "", "Resume from file")
@@ -154,8 +163,8 @@ func FunctionsToTcl(functions map[string]function) string {
 	return out
 }
 func runWithGuardian(cmd []string) error {
-	drintf("Launching guardian for %+v\n", cmd)
-	cmd = append([]string{"./guardian"}, cmd...)
+	drintf("Launching guardian for %+v from %v\n", cmd, guardianPath)
+	cmd = append([]string{guardianPath}, cmd...)
 	return goof.QCI(cmd)
 }
 func void ()autoparser.Node{
