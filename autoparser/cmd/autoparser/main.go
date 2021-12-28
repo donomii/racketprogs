@@ -46,6 +46,7 @@ func main() {
 	fname := flag.String("f", "example.xsh", "Script file to execute")
 	shellOpt := flag.Bool("shell", false, "Run interactive shell")
 	resumeFile := flag.String("r", "", "Resume from file")
+	flag.BoolVar(&wantDebug, "debug", false, "Enable debug output")
 	flag.Parse()
 	wantShell=*shellOpt
 	switch {
@@ -156,6 +157,24 @@ func FunctionsToTcl(functions map[string]function) string {
 	return out
 }
 
+func QuickCommandInteractivePrep(strs []string) (*subprocpipes, *exec.Cmd) {
+	cmd := exec.Command(strs[0], strs[1:]...)
+	stdinreader, stdinwriter := io.Pipe()
+	outreader, outwriter := io.Pipe()
+	errreader, errwriter := io.Pipe()
+	//go io.Copy(stdinwriter, os.Stdin)
+	go CopyFilter(os.Stdin, stdinwriter)
+	go io.Copy(os.Stdout, outreader)
+	go io.Copy(os.Stderr, errreader)
+	cmd.Stdin = stdinreader
+	cmd.Stdout = outwriter
+	cmd.Stderr = errwriter
+	sub := subprocpipes{stdinwriter, outreader, errreader}
+	return &sub, cmd
+}
+func void ()autoparser.Node{
+	return autoparser.Node{Note: "VOID"}
+}
 func eval(command []autoparser.Node, parent *autoparser.Node) autoparser.Node {
 	if len(command) == 0 {
 		return autoparser.Node{}
@@ -171,6 +190,7 @@ func eval(command []autoparser.Node, parent *autoparser.Node) autoparser.Node {
 		drintf("Calling function %+v\n", nbod)
 		return treeReduce(nbod, parent)
 	} else {
+		if f == "" { return void()}
 		switch f {
 		case "cd":
 			os.Chdir(S(args[0]))
@@ -269,6 +289,8 @@ func treeReduce(t []autoparser.Node, parent *autoparser.Node) autoparser.Node {
 	out := []autoparser.Node{}
 	for i, v := range t {
 		switch {
+		case v.Note =="#":
+		case v.Raw=="#":
 		case v.List != nil:
 			if v.Note == "[" || v.Note == "\n" || v.Note == ";" {
 
