@@ -183,7 +183,7 @@ func Stringify(in []Node, start, end, escape, strMode string) ([]Node, []Node) {
 					sublist, in = Stringify(in[i+len(start):], start, end, escape, end)
 					i = -1
 					//fmt.Printf("Found string: %s\n", joinRaw(sublist))
-					n := Node{Str: joinRaw(sublist)}
+					n := Node{Str: joinRaw(sublist), Note: start}
 					//fmt.Printf("Found node: %+v\n", n)
 					accum = append(accum, n)
 
