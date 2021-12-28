@@ -48,9 +48,18 @@ func main() {
 	}else {
 		guardianPath = bindir + "/guardian"
 	}
+
+	var fname string
+	if len(os.Args) > 1 {
+		fname = os.Args[1]
+	} else {
+			wantShell = true
+		}
 	
-	fname := flag.String("f", "example.xsh", "Script file to execute")
+	/*
+	fname = flag.String("f", "example.xsh", "Script file to execute")
 	shellOpt := flag.Bool("shell", false, "Run interactive shell")
+	*/
 	resumeFile := flag.String("r", "", "Resume from file")
 	flag.BoolVar(&wantDebug, "debug", false, "Enable debug output")
 	flag.Parse()
