@@ -34,6 +34,7 @@ type function struct {
 	Body []autoparser.Node
 }
 
+var usePterm = true
 var wantDebug bool
 var functions = map[string]function{}
 
@@ -216,6 +217,10 @@ func eval(command []autoparser.Node, parent *autoparser.Node) autoparser.Node {
 			default:
 				os.Setenv("OLDPWD", os.Getenv("PWD"))
 				os.Chdir(S(args[0]))
+			}
+			if usePterm {
+				header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgRed))
+				pterm.DefaultCenter.Println(header.Sprint(goof.Cwd()))
 			}
 		case "\n":
 			//Fuck
@@ -412,12 +417,23 @@ func listFiles(path string) func(string) []string {
 		return names
 	}
 }
-
-func listPathExecutables(path string) func(string) []string {
+//List all executable files in PATH
+func listPathExecutables() func(string) []string {
 	return func(line string) []string {
-		return []string{}
+		names := make([]string, 0)
+		paths := strings.Split(os.Getenv("PATH"), ":")
+		for _, p := range paths {
+			files, _ := ioutil.ReadDir(p)
+			for _, f := range files {
+				if f.Mode().Perm()&0111 != 0 {
+					names = append(names, f.Name())
+				}
+			}
+		}
+		return names
 	}
 }
+
 
 func listBuiltins() func(string) []string {
 	return func(line string) []string {
@@ -433,11 +449,15 @@ func tbprint(x, y int, fg, bg termbox.Attribute, msg string) {
 func shell() {
 
 	var completer = readline.NewPrefixCompleter(
-		readline.PcItem("mode"),
-		readline.PcItemDynamic(listPathExecutables("."),
-			readline.PcItemDynamic(listFiles("./"))),
+		readline.PcItem("cd", readline.PcItemDynamic(listFiles("./"))),
+		readline.PcItemDynamic(listPathExecutables(),
+			readline.PcItemDynamic(listFiles("./")),
+	
+		),
 		readline.PcItemDynamic(listBuiltins(),
-			readline.PcItemDynamic(listFiles("./"))),
+			readline.PcItemDynamic(listFiles("./")),
+		
+		),
 	)
 
 	l, err := readline.NewEx(&readline.Config{
@@ -452,28 +472,19 @@ func shell() {
 	}
 	defer l.Close()
 
+	if usePterm {
 	// Print a large text with differently colored letters.
 	pterm.DefaultBigText.WithLetters(
 		pterm.NewLettersFromStringWithStyle("X", pterm.NewStyle(pterm.FgCyan)),
-		pterm.NewLettersFromStringWithStyle("Shelll", pterm.NewStyle(pterm.FgLightMagenta))).
+		pterm.NewLettersFromStringWithStyle("Shell", pterm.NewStyle(pterm.FgLightMagenta))).
 		Render()
-
-			header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgRed))
-
-
+	}
 
 	for {
-
-	
-		// Print the header centered in your terminal.
-		//      ┌ Use the default CenterPrinter
-		//      │              ┌ Print a string ending with a new line
-		//      │              │      ┌ Use our new header to format the input string
-		pterm.DefaultCenter.Println(header.Sprint(goof.Cwd()))
-	
 		line, err := l.Readline()
 		if err == readline.ErrInterrupt {
-			fmt.Println("XSH ignoring interrupt")
+			fmt.Println("Canceled.  Ctrl-D to exit.")
+			continue
 			/*			if len(line) == 0 {
 							break
 						} else {
@@ -487,7 +498,7 @@ func shell() {
 
 		line = strings.TrimSpace(line)
 		tree := autoparser.ParseTcl(line)
-		fmt.Printf("Result: %+v\n", NodeToString(treeReduce(tree, nil)))
+		fmt.Printf("%+v\n", NodeToString(treeReduce(tree, nil)))
 	}
 
 	/*
