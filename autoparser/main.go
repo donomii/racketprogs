@@ -66,7 +66,6 @@ func countTree(t []Node) int {
 	return count
 }
 
-//)))
 func printTree(t []Node, indent int, newlines bool) {
 	for _, v := range t {
 		if v.List == nil {
