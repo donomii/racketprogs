@@ -119,6 +119,12 @@ func ListToString(l []autoparser.Node) ([]string, error) {
 	return out, nil
 }
 
+func ListToStr(l []autoparser.Node) string {
+	str, _ := ListToString(l)
+	out := strings.Join(str, " ")
+	return out
+}
+
 //This is ridiculous
 func ato(s string) int {
 	i, _ := strconv.Atoi(s)
@@ -205,6 +211,8 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 			return void()
 		}
 		switch f {
+		case "seq":
+			return args[len(args)-1]
 		case "cd":
 			switch {
 			case len(args) == 0:
@@ -291,11 +299,16 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 			}
 
 		case "saveInterpreter":
+			if len(args)<1 {
+				xshErr("saveInterpreter: no filename specified")
+				return N("No filename given")
+			}
 			*parent = autoparser.Node{"", "", nil, "VOID"}
 			rest := TreeToTcl(wholeTree)
 			funcs := FunctionsToTcl(functions)
 			code := funcs + "\n\n" + rest
 			fmt.Printf("Function defs: %v\n\nRemaining code: %v\n", funcs, rest)
+
 			ioutil.WriteFile(S(args[0]), []byte(code), 0644)
 		default:
 			//fixme warn user on verbose?
@@ -329,14 +342,17 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 	}
 	return autoparser.Node{Note: "VOID"}
 }
+func xshErr(msg string) {
+	if usePterm {
+		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgRed))
+		pterm.DefaultCenter.Println(header.Sprint(msg))
+	}
+}
 func treeReduce(t []autoparser.Node, parent *autoparser.Node, toplevel int) autoparser.Node {
 	drintf("Reducing: %+v\n", t)
 	if toplevel == 1{
-		if usePterm {
-			header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgRed))
-			pterm.DefaultCenter.Println(header.Sprint(ListToString(t)))
+		xshErr(ListToStr(t))
 		}
-	}
 	out := []autoparser.Node{}
 	for i, v := range t {
 		switch {
@@ -515,6 +531,7 @@ func shell() {
 
 		line = strings.TrimSpace(line)
 		tree := autoparser.ParseTcl(line)
+		wholeTree=tree
 		fmt.Printf("%+v\n", NodeToString(treeReduce(tree, nil,2)))
 	}
 
