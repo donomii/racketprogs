@@ -192,11 +192,27 @@ func runWithGuardian(cmd []string) error {
 func void() autoparser.Node {
 	return autoparser.Node{Note: "VOID"}
 }
+func isList(n autoparser.Node) bool {
+	return n.List != nil
+}
 func eval(command []autoparser.Node, parent *autoparser.Node, level int) autoparser.Node {
 	if len(command) == 0 {
 		return autoparser.Node{}
 	}
 	drintf("Evaluating: %v\n", command)
+	if isList(command[0]) {
+		c :=command[0]
+		args := command[1:]
+		bod := CopyTree(c.List[1:])
+		fargs := c.List[0].List
+		if len(fargs) != len(args) {
+			fmt.Printf("Mismatched function args in ->|%v|<-  expected %v, given %v\n", TreeToTcl(command), TreeToTcl(fargs), TreeToTcl(args))
+			os.Exit(1)
+		}
+		nbod := ReplaceArgs(args, fargs, bod)
+		drintf("Calling lambda %+v\n", nbod)
+		return treeReduce(nbod, parent,0)
+	}
 	f := S(command[0])
 	args := command[1:]
 	fu, ok := functions[f]
