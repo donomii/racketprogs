@@ -6,11 +6,29 @@ A cross platform shell and scripting language
 
 A cross platform scripting language that supports interactive development and full integration with command line utilities.
 
-## Example
+## Examples
 
     puts [if 1 { "Hello" } { "Goodbye" }] " world"
 
+Lambdas are supported
 
+    {{a} puts [+ a b]} "Hello"
+
+    {{a b c} [puts [+ a b]] [ puts b]} 1 2 "Hello"
+
+    proc countdown { n } { if [> n 0] {[puts n] [countdown [- n 1]]} {}
+
+    » countdown 10
+    10
+    9
+    8
+    7
+    6
+    5
+    4
+    3
+    2
+    1
 ## Built in commands
 
 ### [seq [command] [command] [command] ...]
@@ -37,9 +55,16 @@ Load *filename* as a string.
 
 Run [command arg1 arg2 ...] interactively.
 
-### [proc *name* {arg1 arg2 ...} { [command ...][command ...]}
+### [proc *name* {arg1 arg2 ...} { [command ...][command ...]}]
 
 Define a function called *name*.
+
+Lambdas are defined slightly differently, with the args inside the lambda:
+
+    {{arg1 arg2 ...}  command ...}
+    {{arg1 arg2 ...}  [command ...][command ...]}
+
+Note that while there are no lexical scopes (all vars are global, only function args are local), 
 
 ### [exit *value*]
 

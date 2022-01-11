@@ -251,6 +251,18 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 			return autoparser.Node{Note: "VOID"}
 		case "+":
 			return N(fmt.Sprintf("%v", ato(S(args[0]))+ato(S(args[1]))))
+		case "-":
+			return N(fmt.Sprintf("%v", ato(S(args[0]))-ato(S(args[1]))))
+		case "*":
+			return N(fmt.Sprintf("%v", ato(S(args[0]))*ato(S(args[1]))))
+		case ">":
+			if  ato(S(args[0]))>ato(S(args[1])) {
+				return N("1")
+			} else {
+				return N("0")
+			}
+			
+		
 		case "puts":
 
 			for _, v := range args {
