@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-"github.com/mattn/go-runewidth"
+	"github.com/mattn/go-runewidth"
 
 	"github.com/pterm/pterm"
 	//"github.com/lmorg/readline"
@@ -55,7 +55,6 @@ func main() {
 		guardianPath = bindir + "/guardian"
 	}
 
-
 	/*
 		fname := flag.String("f", "example.xsh", "Script file to execute")
 		shellOpt := flag.Bool("shell", false, "Run interactive shell")
@@ -78,7 +77,7 @@ func main() {
 		tree := autoparser.ParseTcl(f)
 		drintf("%+v\n", tree)
 		wholeTree = tree
-		drintf("treeReduce: %+v\n", treeReduce(tree, nil,0))
+		drintf("treeReduce: %+v\n", treeReduce(tree, nil, 0))
 		//autoparser.PrintTree(tree, 0, false)
 		json := TreeToTcl(tree)
 
@@ -107,7 +106,7 @@ func NodeToString(v autoparser.Node) string {
 		return v.Raw
 	}
 }
-func ListToString(l []autoparser.Node) ([]string, error) {
+func ListToStrings(l []autoparser.Node) ([]string, error) {
 	out := []string{}
 	for _, v := range l {
 		if v.List != nil {
@@ -120,7 +119,7 @@ func ListToString(l []autoparser.Node) ([]string, error) {
 }
 
 func ListToStr(l []autoparser.Node) string {
-	str, _ := ListToString(l)
+	str, _ := ListToStrings(l)
 	out := strings.Join(str, " ")
 	return out
 }
@@ -146,13 +145,13 @@ func CopyTree(t []autoparser.Node) []autoparser.Node {
 }
 
 func ReplaceArg(arg, farg autoparser.Node, t []autoparser.Node) []autoparser.Node {
-	drintf("Replacing farg %+v with %+v\n", farg, arg)
+	//drintf("Replacing farg %+v with %+v\n", farg, arg)
 	out := []autoparser.Node{}
 	for _, v := range t {
 		if v.List != nil {
 			out = append(out, autoparser.Node{v.Raw, v.Str, ReplaceArg(arg, farg, v.List), v.Note})
 		} else {
-			drintf("Comparing function arg: %+v with node %+v\n", farg, v)
+			//drintf("Comparing function arg: %+v with node %+v\n", farg, v)
 			if farg.Raw == v.Raw {
 				out = append(out, arg)
 			} else {
@@ -164,7 +163,7 @@ func ReplaceArg(arg, farg autoparser.Node, t []autoparser.Node) []autoparser.Nod
 }
 
 func ReplaceArgs(args, fargs, t []autoparser.Node) []autoparser.Node {
-	drintf("Replacing function args %+v with %+v\n", fargs, args)
+	drintf("Replacing function args %+v with %+v\n", TreeToTcl(fargs), TreeToTcl(args))
 	for i, v := range fargs {
 		t = ReplaceArg(args[i], v, t)
 	}
@@ -201,7 +200,7 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 	}
 	drintf("Evaluating: %v\n", command)
 	if isList(command[0]) {
-		c :=command[0]
+		c := command[0]
 		args := command[1:]
 		bod := CopyTree(c.List[1:])
 		fargs := c.List[0].List
@@ -211,7 +210,7 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 		}
 		nbod := ReplaceArgs(args, fargs, bod)
 		drintf("Calling lambda %+v\n", nbod)
-		return treeReduce(nbod, parent,0)
+		return treeReduce(nbod, parent, 0)
 	}
 	f := S(command[0])
 	args := command[1:]
@@ -220,8 +219,8 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 		bod := CopyTree(fu.Body)
 		fargs := fu.Args
 		nbod := ReplaceArgs(args, fargs, bod)
-		drintf("Calling function %+v\n", nbod)
-		return treeReduce(nbod, parent,0)
+		drintf("Calling function %+v\n", TreeToTcl(nbod))
+		return treeReduce(nbod, parent, 0)
 	} else {
 		if f == "" {
 			return void()
@@ -255,17 +254,30 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 			return N(fmt.Sprintf("%v", ato(S(args[0]))-ato(S(args[1]))))
 		case "*":
 			return N(fmt.Sprintf("%v", ato(S(args[0]))*ato(S(args[1]))))
-		case ">":
-			if  ato(S(args[0]))>ato(S(args[1])) {
+		case "gt":
+			if ato(S(args[0])) > ato(S(args[1])) {
 				return N("1")
 			} else {
 				return N("0")
 			}
-			
-		
-		case "puts":
+		case "lt":
+			if ato(S(args[0])) < ato(S(args[1])) {
+				return N("1")
+			} else {
+				return N("0")
+			}
+		case "eq":
+			if ato(S(args[0])) == ato(S(args[1])) {
+				return N("1")
+			} else {
+				return N("0")
+			}
 
+		case "puts":
 			for _, v := range args {
+				if v.List != nil {
+					fmt.Printf("%v\n", ListToStr(v.List))
+				}
 				fmt.Print(S(v))
 			}
 			fmt.Println()
@@ -279,15 +291,15 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 				return N(globals[S(args[0])])
 			}
 		case "run":
-			stringCommand, err := ListToString(command[1:])
+			stringCommand, err := ListToStrings(command[1:])
 			if err != nil {
 				return N(err.Error())
 			} else {
 				var res string
 				var err error
-				
+
 				err = runWithGuardian(stringCommand)
-				
+
 				if err == nil {
 					if res == "" {
 						return N("")
@@ -305,6 +317,10 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 				   body
 				}
 			*/
+			//log.Println("procedure definition", args)
+			if len(args) != 3 {
+				panic("proc requires 3 arguments: proc name {arguments} {body}")
+			}
 			functions[S(args[0])] = function{
 				Name: S(args[0]),
 				Args: args[1].List,
@@ -316,18 +332,51 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 			} else {
 				os.Exit(ato(S(args[0])))
 			}
+		case "cons":
+			thing := args[0]
+			list := args[1].List
+			list = append([]autoparser.Node{thing}, list...)
+			return autoparser.Node{List: list}
+		case "empty?":
+			if args[0].List == nil || len(args[0].List) == 0 {
+				return N("1")
+			} else {
+				return N("0")
+			}
+		case "length":
+			return autoparser.Node{Str: fmt.Sprintf("%v", len(args[0].List))}
+		case "lindex":
+			return args[0].List[ato(S(args[1]))]
+		case "lrange":
+			var start int
+			if S(args[1]) == "start" {
+				start = 0
+			} else {
+				start = ato(S(args[1]))
+			}
+			var end int
+			if S(args[2]) == "end" {
+				end = len(args[0].List)
+			} else {
+				end = ato(S(args[2]))
+			}
+
+			return autoparser.Node{List: args[0].List[start:end]}
 
 		case "if":
+			if S(args[2]) != "else" {
+				panic("If missing else")
+			}
 			if ato(S(args[0])) != 0 {
 				return treeReduce(args[1].List, parent, level)
-			} else if len(args) == 3 {
-				return treeReduce(args[2].List, parent, level)
+			} else if len(args) == 4 {
+				return treeReduce(args[3].List, parent, level)
 			} else {
 				return void()
 			}
 
 		case "saveInterpreter":
-			if len(args)<1 {
+			if len(args) < 1 {
 				xshErr("saveInterpreter: no filename specified")
 				return N("No filename given")
 			}
@@ -344,13 +393,13 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 			if command[0].Note == "\"" {
 				return command[0]
 			}
-			stringCommand, err := ListToString(command)
+			stringCommand, err := ListToStrings(command)
 			if err != nil {
 				return autoparser.Node{Note: "VOID"}
 			} else {
 				var res string
 				var err error
-				if level ==1 {
+				if level == 1 {
 					err = runWithGuardian(stringCommand)
 				} else {
 
@@ -377,10 +426,10 @@ func xshErr(msg string) {
 	}
 }
 func treeReduce(t []autoparser.Node, parent *autoparser.Node, toplevel int) autoparser.Node {
-	drintf("Reducing: %+v\n", t)
-	if toplevel == 1{
-		xshErr(ListToStr(t))
-		}
+	drintf("Reducing: %+v\n", TreeToTcl(t))
+	if toplevel == 1 {
+		xshErr(TreeToTcl(t))
+	}
 	out := []autoparser.Node{}
 	for i, v := range t {
 		switch {
@@ -389,7 +438,6 @@ func treeReduce(t []autoparser.Node, parent *autoparser.Node, toplevel int) auto
 		case v.List != nil:
 			if v.Note == "[" || v.Note == "\n" || v.Note == ";" {
 
-				
 				atom := treeReduce(v.List, &t[i], toplevel-1)
 				out = append(out, atom)
 				t[i] = atom
@@ -405,7 +453,7 @@ func treeReduce(t []autoparser.Node, parent *autoparser.Node, toplevel int) auto
 				drintf("Fetching %v from Globals: %+v\n", vname, globals)
 				if vname == "" {
 					fmt.Println("$ must preceed a variable name")
-					
+
 				} else {
 					if _, ok := globals[vname]; ok {
 						atom = N(globals[vname])
@@ -478,6 +526,7 @@ func listFiles(path string) func(string) []string {
 		return names
 	}
 }
+
 //List all executable files in PATH
 func listPathExecutables() func(string) []string {
 	return func(line string) []string {
@@ -494,7 +543,6 @@ func listPathExecutables() func(string) []string {
 		return names
 	}
 }
-
 
 func listBuiltins() func(string) []string {
 	return func(line string) []string {
@@ -513,11 +561,9 @@ func shell() {
 		readline.PcItem("cd", readline.PcItemDynamic(listFiles("./"))),
 		readline.PcItemDynamic(listPathExecutables(),
 			readline.PcItemDynamic(listFiles("./")),
-	
 		),
 		readline.PcItemDynamic(listBuiltins(),
 			readline.PcItemDynamic(listFiles("./")),
-		
 		),
 	)
 
@@ -534,11 +580,11 @@ func shell() {
 	defer l.Close()
 
 	if usePterm {
-	// Print a large text with differently colored letters.
-	pterm.DefaultBigText.WithLetters(
-		pterm.NewLettersFromStringWithStyle("X", pterm.NewStyle(pterm.FgCyan)),
-		pterm.NewLettersFromStringWithStyle("Shell", pterm.NewStyle(pterm.FgLightMagenta))).
-		Render()
+		// Print a large text with differently colored letters.
+		pterm.DefaultBigText.WithLetters(
+			pterm.NewLettersFromStringWithStyle("X", pterm.NewStyle(pterm.FgCyan)),
+			pterm.NewLettersFromStringWithStyle("Shell", pterm.NewStyle(pterm.FgLightMagenta))).
+			Render()
 	}
 
 	for {
@@ -555,12 +601,11 @@ func shell() {
 		} else if err == io.EOF {
 			break
 		}
-		
 
 		line = strings.TrimSpace(line)
 		tree := autoparser.ParseTcl(line)
-		wholeTree=tree
-		fmt.Printf("%+v\n", NodeToString(treeReduce(tree, nil,2)))
+		wholeTree = tree
+		fmt.Printf("%+v\n", NodeToString(treeReduce(tree, nil, 2)))
 	}
 
 	/*
