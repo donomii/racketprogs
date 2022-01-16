@@ -13,18 +13,16 @@ puts [+ [+ 1 2] [saveInterpreter "savefile.cont"] [+ 3 4] ]
 #puts [loadfile "main.go"]
 ls .
 sayHello "Jeremy"
-proc map  { func alist } { {{} seq seq}
+proc map  { func alist } {
 	if [eq [length alist] 0] {
 		{"map end"}
-        } else { {{} seq seq}
-		"Start of else clause"
-		puts "Func result:" [cons [func [lindex alist 0]] {"end"}]
+        } else {
 		cons [func [lindex alist 0]] [map func [lrange alist 1 end]]
 	}
 }
 
 puts [dump [map {{a} + 1 a} { 1 2 3 4 5}]]
-exit 0
+exit 1
 
 
 proc fold  { func accum alist } { 
