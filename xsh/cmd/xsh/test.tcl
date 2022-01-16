@@ -21,14 +21,13 @@ proc map  { func alist } {
 	}
 }
 
-puts [dump [map {{a} + 1 a} { 1 2 3 4 5}]]
-exit 1
+puts [dump [map {a| + 1 a} { 1 2 3 4 5}]]
 
 
-proc fold  { func accum alist } { 
-	puts "fold list: " accum alist
+proc fold { func accum alist } { 
+	#puts "fold list: " alist "accum:" accum
 	if [eq [length alist] 0] {
-		{"end"}
+		accum
         } else {
 		if [eq [length alist] 1] {
 			func accum [lindex alist 0]
@@ -39,16 +38,17 @@ proc fold  { func accum alist } {
 }
 
 
-
 proc CR {} { chr 13 }
 proc LF {} { chr 10 }
 
 
 puts "Starting fold"
-fold {{a b} [puts "fold:" b] [cons b a]} {"accum"} { 1 2 3 4 5 }
+puts [fold {a b| seq [cons b a]} {"accumstart"} { 1 2 3 4 5 }]
 
 
-proc reverse {alist} { fold {{accum b} [cons b accum]} {} alist }
+proc reverse {alist} {
+       fold {a b| seq [cons b a]} {} alist 
+}
 
 
 puts "Reversed: " [dump [reverse { a b c d } ]]

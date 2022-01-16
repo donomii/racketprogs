@@ -153,29 +153,39 @@ func CopyTree(t []autoparser.Node) []autoparser.Node {
 	return out
 }
 
-func ReplaceArg(arg, farg autoparser.Node, t []autoparser.Node) []autoparser.Node {
-	//drintf("Replacing farg %+v with %+v\n", farg, arg)
+func ReplaceArg(args, params, t []autoparser.Node) []autoparser.Node {
+
 	out := []autoparser.Node{}
 	for _, v := range t {
 		if v.List != nil {
-			out = append(out, autoparser.Node{v.Raw, v.Str, ReplaceArg(arg, farg, v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File})
+			out = append(out, autoparser.Node{v.Raw, v.Str, ReplaceArg(args, params, v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File})
 		} else {
-			//drintf("Comparing function arg: %+v with node %+v\n", farg, v)
-			if farg.Raw == v.Raw {
-				out = append(out, arg)
-			} else {
-				out = append(out, autoparser.Node{v.Raw, v.Str, v.List, v.Note, v.Line, v.Column, v.ChrPos, v.File})
+			replaced := 0
+			for parami, param := range params {
+
+				//drintf("Comparing function arg: %+v with node %+v\n", farg, v)
+				//log.Printf("Comparing function arg: %+v with node %+v\n", args[parami].Raw, v.Raw)
+				if param.Raw == v.Raw {
+					//log.Printf("Replacing param %+v with %+v\n", param, args[parami])
+					out = append(out, args[parami])
+					//log.Printf("Inserting: %v\n", S(args[parami]))
+					replaced = 1
+				}
+			}
+			if replaced == 0 {
+				out = append(out, CopyNode(v))
 			}
 		}
 	}
 	return out
 }
 
-func ReplaceArgs(args, fargs, t []autoparser.Node) []autoparser.Node {
-	drintf("Replacing function args %+v with %+v\n", TreeToTcl(fargs), TreeToTcl(args))
-	for i, v := range fargs {
-		t = ReplaceArg(args[i], v, t)
-	}
+func ReplaceArgs(args, params, t []autoparser.Node) []autoparser.Node {
+	drintf("Replacing function params %+v with %+v\n", TreeToTcl(params), TreeToTcl(args))
+	//log.Printf("Replacing function params %+v with %+v\n", TreeToTcl(params), TreeToTcl(args))
+
+	t = ReplaceArg(args, params, t)
+
 	return t
 }
 
@@ -221,13 +231,13 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 		c := command[0]
 		args := command[1:]
 		bod := CopyTree(c.List[1:])
-		fargs := c.List[0].List
-		if len(fargs) != len(args) {
-			msg := fmt.Sprintf("Error %v,%v: Mismatched function args in ->|%v|<-  expected %v, given %v\n[%v %v]\n", command[0].Line, command[0].Column, TreeToTcl(command), TreeToTcl(fargs), TreeToTcl(args), S(c), TreeToTcl(args))
+		params := c.List[0].List
+		if len(params) != len(args) {
+			msg := fmt.Sprintf("Error %v,%v: Mismatched function args in ->|%v|<-  expected %v, given %v\n[%v %v]\n", command[0].Line, command[0].Column, TreeToTcl(command), TreeToTcl(params), TreeToTcl(args), S(c), TreeToTcl(args))
 			fmt.Printf(msg)
 			os.Exit(1)
 		}
-		nbod := ReplaceArgs(args, fargs, bod)
+		nbod := ReplaceArgs(args, params, bod)
 		drintf("Calling lambda %+v\n", nbod)
 		return blockReduce(nbod, parent, 0)
 	}
@@ -300,11 +310,15 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 			}
 
 		case "puts":
-			for _, v := range args {
-				if v.List != nil {
-					fmt.Printf("%v\n", ListToStr(v.List))
+			for i, v := range args {
+				if i != 0 {
+					fmt.Print(" ")
 				}
-				fmt.Print(S(v))
+				if v.List != nil {
+					fmt.Printf("%v", ListToStr(v.List))
+				} else {
+					fmt.Print(S(v))
+				}
 			}
 			fmt.Println()
 		case "loadfile":
@@ -313,8 +327,10 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 		case "set":
 			if len(args) == 2 {
 				globals[S(args[0])] = S(args[1])
+				os.Setenv(S(args[0]), S(args[1])) //FIXME add "use environment" toggle
 			} else {
-				return N(globals[S(args[0])])
+				//return N(globals[S(args[0])])
+				return N(os.Getenv(S(args[0])))
 			}
 		case "run":
 			stringCommand, err := ListToStrings(command[1:])
@@ -483,7 +499,7 @@ func xshErr(msg string) {
 func blockReduce(t []autoparser.Node, parent *autoparser.Node, toplevel int) autoparser.Node {
 
 	drintf("BlockReduce: starting %+v\n", TreeToTcl(t))
-	log.Printf("BlockReduce: starting %+v\n", t)
+	//log.Printf("BlockReduce: starting %+v\n", t)
 	if len(t) == 0 {
 		return void(*parent)
 	}
@@ -596,7 +612,7 @@ func TreeToTcl(t []autoparser.Node) string {
 		case v.List != nil:
 			out = out + "[" + TreeToTcl(v.List) + "]"
 		case v.Raw != "":
-			out = out + v.Raw + " " //FIXME escape string properly for JSON
+			out = out + v.Raw + " " //FIXME escape string properly to include in JSON
 
 		default:
 			out = out + "\"" + v.Str + "\"" + " " //FIXME escape string properly for JSON
