@@ -61,6 +61,7 @@ func ParseTcl(code, filename string) []Node {
 	//PrintTree(r, 0, false)
 	r, _, _ = Groupify(r)
 	r = KeywordBreak(r, []string{"\n"})
+	r = KeywordBreak(r, []string{"|"})
 	r = StripNL(r)
 	r = MergeNonWhiteSpace(r)
 
