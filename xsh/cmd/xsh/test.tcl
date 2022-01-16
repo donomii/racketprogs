@@ -13,17 +13,47 @@ puts [+ [+ 1 2] [saveInterpreter "savefile.cont"] [+ 3 4] ]
 #puts [loadfile "main.go"]
 ls .
 sayHello "Jeremy"
-proc fold  { func accum alist } { 
-	puts "fold list: " alist
-	if [eq [length alist] 1] {
-		[func accum [lindex alist 0]]
-	} else {
-		fold func [func accum [lindex alist 0]] [lrange alist 1 end]
+proc map  { func alist } { {{} seq seq}
+	if [eq [length alist] 0] {
+		{"map end"}
+        } else { {{} seq seq}
+		"Start of else clause"
+		puts "Func result:" [cons [func [lindex alist 0]] {"end"}]
+		cons [func [lindex alist 0]] [map func [lrange alist 1 end]]
 	}
 }
+
+puts [dump [map {{a} + 1 a} { 1 2 3 4 5}]]
+exit 0
+
+
+proc fold  { func accum alist } { 
+	puts "fold list: " accum alist
+	if [eq [length alist] 0] {
+		{"end"}
+        } else {
+		if [eq [length alist] 1] {
+			func accum [lindex alist 0]
+		} else {
+			fold func [func accum [lindex alist 0]] [lrange alist 1 end]
+		}
+	}
+}
+
+
+
+proc CR {} { chr 13 }
+proc LF {} { chr 10 }
+
+
 puts "Starting fold"
-fold {{a b} [puts "fold:" b] "retval"} "accum" { 1 2 3 4 5 }
-fold puts "accum" { 1 2 3 4 5 }
+fold {{a b} [puts "fold:" b] [cons b a]} {"accum"} { 1 2 3 4 5 }
+
+
+proc reverse {alist} { fold {{accum b} [cons b accum]} {} alist }
+
+
+puts "Reversed: " [dump [reverse { a b c d } ]]
 
 
 
