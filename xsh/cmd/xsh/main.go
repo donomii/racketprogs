@@ -305,7 +305,7 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 				return N("0")
 			}
 		case "eq":
-			if ato(S(args[0])) == ato(S(args[1])) {
+			if S(args[0]) == S(args[1]) {
 				return N("1")
 			} else {
 				return N("0")
@@ -456,6 +456,16 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 			fmt.Printf("Function defs: %v\n\nRemaining code: %v\n", funcs, rest)
 
 			ioutil.WriteFile(S(args[0]), []byte(code), 0644)
+
+		case "return":
+			return args[0]
+		case "and":
+			if ato(S(args[0])) != 0 {
+				if ato(S(args[1])) != 0 {
+					return N("1")
+				}
+			}
+			return N("0")
 		default:
 			//It is an external call, prepare the shell command then run it
 			//fixme warn user on verbose?

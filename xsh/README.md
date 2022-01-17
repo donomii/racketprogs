@@ -22,6 +22,18 @@ Functions also work like normal shell commands. Use [ ] brackets to call sub-fun
     puts 2 + 2 equals [+ 2 2]
 
 ## The language
+
+### If statements
+
+    if [gt n 0] {
+        countdown [- n 1]
+    } else {
+        puts "Countdown complete"
+    }
+
+    if [eq line "you're happy and you know it"] {
+        clap your hands
+    }
 ### Functions
 
 Define functions with *proc*.
@@ -142,7 +154,7 @@ Function args are substituted directly into the function body when the function 
 
 Quit and set the system return *value*.
 
-### if *bool* {[command ...][command ...]} {[command ...][command ...]} 
+### if *bool* {[command ...][command ...]} else {[command ...][command ...]} 
 
 ### saveInterpreter *filename*
 
@@ -194,7 +206,7 @@ Lambdas are supported.  If the lambda is on a single line, it can only have a si
 
     {{a} puts [+ a b]} 1 2
 
-    {{a b c} seq [puts b] [puts [+ a b]] } 1 2 "Result:"
+    {{a b c} seq [puts c] [puts [+ a b]] } 1 2 "Result:"
 
  
 
@@ -202,5 +214,5 @@ Lambdas have a nicer, shorter format as well.
 
     {a| puts [+ a b]} 1 2
 
-     {a b c| seq [puts b] [puts [+ a b]] } 1 2 "Result:"
+     {a b c| seq [puts c] [puts [+ a b]] } 1 2 "Result:"
 

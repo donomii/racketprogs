@@ -65,3 +65,45 @@ countdown 5
 #proc lambdify { alist } {
 #	[cons {} alist]
 #}
+
+proc thr { count threes} {
+	if [eq count threes] {
+		puts "fizz"
+		+ 3 threes
+	} else {
+		return threes 
+	}
+}
+
+proc fiv { count fives } {
+	if [eq count fives] {
+		puts "buzz"
+		+ 5 fives
+	} else {
+		return fives
+	}
+}
+
+proc do_fizzbuzz {count threes fives} {
+	if [and [eq count threes] [eq count fives]] {
+		puts "fizzbuzz"
+		do_fizzbuzz [+ 1 count ] [+ 3 threes] [+ 5 fives]
+	} else {
+		if [eq count threes] {
+			puts "fizz"
+			do_fizzbuzz [+ 1 count] [+ 3 threes] fives
+		} else {
+			if [eq count fives] {
+				puts "buzz"
+				do_fizzbuzz [+ 1 count] threes [+ 5 fives]
+			} else {
+				puts count
+				do_fizzbuzz [+ 1 count] threes fives
+			}
+		}
+	}
+}
+
+proc fizzbuzz {} {do_fizzbuzz 1 3 5}
+
+fizzbuzz
