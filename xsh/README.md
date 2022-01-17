@@ -4,19 +4,44 @@ A cross platform shell and scripting language
 
 ## Description
 
-A cross platform scripting language that supports interactive development and full integration with command line utilities.
+A cross platform shell and scripting language.
 
+A homoiconic functional scripting language that works by tree reduction.
 ## Examples
 
-    puts [if 1 { "Hello" } { "Goodbye" }] " world"
+    set greet "Hello world"
+    echo $greet
 
-Lambdas are supported
+ If you want to call another program, use [ ] brackets (instead of $() in bash).
+    
+    puts "Directory:" [ls]
+    puts "USB devices:" [lsusb]
 
-    {{a} puts [+ a b]} "Hello"
+Functions also work like normal shell commands. You don't need commas, and you usually don't need quotes either.
 
-    {{a b c} [puts [+ a b]] [puts b]} 1 2 "Hello"
+    puts 2 + 2 equals [+ 2 2]
 
-    proc countdown { n } { if [> n 0] {[puts n] [countdown [- n 1]]} {}
+## The language
+### Functions
+
+Define functions with *proc*.
+
+
+*proc* {arg1 arg2 arg ...} { 
+	expression
+	expression
+	...
+	expression
+ }
+
+The last expression is the return value of the function.
+
+    *proc* countdown { n } {
+        puts n
+        if [gt n 0] {
+                countdown [- n 1]
+        }
+    }
 
     » countdown 10
     10
@@ -29,6 +54,29 @@ Lambdas are supported
     3
     2
     1
+
+*proc* {arg1 arg2 arg ...} { expression }
+
+If you use the single line declaration, you can only write one expression.  But that expression can be _seq_.
+
+    *proc* countdown { n } { seq [puts n] [if [gt n 0] { countdown [- n 1] }]}
+
+    » countdown 10
+    10
+    9
+    8
+    7
+    6
+    5
+    4
+    3
+    2
+    1
+
+
+
+
+
 ## Built in commands
 
 ### [seq [command] [command] [command] ...]
@@ -39,13 +87,33 @@ Runs each command in sequence, returns the value of the last command
 
 Change directory, as usual
 
+### +,-,*,/
+
+The usual math functions
+
+### gt, lt
+
+Greater than, and less than.  Because <> is too useful to waste on math functions.
+
+### eq *arg1* *arg2*
+
+Returns true if *arg1 arg2* are equal, false otherwise.
+
 ### [puts "message" "message"]
 
-Print messages, followed by a newline
+Print messages, then a newline
+
+### dump *arg*
+
+Create a string version of *arg*
 
 ### [set *name* *value*]
 
-Set *name* to *value*.  Note that all variables are global.
+Set environment varible *name* to *value*.
+
+All variables are global.  You can't declare local variables, except using function args, which are immutable.
+
+You can access environment variables with *$name*.
 
 ### [loadfile *filename*]
 
@@ -53,7 +121,7 @@ Load *filename* as a string.
 
 ### [run command arg1 arg2 ...]
 
-Run [command arg1 arg2 ...] interactively.  The current stdin, stdout and stderr will be re-used for the command.
+Run external program [command arg1 arg2 ...] interactively.  The current stdin, stdout and stderr will be re-used for the command.
 
 ### [proc *name* {arg1 arg2 ...} { [command ...][command ...]}]
 
@@ -62,7 +130,7 @@ Define a function called *name*.
 Lambdas are defined slightly differently, with the args inside the lambda:
 
     {{arg1 arg2 ...}  command ...}
-    {{arg1 arg2 ...}  [command ...][command ...]}
+    {{arg1 arg2 ...}  seq [command ...][command ...]}
 
 Note that there are no lexical scopes (all variables are global, only function args are local), so lambdas are the closest thing XSH has to variable definitions.
 
@@ -83,4 +151,56 @@ Save the current execution state to be resumed later.
 Save files can be resumed with 
 
     xsh -r *filename*
+
+### cons *arg* *array*
+
+Adds *arg* to the start of *array*.  The old list is not changed, a new list is created.
+
+### empty? *list*
+
+Returns true if *list* is empty.
+
+### length *list*
+
+Returns number of items in *list*
+
+### lindex *index* *array*
+
+Returns item at position *index* in *array*
+
+### lrange *list* *start* *end*
+
+Returns a sublist of *list*, starting at *start*, ending at *end*
+
+### split *string* *delimiter string*
+
+Splits *string* at every *delimiter*, returns the pieces as an array.
+
+### join *list* *inter*
+
+Joins *list* together by placing *inter* between each element of *list*.  Returns a string.
+
+### chr *integer*
+
+Returns a string containing the unicode character *integer*
+
+
+## Advanced language features
+
+
+### Lambdas
+
+Lambdas are supported.  If the lambda is on a single line, it can only have a single expression.  To put multiple statements on a single line, use *seq*.
+
+    {{a} puts [+ a b]} 1 2
+
+    {{a b c} seq [puts b] [puts [+ a b]] } 1 2 "Result:"
+
+ 
+
+Lambdas have a nicer, shorter format as well.
+
+    {a| puts [+ a b]} 1 2
+
+     {a b c| seq [puts b] [puts [+ a b]] } 1 2 "Result:"
 

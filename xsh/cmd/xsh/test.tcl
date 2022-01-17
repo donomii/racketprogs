@@ -53,7 +53,14 @@ proc reverse {alist} {
 
 puts "Reversed: " [dump [reverse { a b c d } ]]
 
+proc countdown { n } { 
+	puts n
+	if [gt n 0] {
+	       	countdown [- n 1]
+	}
+}
 
+countdown 5
 
 #proc lambdify { alist } {
 #	[cons {} alist]

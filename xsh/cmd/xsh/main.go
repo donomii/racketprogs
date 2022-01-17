@@ -288,6 +288,8 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 			return N(fmt.Sprintf("%v", ato(S(args[0]))-ato(S(args[1]))))
 		case "*":
 			return N(fmt.Sprintf("%v", ato(S(args[0]))*ato(S(args[1]))))
+		case "/":
+			return N(fmt.Sprintf("%v", ato(S(args[0]))/ato(S(args[1]))))
 		case "gt":
 			if ato(S(args[0])) > ato(S(args[1])) {
 				return N("1")
