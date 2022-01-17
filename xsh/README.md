@@ -203,7 +203,7 @@ Lambdas are defined slightly differently to functions, with the args inside the 
     {{arg1 arg2 ...}  command ...}
     {{arg1 arg2 ...}  seq [command ...][command ...]}
     
-    If the lambda is on a single line, it can only have a single expression.  To put multiple statements on a single line, use *seq*.
+If the lambda is on a single line, it can only have a single expression.  To put multiple statements on a single line, use *seq*.
 
     {{a} puts [+ a b]} 1 2
 
