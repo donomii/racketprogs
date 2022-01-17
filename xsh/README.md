@@ -135,14 +135,10 @@ Load *filename* as a string.
 
 Run external program [command arg1 arg2 ...] interactively.  The current stdin, stdout and stderr will be re-used for the command.
 
-### [proc *name* {arg1 arg2 ...} { [command ...][command ...]}]
+### proc *name* {arg1 arg2 ...} { [command ...][command ...]}
 
 Define a function called *name*.
 
-Lambdas are defined slightly differently, with the args inside the lambda:
-
-    {{arg1 arg2 ...}  command ...}
-    {{arg1 arg2 ...}  seq [command ...][command ...]}
 
 Note that there are no lexical scopes (all variables are global, only function args are local), so lambdas are the closest thing XSH has to variable definitions.
 
@@ -200,9 +196,14 @@ Returns a string containing the unicode character *integer*
 ## Advanced language features
 
 
-### Lambdas
+### Lambda functions (anonymous functions)
 
-Lambdas are supported.  If the lambda is on a single line, it can only have a single expression.  To put multiple statements on a single line, use *seq*.
+Lambdas are defined slightly differently to functions, with the args inside the lambda:
+
+    {{arg1 arg2 ...}  command ...}
+    {{arg1 arg2 ...}  seq [command ...][command ...]}
+    
+    If the lambda is on a single line, it can only have a single expression.  To put multiple statements on a single line, use *seq*.
 
     {{a} puts [+ a b]} 1 2
 
@@ -216,3 +217,9 @@ Lambdas have a nicer, shorter format as well.
 
      {a b c| seq [puts c] [puts [+ a b]] } 1 2 "Result:"
 
+If the lambda is on more than one line, the parameters go on the first line, without a trailing |
+
+     {a b c
+        puts c
+        puts [+ a b]
+     } 1 2 "Result:"

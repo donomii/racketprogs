@@ -228,12 +228,12 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 	drintf("Evaluating: %v\n", command)
 	//If list, assume it is a lambda function and evaluate it
 	if isList(command[0]) {
-		c := command[0]
+		theLambdaFunction := command[0]
 		args := command[1:]
-		bod := CopyTree(c.List[1:])
-		params := c.List[0].List
+		bod := CopyTree(theLambdaFunction.List[1:])
+		params := theLambdaFunction.List[0].List
 		if len(params) != len(args) {
-			msg := fmt.Sprintf("Error %v,%v: Mismatched function args in ->|%v|<-  expected %v, given %v\n[%v %v]\n", command[0].Line, command[0].Column, TreeToTcl(command), TreeToTcl(params), TreeToTcl(args), S(c), TreeToTcl(args))
+			msg := fmt.Sprintf("Error %v,%v: Mismatched function args in ->|%v|<-  expected %v, given %v\n[%v %v]\n", command[0].Line, command[0].Column, TreeToTcl(command), TreeToTcl(params), TreeToTcl(args), S(theLambdaFunction), TreeToTcl(args))
 			fmt.Printf(msg)
 			os.Exit(1)
 		}

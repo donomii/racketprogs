@@ -102,4 +102,10 @@ proc do_fizzbuzz {count threes fives} {
 
 proc fizzbuzz {} {do_fizzbuzz 1 3 5}
 
-fizzbuzz
+#fizzbuzz
+
+{a b c
+        puts c
+        puts [+ a b]
+     } 1 2 "Result:"
+
