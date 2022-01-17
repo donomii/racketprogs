@@ -200,22 +200,14 @@ Returns a string containing the unicode character *integer*
 
 Lambdas are defined slightly differently to functions, with the args inside the lambda:
 
-    {{arg1 arg2 ...}  command ...}
-    {{arg1 arg2 ...}  seq [command ...][command ...]}
+    {arg1 arg2 ...|  command}
+    {arg1 arg2 ...|  seq [command ...][command ...]}
     
 If the lambda is on a single line, it can only have a single expression.  To put multiple statements on a single line, use *seq*.
 
-    {{a} puts [+ a b]} 1 2
-
-    {{a b c} seq [puts c] [puts [+ a b]] } 1 2 "Result:"
-
- 
-
-Lambdas have a nicer, shorter format as well.
-
     {a| puts [+ a b]} 1 2
 
-     {a b c| seq [puts c] [puts [+ a b]] } 1 2 "Result:"
+    {a b c| seq [puts c] [puts [+ a b]] } 1 2 "Result:"
 
 If the lambda is on more than one line, the parameters go on the first line, without a trailing |
 
