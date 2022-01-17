@@ -62,10 +62,6 @@ proc countdown { n } {
 
 countdown 5
 
-#proc lambdify { alist } {
-#	[cons {} alist]
-#}
-
 proc thr { count threes} {
 	if [eq count threes] {
 		puts "fizz"
