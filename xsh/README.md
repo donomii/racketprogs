@@ -17,7 +17,7 @@ A homoiconic functional scripting language that works by tree reduction.
     puts "Directory:" [ls]
     puts "USB devices:" [lsusb]
 
-Functions also work like normal shell commands. You don't need commas, and you usually don't need quotes either.
+Functions also work like normal shell commands. Use [ ] brackets to call sub-functions, just like calling programs in the shell.  You don't need commas, and you usually don't need quotes either.
 
     puts 2 + 2 equals [+ 2 2]
 
@@ -79,7 +79,7 @@ If you use the single line declaration, you can only write one expression.  But 
 
 ## Built in commands
 
-### [seq [command] [command] [command] ...]
+### seq [command] [command] [command] ...
 
 Runs each command in sequence, returns the value of the last command
 
@@ -99,7 +99,7 @@ Greater than, and less than.  Because <> is too useful to waste on math function
 
 Returns true if *arg1 arg2* are equal, false otherwise.
 
-### [puts "message" "message"]
+### puts "message" "message"
 
 Print messages, then a newline
 
@@ -107,7 +107,7 @@ Print messages, then a newline
 
 Create a string version of *arg*
 
-### [set *name* *value*]
+### set *name* *value*
 
 Set environment varible *name* to *value*.
 
@@ -115,11 +115,11 @@ All variables are global.  You can't declare local variables, except using funct
 
 You can access environment variables with *$name*.
 
-### [loadfile *filename*]
+### loadfile *filename*
 
 Load *filename* as a string.
 
-### [run command arg1 arg2 ...]
+### run command arg1 arg2 ...
 
 Run external program [command arg1 arg2 ...] interactively.  The current stdin, stdout and stderr will be re-used for the command.
 
@@ -138,13 +138,13 @@ Free variables are substituted _before_ the lambda (or function) is created, whi
 
 Function args are substituted directly into the function body when the function is called, meaning that variables are immutable and cannot be re-bound (although they can be shadowed).
 
-### [exit *value*]
+### exit *value*
 
 Quit and set the system return *value*.
 
 ### if *bool* {[command ...][command ...]} {[command ...][command ...]} 
 
-### [saveInterpreter *filename*]
+### saveInterpreter *filename*
 
 Save the current execution state to be resumed later.
 
