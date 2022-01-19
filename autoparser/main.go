@@ -53,15 +53,15 @@ func ParseGo(code, filename string) []Node {
 	//fmt.Printf("%+v\n", r)
 }
 
-func ParseTcl(code, filename string) []Node {
+func ParseXSH(code, filename string) []Node {
 
 	l := NewTree(code, filename)
 	r, _ := Stringify(l, "#", "\n", "\\", "")
 	r, _ = Stringify(r, "\"", "\"", "\\", "")
 	//PrintTree(r, 0, false)
 	r, _, _ = Groupify(r)
-	r = KeywordBreak(r, []string{"\n"})
-	r = KeywordBreak(r, []string{"|"})
+	r = KeywordBreak(r, []string{"|", "\n"})
+	//r = KeywordBreak(r, []string{"|"})
 	r = StripNL(r)
 	r = MergeNonWhiteSpace(r)
 
