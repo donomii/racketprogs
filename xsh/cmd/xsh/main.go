@@ -83,7 +83,7 @@ func main() {
 	case *resumeFile != "":
 		fmt.Println("Resuming from file: ", *resumeFile)
 		code := autoparser.LoadFile(*resumeFile)
-		tree := autoparser.ParseTcl(code, *resumeFile)
+		tree := autoparser.ParseXSH(code, *resumeFile)
 		drintf("%+v\n", tree)
 		wholeTree = tree
 		drintf("treeReduce: %+v\n", treeReduce(tree, nil, 0))
@@ -97,7 +97,7 @@ func main() {
 	default:
 
 		code := autoparser.LoadFile(fname)
-		tree := autoparser.ParseTcl(code, fname)
+		tree := autoparser.ParseXSH(code, fname)
 		drintf("%+v\n", tree)
 		wholeTree = tree
 		drintf("treeReduce: %+v\n", treeReduce(tree, nil, 2))
@@ -153,11 +153,25 @@ func CopyTree(t []autoparser.Node) []autoparser.Node {
 	return out
 }
 
+func checkArgs(args []autoparser.Node, params []autoparser.Node) error {
+	for _, v := range args {
+		for _, p := range params {
+			if p.Raw == v.Raw {
+				panic(fmt.Sprintf("Cannot shadow args in lambda: %+v, %+v\n", v, p))
+			}
+		}
+	}
+	return nil
+}
+
 func ReplaceArg(args, params, t []autoparser.Node) []autoparser.Node {
 
 	out := []autoparser.Node{}
 	for _, v := range t {
 		if v.List != nil {
+			if v.Note == "|" {
+				checkArgs(v.List, params)
+			}
 			out = append(out, autoparser.Node{v.Raw, v.Str, ReplaceArg(args, params, v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File})
 		} else {
 			replaced := 0
@@ -230,16 +244,23 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 	if isList(command[0]) {
 		theLambdaFunction := command[0]
 		args := command[1:]
+
 		bod := CopyTree(theLambdaFunction.List[1:])
 		params := theLambdaFunction.List[0].List
-		if len(params) != len(args) {
-			msg := fmt.Sprintf("Error %v,%v: Mismatched function args in ->|%v|<-  expected %v, given %v\n[%v %v]\n", command[0].Line, command[0].Column, TreeToTcl(command), TreeToTcl(params), TreeToTcl(args), S(theLambdaFunction), TreeToTcl(args))
-			fmt.Printf(msg)
-			os.Exit(1)
+		if theLambdaFunction.List[0].Note == "|" {
+			if theLambdaFunction.List[0].Note != "|" {
+				panic("Not a lambda function: " + TreeToTcl(params))
+				panic(fmt.Sprintf("Not a lambda function: %+v\n", theLambdaFunction))
+			}
+			if len(params) != len(args) {
+				msg := fmt.Sprintf("Error %v,%v: Mismatched function args in ->|%v|<-  expected %v, given %v\n[%v %v]\n", command[0].Line, command[0].Column, TreeToTcl(command), TreeToTcl(params), TreeToTcl(args), S(theLambdaFunction), TreeToTcl(args))
+				fmt.Printf(msg)
+				os.Exit(1)
+			}
+			nbod := ReplaceArgs(args, params, bod)
+			drintf("Calling lambda %+v\n", nbod)
+			return blockReduce(nbod, parent, 0)
 		}
-		nbod := ReplaceArgs(args, params, bod)
-		drintf("Calling lambda %+v\n", nbod)
-		return blockReduce(nbod, parent, 0)
 	}
 
 	//If it s a string or symbol, look it up in the global
@@ -297,7 +318,9 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 				return N("0")
 			}
 		case "dump":
+			//fmt.Println(N(fmt.Sprintf("%+v", args)))
 			return N(fmt.Sprintf("%v", TreeToTcl(args)))
+
 		case "lt":
 			if ato(S(args[0])) < ato(S(args[1])) {
 				return N("1")
@@ -721,7 +744,7 @@ func shell() {
 		}
 
 		line = strings.TrimSpace(line)
-		tree := autoparser.ParseTcl(line, "shell")
+		tree := autoparser.ParseXSH(line, "shell")
 		wholeTree = tree
 		fmt.Printf("%+v\n", NodeToString(treeReduce(tree, nil, 1)))
 	}

@@ -104,8 +104,12 @@ proc fizzbuzz {} {do_fizzbuzz 1 3 5}
 
 #fizzbuzz
 
-{a b c
+{a b c|
         puts c
         puts [+ a b]
      } 1 2 "Result:"
 
+{a b c|
+        puts c
+        puts [+ a b]
+     } 1 2 "Result:"

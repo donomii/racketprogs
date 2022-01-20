@@ -209,9 +209,9 @@ If the lambda is on a single line, it can only have a single expression.  To put
 
     {a b c| seq [puts c] [puts [+ a b]] } 1 2 "Result:"
 
-If the lambda is on more than one line, the parameters go on the first line, without a trailing |
+If the lambda is on more than one line, the parameters go on the first line.
 
-     {a b c
+     {a b c |
         puts c
         puts [+ a b]
      } 1 2 "Result:"
