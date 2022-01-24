@@ -1,7 +1,6 @@
-package main
+package autoparser
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -9,31 +8,67 @@ import (
 )
 
 type Node struct {
-	Raw  string
-	Str  string
-	List []Node
+	Raw    string
+	Str    string
+	List   []Node
+	Note   string
+	Line   int
+	Column int
+	ChrPos int
+	File   string
 }
 
-func main() {
-	fname := flag.String("f", "main.go", "File to parse")
-	flag.Parse()
-	f := loadFile(*fname)
-	//fmt.Println("Parsing file:", f)
-	fl := strings.Split(f, "")
+func NewTree(s, filename string) []Node {
 	l := []Node{}
-	for _, v := range fl {
-		l = append(l, Node{v, "", nil})
+	line := 1
+	pos := 0
+	chrpos := 0
+	for _, v := range strings.Split(s, "") {
+		pos = pos + 1
+		chrpos = chrpos + 1
+		if v == "\n" {
+			line = line + 1
+			pos = 0
+		}
+		l = append(l, Node{v, "", nil, "", line, pos, chrpos, filename})
 	}
-	r, _ := stringify(l, "//", "\n", "\\", "")
-	printTree(r, 0, false)
-	r, _, _ = groupify(r, "")
-	r = keywordBreak(r, []string{"import", "type", "func", "\n"})
-	r = mergeNonWhiteSpace(r)
-	r = stripNL(r)
-	r = stripWhiteSpace(r)
+	return l
+}
+
+func ParseGo(code, filename string) []Node {
+
+	l := NewTree(code, filename)
+	r, _ := Stringify(l, "//", "\n", "\\", "")
+	r, _ = Stringify(r, "\"", "\"", "\\", "")
+	//PrintTree(r, 0, false)
+	r, _, _ = Groupify(r)
+	r = KeywordBreak(r, []string{"import", "type", "func", "\n"})
+	r = MergeNonWhiteSpace(r)
+	r = StripNL(r)
+	r = StripWhiteSpace(r)
 	//Need to split on spaces and merge before doing binops
-	r = groupBinops(r)
-	printTree(r, 0, false)
+	r = GroupBinops(r)
+	//PrintTree(r, 0, false)
+	return r
+	//fmt.Printf("%+v\n", r)
+}
+
+func ParseXSH(code, filename string) []Node {
+
+	l := NewTree(code, filename)
+	r, _ := Stringify(l, "#", "\n", "\\", "")
+	r, _ = Stringify(r, "\"", "\"", "\\", "")
+	//PrintTree(r, 0, false)
+	r, _, _ = Groupify(r)
+	r = KeywordBreak(r, []string{"|", "\n"})
+	//r = KeywordBreak(r, []string{"|"})
+	r = StripNL(r)
+	r = MergeNonWhiteSpace(r)
+
+	r = StripWhiteSpace(r)
+	StripEmptyLists(r)
+	//PrintTree(r, 0, false)
+	return r
 	//fmt.Printf("%+v\n", r)
 }
 
@@ -66,7 +101,8 @@ func countTree(t []Node) int {
 	return count
 }
 
-func printTree(t []Node, indent int, newlines bool) {
+// lalala))) ululu
+func PrintTree(t []Node, indent int, newlines bool) {
 	for _, v := range t {
 		if v.List == nil {
 			if v.Str == "" {
@@ -86,13 +122,13 @@ func printTree(t []Node, indent int, newlines bool) {
 					printIndent(indent+1, "_")
 				}
 				fmt.Print("(")
-				printTree(v.List, indent+2, true)
+				PrintTree(v.List, indent+2, true)
 				print("\n")
 				printIndent(indent, "_")
 				fmt.Print(")\n")
 			} else {
 				fmt.Print("(")
-				printTree(v.List, indent+2, false)
+				PrintTree(v.List, indent+2, false)
 				fmt.Print(")")
 
 			}
@@ -132,13 +168,13 @@ func match(s string, l []Node) bool {
 	}
 	return false
 }
-func stringify(in []Node, start, end, escape, strMode string) ([]Node, []Node) {
+func Stringify(in []Node, start, end, escape, strMode string) ([]Node, []Node) {
 	accum := []Node{}
 	for i := 0; i < len(in); i++ {
 		v := in[i]
 		if v.List != nil {
 			var ret []Node
-			ret, in = stringify(v.List, start, end, escape, strMode)
+			ret, in = Stringify(v.List, start, end, escape, strMode)
 			i = -1
 			accum = append(accum, Node{List: ret})
 		} else {
@@ -158,10 +194,10 @@ func stringify(in []Node, start, end, escape, strMode string) ([]Node, []Node) {
 				switch {
 				case match(start, in[i:]):
 					var sublist []Node
-					sublist, in = stringify(in[i+len(start):], start, end, escape, end)
+					sublist, in = Stringify(in[i+len(start):], start, end, escape, end)
 					i = -1
 					//fmt.Printf("Found string: %s\n", joinRaw(sublist))
-					n := Node{Str: joinRaw(sublist)}
+					n := Node{Str: joinRaw(sublist), Note: start}
 					//fmt.Printf("Found node: %+v\n", n)
 					accum = append(accum, n)
 
@@ -173,65 +209,45 @@ func stringify(in []Node, start, end, escape, strMode string) ([]Node, []Node) {
 	}
 	return accum, []Node{}
 }
-func groupify(in []Node, strMode string) ([]Node, []Node, int) {
+func Groupify(in []Node) ([]Node, []Node, int) {
 	output := []Node{}
 	accum := []Node{}
 	for i := 0; i < len(in); i++ {
 		v := in[i]
-		if strMode != "" {
-			switch v.Raw {
-			case "\\":
-				vv := in[i+1]
-				accum = append(accum, vv)
-				i = i + 1
-			case strMode:
-				return accum, in[i+1:], i
 
-			default:
-				accum = append(accum, v)
-			}
-		} else {
-			switch v.Raw {
-			case "\\":
-				vv := in[i+1]
-				accum = append(accum, vv)
-				i = i + 1
-			case "\"":
-				var sublist []Node
-				sublist, in, i = groupify(in[i+1:], "\"")
-				i = -1
-				//fmt.Printf("Found string: %s\n", joinRaw(sublist))
-				n := Node{Str: joinRaw(sublist)}
-				//fmt.Printf("Found node: %+v\n", n)
-				accum = append(accum, n)
+		switch v.Raw {
+		case "[":
+			var sublist []Node
+			sublist, in, i = Groupify(in[i+1:])
+			i = -1
+			accum = append(accum, Node{v.Raw, v.Str, sublist, "[", v.Line, v.Column, v.ChrPos, v.File}) //Use the opening parenthesis to identify the list
+		case "{":
+			var sublist []Node
+			sublist, in, i = Groupify(in[i+1:])
+			i = -1
+			accum = append(accum, Node{v.Raw, v.Str, sublist, "{", v.Line, v.Column, v.ChrPos, v.File}) //Use the opening parenthesis to identify the list
+		case "(":
+			var sublist []Node
+			sublist, in, i = Groupify(in[i+1:])
+			i = -1
+			accum = append(accum, Node{v.Raw, v.Str, sublist, "(", v.Line, v.Column, v.ChrPos, v.File}) //Use the opening parenthesis to identify the list
+		case "]":
+			fallthrough
+		case "}":
+			fallthrough
+		case ")":
+			return append(output, accum...), in[i+1:], i
 
-			case "[":
-				fallthrough
-			case "{":
-				fallthrough
-			case "(":
-				var sublist []Node
-				sublist, in, i = groupify(in[i+1:], strMode)
-				i = -1
-				accum = append(accum, Node{"", "", sublist})
-			case "]":
-				fallthrough
-			case "}":
-				fallthrough
-			case ")":
-				return append(output, accum...), in[i+1:], i
+		default:
+			accum = append(accum, v)
 
-			default:
-				accum = append(accum, v)
-
-			}
 		}
-
 	}
+
 	return append(output, accum...), []Node{}, -1
 }
 
-func keywordBreak(in []Node, keywords []string) []Node {
+func KeywordBreak(in []Node, keywords []string) []Node {
 	output := []Node{}
 	accum := []Node{}
 	for i := 0; i < len(in); i++ {
@@ -243,7 +259,7 @@ func keywordBreak(in []Node, keywords []string) []Node {
 					// 1.Capture the accumulator (e.g. we are in a list)
 					// 2.Capture the next next subtree (or more), join with the current node
 					//   e.g. a type or function definition, or aprocedure call
-					output = append(output, Node{"", "🛑", accum})
+					output = append(output, Node{v.Raw, v.Str, accum, keyword, v.Line, v.Column, v.ChrPos, v.File})
 					accum = []Node{}
 					//accum = []Node{{"", "🛑", nil}}
 					break
@@ -251,13 +267,13 @@ func keywordBreak(in []Node, keywords []string) []Node {
 			}
 			accum = append(accum, v)
 		} else {
-			accum = append(accum, Node{"", "", keywordBreak(v.List, keywords)})
+			accum = append(accum, Node{v.Raw, v.Str, KeywordBreak(v.List, keywords), v.Note, v.Line, v.Column, v.ChrPos, v.File})
 		}
 	}
 	return append(output, accum...)
 }
 
-func groupBinops(in []Node) []Node {
+func GroupBinops(in []Node) []Node {
 	accum := []Node{}
 
 	for i := 0; i < len(in); i++ {
@@ -267,8 +283,8 @@ func groupBinops(in []Node) []Node {
 			//fmt.Printf("Found ==\n")
 			first := in[0:i]
 			second := in[i+1:] //FIXME need to skip length of match
-			firstret := groupBinops(first)
-			secondret := groupBinops(second)
+			firstret := GroupBinops(first)
+			secondret := GroupBinops(second)
 			v.Raw = "define"
 			return []Node{v,
 				{List: firstret},
@@ -279,7 +295,7 @@ func groupBinops(in []Node) []Node {
 		if v.List == nil {
 			accum = append(accum, v)
 		} else {
-			accum = append(accum, Node{List: groupBinops(v.List)})
+			accum = append(accum, Node{List: GroupBinops(v.List)})
 		}
 	}
 
@@ -294,7 +310,7 @@ func isWhiteSpace(s string) bool {
 	return unicode.IsSpace(r[0]) || s[:1] == "\n" || s[:1] == "\t" || s[:1] == "\r" || s[:1] == " "
 }
 
-func mergeNonWhiteSpace(in []Node) []Node {
+func MergeNonWhiteSpace(in []Node) []Node {
 	output := []Node{}
 	accum := []Node{}
 	for i := 0; i < len(in); i++ {
@@ -310,14 +326,14 @@ func mergeNonWhiteSpace(in []Node) []Node {
 				}
 			}
 		} else {
-			accum = append(accum, Node{"", "", mergeNonWhiteSpace(v.List)})
+			accum = append(accum, Node{v.Raw, v.Str, MergeNonWhiteSpace(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File})
 		}
 	}
 
 	return append(output, accum...)
 }
 
-func stripNL(in []Node) []Node {
+func StripNL(in []Node) []Node {
 	output := []Node{}
 	accum := []Node{}
 	for i := 0; i < len(in); i++ {
@@ -330,13 +346,30 @@ func stripNL(in []Node) []Node {
 				accum = append(accum, v)
 			}
 		} else {
-			accum = append(accum, Node{"", "", stripNL(v.List)})
+			accum = append(accum, Node{v.Raw, v.Str, StripNL(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File})
 		}
 	}
 	return append(output, accum...)
 }
 
-func stripWhiteSpace(in []Node) []Node {
+func StripEmptyLists(in []Node) []Node {
+	output := []Node{}
+	accum := []Node{}
+	for i := 0; i < len(in); i++ {
+		v := in[i]
+		if v.List == nil {
+			accum = append(accum, v)
+		} else {
+			if len(v.List) == 0 {
+			} else {
+				accum = append(accum, Node{v.Raw, v.Str, StripNL(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File})
+			}
+		}
+	}
+	return append(output, accum...)
+}
+
+func StripWhiteSpace(in []Node) []Node {
 	output := []Node{}
 	accum := []Node{}
 	for i := 0; i < len(in); i++ {
@@ -349,12 +382,12 @@ func stripWhiteSpace(in []Node) []Node {
 				accum = append(accum, v)
 			}
 		} else {
-			accum = append(accum, Node{"", "", stripWhiteSpace(v.List)})
+			accum = append(accum, Node{v.Raw, v.Str, StripWhiteSpace(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File})
 		}
 	}
 	return append(output, accum...)
 }
-func loadFile(path string) string {
+func LoadFile(path string) string {
 	fileb, _ := ioutil.ReadFile(path)
 	file := string(fileb)
 	return file
