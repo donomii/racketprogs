@@ -134,8 +134,13 @@ func ListToStr(l []autoparser.Node) string {
 }
 
 //This is ridiculous
-func ato(s string) int {
+func atoi(s string) int {
 	i, _ := strconv.Atoi(s)
+	return i
+}
+
+func atof(s string) float64 {
+	i, _ := strconv.ParseFloat(s, 64)
 	return i
 }
 func N(s string) autoparser.Node {
@@ -304,15 +309,41 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 			//Fuck
 			return void(command[0])
 		case "+":
-			return N(fmt.Sprintf("%v", ato(S(args[0]))+ato(S(args[1]))))
+			return N(fmt.Sprintf("%v", atoi(S(args[0]))+atoi(S(args[1]))))
 		case "-":
-			return N(fmt.Sprintf("%v", ato(S(args[0]))-ato(S(args[1]))))
+			return N(fmt.Sprintf("%v", atoi(S(args[0]))-atoi(S(args[1]))))
 		case "*":
-			return N(fmt.Sprintf("%v", ato(S(args[0]))*ato(S(args[1]))))
+			return N(fmt.Sprintf("%v", atoi(S(args[0]))*atoi(S(args[1]))))
 		case "/":
-			return N(fmt.Sprintf("%v", ato(S(args[0]))/ato(S(args[1]))))
+			return N(fmt.Sprintf("%v", atoi(S(args[0]))/atoi(S(args[1]))))
 		case "gt":
-			if ato(S(args[0])) > ato(S(args[1])) {
+			if atoi(S(args[0])) > atoi(S(args[1])) {
+				return N("1")
+			} else {
+				return N("0")
+			}
+		case "lt":
+			if atoi(S(args[0])) < atoi(S(args[1])) {
+				return N("1")
+			} else {
+				return N("0")
+			}
+		case "+.":
+			return N(fmt.Sprintf("%v", atof(S(args[0]))+atof(S(args[1]))))
+		case "-.":
+			return N(fmt.Sprintf("%v", atof(S(args[0]))-atof(S(args[1]))))
+		case "*.":
+			return N(fmt.Sprintf("%v", atof(S(args[0]))*atof(S(args[1]))))
+		case "/.":
+			return N(fmt.Sprintf("%v", atof(S(args[0]))/atof(S(args[1]))))
+		case "gt.":
+			if atof(S(args[0])) > atof(S(args[1])) {
+				return N("1")
+			} else {
+				return N("0")
+			}
+		case "lt.":
+			if atof(S(args[0])) < atof(S(args[1])) {
 				return N("1")
 			} else {
 				return N("0")
@@ -321,12 +352,6 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 			//fmt.Println(N(fmt.Sprintf("%+v", args)))
 			return N(fmt.Sprintf("%v", TreeToTcl(args)))
 
-		case "lt":
-			if ato(S(args[0])) < ato(S(args[1])) {
-				return N("1")
-			} else {
-				return N("0")
-			}
 		case "eq":
 			if S(args[0]) == S(args[1]) {
 				return N("1")
@@ -400,7 +425,7 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 			if len(args) == 0 {
 				os.Exit(0)
 			} else {
-				os.Exit(ato(S(args[0])))
+				os.Exit(atoi(S(args[0])))
 			}
 		case "cons":
 			//log.Printf("Cons %+v\n", args)
@@ -419,19 +444,19 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 		case "length":
 			return autoparser.Node{Str: fmt.Sprintf("%v", len(args[0].List))}
 		case "lindex":
-			return args[0].List[ato(S(args[1]))]
+			return args[0].List[atoi(S(args[1]))]
 		case "lrange":
 			var start int
 			if S(args[1]) == "start" {
 				start = 0
 			} else {
-				start = ato(S(args[1]))
+				start = atoi(S(args[1]))
 			}
 			var end int
 			if S(args[2]) == "end" {
 				end = len(args[0].List)
 			} else {
-				end = ato(S(args[2]))
+				end = atoi(S(args[2]))
 			}
 
 			return autoparser.Node{List: args[0].List[start:end]}
@@ -449,12 +474,12 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 			delim := S(args[1])
 			return N(strings.Join(list, delim))
 		case "chr":
-			return N(string(ato(S(args[0]))))
+			return N(string(atoi(S(args[0]))))
 		case "if":
 			if len(args) == 3 && S(args[2]) != "else" {
 				panic("If missing else")
 			}
-			if ato(S(args[0])) != 0 {
+			if atoi(S(args[0])) != 0 {
 				ret := blockReduce(args[1].List, parent, level)
 				drintln("Returning from if true branch:", TreeToTcl([]autoparser.Node{ret}))
 				return ret
@@ -483,8 +508,8 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 		case "return":
 			return args[0]
 		case "and":
-			if ato(S(args[0])) != 0 {
-				if ato(S(args[1])) != 0 {
+			if atoi(S(args[0])) != 0 {
+				if atoi(S(args[1])) != 0 {
 					return N("1")
 				}
 			}
