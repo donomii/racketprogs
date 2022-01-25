@@ -22,12 +22,16 @@ import (
 
 	"github.com/chzyer/readline"
 	"github.com/donomii/goof"
+	_ "embed"
 
 	autoparser "../../../autoparser"
 )
 
 var guardianPath string
 var trace bool
+
+//go:embed stdlib.xsh
+var stdlib_str string
 
 type function struct {
 	Name string
@@ -54,6 +58,17 @@ func drintln(args ...interface{}) {
 		log.Println(args...)
 	}
 }
+
+func Eval(code, fname string) autoparser.Node {
+	fmt.Printf("Evalling: %v\n", code)
+	tree := autoparser.ParseXSH(code, fname)
+	wholeTree = tree
+	return treeReduce(tree, nil, 2)
+}
+func LoadEval(fname string) autoparser.Node {
+	return Eval(autoparser.LoadFile(fname), fname)
+}
+
 func main() {
 	bindir := goof.ExecutablePath()
 	if runtime.GOOS == "windows" {
@@ -81,30 +96,14 @@ func main() {
 
 	switch {
 	case *resumeFile != "":
-		fmt.Println("Resuming from file: ", *resumeFile)
-		code := autoparser.LoadFile(*resumeFile)
-		tree := autoparser.ParseXSH(code, *resumeFile)
-		drintf("%+v\n", tree)
-		wholeTree = tree
-		drintf("treeReduce: %+v\n", treeReduce(tree, nil, 0))
-		//autoparser.PrintTree(tree, 0, false)
-		json := TreeToTcl(tree)
-
-		fmt.Println(json)
-
+		Eval(stdlib_str, "stdlib")
+		LoadEval(*resumeFile)
 	case wantShell:
+		Eval(stdlib_str, "stdlib")
 		shell()
 	default:
-
-		code := autoparser.LoadFile(fname)
-		tree := autoparser.ParseXSH(code, fname)
-		drintf("%+v\n", tree)
-		wholeTree = tree
-		drintf("treeReduce: %+v\n", treeReduce(tree, nil, 2))
-		//autoparser.PrintTree(tree, 0, false)
-		json := TreeToTcl(tree)
-
-		fmt.Println(json)
+		Eval(stdlib_str, "stdlib")
+		LoadEval(fname)
 	}
 }
 
@@ -506,6 +505,8 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 			ioutil.WriteFile(S(args[0]), []byte(code), 0644)
 
 		case "return":
+			return args[0]
+		case "id":
 			return args[0]
 		case "and":
 			if atoi(S(args[0])) != 0 {
