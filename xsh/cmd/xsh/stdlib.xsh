@@ -35,3 +35,6 @@ proc reverse {alist} {
 
 proc CR {} { chr 13 }
 proc LF {} { chr 10 }
+
+
+proc range {start end accum} { if [gt start end] { id accum } else { range start [- end 1] [cons end accum] }

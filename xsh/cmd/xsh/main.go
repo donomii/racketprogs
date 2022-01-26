@@ -444,6 +444,12 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 			return autoparser.Node{Str: fmt.Sprintf("%v", len(args[0].List))}
 		case "lindex":
 			return args[0].List[atoi(S(args[1]))]
+		case "lset":
+			array:= args[0]
+			pos := atoi(S(args[1]))
+			data := args[2]
+			array.List[pos] = data
+			return array
 		case "lrange":
 			var start int
 			if S(args[1]) == "start" {
