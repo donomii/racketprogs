@@ -62,8 +62,11 @@ func drintln(args ...interface{}) {
 func Eval(code, fname string) autoparser.Node {
 	fmt.Printf("Evalling: %v\n", code)
 	tree := autoparser.ParseXSH(code, fname)
+	//fmt.Printf("Tree: %v\n", tree)
 	wholeTree = tree
-	return treeReduce(tree, nil, 2)
+	res := treeReduce(tree, nil, 2)
+	//fmt.Printf("Res: %+v\n", res)
+	return res
 }
 func LoadEval(fname string) autoparser.Node {
 	return Eval(autoparser.LoadFile(fname), fname)
@@ -99,7 +102,7 @@ func main() {
 		Eval(stdlib_str, "stdlib")
 		LoadEval(*resumeFile)
 	case wantShell:
-		Eval(stdlib_str, "stdlib")
+		fmt.Printf("%+v\n", TreeToTcl( Eval(stdlib_str, "stdlib").List ))
 		shell()
 	default:
 		Eval(stdlib_str, "stdlib")
@@ -776,9 +779,7 @@ func shell() {
 		}
 
 		line = strings.TrimSpace(line)
-		tree := autoparser.ParseXSH(line, "shell")
-		wholeTree = tree
-		fmt.Printf("%+v\n", NodeToString(treeReduce(tree, nil, 1)))
+		fmt.Printf("Result: %+v\n", TreeToTcl([]autoparser.Node{Eval(line, "shell")}))
 	}
 
 	/*

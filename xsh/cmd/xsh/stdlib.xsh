@@ -36,5 +36,8 @@ proc reverse {alist} {
 proc CR {} { chr 13 }
 proc LF {} { chr 10 }
 
+proc range_rec {start end step accum} { if [gt start end] { return accum } else { range_rec [+ start step] end step [cons start accum] } }
 
-proc range {start end accum} { if [gt start end] { id accum } else { range start [- end 1] [cons end accum] }
+#Generate a list
+proc range {start end step} { reverse [range_rec start end step {} ] }
+
