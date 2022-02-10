@@ -113,3 +113,7 @@ proc fizzbuzz {} {do_fizzbuzz 1 3 5}
         puts c
         puts [+ a b]
      } 1 2 "Result:"
+
+with {x y z} = {1 2 3} {
+	 puts "x:"  x  " y:"  y  " z:"  z
+}
