@@ -8,14 +8,15 @@ import (
 )
 
 type Node struct {
-	Raw    string
-	Str    string
-	List   []Node
-	Note   string
-	Line   int
-	Column int
-	ChrPos int
-	File   string
+	Raw          string
+	Str          string
+	List         []Node
+	Note         string
+	Line         int
+	Column       int
+	ChrPos       int
+	File         string
+	ScopeBarrier bool
 }
 
 func NewTree(s, filename string) []Node {
@@ -30,7 +31,7 @@ func NewTree(s, filename string) []Node {
 			line = line + 1
 			pos = 0
 		}
-		l = append(l, Node{v, "", nil, "", line, pos, chrpos, filename})
+		l = append(l, Node{v, "", nil, "", line, pos, chrpos, filename, false})
 	}
 	return l
 }
@@ -220,17 +221,17 @@ func Groupify(in []Node) ([]Node, []Node, int) {
 			var sublist []Node
 			sublist, in, i = Groupify(in[i+1:])
 			i = -1
-			accum = append(accum, Node{v.Raw, v.Str, sublist, "[", v.Line, v.Column, v.ChrPos, v.File}) //Use the opening parenthesis to identify the list
+			accum = append(accum, Node{v.Raw, v.Str, sublist, "[", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier}) //Use the opening parenthesis to identify the list
 		case "{":
 			var sublist []Node
 			sublist, in, i = Groupify(in[i+1:])
 			i = -1
-			accum = append(accum, Node{v.Raw, v.Str, sublist, "{", v.Line, v.Column, v.ChrPos, v.File}) //Use the opening parenthesis to identify the list
+			accum = append(accum, Node{v.Raw, v.Str, sublist, "{", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier}) //Use the opening parenthesis to identify the list
 		case "(":
 			var sublist []Node
 			sublist, in, i = Groupify(in[i+1:])
 			i = -1
-			accum = append(accum, Node{v.Raw, v.Str, sublist, "(", v.Line, v.Column, v.ChrPos, v.File}) //Use the opening parenthesis to identify the list
+			accum = append(accum, Node{v.Raw, v.Str, sublist, "(", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier}) //Use the opening parenthesis to identify the list
 		case "]":
 			fallthrough
 		case "}":
@@ -259,7 +260,7 @@ func KeywordBreak(in []Node, keywords []string) []Node {
 					// 1.Capture the accumulator (e.g. we are in a list)
 					// 2.Capture the next next subtree (or more), join with the current node
 					//   e.g. a type or function definition, or aprocedure call
-					output = append(output, Node{v.Raw, v.Str, accum, keyword, v.Line, v.Column, v.ChrPos, v.File})
+					output = append(output, Node{v.Raw, v.Str, accum, keyword, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
 					accum = []Node{}
 					//accum = []Node{{"", "🛑", nil}}
 					break
@@ -267,7 +268,7 @@ func KeywordBreak(in []Node, keywords []string) []Node {
 			}
 			accum = append(accum, v)
 		} else {
-			accum = append(accum, Node{v.Raw, v.Str, KeywordBreak(v.List, keywords), v.Note, v.Line, v.Column, v.ChrPos, v.File})
+			accum = append(accum, Node{v.Raw, v.Str, KeywordBreak(v.List, keywords), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
 		}
 	}
 	return append(output, accum...)
@@ -319,14 +320,14 @@ func MergeNonWhiteSpace(in []Node) []Node {
 			if i == 0 {
 				accum = append(accum, v)
 			} else {
-				if !isWhiteSpace(v.Raw) && !isWhiteSpace(in[i-1].Raw) {
+				if !(v.Raw == "") && (accum[len(accum)-1].Raw != "") && !isWhiteSpace(v.Raw) && !isWhiteSpace(in[i-1].Raw) {
 					accum[len(accum)-1].Raw = accum[len(accum)-1].Raw + v.Raw
 				} else {
 					accum = append(accum, v)
 				}
 			}
 		} else {
-			accum = append(accum, Node{v.Raw, v.Str, MergeNonWhiteSpace(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File})
+			accum = append(accum, Node{v.Raw, v.Str, MergeNonWhiteSpace(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
 		}
 	}
 
@@ -346,7 +347,7 @@ func StripNL(in []Node) []Node {
 				accum = append(accum, v)
 			}
 		} else {
-			accum = append(accum, Node{v.Raw, v.Str, StripNL(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File})
+			accum = append(accum, Node{v.Raw, v.Str, StripNL(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
 		}
 	}
 	return append(output, accum...)
@@ -362,7 +363,7 @@ func StripEmptyLists(in []Node) []Node {
 		} else {
 			if len(v.List) == 0 {
 			} else {
-				accum = append(accum, Node{v.Raw, v.Str, StripNL(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File})
+				accum = append(accum, Node{v.Raw, v.Str, StripNL(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
 			}
 		}
 	}
@@ -382,7 +383,7 @@ func StripWhiteSpace(in []Node) []Node {
 				accum = append(accum, v)
 			}
 		} else {
-			accum = append(accum, Node{v.Raw, v.Str, StripWhiteSpace(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File})
+			accum = append(accum, Node{v.Raw, v.Str, StripWhiteSpace(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
 		}
 	}
 	return append(output, accum...)
