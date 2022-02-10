@@ -114,6 +114,12 @@ proc fizzbuzz {} {do_fizzbuzz 1 3 5}
         puts [+ a b]
      } 1 2 "Result:"
 
-with {x y z} = {1 2 3} {
+
+with {testscope} = { {dontreplace| puts dontreplace} } {
+with {x y z dontreplace lambdacopy} = {1 2 3 fail testscope} {
 	 puts "x:"  x  " y:"  y  " z:"  z
+	 testscope "Scope working"
+	 puts testscope "testscope"
+	 lambdacopy "lambdacopy"
+}
 }

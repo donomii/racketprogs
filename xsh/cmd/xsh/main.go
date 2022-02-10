@@ -175,33 +175,38 @@ func ReplaceArg(args, params, t []autoparser.Node) []autoparser.Node {
 
 	out := []autoparser.Node{}
 	for _, v := range t {
-		if v.List != nil {
-			if v.Note == "|" {
-				checkArgs(v.List, params)
-			}
-			out = append(out, autoparser.Node{v.Raw, v.Str, ReplaceArg(args, params, v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+		//The scope barrier exists to prevent variable names being incorrectly replaced in substitued code
+		//If there are multiple LET statements, or with some combinations of lambdas and recursion, it is possible
+		//that a lambda will be copied into the function tree, and then another variable replace pass runs, incorrectly replacing
+		//variables inside the lambda when they are really in a different scope and should not be replaced.
+		if v.ScopeBarrier {
+			out = append(out, CopyNode(v))
 		} else {
-			replaced := 0
-			for parami, param := range params {
-
-				//drintf("Comparing function arg: %+v with node %+v\n", farg, v)
-				//log.Printf("Comparing function arg: %+v with node %+v\n", args[parami].Raw, v.Raw)
-				//We found a variable to replace
-				if param.Raw == v.Raw {
-					//log.Printf("Replacing param %+v with %+v\n", param, args[parami])
-					new := CopyNode(args[parami])
-					//The scope barrier exists to prevent variable names being incorrectly replaced in substitued code
-					//If there are multiple LET statements, or with some combinations of lambdas and recursion, it is possible
-					//that a lambda will be copied into the function tree, and then a variable replace runs, incorrectly replacing
-					//"free" variables inside the lambda when they are really in a different scope and should not be replaced.
-					new.ScopeBarrier = true
-					out = append(out, new)
-					//log.Printf("Inserting: %v\n", S(args[parami]))
-					replaced = 1
+			if v.List != nil {
+				if v.Note == "|" {
+					checkArgs(v.List, params)
 				}
-			}
-			if replaced == 0 {
-				out = append(out, CopyNode(v))
+				out = append(out, autoparser.Node{v.Raw, v.Str, ReplaceArg(args, params, v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+			} else {
+				replaced := 0
+				for parami, param := range params {
+
+					//drintf("Comparing function arg: %+v with node %+v\n", farg, v)
+					//log.Printf("Comparing function arg: %+v with node %+v\n", args[parami].Raw, v.Raw)
+					//We found a variable to replace
+					if param.Raw == v.Raw {
+						//log.Printf("Replacing param %+v with %+v\n", param, args[parami])
+						new := CopyNode(args[parami])
+						//New node is assumed to be from a different scope, so we need to set the scope barrier
+						new.ScopeBarrier = true
+						out = append(out, new)
+						//log.Printf("Inserting: %v\n", S(args[parami]))
+						replaced = 1
+					}
+				}
+				if replaced == 0 {
+					out = append(out, CopyNode(v))
+				}
 			}
 		}
 	}
