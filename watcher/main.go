@@ -4,7 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os/exec"
 	"regexp"
+	"runtime"
 	"strings"
 	"time"
 
@@ -12,16 +14,37 @@ import (
 	"github.com/radovskyb/watcher"
 )
 
+var ignoreEvents bool
+
+func ShellBackground(shellcmd string) *exec.Cmd {
+	var cmd *exec.Cmd = nil
+	switch runtime.GOOS {
+	case "linux":
+		cmd = exec.Command("/bin/sh", "-c", shellcmd)
+	case "windows":
+		cmd = exec.Command("c:\\Windows\\System32\\cmd.exe", "/c", shellcmd)
+	case "darwin":
+		cmd = exec.Command("/bin/sh", "-c", shellcmd)
+	default:
+		log.Println("unsupported platform when trying to run application")
+	}
+	cmd.Start()
+	return cmd
+}
+
 func main() {
 
-	watchDir := flag.String("watch", "./", "Directory to watch")
-	watchRegex := flag.String("regex", "go", "Regex to match files to watch")
+	watch := flag.String("watch", "./", "Directory to watch")
+	watchRegex := flag.String("regex", ".*", "Regex to match files to watch")
 	buildCmd := flag.String("build", "go build -o tmp.exe .", "Command to build")
 	runCmd := flag.String("run", "./tmp.exe", "Command to run")
 	flag.Parse()
 
 	var changeDetected chan bool = make(chan bool)
 	var buildComplete chan bool = make(chan bool)
+
+	fmt.Printf("Watching for changes in %s\n", *watch)
+	fmt.Printf("Regex: %s\n", *watchRegex)
 
 	go func() {
 		for {
@@ -30,19 +53,24 @@ func main() {
 			goof.Shell(*buildCmd)
 			fmt.Printf("Build complete\n")
 			buildComplete <- true
-
 		}
 	}()
 
 	go func() {
+		var cmd *exec.Cmd = nil
 		for {
 			<-buildComplete
-			fmt.Printf("Killing %v\n", *runCmd)
-			goof.QC([]string{"pkill", "-f", *runCmd}) //FIXME windows
+			if cmd != nil {
+				fmt.Printf("Killing %v\n", *runCmd)
+				cmd.Process.Kill()
+				cmd.Process.Release()
+			}
 			fmt.Printf("Running %v\n", *runCmd)
-			go goof.Shell(*runCmd)
+			cmd = ShellBackground(*runCmd)
+			ignoreEvents = false
 
 		}
+
 	}()
 
 	fmt.Println("Started workers")
@@ -56,7 +84,12 @@ func main() {
 				fmt.Printf("Change detected: %s\n", event.Path)
 				match, _ := regexp.MatchString(*watchRegex, event.Path)
 				if match && !strings.Contains(event.Path, "tmp.exe") {
-					changeDetected <- true
+					if !ignoreEvents {
+						ignoreEvents = true
+						changeDetected <- true
+					} else {
+						fmt.Printf("Ignoring event: %s\n", event.Path)
+					}
 				}
 			case err := <-w.Error:
 				log.Fatalln(err)
@@ -67,7 +100,7 @@ func main() {
 	}()
 
 	// Watch test_folder recursively for changes.
-	if err := w.AddRecursive(*watchDir); err != nil {
+	if err := w.AddRecursive(*watch); err != nil {
 		log.Fatalln(err)
 	}
 
