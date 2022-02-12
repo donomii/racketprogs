@@ -13,10 +13,10 @@ import (
 
 func main() {
 
-	watchDir := flag.String("watchDir", "./", "Directory to watch")
+	watchDir := flag.String("watch", "./", "Directory to watch")
 	watchRegex := flag.String("regex", "go", "Regex to match files to watch")
-	buildCmd := flag.String("buildCmd", "go build -o tmp.exe .", "Command to build")
-	runCmd := flag.String("runCmd", "./tmp.exe", "Command to run")
+	buildCmd := flag.String("build", "go build -o tmp.exe .", "Command to build")
+	runCmd := flag.String("run", "./tmp.exe", "Command to run")
 	flag.Parse()
 
 	var changeDetected chan bool = make(chan bool)
@@ -53,7 +53,7 @@ func main() {
 			select {
 			case event := <-w.Event:
 				fmt.Printf("Change detected: %s\n", event.Path)
-				if strings.Contains(event.Path, *watchRegex) && !strings.Contains(event.Path, "tmp.exe") {
+				if regexp. && !strings.Contains(event.Path, "tmp.exe") {
 					changeDetected <- true
 				}
 			case err := <-w.Error:
