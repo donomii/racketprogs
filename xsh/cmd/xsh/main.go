@@ -75,9 +75,9 @@ func LoadEval(fname string) autoparser.Node {
 func main() {
 	bindir := goof.ExecutablePath()
 	if runtime.GOOS == "windows" {
-		guardianPath = bindir + "/guardian.exe"
+		guardianPath = bindir + "/xshguardian.exe"
 	} else {
-		guardianPath = bindir + "/guardian"
+		guardianPath = bindir + "/xshguardian"
 	}
 
 	/*
@@ -435,14 +435,12 @@ func eval(command []autoparser.Node, parent *autoparser.Node, level int) autopar
 					return N(err.Error())
 				}
 			}
-
 		case "proc":
 			/*
-						proc procedureName {arguments} {
+				proc procedureName {arguments} {
 				   body
 				}
 			*/
-			//log.Println("procedure definition", args)
 			if len(args) != 3 {
 				a := TreeToTcl(args)
 				msg := fmt.Sprintf("Error %v,%v: proc requires 3 arguments: proc name {arguments} {body}\n[%v %v]\n", command[0].Line, command[0].Column, f, a)
