@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"time"
 
@@ -53,7 +54,8 @@ func main() {
 			select {
 			case event := <-w.Event:
 				fmt.Printf("Change detected: %s\n", event.Path)
-				if regexp. && !strings.Contains(event.Path, "tmp.exe") {
+				match, _ := regexp.MatchString(*watchRegex, event.Path)
+				if match && !strings.Contains(event.Path, "tmp.exe") {
 					changeDetected <- true
 				}
 			case err := <-w.Error:
@@ -72,5 +74,4 @@ func main() {
 	if err := w.Start(time.Millisecond * 100); err != nil {
 		log.Fatalln(err)
 	}
-
 }
