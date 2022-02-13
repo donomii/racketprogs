@@ -42,6 +42,7 @@ var wantDebug bool
 var wantShell bool
 
 func main() {
+	state := xsh.New()
 	bindir := goof.ExecutablePath()
 	if runtime.GOOS == "windows" {
 		guardianPath = bindir + "/xshguardian.exe"
@@ -68,14 +69,14 @@ func main() {
 
 	switch {
 	case *resumeFile != "":
-		xsh.Eval(xsh.Stdlib_str, "stdlib")
-		xsh.LoadEval(*resumeFile)
+		xsh.Eval(state, xsh.Stdlib_str, "stdlib")
+		xsh.LoadEval(state, *resumeFile)
 	case wantShell:
-		fmt.Printf("%+v\n", xsh.TreeToTcl(xsh.Eval(xsh.Stdlib_str, "stdlib").List))
-		shell()
+		fmt.Printf("%+v\n", xsh.TreeToTcl(xsh.Eval(state, xsh.Stdlib_str, "stdlib").List))
+		shell(state)
 	default:
-		xsh.Eval(xsh.Stdlib_str, "stdlib")
-		xsh.LoadEval(fname)
+		xsh.Eval(state, xsh.Stdlib_str, "stdlib")
+		xsh.LoadEval(state, fname)
 	}
 }
 
@@ -119,7 +120,7 @@ func tbprint(x, y int, fg, bg termbox.Attribute, msg string) {
 		x += runewidth.RuneWidth(c)
 	}
 }
-func shell() {
+func shell(state xsh.State) {
 
 	var completer = readline.NewPrefixCompleter(
 		readline.PcItem("cd", readline.PcItemDynamic(listFiles("./"))),
@@ -167,7 +168,7 @@ func shell() {
 		}
 
 		line = strings.TrimSpace(line)
-		fmt.Printf("Result: %+v\n", xsh.TreeToTcl([]autoparser.Node{xsh.Eval(line, "shell")}))
+		fmt.Printf("Result: %+v\n", xsh.TreeToTcl([]autoparser.Node{xsh.Eval(state, line, "shell")}))
 	}
 
 	/*
