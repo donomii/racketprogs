@@ -63,7 +63,7 @@ var addreverse bool
 var tsv bool
 
 func main() {
-	flag.BoolVar(&noColumns, "no_columns", false, "Do not link column names to data, treat each row as a list of trigrams")
+	flag.BoolVar(&noColumns, "no-column-names", false, "Do not link column names to data, treat each row as a list of trigrams")
 	flag.BoolVar(&tsv, "tsv", false, "Input is tab-separated-values, not comma-separated-values")
 	flag.BoolVar(&verbose, "verbose", false, "Print records as they are inserted")
 	flag.BoolVar(&addreverse, "add-reverse", false, "Also add reverse trigrams")

@@ -25,9 +25,9 @@ trigrammr is a highly experimental tool for exploring data.  Using trigrammr, yo
 
 or
 
-    cat example.txt | ./trigrammr-import-book cat.sqlite
+    cat example.txt | ./trigrammr-import-book mydb.sqlite
 
-trigrammr-import-csv reads the data from STDIN and saves it in cat.sqlite.
+trigrammr-import-csv reads the data from STDIN and saves it in mydb.sqlite.
 
 ## Large example database
 
@@ -41,15 +41,16 @@ You will need to install BASH, PERL and CURL for this to work.  They come pre-in
 
 ### Load a database
 
-    > ./trigrammr-client cat.sqlite
+Before you can search for anything, you must load the data from a database.
+
+    > ./trigrammr-client mydb.sqlite
 
 or
 
     > ./trigrammr-client
-    » db cat
-    Opening: cat.sqlite
+    » db mydb
+    Opening: mydb.sqlite
 
-Before you can search for anything, you must load the data from a database.
 
 ### Get a summary of your database
 
@@ -70,7 +71,7 @@ Search for the word "the"
 
 Here, the [[cat]] is the only known word that follows [[the]].  Trigrammr displays every bigram (2-gram) that starts with [[the]].
 
-Typing "cat" displays every trigram (3-gram) that matches [[the]] [[cat]].
+Now typing "cat" displays every trigram (3-gram) that matches [[the]] [[cat]].
 
     » cat
 
@@ -119,9 +120,9 @@ Trims the output if it gets too long
 
 Prints the entire search output, no matter how many pages it might take up
 
-### dump WORD
+### dump
 
-Trigrammer stores the original record when it is imported.  "dump" will print out all records that match WORD
+Trigrammer stores the original record when it is imported.  "dump" will print out all records that match the current trigram.
 
 ### reset
 
