@@ -1,7 +1,7 @@
 package main
 
 import (
-	"time"
+	"../xsh"
 	"bufio"
 	"encoding/json"
 	"flag"
@@ -12,11 +12,13 @@ import (
 	"path"
 	"runtime/debug"
 	"strings"
+	"time"
 
 	"github.com/chzyer/readline"
 	"github.com/donomii/goof"
 
 	//. "github.com/donomii/pmoo"
+	"../autoparser"
 	. "./pmoolib"
 	pmoo "./pmoolib"
 	"github.com/donomii/throfflib"
@@ -32,8 +34,14 @@ func ConsoleInputHandler(queue chan *Message) {
 		text = strings.TrimSuffix(text, "\r\n")
 		text = strings.TrimSuffix(text, "\n")
 		if text != "" {
-			//Console is always the wizard, at least for now
-			InputMsg("2", "7", "input", text)
+			//fmt.Printf("Examining input: %s\n", text[:2])
+			if text[:2] == "x " {
+				fmt.Println(xshRun(text[2:]))
+			} else {
+				fmt.Printf("ConsoleInputHandler: %s\n", text)
+				//Console is always the wizard, at least for now
+				InputMsg("2", "7", "input", text)
+			}
 		}
 	}
 }
@@ -46,6 +54,20 @@ func listVerbs(player string) func(string) []string {
 	}
 }
 
+func xshRun(text string) string {
+	//fmt.Printf("Evalling xsh %v\n", text)
+	state := xsh.New()
+	xsh.UsePterm = false
+	state.UserData = "7"
+	state.ExtraBuiltins = xshBuiltins
+	xsh.Eval(state, xsh.Stdlib_str, "stdlib")
+	res := xsh.Eval(state, text, "pmoo")
+	//fmt.Printf("Result: %+v\n", res)
+	l := []autoparser.Node{res}
+	resstr := xsh.TreeToTcl(l)
+	//fmt.Printf("Result: %+v\n", resstr)
+	return resstr
+}
 func ReadLineInputHandler(queue chan *Message, player string) {
 
 	var completer = readline.NewPrefixCompleter(
@@ -65,8 +87,8 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 	}
 	for {
 		completer = readline.NewPrefixCompleter(
-		readline.PcItemDynamic(listVerbs(player)))
-		fmt.Print ("\033[31m»\033[0m ")
+			readline.PcItemDynamic(listVerbs(player)))
+		fmt.Print("\033[31m»\033[0m ")
 		text, err := l.Readline()
 		if batch {
 			fmt.Print(text)
@@ -79,7 +101,7 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 		}
 
 		if err != nil {
-			log.Println("Readline error:", err,"Exiting once queue is empty")
+			log.Println("Readline error:", err, "Exiting once queue is empty")
 			QuitOnEmptyQueue = true
 		}
 		text = strings.TrimSuffix(text, "\r\n")
@@ -88,8 +110,13 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 			os.Exit(0)
 		}
 		if text != "" {
-			//Console is always the wizard, at least for now
-			InputMsg("2", "7", "input", text)
+			//fmt.Printf("Examining input: '%s'\n", text[:2])
+			if text[:2] == "x " {
+				fmt.Println(xshRun(text[2:]))
+			} else {
+				//Console is always the wizard, at least for now
+				InputMsg("2", "7", "input", text)
+			}
 		}
 	}
 	l.Close()
@@ -122,7 +149,7 @@ func main() {
 
 	if !debug {
 		log.SetOutput(ioutil.Discard)
-		}
+	}
 
 	SetQ(inQ)
 
@@ -153,7 +180,7 @@ func main() {
 			})
 			log.Println("Using MOO in cluster", QueueServer)
 		} else {
-			if !goof.Exists(pmoo.DataDir){
+			if !goof.Exists(pmoo.DataDir) {
 				dataDir := goof.HomeDirectory() + "/.pmoo/objects"
 				os.MkdirAll(dataDir, 0600)
 				SetDataDir(dataDir)
@@ -219,8 +246,8 @@ func MOOloop(inQ chan *Message, player string) {
 		}
 
 		log.Println(strings.Join([]string{verb, dobjstr, prepstr, iobjstr}, ":"))
-		dobj, dpropstr := ParseDo(dobjstr, player)
-		iobj, ipropstr := ParseDo(iobjstr, player)
+		dobj, dpropstr := ParseDirectObject(dobjstr, player)
+		iobj, ipropstr := ParseDirectObject(iobjstr, player)
 
 		thisObj, _ := VerbSearch(LoadObject(player), verb)
 
@@ -248,6 +275,50 @@ func MOOloop(inQ chan *Message, player string) {
 	}
 }
 
+func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node, level int) (autoparser.Node, bool) {
+	player := s.UserData.(string)
+	if len(command) > 0 {
+		c, err := xsh.ListToStrings(command)
+		if err != nil {
+			log.Println("Error converting command to string:", err)
+		} else {
+			//fmt.Printf("Running custom handler for command %v\n", c)
+			switch c[0] {
+			case "setprop":
+				SetProp(c[1], c[2], c[3])
+			case "findobject":
+				FindObjectByName(player, c[1])
+			case "getprop":
+				return xsh.N(GetProp(c[1], c[2])), true
+			case "clone":
+				return xsh.N(Clone(c[1])), true
+			case "formatobject":
+				return xsh.N(FormatObject(c[1])), true
+			case "msg":
+				from := c[1]
+				target := c[2]
+				verb := c[3]
+				dobj := c[4]
+				prep := c[5]
+				iobj := c[6]
+
+				thisObj := LoadObject(target)
+				affin := thisObj.Properties["affinity"].Value
+				//log.Printf("From: %v, Target: %v, Verb: %v, Dobj: %v, Prep: %v, Iobj: %v\n", from.GetString(), target.GetString(), verb.GetString(), dobj.GetString(), prep.GetString(), iobj.GetString())
+
+				if ClusterQueue {
+					//SendNetMessage(Message{From: from.GetString(), Player: player, This: target.GetString(), Verb: verb.GetString(), Dobj: dobj.GetString(), Prepstr: prep.GetString(), Iobj: iobj.GetString(), Trace: traceId})
+					MyQMessage(QueueServer, Message{From: from, Player: player, This: target, Verb: verb, Dobj: dobj, Prepstr: prep, Iobj: iobj, Trace: "FIXME", Affinity: affin, Ticks: DefaultTicks})
+				} else {
+					RawMsg(Message{From: player, Player: player, This: target, Verb: verb, Dobj: dobj, Prepstr: prep, Iobj: iobj, Trace: "FIXME", Ticks: DefaultTicks})
+				}
+			}
+		}
+	}
+	return autoparser.Node{}, false
+
+}
+
 //Actually evaluate the verb
 func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr string, m Message) {
 	code := ""
@@ -262,18 +333,23 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 	if verbStruct == nil {
 		fmt.Printf("Failed to lookup '%v' on %v\n", verb, this)
 	} else {
-		if verbStruct.Throff {
+		log.Printf("Starting %+v\n", verbStruct)
+
+		switch verbStruct.Interpreter {
+		case "":
+			fallthrough
+		case "throff":
 			t := throfflib.MakeEngine()
 			AddEngineFuncs(t, player, this, "0")
 			t = t.RunString(throfflib.BootStrapString(), "Internal Bootstrap")
 			args := throfflib.StringsToArray(m.Args)
-			code = verbStruct.Value
+			code = code + verbStruct.Value
 			log.Println("Throff program: ", code)
 			//code = code + "  PRINTLN A[ ^player: player ]A PRINTLN A[ ^this: this ]A PRINTLN  A[ ^verb: verb ]A PRINTLN   A[ ^dobjstr: dobjstr ]A PRINTLN A[ ^dpropstr: dpropstr ]A PRINTLN  A[ ^prepstr: prepstr ]A  PRINTLN A[ ^iobjstr: iobjstr ]A   PRINTLN A[ ^ipropstr: ipropstr ]A PRINTLN [ ]  "
 			code = code + " ARG args TOK ARG player TOK   ARG  this TOK   ARG verb TOK   ARG  dobj TOK   ARG dpropstr TOK   ARG prepstr TOK  ARG iobj TOK   ARG ipropstr TOK   ARG dobjstr TOK   ARG iobjstr TOK SAFETYON "
 			t = throfflib.PushData(t, args)
 			t.CallArgs(code, player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr)
-		} else {
+		case "yaegi":
 			log.Println("Goscript program: ", code)
 			var goScript *interp.Interpreter
 			goScript = NewInterpreter()
@@ -284,6 +360,17 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 			code = BuildDefinitions(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr)
 			code = code + verbStruct.Value
 			Eval(goScript, code)
+		case "xsh":
+			log.Println("xsh program: ", code)
+			state := xsh.New()
+			state.UserData = player
+			code = BuildXshCode(verbStruct.Value, player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr)
+			state.ExtraBuiltins = xshBuiltins
+			xsh.Eval(state, xsh.Stdlib_str, "stdlib")
+			xsh.Eval(state, code, "pmoo")
+
+		default:
+			log.Println("Unknown interpreter: ", verbStruct.Interpreter)
 		}
 	}
 }

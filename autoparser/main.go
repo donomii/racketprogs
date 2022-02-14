@@ -57,8 +57,11 @@ func ParseGo(code, filename string) []Node {
 func ParseXSH(code, filename string) []Node {
 
 	l := NewTree(code, filename)
-	r, _ := Stringify(l, "#", "\n", "\\", "")
-	r, _ = Stringify(r, "\"", "\"", "\\", "")
+	//FIXME we need to run both of these in parallel
+	r, _ := Stringify(l, "\"", "\"", "\\", "")
+	r, _ = Stringify(r, "#", "\n", "\\", "")
+
+	//fmt.Printf("Stringified: ")
 	//PrintTree(r, 0, false)
 	r, _, _ = Groupify(r)
 	r = KeywordBreak(r, []string{"|", "\n"})

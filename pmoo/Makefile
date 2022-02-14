@@ -1,4 +1,4 @@
-all: deps build install
+all: deps build init install
 
 deps:
 	go get -v "github.com/google/uuid" "github.com/gin-gonic/gin" "github.com/philippgille/gokv/badgerdb" "github.com/donomii/throfflib"
@@ -6,11 +6,13 @@ deps:
 clean:
 	rm -r build
 
-build: *.go
+build: *.go Makefile
 	mkdir build || true
 	mkdir build/objects || true
 	go build -o build/pmoo -v .
 	go build -o build/queue -v ../queue/
+
+init:
 	cd build && ./pmoo --init
 	cd build && cat ../create.txt | ./pmoo --batch --debug
 

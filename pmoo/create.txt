@@ -33,4 +33,4 @@ look
 //goscript #1.dig is "newRoom:=ToStr(iobj.Id);if newRoom==`` {newRoom=Clone(`4`);SetProp(newRoom, `owner`, playerid);SetProp(newRoom, `name`, iobjstr);};o:=Clone(`6`);SetProp(o, `owner`, playerid);SetProp(o, `name`, dobjstr);SetProp(o, `exit_target`, newRoom);v:=GetVerb(o, `exit_verb`);SetVerb(o, dobjstr, v);MoveObj(o, GetProp(playerid, `location`)); "
 // PRINTLN A[ ^player: player ]A PRINTLN A[ ^this: this ]A PRINTLN  A[ ^verb: verb ]A PRINTLN   A[ ^dobjstr: dobjstr ]A PRINTLN A[ ^dpropstr: dpropstr ]A PRINTLN  A[ ^prepstr: prepstr ]A  PRINTLN A[ ^iobjstr: iobjstr ]A   PRINTLN A[ ^ipropstr: ipropstr ]A PRINTLN [ ] 
 //goscript #4.look is "Println(GetProp(this, `name`));Println(GetProp(this, `description`));for _,o := range VisibleObjects(player){Println(`You see`,GetProp(o, `name`), `here.`)}"
-exit
+

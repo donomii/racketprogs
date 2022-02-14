@@ -58,6 +58,8 @@ func main() {
 	tracef := flag.Bool("trace", false, "Trace execution")
 	flag.BoolVar(&wantDebug, "debug", false, "Enable debug output")
 	flag.Parse()
+	xsh.WantDebug = wantDebug
+	xsh.WantTrace = *tracef
 	trace = *tracef
 	//wantShell=*shellOpt
 	var fname string

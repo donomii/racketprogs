@@ -108,6 +108,16 @@ func AddEngineFuncs(e *throfflib.Engine, player, from, traceId string) {
 		return ne
 	}))
 
+	e = throfflib.Add(e, "SetXshVerb", throfflib.NewCode("SetXshVerb", 3, 3, 0, func(ne *throfflib.Engine, c *throfflib.Thingy) *throfflib.Engine {
+
+		obj, ne := throfflib.PopData(ne)
+		name, ne := throfflib.PopData(ne)
+		code, ne := throfflib.PopData(ne)
+
+		SetXshVerb(obj.GetString(), name.GetString(), code.GetString())
+		return ne
+	}))
+
 	e = throfflib.Add(e, "MoveObj", throfflib.NewCode("MoveObj", 2, 2, 0, func(ne *throfflib.Engine, c *throfflib.Thingy) *throfflib.Engine {
 
 		obj, ne := throfflib.PopData(ne)

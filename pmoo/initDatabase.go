@@ -37,6 +37,9 @@ func initDB() {
 	thr := Property{Value: `SetThroffVerb dobj dpropstr iobjstr`, Verb: true, Throff: true, Interpreter: "throff"}
 	rootObj.Properties["verb.throff"] = thr
 
+	xsh := Property{Value: `SetXshVerb dobj dpropstr iobjstr`, Verb: true, Throff: true, Interpreter: "throff"}
+	rootObj.Properties["verb.xsh"] = xsh
+
 	log.Println("Overwriting Player 1")
 	playerobj := Object{}
 	playerobj.Id = "2"

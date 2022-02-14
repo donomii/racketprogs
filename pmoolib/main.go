@@ -13,12 +13,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/traefik/yaegi/interp"
 	"github.com/traefik/yaegi/stdlib"
 	"github.com/traefik/yaegi/stdlib/syscall"
 	"github.com/traefik/yaegi/stdlib/unrestricted"
 	"github.com/traefik/yaegi/stdlib/unsafe"
-	"github.com/google/uuid"
 )
 
 // content holds our static web server content.
@@ -37,10 +37,12 @@ func SetEtcdServers(s []string) {
 	EtcdServers = s
 }
 
+//Choose the network Queue server
 func SetQueueServer(s string) {
 	QueueServer = s
 }
 
+//Somewhere to save the objects
 func SetDataDir(s string) {
 	DataDir = s
 }
@@ -65,6 +67,7 @@ func SetQ(queue chan *Message) {
 	//log.Printf(" set queue to %v", Q)
 }
 
+//Take a message from the user and submit it to the queue
 func InputMsg(from, target, verb, arg1 string) {
 	m := &Message{Player: from, This: target, Verb: verb, Data: arg1, Ticks: DefaultTicks}
 	log.Printf("**********Queueing Message %v to %v\n", m, Q)
@@ -72,6 +75,7 @@ func InputMsg(from, target, verb, arg1 string) {
 	log.Println("**************Message queued")
 }
 
+//Submit a message to the queue
 func Msg(from, target, verb, dobjstr, prep, iobjstr string) {
 	m := &Message{Player: from, This: target, Verb: verb, Dobjstr: dobjstr, Prepstr: prep, Iobjstr: iobjstr, Ticks: DefaultTicks}
 	Q <- m
@@ -105,6 +109,7 @@ func ToStr(i interface{}) string {
 	return fmt.Sprintf("%v", i)
 }
 
+//Return all the visible objects in the room
 func VisibleObjects(player *Object) []string {
 	out := []string{}
 
@@ -118,10 +123,15 @@ func VisibleObjects(player *Object) []string {
 	return out
 }
 
-func FuckGo(cond bool, v1,v2 string) string{
-if cond {return v1} else {return v2}
+func FuckGo(cond bool, v1, v2 string) string {
+	if cond {
+		return v1
+	} else {
+		return v2
+	}
 }
 
+//Arrange and object for user display
 func FormatObject(id string) string {
 	o := LoadObject(id)
 	var out string
@@ -141,9 +151,9 @@ func FormatObject(id string) string {
 	out = out + "\nDefinitions\n-----------\n"
 	for k, v := range o.Properties {
 		if v.Throff {
-			out = out + fmt.Sprintf("%v(Verb,Throff): %v\n", k, v.Value)	
-		}else {
-		out = out + fmt.Sprintf("%v(Noun): %v\n", k,  v.Value)
+			out = out + fmt.Sprintf("%v(Verb,Throff): %v\n", k, v.Value)
+		} else {
+			out = out + fmt.Sprintf("%v(Noun): %v\n", k, v.Value)
 		}
 
 	}
@@ -187,10 +197,10 @@ func LoadObject(id string) *Object {
 		//log.Println("Loading '" + name+"'")
 		file, err := ioutil.ReadFile(name)
 		if err != nil {
-			log.Println("Failed to load"+ name)
+			log.Println("Failed to load" + name)
 			file, err = fallback_objs.ReadFile("fallback/" + id + ".json")
 			if err != nil {
-				log.Println("Failed to load"+ name)
+				log.Println("Failed to load" + name)
 				return nil
 			}
 		}
@@ -199,7 +209,7 @@ func LoadObject(id string) *Object {
 
 		err = json.Unmarshal([]byte(file), &data)
 		if err != nil {
-			log.Println("Failed to unmarshal"+ name, err)
+			log.Println("Failed to unmarshal"+name, err)
 			return nil
 		}
 
@@ -218,7 +228,7 @@ func GetPropertyStruct(o *Object, name string, timeout int) *Property {
 	if o == nil {
 		return nil
 	}
-	log.Printf("Searching for property %v in %v\n", name,  o.Id)
+	log.Printf("Searching for property %v in %v\n", name, o.Id)
 	val, ok := o.Properties[name]
 	if ok {
 		if val.Verb {
@@ -275,7 +285,7 @@ func GetVerbStruct(o *Object, name string, timeout int) *Property {
 	if ok {
 		if val.Verb {
 			log.Printf("Found %v in %v", name, o.Id)
-		return &val
+			return &val
 		}
 		//Property is not a verb.  Maybe we should stop here anyway?
 	} else {
@@ -310,13 +320,13 @@ func GetFreshId() string {
 	id = id + 1
 	newLastId := fmt.Sprintf("%v", id)
 	lastId.Value = newLastId
-	
+
 	root.Properties["lastId"] = *lastId
 	SaveObject(root)
 	return newLastId
 	*/
 
-	guid, err:= uuid.NewUUID()
+	guid, err := uuid.NewUUID()
 	panicErr(err)
 	return guid.String()
 }
@@ -566,8 +576,18 @@ func BuildDefinitions(player, this, verb, dobj, dpropstr, prepositionStr, iobj, 
 	return definitions
 }
 
+func BuildXshCode(code, player, this, verb, dobj, dpropstr, prepositionStr, iobj, ipropstr, dobjstr, iobjstr string) string {
+	definitions := ` 
+
+	with { playerid        this           caller           verb            dobjstr       dobj     dpropstr           prepstr                  iobjstr    iobj       ipropstr           } = {"` + player + `" "` + this + `" "` + player + `" "` + verb + `" "` + dobjstr + `" "` + dobj + `"  "` + dpropstr + `" "` + prepositionStr + `" "` + iobjstr + `" "` + iobj + `" "` + ipropstr + `"} {
+	` + code + `
+	}
+`
+	return definitions
+}
+
 func VerbSearch(o *Object, aName string) (*Object, *Property) {
-	log.Println("Searching for verb", aName, "in",o.Id)
+	log.Println("Searching for verb", aName, "in", o.Id)
 	locId := GetPropertyStruct(o, "location", 10).Value
 	loc := LoadObject(locId)
 	roomContents := SplitStringList(GetPropertyStruct(loc, "contents", 10).Value)
@@ -576,13 +596,13 @@ func VerbSearch(o *Object, aName string) (*Object, *Property) {
 	contents = append(contents, playerContents...)
 	for _, objId := range contents {
 		if objId != "" {
-		log.Println("Loading object from contents: '"+ objId+"'")
-		obj := LoadObject(objId)
-		nameProp := GetVerbStruct(obj, aName, 10)
-		if nameProp != nil {
-			return obj, nameProp
+			log.Println("Loading object from contents: '" + objId + "'")
+			obj := LoadObject(objId)
+			nameProp := GetVerbStruct(obj, aName, 10)
+			if nameProp != nil {
+				return obj, nameProp
+			}
 		}
-	}
 	}
 
 	log.Printf("Failed to find verb %v here!\n", aName)
@@ -652,7 +672,7 @@ func NameSearch(o *Object, aName, player string) (*Object, *Property) {
 
 }
 
-func ParseDo(s string, playerId string) (string, string) {
+func ParseDirectObject(s string, playerId string) (string, string) {
 	s = strings.Trim(s, " \n\r")
 	log.Printf("Parsing '%v', len: %v\n", string([]byte(s)), len(s))
 	if playerId == "" {
@@ -679,6 +699,7 @@ func ParseDo(s string, playerId string) (string, string) {
 		oneprop := GetPropertyStruct(one, prop, 10)
 		if oneprop == nil {
 			fmt.Printf("Could not find special property %v on 1\n", prop)
+			return "", ""
 		}
 		objstr := oneprop.Value
 		return objstr, ""
@@ -773,6 +794,15 @@ func SetThroffVerb(obj, name, code string) {
 	log.Println("SetThroffVerb: ", obj, name, code)
 	o := LoadObject(obj)
 	v := Property{Value: code, Verb: true, Throff: true}
+	log.Println("object:", o)
+	o.Properties[name] = v
+	SaveObject(o)
+}
+
+func SetXshVerb(obj, name, code string) {
+	log.Println("SetXshVerb: ", obj, name, code)
+	o := LoadObject(obj)
+	v := Property{Value: code, Verb: true, Throff: false, Interpreter: "xsh"}
 	log.Println("object:", o)
 	o.Properties[name] = v
 	SaveObject(o)
