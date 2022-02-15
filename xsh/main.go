@@ -34,7 +34,7 @@ type Function struct {
 	Body       []autoparser.Node
 }
 
-var UsePterm = true
+var usePterm = true
 var WantDebug bool
 var WantShell bool
 var WantTrace bool
@@ -277,9 +277,17 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 		case "with":
 			letparams := args[0].List
 			letargs := args[2].List
+			evalledArgs := []autoparser.Node{}
+			for _, e := range letargs {
+				if e.List == nil {
+					evalledArgs = append(evalledArgs, e)
+				} else {
+					evalledArgs = append(evalledArgs, treeReduce(s, e.List, nil, 0))
+				}
+			}
 			letbod := CopyTree(args[3].List)
-			fmt.Printf("Replacing %v with %v\n", TreeToTcl(letparams), TreeToTcl(letargs))
-			nbod := ReplaceArgs(letargs, letparams, letbod)
+			fmt.Printf("Replacing %v with %v\n", TreeToTcl(letparams), TreeToTcl(evalledArgs))
+			nbod := ReplaceArgs(evalledArgs, letparams, letbod)
 			drintf("Calling function %+v\n", TreeToTcl(nbod))
 			return blockReduce(s, nbod, parent, 0)
 		case "cd":
@@ -295,7 +303,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 				os.Setenv("OLDPWD", os.Getenv("PWD"))
 				os.Chdir(S(args[0]))
 			}
-			if UsePterm {
+			if usePterm {
 				header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgRed))
 				pterm.DefaultCenter.Println(header.Sprint(goof.Cwd()))
 			}
@@ -572,7 +580,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 	return void(command[0])
 }
 func xshErr(msg string) {
-	if UsePterm {
+	if usePterm {
 		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgRed))
 		pterm.DefaultCenter.Println(header.Sprint(msg))
 	}

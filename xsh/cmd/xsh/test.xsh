@@ -123,3 +123,6 @@ with {x y z dontreplace lambdacopy} = {1 2 3 fail testscope} {
 	 lambdacopy "lambdacopy"
 }
 }
+with {sum} = {[+ 2 3]} {
+	puts "Sum:" sum
+}
