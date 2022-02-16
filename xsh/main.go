@@ -44,6 +44,7 @@ type State struct {
 	Globals       map[string]string
 	Tree          []autoparser.Node
 	ExtraBuiltins func(s State, command []autoparser.Node, parent *autoparser.Node, level int) (autoparser.Node, bool)
+	TypeSigs      map[string][]string
 	UserData      interface{}
 }
 
@@ -60,7 +61,42 @@ func drintln(args ...interface{}) {
 }
 
 func New() State {
-	return State{map[string]Function{}, map[string]string{}, nil, nil, nil}
+	s := State{map[string]Function{}, map[string]string{}, nil, nil, map[string][]string{}, nil}
+	s.TypeSigs["map"] = []string{"list", "lambda", "list"}
+	s.TypeSigs["cd"] = []string{"void", "string"}
+	s.TypeSigs["\n"] = []string{"void"}
+	s.TypeSigs["+"] = []string{"string", "string", "string"}
+	s.TypeSigs["-"] = s.TypeSigs["+"]
+	s.TypeSigs["*"] = s.TypeSigs["+"]
+	s.TypeSigs["/"] = s.TypeSigs["+"]
+	s.TypeSigs["gt"] = s.TypeSigs["+"]
+	s.TypeSigs["lt"] = s.TypeSigs["+"]
+	s.TypeSigs["+."] = s.TypeSigs["+"]
+	s.TypeSigs["-."] = s.TypeSigs["+"]
+	s.TypeSigs["."] = s.TypeSigs["+"]
+	s.TypeSigs["/."] = s.TypeSigs["+"]
+	s.TypeSigs["gt."] = s.TypeSigs["+"]
+	s.TypeSigs["lt"] = s.TypeSigs["+"]
+	s.TypeSigs["eq"] = s.TypeSigs["+"]
+	s.TypeSigs["loadfile"] = []string{"string", "string"}
+	s.TypeSigs["proc"] = []string{"void", "string", "list", "list"}
+	s.TypeSigs["exit"] = []string{"string", "void"}
+	s.TypeSigs["cons"] = []string{"list", "string", "list"}
+	s.TypeSigs["empty?"] = []string{"string", "list"}
+	s.TypeSigs["length"] = []string{"string", "list"}
+	s.TypeSigs["lindex"] = []string{"any", "list", "string"}
+	s.TypeSigs["lset"] = []string{"string", "list", "string", "any"}
+	s.TypeSigs["lrange"] = []string{"list", "list", "string", "string"}
+	s.TypeSigs["split"] = []string{"list", "string", "string"}
+	s.TypeSigs["join"] = []string{"string", "list", "string"}
+	s.TypeSigs["chr"] = []string{"string", "string"}
+	s.TypeSigs["saveInterpreter"] = []string{"void"}
+	s.TypeSigs["return"] = []string{"any", "any"}
+	s.TypeSigs["id"] = []string{"any", "any"}
+	s.TypeSigs["and"] = []string{"string", "string"}
+	s.TypeSigs["or"] = []string{"string", "string"}
+
+	return s
 }
 
 func Eval(s State, code, fname string) autoparser.Node {
@@ -220,6 +256,26 @@ func isList(n autoparser.Node) bool {
 func CopyNode(n autoparser.Node) autoparser.Node {
 	return autoparser.Node{n.Raw, n.Str, n.List, n.Note, n.Line, n.Column, n.ChrPos, n.File, n.ScopeBarrier}
 }
+
+func typeOf(e autoparser.Node) string {
+	if e.Note == "|" {
+		return "lambda"
+	}
+	if e.List != nil && e.Note == "{" {
+		return "list"
+	}
+	if e.Str != "" {
+		return "string"
+	}
+	if e.Raw != "" {
+		return "string"
+	}
+	return "void"
+}
+
+func EmptyList() autoparser.Node {
+	return autoparser.Node{Note: "{", List: []autoparser.Node{}}
+}
 func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int) autoparser.Node {
 	if len(command) == 0 {
 		return autoparser.Node{}
@@ -251,7 +307,23 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 	//If it s a string or symbol, look it up in the global
 	//functions map and return the result
 	f := S(command[0])
-	args := command[1:]
+	preargs := command[1:]
+	args := []autoparser.Node{}
+	for _, v := range preargs {
+		if typeOf(v) != "void" {
+			args = append(args, v)
+		}
+	}
+
+	//Do we have a type for this?
+	ftype, ok := s.TypeSigs[f]
+	if ok {
+		for i, v := range ftype[1:] {
+			if typeOf(args[i]) != v {
+				fmt.Printf("Type error at line %v (command %v, %+v).  At argument %v, expected %v, got %v\n", command[0].Line, TreeToTcl(command), command, i, v, typeOf(args[i]))
+			}
+		}
+	}
 	fu, ok := s.Functions[f]
 	if ok {
 		bod := CopyTree(fu.Body)
@@ -443,7 +515,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 			thing := args[0]
 			list := args[1].List
 			list = append([]autoparser.Node{thing}, list...)
-			out := autoparser.Node{List: list, Line: command[0].Line, Column: command[0].Column, ChrPos: command[0].ChrPos}
+			out := autoparser.Node{List: list, Line: command[0].Line, Column: command[0].Column, ChrPos: command[0].ChrPos, Note: "{"}
 			//log.Printf("New consed node: %+v\n", out)
 			return out
 		case "empty?":
@@ -476,7 +548,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 				end = atoi(S(args[2]))
 			}
 
-			return autoparser.Node{List: args[0].List[start:end]}
+			return autoparser.Node{List: args[0].List[start:end], Note: "{"}
 		case "split":
 			text := S(args[0])
 			delim := S(args[1])
@@ -485,7 +557,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 			for _, v := range bits {
 				list = append(list, N(v))
 			}
-			return autoparser.Node{List: list}
+			return autoparser.Node{List: list, Note: "{"}
 		case "join":
 			list, _ := ListToStrings(args[0].List)
 			delim := S(args[1])
@@ -527,7 +599,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 		case "id":
 			return args[0]
 		case "list":
-			return autoparser.Node{List: args}
+			return autoparser.Node{List: args, Note: "{"}
 		case "and":
 			if atoi(S(args[0])) != 0 {
 				if atoi(S(args[1])) != 0 {

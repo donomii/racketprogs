@@ -15,7 +15,7 @@ ls .
 sayHello "Jeremy"
 proc map  { func alist } {
 	if [eq [length alist] 0] {
-		{"map end"}
+		id {"map end"}
         } else {
 		cons [func [lindex alist 0]] [map func [lrange alist 1 end]]
 	}
