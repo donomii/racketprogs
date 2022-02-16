@@ -301,6 +301,11 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 			nbod := ReplaceArgs(args, params, bod)
 			drintf("Calling lambda %+v\n", nbod)
 			return blockReduce(s, nbod, parent, 0)
+		} else {
+			//Programmer is trying to return a list, it's not a lambda function
+			l := EmptyList()
+			l.List = command
+			return l
 		}
 	}
 
