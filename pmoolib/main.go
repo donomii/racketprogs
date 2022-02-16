@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/donomii/goof"
 	"github.com/google/uuid"
 	"github.com/traefik/yaegi/interp"
 	"github.com/traefik/yaegi/stdlib"
@@ -181,6 +182,10 @@ func SaveObject(o *Object) {
 		err = ioutil.WriteFile(fmt.Sprintf(DataDir+"/%v.json", o.Id), txt, 0600)
 		panicErr(err)
 	}
+}
+
+func AllObjects() []string {
+	return goof.Ls(DataDir)
 }
 
 //First, try to load from disk

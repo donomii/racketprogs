@@ -286,8 +286,11 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 			switch c[0] {
 			case "setprop":
 				SetProp(c[1], c[2], c[3])
+				return command[3], true
+			case "allobjects":
+				return xsh.StringsToList(AllObjects()), true
 			case "findobject":
-				FindObjectByName(player, c[1])
+				FindObjectByName(player, c[1]) //FIXME
 			case "getprop":
 				return xsh.N(GetProp(c[1], c[2])), true
 			case "clone":

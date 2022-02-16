@@ -6,10 +6,10 @@ proc sayHello { name } {
 }
 
 proc map  { func alist } {
-	if [eq [length alist] 0] {
-		id {}
+	if [eq [length alist] 1] {
+			[func [lindex alist 0]]
         } else {
-		cons [func [lindex alist 0]] [map func [lrange alist 1 end]]
+			cons [func [lindex alist 0]] [map func [lrange alist 1 end]]
 	}
 }
 

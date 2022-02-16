@@ -1,10 +1,10 @@
 puts "2 + 3"
 set x [+ 2 3]
 puts $x
-proc sayHello { name } {
+func sayHello { name|
 	puts "Hello " name
 }
-proc returnOne {} { "1" }
+func returnOne {| "1" }
 puts "Testing return"
 puts "Test 1:" [returnOne]
 puts [+ [+ 1 2] [saveInterpreter "savefile.cont"] [+ 3 4] ]
@@ -13,7 +13,7 @@ puts [+ [+ 1 2] [saveInterpreter "savefile.cont"] [+ 3 4] ]
 #puts [loadfile "main.go"]
 ls .
 sayHello "Jeremy"
-proc map  { func alist } {
+func map  { func alist |
 	if [eq [length alist] 0] {
 		{"map end"}
         } else {
@@ -24,7 +24,7 @@ proc map  { func alist } {
 puts [dump [map {a| + 1 a} { 1 2 3 4 5}]]
 
 
-proc fold { func accum alist } { 
+func fold { func accum alist |
 	#puts "fold list: " alist "accum:" accum
 	if [eq [length alist] 0] {
 		accum

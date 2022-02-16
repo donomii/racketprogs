@@ -34,7 +34,7 @@ type Function struct {
 	Body       []autoparser.Node
 }
 
-var usePterm = true
+var UsePterm = true
 var WantDebug bool
 var WantShell bool
 var WantTrace bool
@@ -129,6 +129,17 @@ func ListToStrings(l []autoparser.Node) ([]string, error) {
 		}
 	}
 	return out, nil
+}
+
+func StringsToList(s []string) autoparser.Node {
+	out := []autoparser.Node{}
+	for _, v := range s {
+		out = append(out, autoparser.Node{Str: v})
+	}
+
+	o := EmptyList()
+	o.List = out
+	return o
 }
 
 func ListToStr(l []autoparser.Node) string {
@@ -242,7 +253,7 @@ func runWithGuardian(cmd []string) error {
 	cmd = append([]string{guardianPath}, cmd...)
 	return goof.QCI(cmd)
 }
-func void(command autoparser.Node) autoparser.Node {
+func Void(command autoparser.Node) autoparser.Node {
 	drintf("Creating void at %+v\n", command.Line)
 	if command.ChrPos < 1 {
 		log.Println("Warning: Create void with no line number.  This is probably an error.")
@@ -258,7 +269,7 @@ func CopyNode(n autoparser.Node) autoparser.Node {
 }
 
 func typeOf(e autoparser.Node) string {
-	if e.Note == "|" {
+	if isLambda(e) {
 		return "lambda"
 	}
 	if e.List != nil && e.Note == "{" {
@@ -276,6 +287,19 @@ func typeOf(e autoparser.Node) string {
 func EmptyList() autoparser.Node {
 	return autoparser.Node{Note: "{", List: []autoparser.Node{}}
 }
+
+func isLambda(e autoparser.Node) bool {
+	command := e.List
+	if len(command) > 0 && isList(command[0]) {
+		theLambdaFunction := command[0]
+		if theLambdaFunction.Note == "|" {
+
+			return true
+		}
+	}
+
+	return false
+}
 func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int) autoparser.Node {
 	if len(command) == 0 {
 		return autoparser.Node{}
@@ -289,10 +313,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 		bod := CopyTree(theLambdaFunction.List[1:])
 		params := theLambdaFunction.List[0].List
 		if theLambdaFunction.List[0].Note == "|" {
-			if theLambdaFunction.List[0].Note != "|" {
-				panic("Not a lambda function: " + TreeToTcl(params))
-				panic(fmt.Sprintf("Not a lambda function: %+v\n", theLambdaFunction))
-			}
+
 			if len(params) != len(args) {
 				msg := fmt.Sprintf("Error %v,%v: Mismatched function args in ->|%v|<-  expected %v, given %v\n[%v %v]\n", command[0].Line, command[0].Column, TreeToTcl(command), TreeToTcl(params), TreeToTcl(args), S(theLambdaFunction), TreeToTcl(args))
 				fmt.Printf(msg)
@@ -339,7 +360,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 	} else {
 		//It is a builtin function or an external call
 		if f == "" {
-			return void(command[0])
+			return Void(command[0])
 		}
 		if s.ExtraBuiltins != nil {
 			ret, handled := s.ExtraBuiltins(s, command, parent, level)
@@ -380,13 +401,13 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 				os.Setenv("OLDPWD", os.Getenv("PWD"))
 				os.Chdir(S(args[0]))
 			}
-			if usePterm {
+			if UsePterm {
 				header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgRed))
 				pterm.DefaultCenter.Println(header.Sprint(goof.Cwd()))
 			}
 		case "\n":
 			//Fuck
-			return void(command[0])
+			return Void(command[0])
 		case "+":
 			return N(fmt.Sprintf("%v", atoi(S(args[0]))+atoi(S(args[1]))))
 		case "-":
@@ -438,6 +459,12 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 				return N("0")
 			}
 			//FIXME dedupe
+		case "tron":
+			WantTrace = true
+			return N("Trace on")
+		case "troff":
+			WantTrace = false
+			return N("Trace off")
 		case "put":
 			for i, v := range args {
 				if i != 0 {
@@ -492,6 +519,28 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 					return N(err.Error())
 				}
 			}
+		case "func":
+			/*
+				func procedureName {arguments|
+				   body
+				}
+			*/
+			if len(args) != 2 {
+				a := TreeToTcl(args)
+				msg := fmt.Sprintf("Error %v,%v: func requires 2 arguments: func name {arguments| body}\n[%v %v]\n", command[0].Line, command[0].Column, f, a)
+
+				log.Panicf(msg)
+			}
+			fmt.Printf("%+v\n", args)
+			body := args[1].List
+			s.Functions[S(args[0])] = Function{
+				Name:       S(args[0]),
+				Parameters: body[0].List,
+				Body:       body[1:],
+			}
+
+			fmt.Printf("%+v\n", s.Functions[S(args[0])])
+
 		case "proc":
 			/*
 				proc procedureName {arguments} {
@@ -583,7 +632,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 				return ret
 			} else {
 				log.Printf("No else for if at %v:%v\n", command[0].Line, command[0].Column)
-				return void(command[0])
+				return Void(command[0])
 			}
 
 		case "saveInterpreter":
@@ -591,7 +640,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 				xshErr("saveInterpreter: no filename specified")
 				return N("No filename given")
 			}
-			*parent = void(command[0])
+			*parent = Void(command[0])
 			rest := TreeToTcl(s.Tree)
 			funcs := FunctionsToTcl(s.Functions)
 			code := funcs + "\n\n" + rest
@@ -631,7 +680,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 			stringCommand, err := ListToStrings(command)
 			if err != nil {
 				log.Printf("Error %v,%v: converting command to string: %v\n", command[0].Line, command[0].Column, err)
-				return void(command[0])
+				return Void(command[0])
 			} else {
 				var res string
 				var err error
@@ -654,10 +703,10 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 			}
 		}
 	}
-	return void(command[0])
+	return Void(command[0])
 }
 func xshErr(msg string) {
-	if usePterm {
+	if UsePterm {
 		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgRed))
 		pterm.DefaultCenter.Println(header.Sprint(msg))
 	}
@@ -668,7 +717,7 @@ func blockReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel
 	drintf("BlockReduce: starting %+v\n", TreeToTcl(t))
 	//log.Printf("BlockReduce: starting %+v\n", t)
 	if len(t) == 0 {
-		return void(*parent)
+		return Void(*parent)
 	}
 
 	if (parent != nil) && parent.ScopeBarrier {
