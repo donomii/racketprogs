@@ -35,9 +35,8 @@ type Function struct {
 }
 
 var UsePterm = true
-var WantDebug bool
-var WantShell bool
-var WantTrace bool
+var WantDebug bool = false
+var WantTrace bool = false
 
 type State struct {
 	Functions     map[string]Function
@@ -336,14 +335,19 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 	preargs := command[1:]
 	args := []autoparser.Node{}
 	for _, v := range preargs {
-		if typeOf(v) != "void" {
-			args = append(args, v)
-		}
+		//if typeOf(v) != "void" {  //FIXME causes map etc. to fail.  Filtering out void alters the number of args to some calls.  Need to improve type system so void can't be returned in those situations.
+		args = append(args, v)
+		//}
 	}
 
 	//Do we have a type for this?
 	ftype, ok := s.TypeSigs[f]
 	if ok {
+		if len(ftype) != len(args)+1 {
+			msg := fmt.Sprintf("Error %v,%v: Mismatched function args in <%v>  expected %v, given %v, %+v\n", command[0].Line, command[0].Column, f, ftype, TreeToTcl(args), args)
+			fmt.Printf(msg)
+			os.Exit(1)
+		}
 		for i, v := range ftype[1:] {
 			if typeOf(args[i]) != v {
 				fmt.Printf("Type error at line %v (command %v, %+v).  At argument %v, expected %v, got %v\n", command[0].Line, TreeToTcl(command), command, i, v, typeOf(args[i]))
@@ -488,6 +492,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 				}
 			}
 			fmt.Println()
+			return N(TreeToTcl(args))
 		case "loadfile":
 			b, _ := ioutil.ReadFile(S(args[0]))
 			return N(string(b))
