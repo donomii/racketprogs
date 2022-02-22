@@ -255,7 +255,7 @@ func runWithGuardian(cmd []string) error {
 func Void(command autoparser.Node) autoparser.Node {
 	drintf("Creating void at %+v\n", command.Line)
 	if command.ChrPos < 1 {
-		log.Println("Warning: Create void with no line number.  This is probably an error.")
+		XshWarn("Warning: Create void with no line number.  This is probably an error.")
 	}
 	return autoparser.Node{"", "", nil, "VOID", command.Line, command.Column, command.ChrPos, command.File, command.ScopeBarrier}
 }
@@ -315,7 +315,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 		if theLambdaFunction.List[0].Note == "|" {
 
 			if len(params) != len(args) {
-				msg := fmt.Sprintf("Error %v,%v: Mismatched function args in ->|%v|<-  expected %v, given %v\n[%v %v]\n", command[0].Line, command[0].Column, TreeToTcl(command), TreeToTcl(params), TreeToTcl(args), S(theLambdaFunction), TreeToTcl(args))
+				msg := fmt.Sprintf("Error %v,%v,%v: Mismatched function args in ->|%v|<-  expected %v, given %v\n[%v %v]\n", command[0].File, command[0].Line, command[0].Column, TreeToTcl(command), TreeToTcl(params), TreeToTcl(args), S(theLambdaFunction), TreeToTcl(args))
 				fmt.Printf(msg)
 				os.Exit(1)
 			}
@@ -351,12 +351,13 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 		}
 		for i, v := range ftype[1:] {
 			if typeOf(args[i]) != v {
-				fmt.Printf("Type error at line %v (command %v, %+v).  At argument %v, expected %v, got %v\n", command[0].Line, TreeToTcl(command), command, i, v, typeOf(args[i]))
+				XshWarn(fmt.Sprintf("Warning:Type error at line %v (command %v, %+v).  At argument %v, expected %v, got %v\n", command[0].Line, TreeToTcl(command), command, i, v, typeOf(args[i])))
 			}
 		}
 	}
 	fu, ok := s.Functions[f]
 	if ok {
+		//It's a user-defined function
 		bod := CopyTree(fu.Body)
 		fparams := fu.Parameters
 		nbod := ReplaceArgs(args, fparams, bod)
@@ -365,8 +366,11 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 	} else {
 		//It is a builtin function or an external call
 		if f == "" {
+			//We shouldn't get an empty string here, but if we do, ignore it and keep going
 			return Void(command[0])
 		}
+		//This is for the embedded xsh, it allows the embeddor to add their own functions,
+		//most usually extra data sources and/or IO
 		if s.ExtraBuiltins != nil {
 			ret, handled := s.ExtraBuiltins(s, command, parent, level)
 			if handled {
@@ -375,23 +379,39 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 		}
 		return builtin(s, command, parent, f, args, level)
 	}
+	//Maybe we should return a warning here?  Or even exit?  Need a strict mode.
 	return Void(command[0])
 }
-func xshErr(msg string) {
+func XshErr(msg string) {
 	if UsePterm {
 		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgRed))
 		pterm.DefaultCenter.Println(header.Sprint(msg))
 	}
-
 }
-func blockReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel int) autoparser.Node {
 
+func XshWarn(msg string) {
+	if UsePterm {
+		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgLightYellow))
+		pterm.DefaultCenter.Println(header.Sprint(msg))
+	}
+}
+
+func XshInform(msg string) {
+	if UsePterm {
+		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgLightBlue))
+		pterm.default.Println(header.Sprint(msg))
+	}
+}
+
+func blockReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel int) autoparser.Node {
 	drintf("BlockReduce: starting %+v\n", TreeToTcl(t))
 	//log.Printf("BlockReduce: starting %+v\n", t)
 	if len(t) == 0 {
 		return Void(*parent)
 	}
 
+	//The scopebarrier prevents variable substitution happening to a code branch that has been copied in
+	//from another function or scope.
 	if (parent != nil) && parent.ScopeBarrier {
 		return *parent
 	}
@@ -399,7 +419,6 @@ func blockReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel
 	var out autoparser.Node
 	if t[0].Note == "\n" && t[0].Raw == "\n" {
 		//It is a multi line lambda, eval as statements, return the last
-
 		for i, v := range t {
 			out = treeReduce(s, v.List, parent, toplevel)
 			t[i] = out
@@ -420,7 +439,7 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 	}
 
 	if toplevel == 1 {
-		xshErr(TreeToTcl(t))
+		XshInform(TreeToTcl(t)) //Return output to user
 	}
 	out := []autoparser.Node{}
 	for i, v := range t {
@@ -429,8 +448,8 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 		}
 
 		switch {
-		case v.Note == "#":
-		case v.Raw == "#":
+		case v.Note == "#": //Comment
+		case v.Raw == "#": //Comment
 		case v.List != nil:
 			if v.Note == "[" || v.Note == "\n" || v.Note == ";" {
 				//log.Println("Command:", TreeToTcl(v.List))
@@ -507,9 +526,12 @@ func TreeToTcl(t []autoparser.Node) string {
 		switch {
 		case v.Note == "VOID":
 		case v.List != nil:
-			if v.Note == "{" {
+			switch v.Note {
+			case "{":
 				out = out + "{" + TreeToTcl(v.List) + "}"
-			} else {
+			case "|":
+				out = out + TreeToTcl(v.List) + "|"
+			default:
 				out = out + "[" + TreeToTcl(v.List) + "]"
 			}
 		case v.Raw != "":
