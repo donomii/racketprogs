@@ -507,7 +507,11 @@ func TreeToTcl(t []autoparser.Node) string {
 		switch {
 		case v.Note == "VOID":
 		case v.List != nil:
-			out = out + "[" + TreeToTcl(v.List) + "]"
+			if v.Note == "{" {
+				out = out + "{" + TreeToTcl(v.List) + "}"
+			} else {
+				out = out + "[" + TreeToTcl(v.List) + "]"
+			}
 		case v.Raw != "":
 			out = out + v.Raw + " " //FIXME escape string properly to include in JSON
 
