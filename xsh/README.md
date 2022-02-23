@@ -95,9 +95,9 @@ If you use the single line declaration, you can only write one expression.  But 
 
 Runs each command in sequence, returns the value of the last command
 
-### [cd directory]
+### cd *directory*
 
-Change directory, as usual
+Change to *directory*, as usual
 
 ### +,-,*,/
 
