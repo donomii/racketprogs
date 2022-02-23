@@ -214,4 +214,4 @@ If the lambda is on more than one line, the parameters go on the first line.
      {a b c |
         puts c
         puts [+ a b]
-     } 1 2 "Result:"
+     } 1 2 "1 + 2 = "
