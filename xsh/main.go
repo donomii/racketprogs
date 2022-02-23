@@ -177,7 +177,9 @@ func checkArgs(args []autoparser.Node, params []autoparser.Node) error {
 	for _, v := range args {
 		for _, p := range params {
 			if p.Raw == v.Raw {
-				panic(fmt.Sprintf("Cannot shadow args in lambda: %+v, %+v\n", v, p))
+				XshErr("%v,%v,%v: Cannot shadow args in lambda: %+v, %+v\n", v.File, v.Line, v.Column, v, p)
+				os.Exit(1)
+				//panic(fmt.Sprintf("Cannot shadow args in lambda: %+v, %+v\n", v, p))
 			}
 		}
 	}
@@ -356,7 +358,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 		}
 		for i, v := range ftype[1:] {
 			if typeOf(args[i]) != v {
-				XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v, got %v\n", command[0].File, command[0].Line, TreeToTcl(command), i, v, typeOf(args[i]))
+				XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v, got %v\n", command[0].File, command[0].Line, TreeToTcl(command), i+1, v, typeOf(args[i]))
 			}
 		}
 	}
@@ -463,7 +465,7 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 	out := []autoparser.Node{}
 	for i, v := range t {
 		if WantTrace {
-			log.Printf("%v,%v: %v\n", v.Line, v.Column, TreeToTcl(t))
+			XshTrace("%v,%v: %v\n", v.Line, v.Column, TreeToTcl(t))
 		}
 
 		switch {
@@ -487,7 +489,7 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 				vname := S(v)[1:]
 				drintf("Fetching %v from Globals: %+v\n", vname, s.Globals)
 				if vname == "" {
-					XshErr(fmt.Sprintf("$ found without variable name.  $ defines a variable, and cannot be used on its own."))
+					XshErr("$ found without variable name.  $ defines a variable, and cannot be used on its own.")
 					os.Exit(1)
 				} else {
 					if _, ok := s.Globals[vname]; ok {
@@ -496,7 +498,7 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 						if val := os.Getenv(vname); val != "" {
 							atom = N(val)
 						} else {
-							XshErr(fmt.Sprintf("Global variable $%v not found.  You must define a variable before you use it.", vname))
+							XshErr("Global variable $%v not found.  You must define a variable before you use it.", vname)
 							os.Exit(1)
 						}
 					}
@@ -513,7 +515,7 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 	//Run command
 	if len(out) > 0 {
 		if WantTrace {
-			XshTrace(fmt.Sprintf("%v,%v: %v\n", out[0].Line, out[0].Column, TreeToTcl(out)))
+			XshTrace("%v,%v: %v\n", out[0].Line, out[0].Column, TreeToTcl(out))
 		}
 	}
 	ret := eval(s, out, parent, toplevel)
