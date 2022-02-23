@@ -283,7 +283,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 
 	case "saveInterpreter":
 		if len(args) < 1 {
-			XshErr("saveInterpreter: no filename specified")
+			xshErr("saveInterpreter: no filename specified")
 			return N("No filename given")
 		}
 		*parent = Void(command[0])

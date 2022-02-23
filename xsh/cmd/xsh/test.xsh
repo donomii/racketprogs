@@ -38,22 +38,22 @@ func fold { func accum alist |
 }
 
 
-func CR {| chr 13 }
-func LF {| chr 10 }
+proc CR {} { chr 13 }
+proc LF {} { chr 10 }
 
 
 puts "Starting fold"
 puts [fold {a b| seq [cons b a]} {"accumstart"} { 1 2 3 4 5 }]
 
 
-func reverse {alist|
+proc reverse {alist} {
        fold {a b| seq [cons b a]} {} alist 
 }
 
 
 puts "Reversed: " [dump [reverse { a b c d } ]]
 
-func countdown { n |
+proc countdown { n } { 
 	puts n
 	if [gt n 0] {
 	       	countdown [- n 1]
@@ -62,7 +62,7 @@ func countdown { n |
 
 countdown 5
 
-func thr { count threes|
+proc thr { count threes} {
 	if [eq count threes] {
 		puts "fizz"
 		+ 3 threes
@@ -71,7 +71,7 @@ func thr { count threes|
 	}
 }
 
-func fiv { count fives |
+proc fiv { count fives } {
 	if [eq count fives] {
 		puts "buzz"
 		+ 5 fives
@@ -80,7 +80,7 @@ func fiv { count fives |
 	}
 }
 
-func do_fizzbuzz {count threes fives|
+proc do_fizzbuzz {count threes fives} {
 	if [and [eq count threes] [eq count fives]] {
 		puts "fizzbuzz"
 		do_fizzbuzz [+ 1 count ] [+ 3 threes] [+ 5 fives]
@@ -100,7 +100,7 @@ func do_fizzbuzz {count threes fives|
 	}
 }
 
-func fizzbuzz {|do_fizzbuzz 1 3 5}
+proc fizzbuzz {} {do_fizzbuzz 1 3 5}
 
 #fizzbuzz
 

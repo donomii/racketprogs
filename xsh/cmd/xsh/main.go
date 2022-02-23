@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os/signal"
-
 	xsh "../.."
 
 	"flag"
@@ -21,9 +19,9 @@ import (
 	"github.com/mattn/go-runewidth"
 
 	"github.com/pterm/pterm"
+	//"github.com/lmorg/readline"
 
 	_ "embed"
-
 	"github.com/chzyer/readline"
 	"github.com/donomii/goof"
 
@@ -76,7 +74,7 @@ func main() {
 		xsh.Eval(state, xsh.Stdlib_str, "stdlib")
 		xsh.LoadEval(state, *resumeFile)
 	case wantShell:
-		//fmt.Printf("%+v\n", xsh.TreeToTcl(xsh.Eval(state, xsh.Stdlib_str, "stdlib").List))
+		fmt.Printf("%+v\n", xsh.TreeToTcl(xsh.Eval(state, xsh.Stdlib_str, "stdlib").List))
 		shell(state)
 	default:
 		xsh.Eval(state, xsh.Stdlib_str, "stdlib")
@@ -141,43 +139,54 @@ func shell(state xsh.State) {
 		HistoryFile:  "/tmp/readline.tmp",
 		AutoComplete: completer,
 		//InterruptPrompt: "^C",
-		//EOFPrompt: "exit",
+		EOFPrompt: "exit",
 	})
 	if err != nil {
-		xsh.XshErr(fmt.Sprintf("%v", err))
 		panic(err)
 	}
 	defer l.Close()
 
 	if usePterm {
-		// Print a large text banner with differently colored letters.
+		// Print a large text with differently colored letters.
 		pterm.DefaultBigText.WithLetters(
-			pterm.NewLettersFromStringWithStyle("X", pterm.NewStyle(pterm.FgLightMagenta)),
-			pterm.NewLettersFromStringWithStyle("Shell", pterm.NewStyle(pterm.FgCyan))).
+			pterm.NewLettersFromStringWithStyle("X", pterm.NewStyle(pterm.FgCyan)),
+			pterm.NewLettersFromStringWithStyle("Shell", pterm.NewStyle(pterm.FgLightMagenta))).
 			Render()
 	}
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		for sig := range c {
-			// sig is a ^C, handle it
-			fmt.Printf("\n%v\n", sig)
-			xsh.XshWarn("Break")
-		}
-	}()
 
 	for {
 		line, err := l.Readline()
 		if err == readline.ErrInterrupt {
-			xsh.XshWarn("Canceled.  Ctrl-D to exit.")
+			fmt.Println("Canceled.  Ctrl-D to exit.")
 			continue
+			/*			if len(line) == 0 {
+							break
+						} else {
+							continue
+						}
+			*/
 		} else if err == io.EOF {
-			xsh.XshWarn("Input finished, exiting.")
 			break
 		}
 
 		line = strings.TrimSpace(line)
-		xsh.XshInform(fmt.Sprintf("%v\n", xsh.TreeToTcl([]autoparser.Node{xsh.Eval(state, line, "shell")})))
+		fmt.Printf("Result: %+v\n", xsh.TreeToTcl([]autoparser.Node{xsh.Eval(state, line, "shell")}))
 	}
+
+	/*
+		for {
+			rl := readline.NewInstance()
+
+			for {
+				line, err := rl.Readline()
+
+				if err != nil {
+					fmt.Println("Error:", err)
+					return
+				}
+
+				fmt.Printf("You just typed: %s\n", line)
+			}
+		}
+	*/
 }
