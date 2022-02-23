@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os/signal"
+
 	xsh "../.."
 
 	"flag"
@@ -19,9 +21,9 @@ import (
 	"github.com/mattn/go-runewidth"
 
 	"github.com/pterm/pterm"
-	//"github.com/lmorg/readline"
 
 	_ "embed"
+
 	"github.com/chzyer/readline"
 	"github.com/donomii/goof"
 
@@ -74,7 +76,8 @@ func main() {
 		xsh.Eval(state, xsh.Stdlib_str, "stdlib")
 		xsh.LoadEval(state, *resumeFile)
 	case wantShell:
-		fmt.Printf("%+v\n", xsh.TreeToTcl(xsh.Eval(state, xsh.Stdlib_str, "stdlib").List))
+		//fmt.Printf("%+v\n", xsh.TreeToTcl(xsh.Eval(state, xsh.Stdlib_str, "stdlib").List))
+		xsh.TreeToTcl(xsh.Eval(state, xsh.Stdlib_str, "stdlib").List)
 		shell(state)
 	default:
 		xsh.Eval(state, xsh.Stdlib_str, "stdlib")
@@ -148,12 +151,22 @@ func shell(state xsh.State) {
 	defer l.Close()
 
 	if usePterm {
-		// Print a large text with differently colored letters.
+		// Print a large text banner with differently colored letters.
 		pterm.DefaultBigText.WithLetters(
-			pterm.NewLettersFromStringWithStyle("X", pterm.NewStyle(pterm.FgCyan)),
-			pterm.NewLettersFromStringWithStyle("Shell", pterm.NewStyle(pterm.FgLightMagenta))).
+			pterm.NewLettersFromStringWithStyle("X", pterm.NewStyle(pterm.FgLightMagenta)),
+			pterm.NewLettersFromStringWithStyle("Shell", pterm.NewStyle(pterm.FgCyan))).
 			Render()
 	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for sig := range c {
+			// sig is a ^C, handle it
+			fmt.Printf("\n%v\n", sig)
+			xsh.XshWarn("Break")
+		}
+	}()
 
 	for {
 		line, err := l.Readline()
@@ -167,6 +180,7 @@ func shell(state xsh.State) {
 						}
 			*/
 		} else if err == io.EOF {
+			xsh.XshWarn("Input finished, exiting.")
 			break
 		}
 
