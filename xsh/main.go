@@ -90,7 +90,7 @@ func New() State {
 	s.TypeSigs["split"] = []string{"list", "string", "string"}
 	s.TypeSigs["join"] = []string{"string", "list", "string"}
 	s.TypeSigs["chr"] = []string{"string", "string"}
-	s.TypeSigs["saveInterpreter"] = []string{"void"}
+	s.TypeSigs["saveInterpreter"] = []string{"void string"}
 	//s.TypeSigs["return"] = []string{"any", "any"}
 	s.TypeSigs["id"] = []string{"any", "any"}
 	s.TypeSigs["and"] = []string{"string", "string"}
@@ -352,7 +352,14 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 	ftype, ok := s.TypeSigs[f]
 	if ok {
 		if len(ftype) != len(args)+1 {
-			XshErr("Error %v,%v,%v: Mismatched function args in <%v>  expected %v(%v), given %v(%v)\n", command[0].File, command[0].Line, command[0].Column, f, ftype[1:], len(ftype)-1, TreeToTcl(args), len(args))
+			XshErr(`Error %v,%v,%v: Mismatched function args to %v
+
+Expected:
+	%v %v (%v args)
+
+Given:
+	%v %v (%v args)
+	`, command[0].File, command[0].Line, command[0].Column, f, f, strings.Join(ftype[1:], " "), len(ftype)-1, f, TreeToTcl(args), len(args))
 
 			os.Exit(1)
 		}
@@ -549,9 +556,9 @@ func TreeToTcl(t []autoparser.Node) string {
 		case v.Note == "VOID":
 		case v.List != nil:
 			if v.Note == "{" {
-				out = out + "{" + TreeToTcl(v.List) + "}"
+				out = out + "{" + TreeToTcl(v.List) + "} "
 			} else {
-				out = out + "[" + TreeToTcl(v.List) + "]"
+				out = out + "[" + TreeToTcl(v.List) + "] "
 			}
 		case v.Raw != "":
 			out = out + v.Raw + " " //FIXME escape string properly to include in JSON
