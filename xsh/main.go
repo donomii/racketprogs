@@ -315,7 +315,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 		if theLambdaFunction.List[0].Note == "|" {
 
 			if len(params) != len(args) {
-				msg := fmt.Sprintf("Error %v,%v: Mismatched function args in ->|%v|<-  expected %v, given %v\n[%v %v]\n", command[0].Line, command[0].Column, TreeToTcl(command), TreeToTcl(params), TreeToTcl(args), S(theLambdaFunction), TreeToTcl(args))
+				msg := fmt.Sprintf("Error %v,%v,%v: Mismatched function args in ->|%v|<-  expected %v, given %v\n[%v %v]\n", command[0].File, command[0].Line, command[0].Column, TreeToTcl(command), TreeToTcl(params), TreeToTcl(args), S(theLambdaFunction), TreeToTcl(args))
 				fmt.Printf(msg)
 				os.Exit(1)
 			}
@@ -345,13 +345,13 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 	ftype, ok := s.TypeSigs[f]
 	if ok {
 		if len(ftype) != len(args)+1 {
-			msg := fmt.Sprintf("Error %v,%v: Mismatched function args in <%v>  expected %v, given %v, %+v\n", command[0].Line, command[0].Column, f, ftype, TreeToTcl(args), args)
+			msg := fmt.Sprintf("Error %v,%v,%v: Mismatched function args in <%v>  expected %v, given %v, %+v\n", command[0].File, command[0].Line, command[0].Column, f, ftype, TreeToTcl(args), args)
 			fmt.Printf(msg)
 			os.Exit(1)
 		}
 		for i, v := range ftype[1:] {
 			if typeOf(args[i]) != v {
-				fmt.Printf("Type error at line %v (command %v, %+v).  At argument %v, expected %v, got %v\n", command[0].Line, TreeToTcl(command), command, i, v, typeOf(args[i]))
+				fmt.Printf("Type error at file %v line %v (command %v, %+v).  At argument %v, expected %v, got %v\n", command[0].File, command[0].Line, TreeToTcl(command), command, i, v, typeOf(args[i]))
 			}
 		}
 	}
