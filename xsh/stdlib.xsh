@@ -7,7 +7,7 @@ proc sayHello { name } {
 
 proc map  { func alist } {
 	if [eq [length alist] 1] {		
-			return func [lindex alist 0]
+			return [func [lindex alist 0]]
         } else {
 			cons [func [lindex alist 0]] [map func [lrange alist 1 end]]
 	}
