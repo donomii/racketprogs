@@ -39,12 +39,12 @@ Functions also work like normal shell commands. Use [ ] brackets to call sub-fun
 Define functions with *func*.
 
 
-func {arg1 arg2 arg ...|
-	expression
-	expression
-	...
-	expression
- }
+	func {arg1 arg2 arg ...|
+		expression
+		expression
+		...
+		expression
+	 }
 
 The last expression is the return value of the function.
 
