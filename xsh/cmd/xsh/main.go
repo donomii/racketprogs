@@ -52,10 +52,6 @@ func main() {
 		guardianPath = bindir + "/xshguardian"
 	}
 
-	/*
-		fname := flag.String("f", "example.xsh", "Script file to execute")
-		shellOpt := flag.Bool("shell", false, "Run interactive shell")
-	*/
 	resumeFile := flag.String("r", "", "Resume from file")
 	tracef := flag.Bool("trace", false, "Trace execution")
 	flag.BoolVar(&wantDebug, "debug", false, "Enable debug output")
@@ -63,7 +59,6 @@ func main() {
 	xsh.WantDebug = wantDebug
 	xsh.WantTrace = *tracef
 	trace = *tracef
-	//wantShell=*shellOpt
 	var fname string
 	if len(flag.Args()) > 0 {
 		fname = flag.Arg(0)
@@ -85,7 +80,7 @@ func main() {
 	}
 }
 
-// Function constructor - constructs new function for listing given directory
+// Returns function that lists given directory
 func listFiles(path string) func(string) []string {
 	return func(line string) []string {
 		names := make([]string, 0)
@@ -114,6 +109,7 @@ func listPathExecutables() func(string) []string {
 	}
 }
 
+//Use the types hash?
 func listBuiltins() func(string) []string {
 	return func(line string) []string {
 		return []string{"id", "and", "or", "join", "split", "puts", "+", "-", "*", "/", "+.", "-.", "*.", "/.", "loadfile", "set", "run", "seq", "with", "cd"}
@@ -185,23 +181,6 @@ func shell(state xsh.State) {
 		}
 
 		line = strings.TrimSpace(line)
-		xsh.XshInform("Result: %+v\n", xsh.TreeToTcl([]autoparser.Node{xsh.Eval(state, line, "shell")}))
+		xsh.XshInform("%+v\n", xsh.TreeToTcl([]autoparser.Node{xsh.Eval(state, line, "shell")}))
 	}
-
-	/*
-		for {
-			rl := readline.NewInstance()
-
-			for {
-				line, err := rl.Readline()
-
-				if err != nil {
-					fmt.Println("Error:", err)
-					return
-				}
-
-				fmt.Printf("You just typed: %s\n", line)
-			}
-		}
-	*/
 }
