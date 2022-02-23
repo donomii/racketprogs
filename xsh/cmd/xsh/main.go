@@ -142,6 +142,7 @@ func shell(state xsh.State) {
 		EOFPrompt: "exit",
 	})
 	if err != nil {
+		xsh.XshErr(fmt.Sprintf("%s", err))
 		panic(err)
 	}
 	defer l.Close()
@@ -157,7 +158,7 @@ func shell(state xsh.State) {
 	for {
 		line, err := l.Readline()
 		if err == readline.ErrInterrupt {
-			fmt.Println("Canceled.  Ctrl-D to exit.")
+			xsh.XshWarn("Canceled.  Ctrl-D to exit.\n")
 			continue
 			/*			if len(line) == 0 {
 							break
@@ -170,7 +171,7 @@ func shell(state xsh.State) {
 		}
 
 		line = strings.TrimSpace(line)
-		fmt.Printf("Result: %+v\n", xsh.TreeToTcl([]autoparser.Node{xsh.Eval(state, line, "shell")}))
+		xsh.XshInform("Result: %+v\n", xsh.TreeToTcl([]autoparser.Node{xsh.Eval(state, line, "shell")}))
 	}
 
 	/*

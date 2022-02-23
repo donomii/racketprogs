@@ -90,7 +90,7 @@ func New() State {
 	s.TypeSigs["join"] = []string{"string", "list", "string"}
 	s.TypeSigs["chr"] = []string{"string", "string"}
 	s.TypeSigs["saveInterpreter"] = []string{"void"}
-	s.TypeSigs["return"] = []string{"any", "any"}
+	//s.TypeSigs["return"] = []string{"any", "any"}
 	s.TypeSigs["id"] = []string{"any", "any"}
 	s.TypeSigs["and"] = []string{"string", "string"}
 	s.TypeSigs["or"] = []string{"string", "string"}
@@ -255,7 +255,7 @@ func runWithGuardian(cmd []string) error {
 func Void(command autoparser.Node) autoparser.Node {
 	drintf("Creating void at %+v\n", command.Line)
 	if command.ChrPos < 1 {
-		log.Println("Warning: Create void with no line number.  This is probably an error.")
+		XshWarn("Warning: Create void with no line number.  This is probably an error.")
 	}
 	return autoparser.Node{"", "", nil, "VOID", command.Line, command.Column, command.ChrPos, command.File, command.ScopeBarrier}
 }
@@ -315,8 +315,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 		if theLambdaFunction.List[0].Note == "|" {
 
 			if len(params) != len(args) {
-				msg := fmt.Sprintf("Error %v,%v,%v: Mismatched function args in ->|%v|<-  expected %v, given %v\n[%v %v]\n", command[0].File, command[0].Line, command[0].Column, TreeToTcl(command), TreeToTcl(params), TreeToTcl(args), S(theLambdaFunction), TreeToTcl(args))
-				fmt.Printf(msg)
+				XshErr("Error %v,%v,%v: Mismatched function args in ->|%v|<-  expected %v, given %v\n[%v %v]\n", command[0].File, command[0].Line, command[0].Column, TreeToTcl(command), TreeToTcl(params), TreeToTcl(args), S(theLambdaFunction), TreeToTcl(args))
 				os.Exit(1)
 			}
 			nbod := ReplaceArgs(args, params, bod)
@@ -345,13 +344,13 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 	ftype, ok := s.TypeSigs[f]
 	if ok {
 		if len(ftype) != len(args)+1 {
-			msg := fmt.Sprintf("Error %v,%v,%v: Mismatched function args in <%v>  expected %v, given %v, %+v\n", command[0].File, command[0].Line, command[0].Column, f, ftype, TreeToTcl(args), args)
-			fmt.Printf(msg)
+			XshErr("Error %v,%v,%v: Mismatched function args in <%v>  expected %v(%v), given %v(%v)\n", command[0].File, command[0].Line, command[0].Column, f, ftype, len(ftype), TreeToTcl(args), len(args))
+
 			os.Exit(1)
 		}
 		for i, v := range ftype[1:] {
 			if typeOf(args[i]) != v {
-				fmt.Printf("Type error at file %v line %v (command %v, %+v).  At argument %v, expected %v, got %v\n", command[0].File, command[0].Line, TreeToTcl(command), command, i, v, typeOf(args[i]))
+				XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v, got %v\n", command[0].File, command[0].Line, TreeToTcl(command), i, v, typeOf(args[i]))
 			}
 		}
 	}
@@ -377,12 +376,37 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 	}
 	return Void(command[0])
 }
-func xshErr(msg string) {
+func XshErr(formatStr string, args ...interface{}) {
+	out := fmt.Sprintf(formatStr, args...)
 	if UsePterm {
 		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgRed))
-		pterm.DefaultCenter.Println(header.Sprint(msg))
+		pterm.DefaultCenter.Println(header.Sprint(out))
 	}
 
+}
+
+func XshWarn(formatStr string, args ...interface{}) {
+	out := fmt.Sprintf(formatStr, args...)
+	if UsePterm {
+		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgYellow))
+		pterm.DefaultCenter.Println(header.Sprint(out))
+	}
+}
+
+func XshInform(formatStr string, args ...interface{}) {
+	out := fmt.Sprintf(formatStr, args...)
+	if UsePterm {
+		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgBlue))
+		pterm.DefaultCenter.Println(header.Sprint(out))
+	}
+}
+
+func XshTrace(formatStr string, args ...interface{}) {
+	out := fmt.Sprintf(formatStr, args...)
+	if UsePterm {
+		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgGreen))
+		pterm.DefaultCenter.Println(header.Sprint(out))
+	}
 }
 func blockReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel int) autoparser.Node {
 
@@ -420,7 +444,7 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 	}
 
 	if toplevel == 1 {
-		xshErr(TreeToTcl(t))
+		XshErr(TreeToTcl(t))
 	}
 	out := []autoparser.Node{}
 	for i, v := range t {
@@ -445,11 +469,11 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 		default:
 			atom := autoparser.Node{ChrPos: -1}
 			if strings.HasPrefix(S(v), "$") {
-				drintf("Found variable: %+v\n", S(v))
+				drintf("Variable lookup: %+v\n", S(v))
 				vname := S(v)[1:]
 				drintf("Fetching %v from Globals: %+v\n", vname, s.Globals)
 				if vname == "" {
-					fmt.Println("$ must preceed a variable name")
+					XshErr(fmt.Sprintf("$ found without variable name.  $ defines a variable, and cannot be used on its own."))
 					os.Exit(1)
 				} else {
 					if _, ok := s.Globals[vname]; ok {
@@ -458,7 +482,8 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 						if val := os.Getenv(vname); val != "" {
 							atom = N(val)
 						} else {
-							fmt.Printf("Variable '%v' not found\n", vname)
+							XshErr(fmt.Sprintf("Global variable $%v not found.  You must define a variable before you use it.", vname))
+							os.Exit(1)
 						}
 					}
 				}
@@ -474,7 +499,7 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 	//Run command
 	if len(out) > 0 {
 		if WantTrace {
-			log.Printf("%v,%v: %v\n", out[0].Line, out[0].Column, TreeToTcl(out))
+			XshTrace(fmt.Sprintf("%v,%v: %v\n", out[0].Line, out[0].Column, TreeToTcl(out)))
 		}
 	}
 	ret := eval(s, out, parent, toplevel)
