@@ -5,24 +5,24 @@ proc sayHello { name } {
 	puts "Hello " name
 }
 
-proc map  { func alist } {
+func map  { f alist |
 	if [eq [length alist] 1] {		
-			return [func [lindex alist 0]]
+			return [f [lindex alist 0]]
         } else {
-			cons [func [lindex alist 0]] [map func [lrange alist 1 end]]
+			cons [f [lindex alist 0]] [map f [lrange alist 1 end]]
 	}
 }
 
 #The classic lisp map
 
-proc fold { func accum alist } { 
+proc fold { f accum alist } { 
 	if [eq [length alist] 0] {
 		accum
         } else {
 		if [eq [length alist] 1] {
-			func accum [lindex alist 0]
+			f accum [lindex alist 0]
 		} else {
-			fold func [func accum [lindex alist 0]] [lrange alist 1 end]
+			fold f [f accum [lindex alist 0]] [lrange alist 1 end]
 		}
 	}
 }
