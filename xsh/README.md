@@ -12,6 +12,13 @@ A homoiconic functional scripting language that works by tree reduction.
     set greet "Hello world"
     echo $greet
 
+Run programs like normal
+
+    ls
+    BUGS                     builtins.go              main.go.works            stdlib.xsh.works         xshguardian
+    Makefile                 cmd                      savefile.cont            workspace.code-workspace xshwatch
+    README.md                main.go                  stdlib.xsh               xsh
+    
  If you want to call another program, use [ ] brackets (instead of $() in bash).
     
     puts "Directory:" [ls]
@@ -36,19 +43,19 @@ Functions also work like normal shell commands. Use [ ] brackets to call sub-fun
     }
 ### Functions
 
-Define functions with *proc*.
+Define functions with *func*.
 
 
-*proc* {arg1 arg2 arg ...} { 
-	expression
-	expression
-	...
-	expression
- }
+	func {arg1 arg2 arg ...|
+		expression
+		expression
+		...
+		expression
+	 }
 
 The last expression is the return value of the function.
 
-    *proc* countdown { n } {
+    func countdown { n |
         puts n
         if [gt n 0] {
                 countdown [- n 1]
@@ -67,11 +74,11 @@ The last expression is the return value of the function.
     2
     1
 
-*proc* {arg1 arg2 arg ...} { expression }
+func {arg1 arg2 arg ... | expression }
 
 If you use the single line declaration, you can only write one expression.  But that expression can be _seq_.
 
-    *proc* countdown { n } { seq [puts n] [if [gt n 0] { countdown [- n 1] }]}
+    func countdown { n | seq [puts n] [if [gt n 0] { countdown [- n 1] }]}
 
     » countdown 10
     10
@@ -95,9 +102,9 @@ If you use the single line declaration, you can only write one expression.  But 
 
 Runs each command in sequence, returns the value of the last command
 
-### [cd directory]
+### cd *directory*
 
-Change directory, as usual
+Change to *directory*, as usual
 
 ### +,-,*,/
 
@@ -198,7 +205,7 @@ Returns a string containing the unicode character *integer*
 
 ### Lambda functions (anonymous functions)
 
-Lambdas are defined slightly differently to functions, with the args inside the lambda:
+Lambdas are defined like functions, with the args inside the lambda:
 
     {arg1 arg2 ...|  command}
     {arg1 arg2 ...|  seq [command ...][command ...]}
@@ -214,4 +221,4 @@ If the lambda is on more than one line, the parameters go on the first line.
      {a b c |
         puts c
         puts [+ a b]
-     } 1 2 "Result:"
+     } 1 2 "1 + 2 = "
