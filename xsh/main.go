@@ -356,6 +356,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 	}
 	fu, ok := s.Functions[f]
 	if ok {
+		//It's a user-defined function
 		bod := CopyTree(fu.Body)
 		fparams := fu.Parameters
 		nbod := ReplaceArgs(args, fparams, bod)
@@ -364,8 +365,12 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 	} else {
 		//It is a builtin function or an external call
 		if f == "" {
+			//We shouldn't get an empty string here, but if we do, we ignore it and keep going
 			return Void(command[0])
 		}
+
+		//This is for the embedded xsh, it allows the embeddor to add their own functions,
+		//most usually extra data sources and/or IO
 		if s.ExtraBuiltins != nil {
 			ret, handled := s.ExtraBuiltins(s, command, parent, level)
 			if handled {
@@ -374,6 +379,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 		}
 		return builtin(s, command, parent, f, args, level)
 	}
+	//Maybe we should return a warning here?  Or even exit?  Need a strict mode.
 	return Void(command[0])
 }
 func XshErr(formatStr string, args ...interface{}) {
@@ -416,6 +422,8 @@ func blockReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel
 		return Void(*parent)
 	}
 
+	//The scopebarrier prevents variable substitution happening to a code branch that has been copied in
+	//from another function or scope.
 	if (parent != nil) && parent.ScopeBarrier {
 		return *parent
 	}
