@@ -12,6 +12,13 @@ A homoiconic functional scripting language that works by tree reduction.
     set greet "Hello world"
     echo $greet
 
+Run programs like normal
+
+    ls
+    BUGS                     builtins.go              main.go.works            stdlib.xsh.works         xshguardian
+    Makefile                 cmd                      savefile.cont            workspace.code-workspace xshwatch
+    README.md                main.go                  stdlib.xsh               xsh
+    
  If you want to call another program, use [ ] brackets (instead of $() in bash).
     
     puts "Directory:" [ls]
