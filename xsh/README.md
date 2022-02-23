@@ -198,7 +198,7 @@ Returns a string containing the unicode character *integer*
 
 ### Lambda functions (anonymous functions)
 
-Lambdas are defined slightly differently to functions, with the args inside the lambda:
+Lambdas are defined like functions, with the args inside the lambda:
 
     {arg1 arg2 ...|  command}
     {arg1 arg2 ...|  seq [command ...][command ...]}
