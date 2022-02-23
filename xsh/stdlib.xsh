@@ -1,7 +1,7 @@
 #bits of srfi 1
 #The classic lisp map
 
-proc sayHello { name } {
+func sayHello { name |
 	puts "Hello " name
 }
 
@@ -15,7 +15,7 @@ func map  { f alist |
 
 #The classic lisp map
 
-proc fold { f accum alist } { 
+func fold { f accum alist |
 	if [eq [length alist] 0] {
 		accum
         } else {
@@ -27,17 +27,17 @@ proc fold { f accum alist } {
 	}
 }
 
-proc reverse {alist} {
+func reverse {alist |
        fold {a b| seq [cons b a]} {} alist 
 }
 
 #Add some useful definitions for control codes
 
-proc CR {} { chr 13 }
-proc LF {} { chr 10 }
+func CR {| chr 13 }
+func LF {| chr 10 }
 
-proc range_rec {start end step accum} { if [gt start end] { return accum } else { range_rec [+ start step] end step [cons start accum] } }
+func range_rec {start end step accum| if [gt start end] { return accum } else { range_rec [+ start step] end step [cons start accum] } }
 
 #Generate a list
-proc range {start end step} { reverse [range_rec start end step {} ] }
+func range {start end step| reverse [range_rec start end step {} ] }
 

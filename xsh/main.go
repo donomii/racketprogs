@@ -62,6 +62,7 @@ func drintln(args ...interface{}) {
 func New() State {
 	s := State{map[string]Function{}, map[string]string{}, nil, nil, map[string][]string{}, nil}
 	s.TypeSigs["map"] = []string{"list", "lambda", "list"}
+	s.TypeSigs["fold"] = []string{"any", "lambda", "any", "list"}
 	s.TypeSigs["cd"] = []string{"void", "string"}
 	s.TypeSigs["\n"] = []string{"void"}
 	s.TypeSigs["+"] = []string{"string", "string", "string"}
@@ -185,6 +186,11 @@ func checkArgs(args []autoparser.Node, params []autoparser.Node) error {
 
 func ReplaceArg(args, params, t []autoparser.Node) []autoparser.Node {
 
+	if len(args) != len(params) {
+		XshErr("Internal error.  Invalid number of arguments in function call: %v, %v\n", args, params)
+		panic(fmt.Sprintf("ReplaceArg: Args and params must be the same length: %+v, %+v\n", args, params))
+		//os.Exit(1)
+	}
 	out := []autoparser.Node{}
 	for _, v := range t {
 		//The scope barrier exists to prevent variable names being incorrectly replaced in substitued code
@@ -344,7 +350,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 	ftype, ok := s.TypeSigs[f]
 	if ok {
 		if len(ftype) != len(args)+1 {
-			XshErr("Error %v,%v,%v: Mismatched function args in <%v>  expected %v(%v), given %v(%v)\n", command[0].File, command[0].Line, command[0].Column, f, ftype, len(ftype), TreeToTcl(args), len(args))
+			XshErr("Error %v,%v,%v: Mismatched function args in <%v>  expected %v(%v), given %v(%v)\n", command[0].File, command[0].Line, command[0].Column, f, ftype[1:], len(ftype)-1, TreeToTcl(args), len(args))
 
 			os.Exit(1)
 		}
