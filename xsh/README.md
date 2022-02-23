@@ -36,10 +36,10 @@ Functions also work like normal shell commands. Use [ ] brackets to call sub-fun
     }
 ### Functions
 
-Define functions with *proc*.
+Define functions with *func*.
 
 
-*proc* {arg1 arg2 arg ...} { 
+func {arg1 arg2 arg ...|
 	expression
 	expression
 	...
@@ -48,7 +48,7 @@ Define functions with *proc*.
 
 The last expression is the return value of the function.
 
-    *proc* countdown { n } {
+    func countdown { n |
         puts n
         if [gt n 0] {
                 countdown [- n 1]
@@ -67,11 +67,11 @@ The last expression is the return value of the function.
     2
     1
 
-*proc* {arg1 arg2 arg ...} { expression }
+func {arg1 arg2 arg ... | expression }
 
 If you use the single line declaration, you can only write one expression.  But that expression can be _seq_.
 
-    *proc* countdown { n } { seq [puts n] [if [gt n 0] { countdown [- n 1] }]}
+    func countdown { n | seq [puts n] [if [gt n 0] { countdown [- n 1] }]}
 
     » countdown 10
     10
