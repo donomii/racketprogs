@@ -234,7 +234,7 @@ func ReplaceArg(args, params, t []autoparser.Node) []autoparser.Node {
 }
 
 func ReplaceArgs(args, params, t []autoparser.Node) []autoparser.Node {
-	drintf("Replacing function params %+v with %+v\n", TreeToTcl(params), TreeToTcl(args))
+	drintf("Replacing function params %+v with %+v\n", TreeToXsh(params), TreeToXsh(args))
 	//log.Printf("Replacing function params %+v with %+v\n", TreeToTcl(params), TreeToTcl(args))
 
 	t = ReplaceArg(args, params, t)
@@ -249,8 +249,8 @@ func S(n autoparser.Node) string {
 func FunctionsToTcl(functions map[string]Function) string {
 	out := ""
 	for _, v := range functions {
-		out += fmt.Sprintf("proc %s {%v} {\n", v.Name, TreeToTcl(v.Parameters))
-		out += TreeToTcl(v.Body)
+		out += fmt.Sprintf("proc %s {%v} {\n", v.Name, TreeToXsh(v.Parameters))
+		out += TreeToXsh(v.Body)
 		out += "}\n"
 	}
 	return out
@@ -323,7 +323,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 		if theLambdaFunction.List[0].Note == "|" {
 
 			if len(params) != len(args) {
-				XshErr("Error %v,%v,%v: Mismatched function args in ->|%v|<-  expected %v, given %v\n[%v %v]\n", command[0].File, command[0].Line, command[0].Column, TreeToTcl(command), TreeToTcl(params), TreeToTcl(args), S(theLambdaFunction), TreeToTcl(args))
+				XshErr("Error %v,%v,%v: Mismatched function args in ->|%v|<-  expected %v, given %v\n[%v %v]\n", command[0].File, command[0].Line, command[0].Column, TreeToXsh(command), TreeToXsh(params), TreeToXsh(args), S(theLambdaFunction), TreeToXsh(args))
 				os.Exit(1)
 			}
 			nbod := ReplaceArgs(args, params, bod)
@@ -359,13 +359,13 @@ Expected:
 
 Given:
 	%v %v (%v args)
-	`, command[0].File, command[0].Line, command[0].Column, f, f, strings.Join(ftype[1:], " "), len(ftype)-1, f, TreeToTcl(args), len(args))
+	`, command[0].File, command[0].Line, command[0].Column, f, f, strings.Join(ftype[1:], " "), len(ftype)-1, f, TreeToXsh(args), len(args))
 
 			os.Exit(1)
 		}
 		for i, v := range ftype[1:] {
 			if typeOf(args[i]) != v {
-				XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v, got %v\n", command[0].File, command[0].Line, TreeToTcl(command), i+1, v, typeOf(args[i]))
+				XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v, got %v\n", command[0].File, command[0].Line, TreeToXsh(command), i+1, v, typeOf(args[i]))
 			}
 		}
 	}
@@ -375,7 +375,7 @@ Given:
 		bod := CopyTree(fu.Body)
 		fparams := fu.Parameters
 		nbod := ReplaceArgs(args, fparams, bod)
-		drintf("Calling function %+v\n", TreeToTcl(nbod))
+		drintf("Calling function %+v\n", TreeToXsh(nbod))
 		return blockReduce(s, nbod, parent, 0)
 	} else {
 		//It is a builtin function or an external call
@@ -431,7 +431,7 @@ func XshTrace(formatStr string, args ...interface{}) {
 }
 func blockReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel int) autoparser.Node {
 
-	drintf("BlockReduce: starting %+v\n", TreeToTcl(t))
+	drintf("BlockReduce: starting %+v\n", TreeToXsh(t))
 	//log.Printf("BlockReduce: starting %+v\n", t)
 	if len(t) == 0 {
 		return Void(*parent)
@@ -456,23 +456,23 @@ func blockReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel
 		out = treeReduce(s, t, parent, toplevel)
 	}
 
-	drintf("Returning from BlockReduce: %v\n", TreeToTcl([]autoparser.Node{out}))
+	drintf("Returning from BlockReduce: %v\n", TreeToXsh([]autoparser.Node{out}))
 	return out
 }
 func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel int) autoparser.Node {
-	drintf("Reducing: %+v\n", TreeToTcl(t))
+	drintf("Reducing: %+v\n", TreeToXsh(t))
 
 	if (parent != nil) && parent.ScopeBarrier {
 		return *parent
 	}
 
 	if toplevel == 1 {
-		XshInform(TreeToTcl(t))
+		XshInform(TreeToXsh(t))
 	}
 	out := []autoparser.Node{}
 	for i, v := range t {
 		if WantTrace {
-			XshTrace("%v,%v: %v\n", v.Line, v.Column, TreeToTcl(t))
+			XshTrace("%v,%v: %v\n", v.Line, v.Column, TreeToXsh(t))
 		}
 
 		switch {
@@ -485,7 +485,7 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 				out = append(out, atom)
 				t[i] = atom
 			} else {
-				drintln("treeReduce: found list ", TreeToTcl(v.List))
+				drintln("treeReduce: found list ", TreeToXsh(v.List))
 				out = append(out, v)
 				t[i] = v
 			}
@@ -522,11 +522,11 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 	//Run command
 	if len(out) > 0 {
 		if WantTrace {
-			XshTrace("%v,%v: %v\n", out[0].Line, out[0].Column, TreeToTcl(out))
+			XshTrace("%v,%v: %v\n", out[0].Line, out[0].Column, TreeToXsh(out))
 		}
 	}
 	ret := eval(s, out, parent, toplevel)
-	drintf("Returning from treeReduce: %v\n", TreeToTcl([]autoparser.Node{ret}))
+	drintf("Returning from treeReduce: %v\n", TreeToXsh([]autoparser.Node{ret}))
 	return ret
 }
 
@@ -549,7 +549,7 @@ func TreeToJson(t []autoparser.Node) string {
 	return out
 }
 
-func TreeToTcl(t []autoparser.Node) string {
+func TreeToXsh(t []autoparser.Node) string {
 	out := ""
 	for i, v := range t {
 		switch {
@@ -560,11 +560,11 @@ func TreeToTcl(t []autoparser.Node) string {
 			}
 			switch v.Note {
 			case "{":
-				out = out + "{" + TreeToTcl(v.List) + "}"
+				out = out + "{" + TreeToXsh(v.List) + "}"
 			case "|":
-				out = out + TreeToTcl(v.List) + "|"
+				out = out + TreeToXsh(v.List) + "|"
 			default:
-				out = out + "[" + TreeToTcl(v.List) + "]"
+				out = out + "[" + TreeToXsh(v.List) + "]"
 			}
 		case v.Raw != "":
 			if i != 0 {

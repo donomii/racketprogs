@@ -28,9 +28,9 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			}
 		}
 		letbod := CopyTree(args[3].List)
-		fmt.Printf("Replacing %v with %v\n", TreeToTcl(letparams), TreeToTcl(evalledArgs))
+		fmt.Printf("Replacing %v with %v\n", TreeToXsh(letparams), TreeToXsh(evalledArgs))
 		nbod := ReplaceArgs(evalledArgs, letparams, letbod)
-		drintf("Calling function %+v\n", TreeToTcl(nbod))
+		drintf("Calling function %+v\n", TreeToXsh(nbod))
 		return blockReduce(s, nbod, parent, 0)
 	case "cd":
 		switch {
@@ -91,7 +91,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 		}
 	case "dump":
 		//fmt.Println(N(fmt.Sprintf("%+v", args)))
-		return N(fmt.Sprintf("%v", TreeToTcl(args)))
+		return N(fmt.Sprintf("%v", TreeToXsh(args)))
 
 	case "eq":
 		if S(args[0]) == S(args[1]) {
@@ -129,7 +129,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			}
 		}
 		fmt.Println()
-		return N(TreeToTcl(args))
+		return N(TreeToXsh(args))
 	case "loadfile":
 		b, _ := ioutil.ReadFile(S(args[0]))
 		return N(string(b))
@@ -168,7 +168,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			}
 		*/
 		if len(args) != 2 {
-			a := TreeToTcl(args)
+			a := TreeToXsh(args)
 			msg := fmt.Sprintf("Error %v,%v: func requires 2 arguments: func name {arguments| body}\n[%v %v]\n", command[0].Line, command[0].Column, f, a)
 
 			log.Panicf(msg)
@@ -190,7 +190,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			}
 		*/
 		if len(args) != 3 {
-			a := TreeToTcl(args)
+			a := TreeToXsh(args)
 			msg := fmt.Sprintf("Error %v,%v: proc requires 3 arguments: proc name {arguments} {body}\n[%v %v]\n", command[0].Line, command[0].Column, f, a)
 
 			log.Panicf(msg)
@@ -266,11 +266,11 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 		}
 		if atoi(S(args[0])) != 0 {
 			ret := blockReduce(s, args[1].List, parent, level)
-			drintln("Returning from if true branch:", TreeToTcl([]autoparser.Node{ret}))
+			drintln("Returning from if true branch:", TreeToXsh([]autoparser.Node{ret}))
 			return ret
 		} else if len(args) == 4 {
 			ret := blockReduce(s, args[3].List, parent, level)
-			drintln("Returning from if false branch:", TreeToTcl([]autoparser.Node{ret}))
+			drintln("Returning from if false branch:", TreeToXsh([]autoparser.Node{ret}))
 			return ret
 		} else {
 			XshWarn("No else for if at %v:%v\n", command[0].Line, command[0].Column)
@@ -283,7 +283,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			return N("No filename given")
 		}
 		*parent = Void(command[0])
-		rest := TreeToTcl(s.Tree)
+		rest := TreeToXsh(s.Tree)
 		funcs := FunctionsToTcl(s.Functions)
 		code := funcs + "\n\n" + rest
 		fmt.Printf("Function defs: %v\n\nRemaining code: %v\n", funcs, rest)
