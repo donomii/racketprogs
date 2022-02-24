@@ -551,23 +551,32 @@ func TreeToJson(t []autoparser.Node) string {
 
 func TreeToTcl(t []autoparser.Node) string {
 	out := ""
-	for _, v := range t {
+	for i, v := range t {
 		switch {
 		case v.Note == "VOID":
 		case v.List != nil:
+			if i != 0 {
+				out = out + " "
+			}
 			switch v.Note {
 			case "{":
-				out = out + "{" + TreeToTcl(v.List) + "} "
+				out = out + "{" + TreeToTcl(v.List) + "}"
 			case "|":
 				out = out + TreeToTcl(v.List) + "|"
 			default:
-				out = out + "[" + TreeToTcl(v.List) + "] "
+				out = out + "[" + TreeToTcl(v.List) + "]"
 			}
 		case v.Raw != "":
-			out = out + v.Raw + " " //FIXME escape string properly to include in JSON
+			if i != 0 {
+				out = out + " "
+			}
+			out = out + v.Raw //FIXME escape string properly to include in JSON
 
 		default:
-			out = out + "\"" + v.Str + "\"" + " " //FIXME escape string properly for JSON
+			if i != 0 {
+				out = out + " "
+			}
+			out = out + "\"" + v.Str + "\"" //FIXME escape string properly for JSON
 		}
 	}
 	return out
