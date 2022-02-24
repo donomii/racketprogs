@@ -7,14 +7,13 @@ import (
 	"io/ioutil"
 
 	"github.com/nsf/termbox-go"
-	"log"
+
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/mattn/go-runewidth"
 
-	"github.com/pterm/pterm"
 	//"github.com/lmorg/readline"
 
 	_ "embed"
@@ -45,18 +44,6 @@ type State struct {
 	ExtraBuiltins func(s State, command []autoparser.Node, parent *autoparser.Node, level int) (autoparser.Node, bool)
 	TypeSigs      map[string][]string
 	UserData      interface{}
-}
-
-func drintf(formatStr string, args ...interface{}) {
-	if WantDebug {
-		log.Printf(formatStr, args...)
-	}
-}
-
-func drintln(args ...interface{}) {
-	if WantDebug {
-		log.Println(args...)
-	}
 }
 
 func New() State {
@@ -396,38 +383,6 @@ Given:
 	}
 	//Maybe we should return a warning here?  Or even exit?  Need a strict mode.
 	return Void(command[0])
-}
-func XshErr(formatStr string, args ...interface{}) {
-	out := fmt.Sprintf(formatStr, args...)
-	if UsePterm {
-		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgRed))
-		pterm.DefaultCenter.Println(header.Sprint(out))
-	}
-
-}
-
-func XshWarn(formatStr string, args ...interface{}) {
-	out := fmt.Sprintf(formatStr, args...)
-	if UsePterm {
-		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgYellow))
-		pterm.DefaultCenter.Println(header.Sprint(out))
-	}
-}
-
-func XshInform(formatStr string, args ...interface{}) {
-	out := fmt.Sprintf(formatStr, args...)
-	if UsePterm {
-		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgBlue))
-		pterm.DefaultCenter.Println(header.Sprint(out))
-	}
-}
-
-func XshTrace(formatStr string, args ...interface{}) {
-	out := fmt.Sprintf(formatStr, args...)
-	if UsePterm {
-		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgGreen))
-		pterm.DefaultCenter.Println(header.Sprint(out))
-	}
 }
 func blockReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel int) autoparser.Node {
 
