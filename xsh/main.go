@@ -467,7 +467,7 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 	}
 
 	if toplevel == 1 {
-		XshErr(TreeToTcl(t))
+		XshInform(TreeToTcl(t))
 	}
 	out := []autoparser.Node{}
 	for i, v := range t {
@@ -555,9 +555,12 @@ func TreeToTcl(t []autoparser.Node) string {
 		switch {
 		case v.Note == "VOID":
 		case v.List != nil:
-			if v.Note == "{" {
+			switch v.Note {
+			case "{":
 				out = out + "{" + TreeToTcl(v.List) + "} "
-			} else {
+			case "|":
+				out = out + TreeToTcl(v.List) + "|"
+			default:
 				out = out + "[" + TreeToTcl(v.List) + "] "
 			}
 		case v.Raw != "":

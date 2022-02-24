@@ -4,7 +4,6 @@ import (
 	autoparser "../autoparser"
 	"fmt"
 	"github.com/donomii/goof"
-	"github.com/pterm/pterm"
 	"io/ioutil"
 	"log"
 	"os"
@@ -46,10 +45,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			os.Setenv("OLDPWD", os.Getenv("PWD"))
 			os.Chdir(S(args[0]))
 		}
-		if UsePterm {
-			header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgRed))
-			pterm.DefaultCenter.Println(header.Sprint(goof.Cwd()))
-		}
+		XshInform(goof.Cwd())
 	case "\n":
 		//Fuck
 		return Void(command[0])
@@ -177,7 +173,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 
 			log.Panicf(msg)
 		}
-		fmt.Printf("%+v\n", args)
+		//fmt.Printf("%+v\n", args)
 		body := args[1].List
 		s.Functions[S(args[0])] = Function{
 			Name:       S(args[0]),
@@ -185,7 +181,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			Body:       body[1:],
 		}
 
-		fmt.Printf("%+v\n", s.Functions[S(args[0])])
+		//fmt.Printf("%+v\n", s.Functions[S(args[0])])
 
 	case "proc":
 		/*
@@ -277,7 +273,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			drintln("Returning from if false branch:", TreeToTcl([]autoparser.Node{ret}))
 			return ret
 		} else {
-			log.Printf("No else for if at %v:%v\n", command[0].Line, command[0].Column)
+			XshWarn("No else for if at %v:%v\n", command[0].Line, command[0].Column)
 			return Void(command[0])
 		}
 
@@ -325,7 +321,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 		}
 		stringCommand, err := ListToStrings(command)
 		if err != nil {
-			log.Printf("Error %v,%v: converting command to string: %v\n", command[0].Line, command[0].Column, err)
+			log.Printf("Error %v,%v,%v: converting command to string: %v\n", command[0].File, command[0].Line, command[0].Column, err)
 			return Void(command[0])
 		} else {
 			var res string
