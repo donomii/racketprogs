@@ -10,6 +10,42 @@ import (
 	"strings"
 )
 
+func addBuiltinTypes(s State) {
+	s.TypeSigs["map"] = []string{"list", "lambda", "list"}
+	s.TypeSigs["fold"] = []string{"any", "lambda", "any", "list"}
+	s.TypeSigs["cd"] = []string{"void", "string"}
+	s.TypeSigs["\n"] = []string{"void"}
+	s.TypeSigs["+"] = []string{"string", "string", "string"}
+	s.TypeSigs["-"] = s.TypeSigs["+"]
+	s.TypeSigs["*"] = s.TypeSigs["+"]
+	s.TypeSigs["/"] = s.TypeSigs["+"]
+	s.TypeSigs["gt"] = s.TypeSigs["+"]
+	s.TypeSigs["lt"] = s.TypeSigs["+"]
+	s.TypeSigs["+."] = s.TypeSigs["+"]
+	s.TypeSigs["-."] = s.TypeSigs["+"]
+	s.TypeSigs["."] = s.TypeSigs["+"]
+	s.TypeSigs["/."] = s.TypeSigs["+"]
+	s.TypeSigs["gt."] = s.TypeSigs["+"]
+	s.TypeSigs["lt"] = s.TypeSigs["+"]
+	s.TypeSigs["eq"] = s.TypeSigs["+"]
+	s.TypeSigs["loadfile"] = []string{"string", "string"}
+	s.TypeSigs["proc"] = []string{"void", "string", "list", "list"}
+	s.TypeSigs["exit"] = []string{"string", "void"}
+	s.TypeSigs["cons"] = []string{"list", "string", "list"}
+	s.TypeSigs["empty?"] = []string{"string", "list"}
+	s.TypeSigs["length"] = []string{"string", "list"}
+	s.TypeSigs["lindex"] = []string{"any", "list", "string"}
+	s.TypeSigs["lset"] = []string{"string", "list", "string", "any"}
+	s.TypeSigs["lrange"] = []string{"list", "list", "string", "string"}
+	s.TypeSigs["split"] = []string{"list", "string", "string"}
+	s.TypeSigs["join"] = []string{"string", "list", "string"}
+	s.TypeSigs["chr"] = []string{"string", "string"}
+	s.TypeSigs["saveInterpreter"] = []string{"void string"}
+	//s.TypeSigs["return"] = []string{"any", "any"}
+	s.TypeSigs["id"] = []string{"any", "any"}
+	s.TypeSigs["and"] = []string{"string", "string"}
+	s.TypeSigs["or"] = []string{"string", "string"}
+}
 func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f string, args []autoparser.Node, level int) autoparser.Node {
 
 	switch f {

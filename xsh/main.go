@@ -1,7 +1,6 @@
 package xsh
 
 import (
-	"errors"
 	"fmt"
 
 	"io/ioutil"
@@ -9,7 +8,6 @@ import (
 	"github.com/nsf/termbox-go"
 
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/mattn/go-runewidth"
@@ -17,6 +15,7 @@ import (
 	//"github.com/lmorg/readline"
 
 	_ "embed"
+
 	"github.com/donomii/goof"
 
 	autoparser "../autoparser"
@@ -48,40 +47,7 @@ type State struct {
 
 func New() State {
 	s := State{map[string]Function{}, map[string]string{}, nil, nil, map[string][]string{}, nil}
-	s.TypeSigs["map"] = []string{"list", "lambda", "list"}
-	s.TypeSigs["fold"] = []string{"any", "lambda", "any", "list"}
-	s.TypeSigs["cd"] = []string{"void", "string"}
-	s.TypeSigs["\n"] = []string{"void"}
-	s.TypeSigs["+"] = []string{"string", "string", "string"}
-	s.TypeSigs["-"] = s.TypeSigs["+"]
-	s.TypeSigs["*"] = s.TypeSigs["+"]
-	s.TypeSigs["/"] = s.TypeSigs["+"]
-	s.TypeSigs["gt"] = s.TypeSigs["+"]
-	s.TypeSigs["lt"] = s.TypeSigs["+"]
-	s.TypeSigs["+."] = s.TypeSigs["+"]
-	s.TypeSigs["-."] = s.TypeSigs["+"]
-	s.TypeSigs["."] = s.TypeSigs["+"]
-	s.TypeSigs["/."] = s.TypeSigs["+"]
-	s.TypeSigs["gt."] = s.TypeSigs["+"]
-	s.TypeSigs["lt"] = s.TypeSigs["+"]
-	s.TypeSigs["eq"] = s.TypeSigs["+"]
-	s.TypeSigs["loadfile"] = []string{"string", "string"}
-	s.TypeSigs["proc"] = []string{"void", "string", "list", "list"}
-	s.TypeSigs["exit"] = []string{"string", "void"}
-	s.TypeSigs["cons"] = []string{"list", "string", "list"}
-	s.TypeSigs["empty?"] = []string{"string", "list"}
-	s.TypeSigs["length"] = []string{"string", "list"}
-	s.TypeSigs["lindex"] = []string{"any", "list", "string"}
-	s.TypeSigs["lset"] = []string{"string", "list", "string", "any"}
-	s.TypeSigs["lrange"] = []string{"list", "list", "string", "string"}
-	s.TypeSigs["split"] = []string{"list", "string", "string"}
-	s.TypeSigs["join"] = []string{"string", "list", "string"}
-	s.TypeSigs["chr"] = []string{"string", "string"}
-	s.TypeSigs["saveInterpreter"] = []string{"void string"}
-	//s.TypeSigs["return"] = []string{"any", "any"}
-	s.TypeSigs["id"] = []string{"any", "any"}
-	s.TypeSigs["and"] = []string{"string", "string"}
-	s.TypeSigs["or"] = []string{"string", "string"}
+	addBuiltinTypes(s)
 
 	return s
 }
@@ -99,55 +65,6 @@ func LoadEval(s State, fname string) autoparser.Node {
 	return Eval(s, autoparser.LoadFile(fname), fname)
 }
 
-func NodeToString(v autoparser.Node) string {
-	if v.Raw == "" {
-		return v.Str
-	} else {
-		return v.Raw
-	}
-}
-func ListToStrings(l []autoparser.Node) ([]string, error) {
-	out := []string{}
-	for _, v := range l {
-		if v.List != nil {
-			return nil, errors.New(fmt.Sprintf("ListToArray: List cannot be converted to string array: %+v\n", l))
-		} else {
-			out = append(out, NodeToString(v))
-		}
-	}
-	return out, nil
-}
-
-func StringsToList(s []string) autoparser.Node {
-	out := []autoparser.Node{}
-	for _, v := range s {
-		out = append(out, autoparser.Node{Str: v})
-	}
-
-	o := EmptyList()
-	o.List = out
-	return o
-}
-
-func ListToStr(l []autoparser.Node) string {
-	str, _ := ListToStrings(l)
-	out := strings.Join(str, " ")
-	return out
-}
-
-//This is ridiculous
-func atoi(s string) int {
-	i, _ := strconv.Atoi(s)
-	return i
-}
-
-func atof(s string) float64 {
-	i, _ := strconv.ParseFloat(s, 64)
-	return i
-}
-func N(s string) autoparser.Node {
-	return autoparser.Node{Str: s}
-}
 func CopyTree(t []autoparser.Node) []autoparser.Node {
 	out := []autoparser.Node{}
 	for _, v := range t {
@@ -174,7 +91,6 @@ func checkArgs(args []autoparser.Node, params []autoparser.Node) error {
 }
 
 func ReplaceArg(args, params, t []autoparser.Node) []autoparser.Node {
-
 	if len(args) != len(params) {
 		XshErr("Internal error.  Invalid number of arguments in function call: %v, %v\n", args, params)
 		panic(fmt.Sprintf("ReplaceArg: Args and params must be the same length: %+v, %+v\n", args, params))
@@ -407,7 +323,7 @@ func blockReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel
 			t[i] = out
 		}
 	} else {
-		//It is a single line lambda, eval as expression
+		//It is a single line lambda, eval it as an expression
 		out = treeReduce(s, t, parent, toplevel)
 	}
 
