@@ -11,6 +11,14 @@ import (
 )
 
 func addBuiltinTypes(s State) {
+	s.TypeSigs["puts"] = []string{"void", "any", "..."}
+	s.TypeSigs["put"] = []string{"void", "any", "..."}
+	s.TypeSigs["format"] = []string{"void", "any", "..."}
+	s.TypeSigs["list"] = []string{"list", "any", "..."}
+	s.TypeSigs["seq"] = []string{"any", "list", "..."}
+	s.TypeSigs["set"] = []string{"void", "string", "any"}
+	s.TypeSigs["run"] = []string{"string", "string", "..."}
+
 	s.TypeSigs["map"] = []string{"list", "lambda", "list"}
 	s.TypeSigs["fold"] = []string{"any", "lambda", "any", "list"}
 	s.TypeSigs["cd"] = []string{"void", "string"}
@@ -30,6 +38,7 @@ func addBuiltinTypes(s State) {
 	s.TypeSigs["eq"] = s.TypeSigs["+"]
 	s.TypeSigs["loadfile"] = []string{"string", "string"}
 	s.TypeSigs["proc"] = []string{"void", "string", "list", "list"}
+	s.TypeSigs["func"] = []string{"void", "string", "lambda"}
 	s.TypeSigs["exit"] = []string{"string", "void"}
 	s.TypeSigs["cons"] = []string{"list", "string", "list"}
 	s.TypeSigs["empty?"] = []string{"string", "list"}
@@ -41,10 +50,14 @@ func addBuiltinTypes(s State) {
 	s.TypeSigs["join"] = []string{"string", "list", "string"}
 	s.TypeSigs["chr"] = []string{"string", "string"}
 	s.TypeSigs["saveInterpreter"] = []string{"void string"}
-	//s.TypeSigs["return"] = []string{"any", "any"}
+	s.TypeSigs["return"] = []string{"any", "any"}
 	s.TypeSigs["id"] = []string{"any", "any"}
 	s.TypeSigs["and"] = []string{"string", "string"}
 	s.TypeSigs["or"] = []string{"string", "string"}
+	s.TypeSigs["tron"] = []string{"void", "string"}
+	s.TypeSigs["troff"] = s.TypeSigs["tron"]
+	s.TypeSigs["dron"] = s.TypeSigs["tron"]
+	s.TypeSigs["droff"] = s.TypeSigs["tron"]
 }
 func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f string, args []autoparser.Node, level int) autoparser.Node {
 	switch f {
@@ -141,6 +154,12 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 	case "troff":
 		WantTrace = false
 		return N("Trace off")
+	case "dron":
+		WantDebug = true
+		return N("Debug on")
+	case "droff":
+		WantDebug = false
+		return N("Debug off")
 	case "put":
 		for i, v := range args {
 			if i != 0 {
@@ -152,6 +171,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 				fmt.Print(S(v))
 			}
 		}
+		return N(TreeToXsh(args))
 	case "puts":
 		for i, v := range args {
 			if i != 0 {
@@ -164,6 +184,8 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			}
 		}
 		fmt.Println()
+		return N(TreeToXsh(args))
+	case "format":
 		return N(TreeToXsh(args))
 	case "loadfile":
 		b, _ := ioutil.ReadFile(S(args[0]))

@@ -206,7 +206,6 @@ func isLambda(e autoparser.Node) bool {
 			return true
 		}
 	}
-
 	return false
 }
 
@@ -250,11 +249,13 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 		//}
 	}
 
-	//Do we have a type for this?
+	//Do we have a type for this function?
 	ftype, ok := s.TypeSigs[f]
 	if ok {
+		last := ftype[len(ftype)-1]
 		if len(ftype) != len(args)+1 {
-			XshErr(`Error %v,%v,%v: Mismatched function args to %v
+			if last != "..." {
+				XshErr(`Error %v,%v,%v: Mismatched function args to %v
 
 Expected:
 	%v %v (%v args)
@@ -263,13 +264,34 @@ Given:
 	%v %v (%v args)
 	`, command[0].File, command[0].Line, command[0].Column, f, f, strings.Join(ftype[1:], " "), len(ftype)-1, f, TreeToXsh(args), len(args))
 
-			os.Exit(1)
-		}
-		for i, v := range ftype[1:] {
-			if typeOf(args[i]) != v {
-				XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v, got %v\n", command[0].File, command[0].Line, TreeToXsh(command), i+1, v, typeOf(args[i]))
+				os.Exit(1)
 			}
 		}
+		//Different checks for variadic functions
+		//FIXME refactor duplicate code
+		if last == "..." {
+			lastType := ftype[len(ftype)-2]
+			for i, v := range ftype[1 : len(ftype)-1] {
+				drintf("Checking type %v against arg %v\n", v, typeOf(args[i]))
+				if typeOf(args[i]) != v && v != "any" {
+					XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v, got %v\n", command[0].File, command[0].Line, TreeToXsh(command), i+1, v, typeOf(args[i]))
+				}
+			}
+			drintf("Checking remaining args %v against last type %v\n", TreeToXsh(args[len(ftype)-2:]), lastType)
+			for i, v := range args[len(ftype)-2:] {
+				drintf("Checking type %v against arg %v\n", typeOf(v), lastType)
+				if typeOf(v) != lastType {
+					XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v (in ...), got %v\n", command[0].File, command[0].Line, TreeToXsh(command), i+len(ftype)-1, lastType, typeOf(v))
+				}
+			}
+		} else {
+			for i, v := range ftype[1:] {
+				if typeOf(args[i]) != v && v != "any" {
+					XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v, got %v\n", command[0].File, command[0].Line, TreeToXsh(command), i+1, v, typeOf(args[i]))
+				}
+			}
+		}
+
 	}
 	fu, ok := s.Functions[f]
 	if ok {
