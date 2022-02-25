@@ -47,7 +47,6 @@ func addBuiltinTypes(s State) {
 	s.TypeSigs["or"] = []string{"string", "string"}
 }
 func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f string, args []autoparser.Node, level int) autoparser.Node {
-
 	switch f {
 	case "seq":
 		//log.Printf("seq %v\n", TreeToTcl(args))

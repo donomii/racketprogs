@@ -48,7 +48,6 @@ type State struct {
 func New() State {
 	s := State{map[string]Function{}, map[string]string{}, nil, nil, map[string][]string{}, nil}
 	addBuiltinTypes(s)
-
 	return s
 }
 
