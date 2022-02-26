@@ -60,6 +60,15 @@ func Eval(s State, code, fname string) autoparser.Node {
 	//fmt.Printf("Res: %+v\n", res)
 	return res
 }
+
+func Parse(code, fname string) []autoparser.Node {
+	return autoparser.ParseXSH(code, fname)
+}
+func Run(s State, tree []autoparser.Node) autoparser.Node {
+	s.Tree = tree
+	res := treeReduce(s, tree, nil, 2)
+	return res
+}
 func LoadEval(s State, fname string) autoparser.Node {
 	return Eval(s, autoparser.LoadFile(fname), fname)
 }
@@ -142,10 +151,6 @@ func ReplaceArgs(args, params, t []autoparser.Node) []autoparser.Node {
 	t = ReplaceArg(args, params, t)
 
 	return t
-}
-
-func S(n autoparser.Node) string {
-	return NodeToString(n)
 }
 
 func FunctionsToTcl(functions map[string]Function) string {
@@ -513,4 +518,20 @@ func tbprint(x, y int, fg, bg termbox.Attribute, msg string) {
 		termbox.SetCell(x, y, c, fg, bg)
 		x += runewidth.RuneWidth(c)
 	}
+}
+
+func TreeMap(f func(autoparser.Node) autoparser.Node, t []autoparser.Node) []autoparser.Node {
+
+	out := []autoparser.Node{}
+	for _, v := range t {
+
+		if v.List != nil {
+			out = append(out, autoparser.Node{v.Raw, v.Str, TreeMap(f, v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+		} else {
+			new := f(v)
+
+			out = append(out, new)
+		}
+	}
+	return out
 }

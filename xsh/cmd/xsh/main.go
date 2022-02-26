@@ -109,10 +109,18 @@ func listPathExecutables() func(string) []string {
 	}
 }
 
+func keys(aHash map[string][]string) []string {
+	keys := make([]string, 0)
+	for k := range aHash {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 //Use the types hash?
-func listBuiltins() func(string) []string {
+func listBuiltins(s xsh.State) func(string) []string {
 	return func(line string) []string {
-		return []string{"id", "and", "or", "join", "split", "puts", "+", "-", "*", "/", "+.", "-.", "*.", "/.", "loadfile", "set", "run", "seq", "with", "cd"}
+		return keys(s.TypeSigs)
 	}
 }
 func tbprint(x, y int, fg, bg termbox.Attribute, msg string) {
@@ -128,7 +136,7 @@ func shell(state xsh.State) {
 		readline.PcItemDynamic(listPathExecutables(),
 			readline.PcItemDynamic(listFiles("./")),
 		),
-		readline.PcItemDynamic(listBuiltins(),
+		readline.PcItemDynamic(listBuiltins(state),
 			readline.PcItemDynamic(listFiles("./")),
 		),
 	)
