@@ -285,7 +285,7 @@ Given:
 			drintf("Checking remaining args %v against last type %v\n", TreeToXsh(args[len(ftype)-2:]), lastType)
 			for i, v := range args[len(ftype)-2:] {
 				drintf("Checking type %v against arg %v\n", typeOf(v), lastType)
-				if typeOf(v) != lastType {
+				if typeOf(v) != lastType && lastType != "any" {
 					XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v (in ...), got %v\n", command[0].File, command[0].Line, TreeToXsh(command), i+len(ftype)-1, lastType, typeOf(v))
 				}
 			}

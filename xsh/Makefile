@@ -1,4 +1,4 @@
-all: clean xsh xshguardian xshwatch
+all: clean xsh xshguardian xshwatch libxsh
 
 xsh:./cmd/xsh/main.go
 	go build ./cmd/xsh
@@ -8,6 +8,10 @@ xshguardian:./cmd/xshguardian/main.go
 
 xshwatch:../watcher/main.go
 	go build -o xshwatch ../watcher
+
+libxsh:./cmd/libxsh/libxsh.go
+	go build -buildmode c-shared -o libxsh.so ./cmd/libxsh
+	gcc -L. -lxsh -o testxshCbridge ./cmd/libxshtest/test.c
 
 localinstall: xsh xshguardian xshwatch
 	mkdir -p ~/.local/bin
@@ -22,4 +26,4 @@ install: xsh xshguardian xshwatch
 
 
 clean:
-	rm xsh xshguardian xshwatch || true
+	rm xsh xshguardian xshwatch libxsh.h libxsh.so || true
