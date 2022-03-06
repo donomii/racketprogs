@@ -57,6 +57,7 @@ func listVerbs(player string) func(string) []string {
 func xshRun(text string) string {
 	//fmt.Printf("Evalling xsh %v\n", text)
 	state := xsh.New()
+	addPmooTypes(state)
 	xsh.UsePterm = false
 	state.UserData = "7"
 	state.ExtraBuiltins = xshBuiltins
@@ -64,7 +65,7 @@ func xshRun(text string) string {
 	res := xsh.Eval(state, text, "pmoo")
 	//fmt.Printf("Result: %+v\n", res)
 	l := []autoparser.Node{res}
-	resstr := xsh.TreeToTcl(l)
+	resstr := xsh.TreeToXsh(l)
 	//fmt.Printf("Result: %+v\n", resstr)
 	return resstr
 }
@@ -275,6 +276,16 @@ func MOOloop(inQ chan *Message, player string) {
 	}
 }
 
+func addPmooTypes(s xsh.State) {
+	s.TypeSigs["setprop"] = []string{"void", "string", "string", "string"}
+	s.TypeSigs["allobjects"] = []string{"list"}
+	s.TypeSigs["findobject"] = []string{"string", "string"}
+	s.TypeSigs["clone"] = []string{"string", "string"}
+	s.TypeSigs["formatobject"] = []string{"string", "string"}
+	s.TypeSigs["getprop"] = []string{"string", "string", "string"}
+	s.TypeSigs["msg"] = []string{"void", "string", "string", "string", "string", "string", "string"}
+}
+
 func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node, level int) (autoparser.Node, bool) {
 	player := s.UserData.(string)
 	if len(command) > 0 {
@@ -369,11 +380,22 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 			state.UserData = player
 			code = BuildXshCode(verbStruct.Value, player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr)
 			state.ExtraBuiltins = xshBuiltins
-			xsh.Eval(state, xsh.Stdlib_str, "stdlib")
-			xsh.Eval(state, code, "pmoo")
+			std := xsh.Parse(xsh.Stdlib_str, "stdlib")
+			xsh.Run(state, std)
 
+			tr := xsh.Parse(code, "pmoo")
+			tr = subsitutePmooVars(tr)
+			xsh.Run(state, tr)
 		default:
 			log.Println("Unknown interpreter: ", verbStruct.Interpreter)
 		}
 	}
+}
+
+func subsitutePmooVars(code []autoparser.Node) []autoparser.Node {
+	out := xsh.TreeMap(func(n autoparser.Node) autoparser.Node {
+		return n
+
+	}, code)
+	return out
 }
