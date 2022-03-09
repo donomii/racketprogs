@@ -524,13 +524,15 @@ func TreeMap(f func(autoparser.Node) autoparser.Node, t []autoparser.Node) []aut
 
 	out := []autoparser.Node{}
 	for _, v := range t {
-
 		if v.List != nil {
 			out = append(out, autoparser.Node{v.Raw, v.Str, TreeMap(f, v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
 		} else {
 			new := f(v)
-
-			out = append(out, new)
+			if isList(new) {
+				out = append(out, new.List...)
+			} else {
+				out = append(out, new)
+			}
 		}
 	}
 	return out
