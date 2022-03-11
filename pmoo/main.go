@@ -1,7 +1,6 @@
 package main
 
 import (
-	"regexp"
 	"../xsh"
 	"bufio"
 	"encoding/json"
@@ -11,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"regexp"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -182,8 +182,8 @@ func main() {
 	flag.Parse()
 
 	if debug {
-		xsh.WantDebug=true
-	}else{
+		xsh.WantDebug = true
+	} else {
 		log.SetOutput(ioutil.Discard)
 	}
 
@@ -340,6 +340,7 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 			case "clone":
 				return xsh.N(Clone(c[1])), true
 			case "formatobject":
+				fmt.Printf("Formatting object from args: %v\n", c)
 				return xsh.N(FormatObject(c[1])), true
 			case "msg":
 				from := c[1]
@@ -441,6 +442,7 @@ func subsitutePmooVars(code []autoparser.Node) []autoparser.Node {
 			fmt.Printf("Looking up object '%v'\n", objStr)
 			id := GetObjectByName("7", objStr)
 			fmt.Printf("Found object %v\n", id)
+			return xsh.N(fmt.Sprintf("%v", id))
 		}
 
 		return n
