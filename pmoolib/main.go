@@ -614,7 +614,7 @@ func VerbSearch(o *Object, aName string) (*Object, *Property) {
 	return nil, nil
 }
 
-func FindObjectByName(player, name string) {
+func GetObjectByName(player, name string)  string {
 	lastIdStr := GetProp("1", "lastId")
 	lastId, err := strconv.Atoi(lastIdStr)
 	if err != nil {
@@ -622,10 +622,19 @@ func FindObjectByName(player, name string) {
 	}
 	for i := 0; i < lastId+1; i = i + 1 {
 		if GetProp(fmt.Sprintf("%v", i), "name") == name {
-			Msg("7", player, "tell", fmt.Sprintf("Found object #%v called %v", i, name), "", "")
+			return fmt.Sprintf("%v", i)
 		}
 	}
+	return ""
 
+}
+
+
+func FindObjectByName(player, name string) {
+		num := GetObjectByName(player, name)
+		if num != "" {
+			Msg("7", player, "tell", fmt.Sprintf("Found object #%v called %v", num, name), "", "")
+		}
 }
 
 func VerbList(player string) []string {
@@ -638,6 +647,9 @@ func VerbList(player string) []string {
 	contents := append([]string{o.Id, locId}, roomContents...)
 	contents = append(contents, playerContents...)
 	for _, objId := range contents {
+		if objId =="" {
+			log.Println("Invalid object id \"\"")
+		}else {
 		log.Println("Loading object from contents:", objId)
 		obj := LoadObject(objId)
 		for name, s := range obj.Properties {
@@ -645,6 +657,7 @@ func VerbList(player string) []string {
 				out = append(out, name)
 			}
 		}
+	}
 	}
 
 	return out
