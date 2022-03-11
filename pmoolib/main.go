@@ -643,7 +643,7 @@ func GetObjectByName(player, name string) string {
 func FindObjectByName(player, name string) {
 	num := GetObjectByName(player, name)
 	if num != "" {
-		Msg("7", player, "tell", fmt.Sprintf("Found object #%v called %v", num, name), "", "")
+		Msg("7", player, "tell", fmt.Sprintf("Found object %%v called %v", num, name), "", "")
 	}
 }
 
@@ -720,7 +720,7 @@ func ParseDirectObject(s string, playerId string) (string, string) {
 		return GetPropertyStruct(LoadObject(playerId), "location", 10).Value, ""
 	}
 
-	//It's a generic object, look for it in the properties of #1
+	//It's a generic object, look for it in the properties of %1
 	if len(s) > 0 && s[0] == '$' {
 		prop := s[1:]
 		one := LoadObject("1")
@@ -734,7 +734,7 @@ func ParseDirectObject(s string, playerId string) (string, string) {
 	}
 
 	//It's an object id
-	if len(s) > 0 && s[0] == '#' {
+	if len(s) > 0 && s[0] == '%' {
 		s = s[1:]
 		log.Println("Splitting", s, "on", ".")
 		ss := strings.Split(s, ".")

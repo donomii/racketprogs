@@ -22,9 +22,9 @@ localinstall: build
 	cp build/queue ~/.local/bin/
 
 install: build
-	cp build/pmoo ~/.local/bin/
-	cp build/pmoo ~/.local/bin/p
-	cp build/queue ~/.local/bin/
+	cp build/pmoo /usr/local/bin/
+	cp build/pmoo /usr/local/bin/p
+	cp build/queue /usr/local/bin/
 
 run:
 	./pmoo
