@@ -388,7 +388,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 				err = runWithGuardian(stringCommand)
 			} else {
 				drintln("Running", stringCommand, "to capture output")
-				res, err = goof.QC(stringCommand)
+				res, err = runWithGuardianCapture(stringCommand)
 			}
 			if err == nil {
 				if res == "" {

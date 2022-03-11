@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 
 	"github.com/nsf/termbox-go"
-
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/mattn/go-runewidth"
@@ -20,8 +20,6 @@ import (
 
 	autoparser "../autoparser"
 )
-
-var guardianPath string
 
 //go:embed stdlib.xsh
 var Stdlib_str string
@@ -162,10 +160,59 @@ func FunctionsToTcl(functions map[string]Function) string {
 	}
 	return out
 }
+
+func searchPath(execName string) string {
+	pathStr := os.Getenv("PATH")
+	paths := strings.Split(pathStr, ":")
+	for _, path := range paths {
+		fullPath := path + "/" + execName
+		if _, err := os.Stat(fullPath); err == nil {
+
+			XshInform("Found %s\n", fullPath)
+			return fullPath
+		}
+	}
+	return ""
+}
+
+func FindGuardian() string {
+	bindir := goof.ExecutablePath()
+	var guardianPath string = "Guardian not found"
+	if runtime.GOOS == "windows" {
+		guardianPath = bindir + "/xshguardian.exe"
+	} else {
+		guardianPath = bindir + "/xshguardian"
+	}
+
+	XshInform("Found guardian at %s\n", guardianPath)
+	return guardianPath
+}
 func runWithGuardian(cmd []string) error {
+	guardianPath := FindGuardian()
 	drintf("Launching guardian for %+v from %v\n", cmd, guardianPath)
+	binfile := cmd[0]
+	fullPath := searchPath(binfile)
+	if fullPath == "" {
+		return fmt.Errorf("Could not find %v in path\n", binfile)
+	}
+	cmd[0] = fullPath
 	cmd = append([]string{guardianPath}, cmd...)
+	XshInform("Running %+v interactively with guardian %v\n", cmd, guardianPath)
 	return goof.QCI(cmd)
+}
+
+func runWithGuardianCapture(cmd []string) (string, error) {
+	guardianPath := FindGuardian()
+	drintf("Launching guardian for %+v from %v\n", cmd, guardianPath)
+	binfile := cmd[0]
+	fullPath := searchPath(binfile)
+	if fullPath == "" {
+		return "", fmt.Errorf("Could not find %v in path\n", binfile)
+	}
+	cmd[0] = fullPath
+	cmd = append([]string{guardianPath}, cmd...)
+	XshInform("Running %+v for capture with guardian %v\n", cmd, guardianPath)
+	return goof.QC(cmd)
 }
 func Void(command autoparser.Node) autoparser.Node {
 	drintf("Creating void at %+v\n", command.Line)

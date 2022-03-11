@@ -10,7 +10,6 @@ import (
 
 	"io"
 	"io/ioutil"
-	"runtime"
 
 	"github.com/nsf/termbox-go"
 
@@ -25,7 +24,6 @@ import (
 	_ "embed"
 
 	"github.com/chzyer/readline"
-	"github.com/donomii/goof"
 
 	autoparser "../../../autoparser"
 )
@@ -45,12 +43,6 @@ var wantShell bool
 
 func main() {
 	state := xsh.New()
-	bindir := goof.ExecutablePath()
-	if runtime.GOOS == "windows" {
-		guardianPath = bindir + "/xshguardian.exe"
-	} else {
-		guardianPath = bindir + "/xshguardian"
-	}
 
 	resumeFile := flag.String("r", "", "Resume from file")
 	tracef := flag.Bool("trace", false, "Trace execution")
