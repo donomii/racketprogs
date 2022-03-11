@@ -6,7 +6,7 @@ deps:
 clean:
 	rm -r build
 
-build: *.go Makefile ../xsh/main.go ../xsh/stdlib.xsh
+build: *.go Makefile ../xsh/main.go ../xsh/stdlib.xsh ../pmoolib/main.go ../xsh/*
 	mkdir build || true
 	mkdir build/objects || true
 	go build -o build/pmoo -v .

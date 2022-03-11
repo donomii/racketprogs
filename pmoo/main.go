@@ -1,6 +1,7 @@
 package main
 
 import (
+	"regexp"
 	"../xsh"
 	"bufio"
 	"encoding/json"
@@ -36,7 +37,7 @@ func ConsoleInputHandler(queue chan *Message) {
 		if text != "" {
 			//fmt.Printf("Examining input: %s\n", text[:2])
 			if text[:2] == "x " {
-				fmt.Println(xshRun(text[2:]))
+				fmt.Println(xshRun(text[2:], "7"))
 			} else {
 				fmt.Printf("ConsoleInputHandler: %s\n", text)
 				//Console is always the wizard, at least for now
@@ -54,25 +55,53 @@ func listVerbs(player string) func(string) []string {
 	}
 }
 
-func xshRun(text string) string {
+func xshRun(text, player string) string {
 	//fmt.Printf("Evalling xsh %v\n", text)
 	state := xsh.New()
 	addPmooTypes(state)
 	xsh.UsePterm = false
-	state.UserData = "7"
+	state.UserData = player
 	state.ExtraBuiltins = xshBuiltins
-	xsh.Eval(state, xsh.Stdlib_str, "stdlib")
-	res := xsh.Eval(state, text, "pmoo")
+	//xsh.Eval(state, xsh.Stdlib_str, "stdlib")
+	//res := xsh.Eval(state, text, "pmoo")
 	//fmt.Printf("Result: %+v\n", res)
+	//l := []autoparser.Node{res}
+	//resstr := xsh.TreeToXsh(l)
+	//fmt.Printf("Result: %+v\n", resstr)
+	std := xsh.Parse(xsh.Stdlib_str, "stdlib")
+	xsh.Run(state, std)
+
+	tr := xsh.Parse(text, "pmoo")
+	fmt.Printf("Substituting pmoo vars\n")
+	tr = subsitutePmooVars(tr)
+	res := xsh.Run(state, tr)
 	l := []autoparser.Node{res}
 	resstr := xsh.TreeToXsh(l)
-	//fmt.Printf("Result: %+v\n", resstr)
+
 	return resstr
 }
+
+func keys(m map[string][]string) []string {
+	out := []string{}
+	for k, _ := range m {
+		out = append(out, k)
+	}
+	return out
+}
+
+func listFuncs(xshEngine xsh.State) func(string) []string {
+	return func(string) []string {
+		return keys(xshEngine.TypeSigs)
+	}
+}
 func ReadLineInputHandler(queue chan *Message, player string) {
+	xshEngine := xsh.New()
+	addPmooTypes(xshEngine)
+	xshEngine.ExtraBuiltins = xshBuiltins
 
 	var completer = readline.NewPrefixCompleter(
-		readline.PcItemDynamic(listVerbs(player)))
+		readline.PcItemDynamic(listVerbs(player)),
+		readline.PcItem("x", readline.PcItemDynamic(listFuncs(xshEngine))))
 
 	l, err := readline.NewEx(&readline.Config{
 		Prompt:          "",
@@ -88,7 +117,8 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 	}
 	for {
 		completer = readline.NewPrefixCompleter(
-			readline.PcItemDynamic(listVerbs(player)))
+			readline.PcItemDynamic(listVerbs(player)),
+			readline.PcItem("x", readline.PcItemDynamic(listFuncs(xshEngine))))
 		fmt.Print("\033[31m»\033[0m ")
 		text, err := l.Readline()
 		if batch {
@@ -103,17 +133,19 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 
 		if err != nil {
 			log.Println("Readline error:", err, "Exiting once queue is empty")
-			QuitOnEmptyQueue = true
+			QuitOnEmptyQueue = true //FIXME not working
+			os.Exit(1)
 		}
 		text = strings.TrimSuffix(text, "\r\n")
 		text = strings.TrimSuffix(text, "\n")
 		if text == "exit" {
+			fmt.Println("Exiting...")
 			os.Exit(0)
 		}
 		if text != "" {
 			//fmt.Printf("Examining input: '%s'\n", text[:2])
 			if text[:2] == "x " {
-				fmt.Println(xshRun(text[2:]))
+				fmt.Println(xshRun(text[2:], player))
 			} else {
 				//Console is always the wizard, at least for now
 				InputMsg("2", "7", "input", text)
@@ -128,6 +160,7 @@ var QuitOnEmptyQueue bool
 var batch bool
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	etcdServer := ""
 	var init bool
 	var RawTerm bool
@@ -148,14 +181,15 @@ func main() {
 
 	flag.Parse()
 
-	if !debug {
+	if debug {
+		xsh.WantDebug=true
+	}else{
 		log.SetOutput(ioutil.Discard)
 	}
 
 	SetQ(inQ)
 
 	if cmdProg == "p" {
-
 		//fmt.Println("Single command mode")
 		dataDir := goof.HomeDirectory() + "/.pmoo/objects"
 		os.MkdirAll(dataDir, 0600)
@@ -165,11 +199,9 @@ func main() {
 		args := append(flag.Args(), "", "", "")
 		RawMsg(Message{Player: player, This: "7", Verb: "%commandline", Args: args, Ticks: DefaultTicks})
 	} else {
-
 		SetEtcdServers([]string{etcdServer})
 		if Cluster {
 			//okdb.Connect("192.168.178.22:7778")
-
 		}
 		if ClusterQueue {
 			//go StartClient(QueueServer)
@@ -191,6 +223,7 @@ func main() {
 
 		if init {
 			initDB()
+			fmt.Println("Initialised database, exiting\n")
 			os.Exit(0)
 		}
 
@@ -291,7 +324,7 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 	if len(command) > 0 {
 		c, err := xsh.ListToStrings(command)
 		if err != nil {
-			log.Println("Error converting command to string:", err)
+			//log.Println("Error converting command to string:", err)
 		} else {
 			//fmt.Printf("Running custom handler for command %v\n", c)
 			switch c[0] {
@@ -377,13 +410,16 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 		case "xsh":
 			log.Println("xsh program: ", code)
 			state := xsh.New()
+			addPmooTypes(state)
+			state.ExtraBuiltins = xshBuiltins
 			state.UserData = player
 			code = BuildXshCode(verbStruct.Value, player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr)
-			state.ExtraBuiltins = xshBuiltins
+
 			std := xsh.Parse(xsh.Stdlib_str, "stdlib")
 			xsh.Run(state, std)
 
 			tr := xsh.Parse(code, "pmoo")
+			fmt.Printf("Substituting pmoo vars\n")
 			tr = subsitutePmooVars(tr)
 			xsh.Run(state, tr)
 		default:
@@ -393,7 +429,20 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 }
 
 func subsitutePmooVars(code []autoparser.Node) []autoparser.Node {
+	fmt.Printf("Substituting vars in %+v\n", code)
 	out := xsh.TreeMap(func(n autoparser.Node) autoparser.Node {
+		str := xsh.S(n)
+		fmt.Printf("Examining %v\n", str)
+		if strings.HasPrefix(str, "%") {
+			re := regexp.MustCompile("\\%([^.])+\\.?(.+)?")
+			res := re.FindString(str)
+			fmt.Printf("Matched object ref: %v\n", res)
+			objStr := string(res[1:])
+			fmt.Printf("Looking up object '%v'\n", objStr)
+			id := GetObjectByName("7", objStr)
+			fmt.Printf("Found object %v\n", id)
+		}
+
 		return n
 
 	}, code)
