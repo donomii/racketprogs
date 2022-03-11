@@ -342,6 +342,8 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 			case "formatobject":
 				fmt.Printf("Formatting object from args: %v\n", c)
 				return xsh.N(FormatObject(c[1])), true
+			case "move":
+				MoveObj(c[1], c[2])
 			case "msg":
 				from := c[1]
 				target := c[2]

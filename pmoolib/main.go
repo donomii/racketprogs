@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -135,9 +136,19 @@ func FuckGo(cond bool, v1, v2 string) string {
 //Arrange and object for user display
 func FormatObject(id string) string {
 	o := LoadObject(id)
+	if o == nil {
+		return "Object id '" + id + "' not found"
+		debug.PrintStack()
+	}
 	var out string
 	loc := GetProp(id, "location")
-	out = out + fmt.Sprintf("\n\nObject %v, %v at %v\n\nVerbs\n-----\n", id, GetProp(ToStr(o.Id), "name"), GetProp(loc, "name"))
+	locName := "Not found"
+	if loc != "" {
+		locName = GetProp(loc, "name")
+	}
+	shortName := GetProp(ToStr(o.Id), "name")
+
+	out = out + fmt.Sprintf("\n\nObject %v, %v at %v\n\nVerbs\n-----\n", id, shortName, locName)
 	o = LoadObject(id)
 	var verbs, props []string
 	for k, v := range o.Properties {
@@ -614,7 +625,7 @@ func VerbSearch(o *Object, aName string) (*Object, *Property) {
 	return nil, nil
 }
 
-func GetObjectByName(player, name string)  string {
+func GetObjectByName(player, name string) string {
 	lastIdStr := GetProp("1", "lastId")
 	lastId, err := strconv.Atoi(lastIdStr)
 	if err != nil {
@@ -629,12 +640,11 @@ func GetObjectByName(player, name string)  string {
 
 }
 
-
 func FindObjectByName(player, name string) {
-		num := GetObjectByName(player, name)
-		if num != "" {
-			Msg("7", player, "tell", fmt.Sprintf("Found object #%v called %v", num, name), "", "")
-		}
+	num := GetObjectByName(player, name)
+	if num != "" {
+		Msg("7", player, "tell", fmt.Sprintf("Found object #%v called %v", num, name), "", "")
+	}
 }
 
 func VerbList(player string) []string {
@@ -647,17 +657,17 @@ func VerbList(player string) []string {
 	contents := append([]string{o.Id, locId}, roomContents...)
 	contents = append(contents, playerContents...)
 	for _, objId := range contents {
-		if objId =="" {
+		if objId == "" {
 			log.Println("Invalid object id \"\"")
-		}else {
-		log.Println("Loading object from contents:", objId)
-		obj := LoadObject(objId)
-		for name, s := range obj.Properties {
-			if s.Verb {
-				out = append(out, name)
+		} else {
+			log.Println("Loading object from contents:", objId)
+			obj := LoadObject(objId)
+			for name, s := range obj.Properties {
+				if s.Verb {
+					out = append(out, name)
+				}
 			}
 		}
-	}
 	}
 
 	return out

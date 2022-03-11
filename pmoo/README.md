@@ -19,18 +19,11 @@ Warning:  There is currently no security system, at all.  Do not allow strangers
 	make install
 	make init
 
-init will create an object database in the build directory
+init will create an object database in the build directory.  You can then run your MOO with
 
 	cd build && pmoo
 
-Build and run in the current directory
-
-	go build .
-	mkdir objects
-	cat create.txt | ./pmoo --init
-	./pmoo
-
-This creates pmoo, and sets up some basic verbs (stored in create.txt).  
+If using windows, run Makefile.bat
 
 Note that if there is no objects directory, pmoo will use ~/.pmoo/objects
 
@@ -38,7 +31,7 @@ Note that if there is no objects directory, pmoo will use ~/.pmoo/objects
 
 You can install pmoo into your home directory:
 
-	make install
+	make localinstall
 	cat create.txt | p --init 
 
 And then use pmoo in command line integration mode.
@@ -51,6 +44,8 @@ Add ~/.local/bin to your path so you can type
 
 
 ### Cluster install
+
+	To run as a distributed cluster, pmoo requires a networked queue server and networked object database.  The queue program provides this service.
 
 	go build github.com/donomii/racketprogs/queue
 	queue &
@@ -67,7 +62,7 @@ Now, to add a computer to the cluster
 
 Nodes are part of the cluster so long as the command is running.  Message processing happens in the background.
 
-Cluster mode is currently under development and is extremely unstable.  Doing things like entering multiple commands quickly can lead to errors.
+Cluster mode is currently under development and is extremely unstable.  Doing things like entering multiple commands quickly can lead to errors, as the commands are not sure to run sequentially.
 
 
 
@@ -77,7 +72,7 @@ Cluster mode is currently under development and is extremely unstable.  Doing th
 
 The scripting language is not currently sandboxed, so it has access to the entire Golang library.  This means it is capable of formatting your hard drive, so allowing strangers access to this MOO is an exceptionally bad idea.
 
-Due to issues with the go scripting library, I added a temporary scripting langauge called Throff, which is an old project that I always intended to dust off and finish.
+Due to issues with the go scripting library, I added a temporary scripting langauge called Xsh, which is a command line scripting language that integrates well with pmoo.
 
 ## Clusters and the actor model
 
@@ -85,7 +80,7 @@ Pmoo is clustered.  The original MOOs were single computer, and usually single t
 
 Because messages can now run on different CPUs, any message can be evaluated on any pmoo node.  This is fine when all the nodes are identical, but I want to use pmoo to access cameras or other hardware.  One of my goals is to access external hardware like webcams, and also to allow for special network configurations, e.g. where one node has special network access and the rest are just compute nodes.  To achieve this, some objects are marked with an "affinity" property, and their code will only run on a node marked with the same affinity.
 
-The actor model of computation works in this situation.  Actors are roughly the same as MOO objects, they both communicate by sending each other messages.  The main issue here is that pmoo allows user scripting, so the interpreter requires special support to allow a subroutine to jump to the correct affinity node, or all programs will need to be written in Continuation Passing Style (or async handlers).  This means that each subroutine must end by sending a message, and then processing would continue when that message is handled.
+The actor model of computation works in this situation.  Actors are roughly the same as MOO objects, they both communicate by sending each other messages.  The main issue here is that pmoo allows user scripting, so the interpreter requires special support to allow a subroutine to jump to the correct affinity node, or all programs will need to be written in Continuation Passing Style (or async handlers).  This means that each subroutine must end by sending a message, and then processing would continue when that message is received.
 
 # The differences
 
@@ -93,29 +88,30 @@ With pmoo now adding a clustering mode, there seems to be little point to keepin
 
 ## Objects don't have index numbers at all
 
-Pmoo uses GUIDs for object identifiers.  Pmoo needs to be able to allocate objects without contacting a central service.  This allows some nice features like offline mode, and being able to move objects from one MOO to another. 
+Original MOOs used, numeric object ids, but pmoo uses GUIDs for object identifiers.  Pmoo needs to be able to allocate objects without contacting a central service.  This allows some nice features like offline mode, and being able to move objects from one MOO to another. In particular, I can carry a local copy of my MOO on my laptop, update it, then merge it with the MOO on my desktop when I get home.
 
 The drawback is that this makes it horrible to try and type an object name on the command line.
 
 ## You can't have a verb and a property called the same thing (in the same object)
 
+Original MOOs allowed players to make an object with "verbs" and "properties", and a verb and a property could have the same name.  Pmoo does not allow verbs and properties to have the same name.
+
 Properties and verbs are now stored in the same data structure with a flag to tell them apart.  This was to make data storage easier, and simplify the code that has to deal with them.  So now you can't have a verb called "name" and a property called "name" at the same time.
 
-## No more built in commands
+## Built in commands
 
-The special commands are now just normal verbs, so @dig, @create etc are just verbs on the core object, which is ultimately every object's parent.
+You can enter scripting commands by starting them with "x ".
 
-So the commands now look like:
-
+* x allobjects
+* x setprop object_id property_name value
+* x findobject "The First Room"
+* x getprop object_id property_name
+* x clone object_id
+* x formatobject object_id
+* x msg from_id target_id verb dobj_id preposition iobj_id 
 * clone $thing as "A name"
-* move #2 to #3
-* dig north to mountains
+* x move %2 to %3
 
-To set properties and verbs
-
-* property #5.name is "A name"
-* verb #5.introduce is "Println(`Hello, my name is `, GetProperty(dobj, `name`))"
-* findverb dig on me 
 
 # The rest
 
