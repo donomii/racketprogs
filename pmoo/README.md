@@ -12,7 +12,16 @@ Warning:  There is currently no security system, at all.  Do not allow strangers
 ## Install
 
 
-### Quickstart
+### Quickinstall
+
+#### Make
+
+	make install
+	make init
+
+init will create an object database in the build directory
+
+	cd build && pmoo
 
 Build and run in the current directory
 

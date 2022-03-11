@@ -16,6 +16,11 @@ init:
 	cd build && ./pmoo --init
 	cd build && cat ../create.txt | ./pmoo --batch --debug
 
+localinstall: build
+	cp build/pmoo ~/.local/bin/
+	cp build/pmoo ~/.local/bin/p
+	cp build/queue ~/.local/bin/
+
 install: build
 	cp build/pmoo ~/.local/bin/
 	cp build/pmoo ~/.local/bin/p
