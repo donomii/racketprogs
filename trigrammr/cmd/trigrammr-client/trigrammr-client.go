@@ -12,7 +12,7 @@ import (
 	_ "database/sql"
 
 	"github.com/chzyer/readline"
-	"github.com/donomii/trigrammer"
+	"../.."
 	_ "github.com/mattn/go-sqlite3"
 )
 
