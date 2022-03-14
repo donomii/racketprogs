@@ -2,7 +2,7 @@ package main
 
 import (
 	//. "github.com/donomii/pmoo"
-	. "./pmoolib"
+	. "../pmoolib"
 	"github.com/donomii/throfflib"
 )
 

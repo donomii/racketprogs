@@ -20,8 +20,8 @@ import (
 
 	//. "github.com/donomii/pmoo"
 	"../autoparser"
-	. "./pmoolib"
-	pmoo "./pmoolib"
+	. "../pmoolib"
+	pmoo "../pmoolib"
 	"github.com/donomii/throfflib"
 	"github.com/traefik/yaegi/interp"
 )

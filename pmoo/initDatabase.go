@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	. "./pmoolib"
+	. "../pmoolib"
 )
 
 //Writes the core objects to disk. Overwrites any that already exist.
