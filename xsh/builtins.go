@@ -15,7 +15,7 @@ func addBuiltinTypes(s State) {
 	s.TypeSigs["put"] = []string{"void", "any", "..."}
 	s.TypeSigs["format"] = []string{"void", "any", "..."}
 	s.TypeSigs["list"] = []string{"list", "any", "..."}
-	s.TypeSigs["seq"] = []string{"any", "list", "..."}
+	s.TypeSigs["seq"] = []string{"any", "any", "..."}
 	s.TypeSigs["set"] = []string{"void", "string", "any"}
 	s.TypeSigs["run"] = []string{"string", "string", "..."}
 
@@ -93,7 +93,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			os.Setenv("OLDPWD", os.Getenv("PWD"))
 			os.Chdir(S(args[0]))
 		}
-		XshInform(goof.Cwd())
+		XshInform("Cuurent working directory:", goof.Cwd())
 	case "\n":
 		//Fuck
 		return Void(command[0])

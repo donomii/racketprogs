@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/donomii/goof"
+
 	"github.com/google/uuid"
 	"github.com/traefik/yaegi/interp"
 	"github.com/traefik/yaegi/stdlib"
@@ -118,8 +119,11 @@ func VisibleObjects(player *Object) []string { //FIXME use player id string, not
 	loc := LoadObject(locId)
 	contents := SplitStringList(GetPropertyStruct(loc, "contents", 10).Value)
 	contents = append([]string{locId}, contents...)
+	log.Printf("Visible objects for player %v in %v: %v\n", player.Id, locId, contents)
 	for _, objId := range contents {
-		out = append(out, objId)
+		if objId != "" {
+			out = append(out, objId)
+		}
 	}
 	return out
 }
@@ -171,12 +175,17 @@ func FormatObject(id string) string {
 	return out
 }
 
+//Print an object to the screen
 func DumpObject(id string) {
 	fmt.Println(FormatObject(id))
 }
+
+//Log a message to the log system
 func L(s interface{}) {
 	log.Println(s)
 }
+
+//Store an object in the database
 func SaveObject(o *Object) {
 	txt, err := json.MarshalIndent(o, "", " ")
 	panicErr(err)
@@ -191,11 +200,12 @@ func SaveObject(o *Object) {
 
 		err = ioutil.WriteFile(fmt.Sprintf(DataDir+"/%v.json", o.Id), txt, 0600)
 		panicErr(err)
+		goof.QCI([]string{"sync"})
 	}
+	log.Printf("Audit: saved object %v\n", o.Id)
 }
 
-//First, try to load from disk
-//Then, attempt to load from the internal store.  Finally, fail.
+//Attempt to load object from network server or disk, depending on mode
 func LoadObject(id string) *Object {
 	if Cluster {
 		for !DatabaseConnection(QueueServer) {
@@ -204,6 +214,9 @@ func LoadObject(id string) *Object {
 		}
 		return FetchObject(QueueServer, id)
 	} else {
+		if id == "" {
+			panic("LoadObject called with empty id")
+		}
 		name := DataDir + "/" + id + ".json"
 		//fmt.Println("Loading '" + name + "'")
 		file, err := ioutil.ReadFile(name)
@@ -246,6 +259,7 @@ func GetPropertyStruct(o *Object, name string, timeout int) *Property {
 			fmt.Printf("Can't find property '%v', but could find verb '%v'\n", name, name)
 			return nil
 		}
+		log.Printf("Found %v\n", val)
 		return &val
 	}
 	parentProp, ok := o.Properties["parent"]
@@ -263,8 +277,16 @@ func GetPropertyStruct(o *Object, name string, timeout int) *Property {
 	return GetPropertyStruct(LoadObject(parent), name, timeout-1)
 }
 
+//Load a property from an object (given object id)
 func GetProp(objstr, name string) string {
-	p := GetPropertyStruct(LoadObject(objstr), name, 10)
+	if objstr == "" {
+		panic("GetProp called with empty object id")
+	}
+	o := LoadObject(objstr)
+	if o == nil {
+		panic("GetProp called with invalid object id")
+	}
+	p := GetPropertyStruct(o, name, 10)
 	if p != nil {
 		return p.Value
 	} else {
@@ -272,6 +294,7 @@ func GetProp(objstr, name string) string {
 	}
 }
 
+//Load a verb from an object (given object id)
 func GetVerb(objstr, name string) string {
 	p := GetVerbStruct(LoadObject(objstr), name, 10)
 	if p != nil {
@@ -319,23 +342,8 @@ func GetVerbStruct(o *Object, name string, timeout int) *Property {
 	return GetVerbStruct(LoadObject(parent), name, timeout-1)
 }
 
+//Allocate a new GUID for an object.  GUID will be ASCII, and hopefully unique
 func GetFreshId() string {
-	/* Maybe keep this as a mode, so user can switch at the command line?
-	root := LoadObject("1")
-	lastId := GetPropertyStruct(root, "lastId", 10)
-	if lastId == nil {
-		panic("Can't get lastId")
-	}
-
-	id, _ := strconv.Atoi(lastId.Value)
-	id = id + 1
-	newLastId := fmt.Sprintf("%v", id)
-	lastId.Value = newLastId
-
-	root.Properties["lastId"] = *lastId
-	SaveObject(root)
-	return newLastId
-	*/
 
 	guid, err := uuid.NewUUID()
 	panicErr(err)
@@ -343,22 +351,44 @@ func GetFreshId() string {
 }
 
 //Copy a loaded MOO object.  Saves the copy before returning
-func CloneObject(o *Object) *Object {
+func CloneObject(o *Object, location string) *Object {
+	log.Printf("Cloning %v\n", o.Id)
 	out := *o
 	name := out.Properties["name"]
 	name.Value = "Copy of " + name.Value
 	out.Properties["name"] = name
-
 	out.Id = GetFreshId()
+
+	loc := out.Properties["location"]
+	loc.Value = location
+	out.Properties["location"] = loc
+
+	newloc := LoadObject(location)
+	if newloc == nil {
+		panic("CloneObject called with invalid location")
+	}
+	cont, ok := newloc.Properties["contents"]
+	log.Printf("Found contents %v of %v\n", cont, location)
+	if !ok {
+		panic("CloneObject called with invalid contents for newloc")
+	}
+	cont.Value = AddToStringList(cont.Value, out.Id)
+	log.Printf("New contents %v of %v\n", cont, location)
+	newloc.Properties["contents"] = cont
+
 	SaveObject(&out)
-	log.Println("Audit: Cloned ", o.Id)
+	log.Printf("Saved %v\n", out.Id)
+	SaveObject(newloc)
+	log.Printf("Saved %v\n", newloc.Id)
+	goof.QC([]string{"ls objects"})
+	log.Println("Audit: Cloned ", o.Id, " to ", out.Id, " at ", location)
 	return &out
 }
 
 //Create a copy of a MOO object
-func Clone(objstr string) string {
+func Clone(objstr, location string) string {
 	sourceO := LoadObject(objstr)
-	newO := CloneObject(sourceO)
+	newO := CloneObject(sourceO, location)
 	return ToStr(newO.Id)
 }
 
@@ -372,6 +402,7 @@ func SetProperty(o *Object, name, value string) {
 	p := *prop
 	p.Value = value
 	o.Properties[name] = p
+	log.Printf("Audit: Set property %v on %v to %v\n", name, o.Id, value)
 	SaveObject(o)
 }
 
@@ -400,22 +431,39 @@ func SetVerbStruct(o *Object, name, value, interpreter string) {
 		p.Throff = true
 	}
 	o.Properties[name] = p
+	log.Printf("Audit: Set verb %v on %v to %v\n", name, o.Id, value)
 	SaveObject(o)
 }
 
+//Set a verb on an object (given object id)
 func SetVerb(objstr, name, value, interpreter string) {
+	if objstr == "" {
+		panic("SetVerb called with empty object id")
+	}
+	if name == "" {
+		panic("SetVerb called with empty verb name")
+	}
+	if value == "" {
+		panic("SetVerb called with empty verb value")
+	}
 	o := LoadObject(objstr)
+	if o == nil {
+		log.Printf("SetVerb: Object id '%v' not found!\n", objstr)
+	}
 	SetVerbStruct(o, name, value, interpreter)
 }
 
+//pmoo keeps its lists as a comma-separated string, so we need to convert to a slice
 func SplitStringList(s string) []string {
 	return strings.Split(s, ",")
 }
 
+//Slice to comma-separated string
 func BuildStringList(l []string) string {
 	return strings.Join(l, ",")
 }
 
+//shortcut: add an object id to a comma-separated list
 func AddToStringList(l, s string) string {
 	if l == "" {
 		return s
@@ -423,6 +471,7 @@ func AddToStringList(l, s string) string {
 	return l + "," + s
 }
 
+//shortcut: remove an object id from a comma-separated list
 func RemoveFromStringList(l, s string) string {
 	list := SplitStringList(l)
 	var out []string
@@ -434,6 +483,7 @@ func RemoveFromStringList(l, s string) string {
 	return BuildStringList(out)
 }
 
+//create a new yaegi interpreter
 func NewInterpreter() *interp.Interpreter {
 	i := interp.New(interp.Options{GoPath: build.Default.GOPATH, BuildTags: strings.Split("", ",")})
 	if err := i.Use(stdlib.Symbols); err != nil {
@@ -469,6 +519,7 @@ func NewInterpreter() *interp.Interpreter {
 
 }
 
+//Run some code in a yaegi interpreter
 func Eval(i *interp.Interpreter, code string) {
 	prog := `
 		
@@ -509,8 +560,8 @@ func MoveObj(objstr, targetstr string) bool {
 	newcontainerstr := RemoveFromStringList(oldcontainercontentsstr, objstr)
 	oldtargetcontainerstr := GetProp(targetstr, "contents")
 	newtargetcontainerstr := AddToStringList(oldtargetcontainerstr, objstr)
-	if oldcontainercontentsstr == "" || newtargetcontainerstr == "" {
-		log.Printf("MoveObj: oldcontainercontentsstr,  or newtargetcontainerstr is empty")
+	if newtargetcontainerstr == "" {
+		log.Printf("MoveObj: newtargetcontainerstr(%v) is empty while moving %v from %v to %v", oldcontainercontentsstr, newtargetcontainerstr, objstr, oldlocationstr, targetstr)
 		return false
 	}
 	log.Printf("New container string %v", newcontainerstr)
@@ -523,6 +574,7 @@ func MoveObj(objstr, targetstr string) bool {
 
 	//Set the object's new location
 	SetProp(objstr, "location", targetstr)
+	log.Printf("Audit: Moved %v from %v to %v\n", objstr, oldlocationstr, targetstr)
 	return true
 }
 
@@ -588,6 +640,7 @@ func LexLine(editorCmd string) ([]string, error) {
 	return args, nil
 }
 
+//Setup default variables for a yaegi call
 func BuildDefinitions(player, this, verb, dobj, dpropstr, prepositionStr, iobj, ipropstr, dobjstr, iobjstr string) string {
 	definitions := ` 
 
@@ -610,17 +663,25 @@ func BuildDefinitions(player, this, verb, dobj, dpropstr, prepositionStr, iobj, 
 	return definitions
 }
 
+//Setup default variables for an Xsh call
+
 func BuildXshCode(code, player, this, verb, dobj, dpropstr, prepositionStr, iobj, ipropstr, dobjstr, iobjstr string) string {
 	definitions := ` 
 
-	with { playerid        this           caller           verb            dobjstr       dobj     dpropstr           prepstr                  iobjstr    iobj       ipropstr           } = {"` + player + `" "` + this + `" "` + player + `" "` + verb + `" "` + dobjstr + `" "` + dobj + `"  "` + dpropstr + `" "` + prepositionStr + `" "` + iobjstr + `" "` + iobj + `" "` + ipropstr + `"} {
+	with { here		playerid        this           caller           verb            dobjstr       dobj     dpropstr           prepstr                  iobjstr    iobj       ipropstr           } = {"` + GetProp(player, "location") + `" "` + player + `" "` + this + `" "` + player + `" "` + verb + `" "` + dobjstr + `" "` + dobj + `"  "` + dpropstr + `" "` + prepositionStr + `" "` + iobjstr + `" "` + iobj + `" "` + ipropstr + `"} {
 	` + code + `
 	}
 `
 	return definitions
 }
 
-func VerbSearch(o *Object, aName string) (*Object, *Property) {
+//Find a verb by searching visible objects
+func VerbSearch(oid, aName string) (*Object, *Property) {
+	o := LoadObject(oid)
+	if o == nil {
+		log.Printf("VerbSearch: oid %v is not a valid object", oid)
+		return nil, nil
+	}
 	log.Println("Searching for verb", aName, "in", o.Id, "("+GetProp(o.Id, "name")+")")
 	locId := GetPropertyStruct(o, "location", 10).Value
 	loc := LoadObject(locId)
@@ -643,21 +704,24 @@ func VerbSearch(o *Object, aName string) (*Object, *Property) {
 	return nil, nil
 }
 
+//Find an object by name, by searching the currently visible objects
+//and their parents
+
 func GetObjectByName(player, name string) string {
+	if player == "" {
+		panic("GetObjectByName: player is empty.  All calls must be attributed to a player")
+	}
+	if name == "" {
+		panic("GetObjectByName: lookup on empty name")
+	}
 	objects := VisibleObjects(LoadObject(player))
+	log.Printf("Visible objects: %v\n", objects)
 	for _, obj := range objects {
 		if GetProp(obj, "name") == name {
 			return obj
 		}
 	}
 	return ""
-}
-
-func FindObjectByName(player, name string) {
-	num := GetObjectByName(player, name)
-	if num != "" {
-		Msg("7", player, "tell", fmt.Sprintf("Found object %v called %v", num, name), "", "")
-	}
 }
 
 func VerbList(player string) []string {
@@ -686,6 +750,7 @@ func VerbList(player string) []string {
 	return out
 }
 
+//Too similar to findobject?
 func NameSearch(o *Object, aName, player string) (*Object, *Property) {
 
 	locId := GetPropertyStruct(o, "location", 10).Value
@@ -792,6 +857,8 @@ func Find(a []string, x string) int {
 	}
 	return -1
 }
+
+//Find the index of the first preposition in the sentence
 
 func FindPreposition(words []string) int {
 	preps := strings.Split("named that is with using at to in front of in inside into on top of on onto upon out of from inside from over through under underneath beneath behind beside for about is as off off of", " ")
