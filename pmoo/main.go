@@ -338,8 +338,6 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 			case "setprop":
 				SetProp(c[1], c[2], c[3])
 				return command[3], true
-			case "allobjects":
-				return xsh.StringsToList(AllObjects()), true
 			case "findobject":
 				num := GetObjectByName(player, c[1])
 				fmt.Println("Searched for object", c[1], "found", num)

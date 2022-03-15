@@ -90,14 +90,6 @@ func AddEngineFuncs(e *throfflib.Engine, player, from, traceId string) {
 		return ne
 	}))
 
-	e = throfflib.Add(e, "FINDOBJECT", throfflib.NewCode("FINDOBJECT", 1, 1, 0, func(ne *throfflib.Engine, c *throfflib.Thingy) *throfflib.Engine {
-
-		name, ne := throfflib.PopData(ne)
-
-		FindObjectByName(player, name.GetString())
-		return ne
-	}))
-
 	e = throfflib.Add(e, "SetThroffVerb", throfflib.NewCode("SetThroffVerb", 3, 3, 0, func(ne *throfflib.Engine, c *throfflib.Thingy) *throfflib.Engine {
 
 		obj, ne := throfflib.PopData(ne)
