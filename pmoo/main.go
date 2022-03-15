@@ -341,7 +341,12 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 			case "allobjects":
 				return xsh.StringsToList(AllObjects()), true
 			case "findobject":
-				FindObjectByName(player, c[1]) //FIXME
+				num := GetObjectByName(player, c[1])
+				fmt.Println("Searched for object", c[1], "found", num)
+				if num != "" {
+					return xsh.N(num), true
+				}
+				return xsh.Void(command[0]), true
 			case "getprop":
 				return xsh.N(GetProp(c[1], c[2])), true
 			case "clone":
@@ -350,7 +355,7 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 				fmt.Printf("Formatting object from args: %v\n", c)
 				return xsh.N(FormatObject(c[1])), true
 			case "move":
-				MoveObj(c[1], c[2])
+				return xsh.Bool(MoveObj(c[1], c[2])), true
 			case "setverb":
 				obj := c[1]
 				prop := c[2]

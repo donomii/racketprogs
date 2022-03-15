@@ -194,18 +194,6 @@ func SaveObject(o *Object) {
 	}
 }
 
-func AllObjects() []string {
-	if Cluster {
-		//???
-	}
-	out := []string{}
-	files := goof.Ls(DataDir)
-	for _, f := range files {
-		out = append(out, f[:len(f)-5])
-	}
-	return out
-}
-
 //First, try to load from disk
 //Then, attempt to load from the internal store.  Finally, fail.
 func LoadObject(id string) *Object {
@@ -297,7 +285,7 @@ func GetVerbStruct(o *Object, name string, timeout int) *Property {
 	if o == nil {
 		return nil
 	}
-	log.Printf("Searching for verb '%v' in '%v'", name, o.Id)
+	log.Printf("Searching for verb '%v' in '%v'(%v)", name, o.Id, GetProp(o.Id, "name"))
 	//log.Println(o)
 	if timeout < 1 {
 		log.Printf("Timeout while looking up %v on %v\n", name, o.Id)
@@ -401,7 +389,7 @@ func SetVerbStruct(o *Object, name, value, interpreter string) {
 	//fmt.Printf("Setting verb %v on object %v to %v\n", name, o, value)
 	prop := GetVerbStruct(o, name, 10)
 	if prop == nil {
-		log.Printf("Verb '%v' not found, creating new verb on object %v\n", name, o.Id)
+		log.Printf("Verb '%v' not found, creating new verb on object %v(%v)\n", name, o.Id, GetProp(o.Id, "name"))
 		prop = &Property{Verb: true}
 	}
 	prop.Verb = true
@@ -498,27 +486,44 @@ func main() {runme()}`
 }
 
 //Implementing move as a built-in because it is complicated enough to need it
-func MoveObj(objstr, targetstr string) {
+func MoveObj(objstr, targetstr string) bool {
 	log.Printf("Moving %v to %v", objstr, targetstr)
+	if objstr == "" || targetstr == "" {
+		log.Printf("MoveObj: objstr or targetstr is empty")
+		return false
+	}
 	//Remove from old location
 	oldlocationstr := GetProp(objstr, "location")
+	if oldlocationstr == "" {
+		log.Printf("MoveObj: objstr %v has no location", objstr)
+		return false
+	}
 	log.Printf("Old location: %v", oldlocationstr)
 	oldloc := LoadObject(oldlocationstr)
 	log.Printf("Old location object: %v", oldloc)
-	oldcontainerstr := GetProp(oldlocationstr, "contents")
-	newcontainerstr := RemoveFromStringList(oldcontainerstr, objstr)
+	if oldloc == nil {
+		log.Printf("MoveObj: oldlocationstr %v is not a valid object", oldlocationstr)
+		return false
+	}
+	oldcontainercontentsstr := GetProp(oldlocationstr, "contents")
+	newcontainerstr := RemoveFromStringList(oldcontainercontentsstr, objstr)
+	oldtargetcontainerstr := GetProp(targetstr, "contents")
+	newtargetcontainerstr := AddToStringList(oldtargetcontainerstr, objstr)
+	if oldcontainercontentsstr == "" || newtargetcontainerstr == "" {
+		log.Printf("MoveObj: oldcontainercontentsstr,  or newtargetcontainerstr is empty")
+		return false
+	}
 	log.Printf("New container string %v", newcontainerstr)
 	SetProp(oldlocationstr, "contents", newcontainerstr)
 
 	//Add to target container
-	oldtargetcontainerstr := GetProp(targetstr, "contents")
-	newtargetcontainerstr := AddToStringList(oldtargetcontainerstr, objstr)
+
 	log.Printf("xtainer string %v", newtargetcontainerstr)
 	SetProp(targetstr, "contents", newtargetcontainerstr)
 
 	//Set the object's new location
 	SetProp(objstr, "location", targetstr)
-
+	return true
 }
 
 //from https://github.com/laurent22/massren/
