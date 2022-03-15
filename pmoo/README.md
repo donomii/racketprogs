@@ -1,12 +1,14 @@
-# This is pmoo, a MOO written in Golang.
+# Overview
+
+This is pmoo, a MOO written in Golang.
 
 It is loosely inspired by LambdaMOO, but doesn't share any code with it.  I have tried to follow the general design of LambdaMOO, and I am working while looking at LambdaMOO source code, playing on my own LambdaMOO instance and reading the LambdaMOO docs, but the result is significantly different in every way.  It is LambdaMOO with the benefit of 25 years of programming language progress making it better and worse in parts.  
 
-This is not an attempt to recreate the classic online MOOs.  I'm probably never going to bother recreating the complex security system that was needed to allow strangers to interact with each other on a shared server.  Instead, this is an attempt to use the MOO concept in other projects.  I have no idea how it will turn out, but it's the most fun programming project that I have done in a long time.
+This is not an attempt to recreate the classic online MOOs.  I'm never going to bother recreating the complex security system that was needed to allow strangers to interact with each other on a shared server.  Instead, this is an attempt to use the MOO concept in other projects.  I have no idea how it will turn out, but it's the most fun programming project that I have done in a long time.
 
 There is a list of major differences below.
 
-Warning:  There is currently no security system, at all.  Do not allow strangers to access pmoo.  The coordinator node exposes API endpoints with no security checks at all.  Only run cluster mode on a fully secure network!
+Warning:  There is currently no security system, at all.  Do not allow strangers to access pmoo, on your local machine or over the network.  The network coordinator node exposes API endpoints with no security checks at all.  Only run cluster mode on a fully secure network!
 
 
 ## Install
@@ -19,20 +21,32 @@ Warning:  There is currently no security system, at all.  Do not allow strangers
 	make install
 	make init
 
-init will create an object database in the build directory.  You can then run your MOO with
+pmoo installs into /usr/local/bin
 
-	cd build && pmoo
+#### Makefile.bat
 
 If using windows, run Makefile.bat
 
-Note that if there is no objects directory, pmoo will use ~/.pmoo/objects
+#### Init
+
+make init will create an object database in the build directory.  
+
+#### Run
+
+You can then run your MOO with
+
+	cd build && pmoo
+
+
+
+pmoo checks the current directory for an "objects" directory, where it expects to find all the data for the MOO.  If there is no local objects directory, pmoo will use ~/.pmoo/objects
 
 ### Local install
 
 You can install pmoo into your home directory:
 
 	make localinstall
-	cat create.txt | p --init 
+	cat create.txt | ~/.local/bin/p --init
 
 And then use pmoo in command line integration mode.
 
@@ -41,6 +55,18 @@ And then use pmoo in command line integration mode.
 Add ~/.local/bin to your path so you can type
 
 	p look
+
+## Use
+
+pmoo comes with three programs, *pmoo*, *p*, and *queue*.  
+
+*pmoo* is the classic shell inteface.  You get a customised command prompt and can type MOO commands directly.
+
+*p* is the command line integration version of pmoo.  It allows you to use pmoo without leaving your command line.  *p* uses its arguements as a MOO command, and prints the result.  You can itegrate it with your shell like a normal program:
+
+	p look | less
+
+and script it using bash/zsh/whatever
 
 
 ### Cluster install
@@ -53,7 +79,7 @@ Add ~/.local/bin to your path so you can type
 There should be only one queue server running, it is the coordinator for the cluster.
 
 
-	cat create.txt | ./pmoo --cluster --queue http://127.0.0.1:8080 --init
+	cat create.txt | ./pmoo --cluster --queue http://127.0.0.1:8080 --batch --init
 
 Now, to add a computer to the cluster
 
@@ -82,15 +108,15 @@ Because messages can now run on different CPUs, any message can be evaluated on 
 
 The actor model of computation works in this situation.  Actors are roughly the same as MOO objects, they both communicate by sending each other messages.  The main issue here is that pmoo allows user scripting, so the interpreter requires special support to allow a subroutine to jump to the correct affinity node, or all programs will need to be written in Continuation Passing Style (or async handlers).  This means that each subroutine must end by sending a message, and then processing would continue when that message is received.
 
-# The differences
+# Differences to old MOOs
 
 With pmoo now adding a clustering mode, there seems to be little point to keeping a list of differences, because everything is different in cluster mode.  So in general, I'm still following the old MOOs as a guide, but the actual similarities are mostly limited to command names and basic concepts like "having objects" 
 
 ## Objects don't have index numbers at all
 
-Original MOOs used, numeric object ids, but pmoo uses GUIDs for object identifiers.  Pmoo needs to be able to allocate objects without contacting a central service.  This allows some nice features like offline mode, and being able to move objects from one MOO to another. In particular, I can carry a local copy of my MOO on my laptop, update it, then merge it with the MOO on my desktop when I get home.
+Original MOOs used numeric object ids, but pmoo uses GUIDs for object identifiers.  Pmoo needs to be able to allocate objects without contacting a central service.  This allows some nice features like offline mode, and being able to move objects from one MOO to another. In particular, I can carry a local copy of my MOO on my laptop, update it, then merge it with the MOO on my desktop when I get home.
 
-The drawback is that this makes it horrible to try and type an object name on the command line.
+The drawback is that it is horrible to try and type an object name on the command line.
 
 ## You can't have a verb and a property called the same thing (in the same object)
 
@@ -109,7 +135,7 @@ You can enter scripting commands by starting them with "x ".
 * x clone object_id
 * x formatobject object_id
 * x msg from_id target_id verb dobj_id preposition iobj_id 
-* clone $thing as "A name"
+* x clone $thing
 * x move %2 to %3
 
 
