@@ -31,7 +31,7 @@ func initDB() {
 	prop := Property{Value: ` SetProp dobj dpropstr iobjstr `, Verb: true, Throff: true, Interpreter: "throff"}
 	rootObj.Properties["property"] = prop
 
-	ver := Property{Value: `SetVerb dobj dpropstr iobjstr`, Verb: true, Interpreter: "yaegi"}
+	ver := Property{Value: `SetVerb dobj dpropstr iobjstr yaegi`, Verb: true, Interpreter: "throff"}
 	rootObj.Properties["verb.goscript"] = ver
 
 	thr := Property{Value: `SetThroffVerb dobj dpropstr iobjstr`, Verb: true, Throff: true, Interpreter: "throff"}

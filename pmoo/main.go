@@ -72,7 +72,7 @@ func xshRun(text, player string) string {
 	xsh.Run(state, std)
 
 	tr := xsh.Parse(text, "pmoo")
-	fmt.Printf("Substituting pmoo vars\n")
+	//fmt.Printf("Substituting pmoo vars\n")
 	tr = subsitutePmooVars(tr)
 	res := xsh.Run(state, tr)
 	l := []autoparser.Node{res}
@@ -143,6 +143,10 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 			os.Exit(0)
 		}
 		if text != "" {
+			if len(text) < 3 {
+				fmt.Println("Too short")
+				continue
+			}
 			//fmt.Printf("Examining input: '%s'\n", text[:2])
 			if text[:2] == "x " {
 				fmt.Println(xshRun(text[2:], player))
@@ -315,6 +319,7 @@ func addPmooTypes(s xsh.State) {
 	s.TypeSigs["findobject"] = []string{"string", "string"}
 	s.TypeSigs["clone"] = []string{"string", "string"}
 	s.TypeSigs["formatobject"] = []string{"string", "string"}
+	s.TypeSigs["move"] = []string{"void", "string", "string"} //Should be bool?
 	s.TypeSigs["getprop"] = []string{"string", "string", "string"}
 	s.TypeSigs["msg"] = []string{"void", "string", "string", "string", "string", "string", "string"}
 }
@@ -344,6 +349,12 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 				return xsh.N(FormatObject(c[1])), true
 			case "move":
 				MoveObj(c[1], c[2])
+			case "setverb":
+				obj := c[1]
+				prop := c[2]
+				interpreter := c[3]
+				value := c[4]
+				SetVerb(obj, prop, value, interpreter)
 			case "msg":
 				from := c[1]
 				target := c[2]
@@ -422,7 +433,7 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 			xsh.Run(state, std)
 
 			tr := xsh.Parse(code, "pmoo")
-			fmt.Printf("Substituting pmoo vars\n")
+			//fmt.Printf("Substituting pmoo vars\n")
 			tr = subsitutePmooVars(tr)
 			xsh.Run(state, tr)
 		default:
@@ -432,10 +443,10 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 }
 
 func subsitutePmooVars(code []autoparser.Node) []autoparser.Node {
-	fmt.Printf("Substituting vars in %+v\n", code)
+	//fmt.Printf("Substituting vars in %+v\n", code)
 	out := xsh.TreeMap(func(n autoparser.Node) autoparser.Node {
 		str := xsh.S(n)
-		fmt.Printf("Examining %v\n", str)
+		//fmt.Printf("Examining %v\n", str)
 		if strings.HasPrefix(str, "%") {
 			re := regexp.MustCompile("\\%([^.])+\\.?(.+)?")
 			res := re.FindString(str)
