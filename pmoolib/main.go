@@ -10,7 +10,6 @@ import (
 	"log"
 	"os"
 	"runtime/debug"
-	"strconv"
 	"strings"
 	"time"
 
@@ -112,7 +111,7 @@ func ToStr(i interface{}) string {
 }
 
 //Return all the visible objects in the room
-func VisibleObjects(player *Object) []string {
+func VisibleObjects(player *Object) []string { //FIXME use player id string, not obj
 	out := []string{}
 
 	locId := GetPropertyStruct(player, "location", 10).Value
@@ -196,7 +195,15 @@ func SaveObject(o *Object) {
 }
 
 func AllObjects() []string {
-	return goof.Ls(DataDir)
+	if Cluster {
+		//???
+	}
+	out := []string{}
+	files := goof.Ls(DataDir)
+	for _, f := range files {
+		out = append(out, f[:len(f)-5])
+	}
+	return out
 }
 
 //First, try to load from disk
@@ -210,7 +217,7 @@ func LoadObject(id string) *Object {
 		return FetchObject(QueueServer, id)
 	} else {
 		name := DataDir + "/" + id + ".json"
-		//log.Println("Loading '" + name+"'")
+		//fmt.Println("Loading '" + name + "'")
 		file, err := ioutil.ReadFile(name)
 		if err != nil {
 			log.Println("Failed to load" + name)
@@ -244,7 +251,7 @@ func GetPropertyStruct(o *Object, name string, timeout int) *Property {
 	if o == nil {
 		return nil
 	}
-	log.Printf("Searching for property %v in %v\n", name, o.Id)
+	log.Printf("Searching for property %v in %v(%v)\n", name, o.Id, o.Properties["name"].Value)
 	val, ok := o.Properties[name]
 	if ok {
 		if val.Verb {
@@ -300,7 +307,7 @@ func GetVerbStruct(o *Object, name string, timeout int) *Property {
 	val, ok := o.Properties[name]
 	if ok {
 		if val.Verb {
-			log.Printf("Found %v in %v", name, o.Id)
+			log.Printf("Found %v in %v(%v)", name, o.Id, GetProp(o.Id, "name"))
 			return &val
 		}
 		//Property is not a verb.  Maybe we should stop here anyway?
@@ -390,21 +397,27 @@ func SetProp(objstr, name, value string) {
 	SetProperty(o, name, value)
 }
 
-func SetVerbStruct(o *Object, name, value string) {
+func SetVerbStruct(o *Object, name, value, interpreter string) {
+	//fmt.Printf("Setting verb %v on object %v to %v\n", name, o, value)
 	prop := GetVerbStruct(o, name, 10)
 	if prop == nil {
+		log.Printf("Verb '%v' not found, creating new verb on object %v\n", name, o.Id)
 		prop = &Property{Verb: true}
 	}
 	prop.Verb = true
 	p := *prop
 	p.Value = value
+	p.Interpreter = interpreter
+	if interpreter == "throff" {
+		p.Throff = true
+	}
 	o.Properties[name] = p
 	SaveObject(o)
 }
 
-func SetVerb(objstr, name, value string) {
+func SetVerb(objstr, name, value, interpreter string) {
 	o := LoadObject(objstr)
-	SetVerbStruct(o, name, value)
+	SetVerbStruct(o, name, value, interpreter)
 }
 
 func SplitStringList(s string) []string {
@@ -603,7 +616,7 @@ func BuildXshCode(code, player, this, verb, dobj, dpropstr, prepositionStr, iobj
 }
 
 func VerbSearch(o *Object, aName string) (*Object, *Property) {
-	log.Println("Searching for verb", aName, "in", o.Id)
+	log.Println("Searching for verb", aName, "in", o.Id, "("+GetProp(o.Id, "name")+")")
 	locId := GetPropertyStruct(o, "location", 10).Value
 	loc := LoadObject(locId)
 	roomContents := SplitStringList(GetPropertyStruct(loc, "contents", 10).Value)
@@ -626,24 +639,19 @@ func VerbSearch(o *Object, aName string) (*Object, *Property) {
 }
 
 func GetObjectByName(player, name string) string {
-	lastIdStr := GetProp("1", "lastId")
-	lastId, err := strconv.Atoi(lastIdStr)
-	if err != nil {
-		panic(err)
-	}
-	for i := 0; i < lastId+1; i = i + 1 {
-		if GetProp(fmt.Sprintf("%v", i), "name") == name {
-			return fmt.Sprintf("%v", i)
+	objects := VisibleObjects(LoadObject(player))
+	for _, obj := range objects {
+		if GetProp(obj, "name") == name {
+			return obj
 		}
 	}
 	return ""
-
 }
 
 func FindObjectByName(player, name string) {
 	num := GetObjectByName(player, name)
 	if num != "" {
-		Msg("7", player, "tell", fmt.Sprintf("Found object %%v called %v", num, name), "", "")
+		Msg("7", player, "tell", fmt.Sprintf("Found object %v called %v", num, name), "", "")
 	}
 }
 
@@ -720,7 +728,7 @@ func ParseDirectObject(s string, playerId string) (string, string) {
 		return GetPropertyStruct(LoadObject(playerId), "location", 10).Value, ""
 	}
 
-	//It's a generic object, look for it in the properties of %1
+	//It's a global object, look for it in the properties of %1
 	if len(s) > 0 && s[0] == '$' {
 		prop := s[1:]
 		one := LoadObject("1")
@@ -821,6 +829,10 @@ func BreakSentence(s string) (string, string, string, string) {
 func SetThroffVerb(obj, name, code string) {
 	log.Println("SetThroffVerb: ", obj, name, code)
 	o := LoadObject(obj)
+	if o == nil {
+		log.Printf("SetThroffVerb: Could not load object '%v'", obj)
+		return
+	}
 	v := Property{Value: code, Verb: true, Throff: true}
 	log.Println("object:", o)
 	o.Properties[name] = v

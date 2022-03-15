@@ -321,7 +321,9 @@ func addPmooTypes(s xsh.State) {
 	s.TypeSigs["formatobject"] = []string{"string", "string"}
 	s.TypeSigs["move"] = []string{"void", "string", "string"} //Should be bool?
 	s.TypeSigs["getprop"] = []string{"string", "string", "string"}
+	s.TypeSigs["setverb"] = []string{"void", "string", "string", "string", "string"}
 	s.TypeSigs["msg"] = []string{"void", "string", "string", "string", "string", "string", "string"}
+	s.TypeSigs["o"] = []string{"string", "string"}
 }
 
 func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node, level int) (autoparser.Node, bool) {
@@ -355,6 +357,7 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 				interpreter := c[3]
 				value := c[4]
 				SetVerb(obj, prop, value, interpreter)
+				return xsh.Void(command[0]), true
 			case "msg":
 				from := c[1]
 				target := c[2]
@@ -373,6 +376,15 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 				} else {
 					RawMsg(Message{From: player, Player: player, This: target, Verb: verb, Dobj: dobj, Prepstr: prep, Iobj: iobj, Trace: "FIXME", Ticks: DefaultTicks})
 				}
+				return xsh.Void(command[0]), true
+			case "o":
+				num := GetObjectByName(player, c[1])
+				fmt.Println("Searched for object", c[1], "found", num)
+				if num != "" {
+					return xsh.N(num), true
+				}
+				return xsh.Void(command[0]), true
+
 			}
 		}
 	}

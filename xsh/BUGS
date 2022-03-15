@@ -12,3 +12,4 @@ A comment causes the next line to fail.
 	puts x
 
 
+prints nothing

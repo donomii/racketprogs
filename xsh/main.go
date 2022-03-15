@@ -192,7 +192,7 @@ func runWithGuardian(cmd []string) error {
 	drintf("Launching guardian for %+v from %v\n", cmd, guardianPath)
 	binfile := cmd[0]
 	fullPath := searchPath(binfile)
-	if fullPath == "" {
+	if fullPath == "" && !goof.Exists(binfile) {
 		return fmt.Errorf("Could not find %v in path\n", binfile)
 	}
 	cmd[0] = fullPath
@@ -206,7 +206,7 @@ func runWithGuardianCapture(cmd []string) (string, error) {
 	drintf("Launching guardian for %+v from %v\n", cmd, guardianPath)
 	binfile := cmd[0]
 	fullPath := searchPath(binfile)
-	if fullPath == "" {
+	if fullPath == "" && !goof.Exists(binfile) {
 		return "", fmt.Errorf("Could not find %v in path\n", binfile)
 	}
 	cmd[0] = fullPath
@@ -265,7 +265,7 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 	if len(command) == 0 {
 		return autoparser.Node{}
 	}
-	drintf("Evaluating: %v\n", command)
+	drintf("Evaluating: %v\n", TreeToXsh(command))
 	//If list, assume it is a lambda function and evaluate it
 	if isList(command[0]) {
 		theLambdaFunction := command[0]
@@ -366,9 +366,14 @@ Given:
 			ret, handled := s.ExtraBuiltins(s, command, parent, level)
 			if handled {
 				return ret
+			} else {
+				drintf("No extra builtin for %v\n", command[0])
 			}
+		} else {
+
+			drintf("No extra builtins while evaluating %v\n", command[0])
+			return builtin(s, command, parent, f, args, level)
 		}
-		return builtin(s, command, parent, f, args, level)
 	}
 	//Maybe we should return a warning here?  Or even exit?  Need a strict mode.
 	return Void(command[0])
