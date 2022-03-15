@@ -17,7 +17,7 @@ verb.throff #1.do_exit is "MoveObj player GetProp this ^exit_target"
 verb.throff #1.exit_verb is "Msg player this ^do_exit [] [] [] "
 verb.throff #1.findverb is "PRINTLN GetVerb iobjstr dobjstr"
 verb.throff #1.whisper is " IF EQUAL  ->STRING  [ ]  ->STRING  dobj  [  Msg 7 player ^tell A[ [ You can't see ] dobjstr [ here ] ]A [ ] [ ]  ]  [ Msg this dobj ^tell  iobjstr [ ] [ ] ]    "
-verb.throff #1.hello1 is " PRINTLN [ HELLO WORLD ] "
+verb.throff #1.createComplete is " PRINTLN [ Extra definitions loaded, ready for users ] "
 verb.throff #1.recycle is "MoveObj dobj 0"
 verb.throff #1.debugParser is "  PRINTLN A[ ^player: player ]A PRINTLN A[ ^this: this ]A PRINTLN  A[ ^verb: verb.throff ]A PRINTLN   A[ ^dobjstr: dobjstr ]A PRINTLN A[ ^dpropstr: dpropstr ]A PRINTLN  A[ ^prepstr: prepstr ]A  PRINTLN A[ ^iobjstr: iobjstr ]A   PRINTLN A[ ^ipropstr: ipropstr ]A PRINTLN [ ]  "
 verb.throff #4.go is " WHEN EQUAL dobjstr GetProp this ^name [ MoveObj player this ] "
@@ -34,3 +34,4 @@ look
 // PRINTLN A[ ^player: player ]A PRINTLN A[ ^this: this ]A PRINTLN  A[ ^verb: verb ]A PRINTLN   A[ ^dobjstr: dobjstr ]A PRINTLN A[ ^dpropstr: dpropstr ]A PRINTLN  A[ ^prepstr: prepstr ]A  PRINTLN A[ ^iobjstr: iobjstr ]A   PRINTLN A[ ^ipropstr: ipropstr ]A PRINTLN [ ] 
 //goscript #4.look is "Println(GetProp(this, `name`));Println(GetProp(this, `description`));for _,o := range VisibleObjects(player){Println(`You see`,GetProp(o, `name`), `here.`)}"
 
+createComplete
