@@ -64,6 +64,15 @@ func N(s string) autoparser.Node {
 	return autoparser.Node{Str: s}
 }
 
+//Converts a go bool into a bool node
+func Bool(s bool) autoparser.Node {
+	if s {
+		return autoparser.Node{Str: "1"}
+	} else {
+		return autoparser.Node{Str: "0"}
+	}
+}
+
 //Extracts the string/raw value of a node. Does not handle lists.
 func S(n autoparser.Node) string {
 	return NodeToString(n)

@@ -369,11 +369,10 @@ Given:
 			} else {
 				drintf("No extra builtin for %v\n", command[0])
 			}
-		} else {
-
-			drintf("No extra builtins while evaluating %v\n", command[0])
-			return builtin(s, command, parent, f, args, level)
 		}
+		drintf("No extra builtins while evaluating %v\n", command[0])
+		return builtin(s, command, parent, f, args, level)
+
 	}
 	//Maybe we should return a warning here?  Or even exit?  Need a strict mode.
 	return Void(command[0])
