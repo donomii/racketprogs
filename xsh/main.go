@@ -413,10 +413,11 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 	if (parent != nil) && parent.ScopeBarrier {
 		return *parent
 	}
-
+	/*  FIXME need some way to display each line as we run it, but this is not it
 	if toplevel == 1 {
 		XshInform(TreeToXsh(t))
 	}
+	*/
 	out := []autoparser.Node{}
 	for i, v := range t {
 		if WantTrace {

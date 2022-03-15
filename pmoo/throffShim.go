@@ -61,7 +61,7 @@ func AddEngineFuncs(e *throfflib.Engine, player, from, traceId string) {
 		obj, ne := throfflib.PopData(ne)
 
 		//do something with it
-		out := Clone(obj.GetString())
+		out := Clone(obj.GetString(), GetProp(player, "location"))
 
 		//Push the result into the engine
 		o := throfflib.NewString(out, throfflib.Environment(e))

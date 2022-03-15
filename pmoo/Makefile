@@ -14,7 +14,7 @@ build: *.go Makefile ../xsh/main.go ../xsh/stdlib.xsh ../pmoolib/main.go ../xsh/
 
 init:
 	cd build && ./pmoo --init
-	cd build && cat ../create.txt | ./pmoo --batch --debug
+	cd build && cat ../create.txt | ./pmoo  --debug --raw --batch
 
 localinstall: build
 	cp build/pmoo ~/.local/bin/

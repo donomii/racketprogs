@@ -1,11 +1,11 @@
 package main
 
 import (
-	"../xsh"
 	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,6 +14,8 @@ import (
 	"runtime/debug"
 	"strings"
 	"time"
+
+	"../xsh"
 
 	"github.com/chzyer/readline"
 	"github.com/donomii/goof"
@@ -26,25 +28,45 @@ import (
 	"github.com/traefik/yaegi/interp"
 )
 
-func ConsoleInputHandler(queue chan *Message) {
+var DefaultPlayerId = "2"
+var DefaultSystemCore = "7"
+
+func ConsoleInputHandler(queue chan *Message, player string) {
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
 		//fmt.Print("Enter text: ")
-		text, _ := reader.ReadString('\n')
+		text, err := reader.ReadString('\n')
+		if err != nil {
+
+			if batch {
+				log.Println("Waiting for commands to finish...")
+				time.Sleep(time.Millisecond * 5000)
+			}
+			if err == io.EOF {
+				log.Println("Input complete")
+				os.Exit(0)
+			} else {
+				log.Println("Readline error:", err)
+				os.Exit(1)
+			}
+		}
 		text = strings.TrimSuffix(text, "\r\n")
 		text = strings.TrimSuffix(text, "\n")
 		if text != "" {
 			//fmt.Printf("Examining input: %s\n", text[:2])
 			if text[:2] == "x " {
-				fmt.Println(xshRun(text[2:], "7"))
+				fmt.Println(xshRun(text[2:], player))
 			} else {
 				fmt.Printf("ConsoleInputHandler: %s\n", text)
 				//Console is always the wizard, at least for now
-				InputMsg("2", "7", "input", text)
+				InputMsg(player, DefaultSystemCore, "input", text)
 			}
 		}
+		time.Sleep(time.Millisecond * 2000)
+
 	}
+
 }
 
 func listVerbs(player string) func(string) []string {
@@ -57,6 +79,7 @@ func listVerbs(player string) func(string) []string {
 
 func xshRun(text, player string) string {
 	//fmt.Printf("Evalling xsh %v\n", text)
+	xsh.WantDebug = false
 	state := xsh.New()
 	addPmooTypes(state)
 	xsh.UsePterm = false
@@ -70,6 +93,7 @@ func xshRun(text, player string) string {
 	//fmt.Printf("Result: %+v\n", resstr)
 	std := xsh.Parse(xsh.Stdlib_str, "stdlib")
 	xsh.Run(state, std)
+	xsh.WantDebug = pmooDebug
 
 	tr := xsh.Parse(text, "pmoo")
 	//fmt.Printf("Substituting pmoo vars\n")
@@ -95,9 +119,11 @@ func listFuncs(xshEngine xsh.State) func(string) []string {
 	}
 }
 func ReadLineInputHandler(queue chan *Message, player string) {
+	xsh.WantDebug = false
 	xshEngine := xsh.New()
 	addPmooTypes(xshEngine)
 	xshEngine.ExtraBuiltins = xshBuiltins
+	xsh.WantDebug = pmooDebug
 
 	var completer = readline.NewPrefixCompleter(
 		readline.PcItemDynamic(listVerbs(player)),
@@ -132,8 +158,8 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 		}
 
 		if err != nil {
-			log.Println("Readline error:", err, "Exiting once queue is empty")
-			QuitOnEmptyQueue = true //FIXME not working
+			log.Println("Readline error:", err, "Exiting...")
+
 			os.Exit(1)
 		}
 		text = strings.TrimSuffix(text, "\r\n")
@@ -152,7 +178,7 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 				fmt.Println(xshRun(text[2:], player))
 			} else {
 				//Console is always the wizard, at least for now
-				InputMsg("2", "7", "input", text)
+				InputMsg(DefaultPlayerId, DefaultSystemCore, "input", text)
 			}
 		}
 	}
@@ -160,8 +186,8 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 }
 
 var Affinity string
-var QuitOnEmptyQueue bool
 var batch bool
+var pmooDebug bool
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -169,23 +195,23 @@ func main() {
 	var init bool
 	var RawTerm bool
 	var inQ chan *Message = make(chan *Message, 100)
-	player := "2"
+	player := DefaultPlayerId
 	cmdProg := path.Base(os.Args[0])
-	debug := false
+	pmooDebug = false
 
-	flag.BoolVar(&debug, "debug", false, "Print log messages")
+	flag.BoolVar(&pmooDebug, "debug", false, "Print log messages")
 	flag.BoolVar(&init, "init", false, "Create basic objects.  Overwrites existing")
 	flag.BoolVar(&batch, "batch", false, "Batch mode.  Wait for each command to finish before starting next.")
 	flag.BoolVar(&Cluster, "cluster", false, "Run in cluster mode.  See instructions in README.")
 	flag.BoolVar(&ClusterQueue, "clusterQ", false, "Run messages in cluster mode.  See instructions in README.")
 	//flag.StringVar(&queueServer, "queue", "127.0.0.1:2888", "Location of queue server.")
 	flag.StringVar(&QueueServer, "queue", "http://127.0.0.1:8080", "Location of queue server.")
-	flag.StringVar(&Affinity, "affinity", "7", "Will process all messages with this affinity id.")
+	flag.StringVar(&Affinity, "affinity", DefaultSystemCore, "Will process all messages with this affinity id.")
 	flag.BoolVar(&RawTerm, "raw", false, "Batch mode.  No shell enhancements, read directly from STDIN.  Works with rlwrap.")
 
 	flag.Parse()
 
-	if debug {
+	if pmooDebug {
 		xsh.WantDebug = true
 	} else {
 		log.SetOutput(ioutil.Discard)
@@ -199,9 +225,8 @@ func main() {
 		os.MkdirAll(dataDir, 0600)
 		SetDataDir(dataDir)
 		log.Println("Using MOO in", pmoo.DataDir)
-		QuitOnEmptyQueue = true
 		args := append(flag.Args(), "", "", "")
-		RawMsg(Message{Player: player, This: "7", Verb: "%commandline", Args: args, Ticks: DefaultTicks})
+		RawMsg(Message{Player: player, This: DefaultSystemCore, Verb: "%commandline", Args: args, Ticks: DefaultTicks})
 	} else {
 		SetEtcdServers([]string{etcdServer})
 		if Cluster {
@@ -232,7 +257,7 @@ func main() {
 		}
 
 		if RawTerm {
-			go ConsoleInputHandler(inQ)
+			go ConsoleInputHandler(inQ, player)
 		} else {
 			go ReadLineInputHandler(inQ, player)
 		}
@@ -242,11 +267,8 @@ func main() {
 }
 func MOOloop(inQ chan *Message, player string) {
 	for {
-		log.Println("Waiting on Q")
-		if QuitOnEmptyQueue && len(inQ) == 0 {
-			log.Println("queue empty, exiting")
-			os.Exit(0)
-		}
+		log.Println("Waiting on queue", len(inQ), "/", cap(inQ))
+
 		m := <-inQ
 		log.Println("Q:", m)
 		if m.Ticks < 1 {
@@ -258,7 +280,7 @@ func MOOloop(inQ chan *Message, player string) {
 			MyQMessage(QueueServer, m)
 			continue
 		}
-		if m.This != "7" {
+		if m.This != DefaultSystemCore {
 			log.Println("Handling direct message")
 
 			if m.This != "" && m.Player != "" && m.Verb != "" { //Skip broken messages
@@ -287,11 +309,11 @@ func MOOloop(inQ chan *Message, player string) {
 		dobj, dpropstr := ParseDirectObject(dobjstr, player)
 		iobj, ipropstr := ParseDirectObject(iobjstr, player)
 
-		thisObj, _ := VerbSearch(LoadObject(player), verb)
+		thisObj, _ := VerbSearch(player, verb)
 
 		if thisObj == nil {
 			msg := fmt.Sprintf("Verb '%v' not found!\n", verb)
-			RawMsg(Message{From: "7", Player: player, Verb: "notify", Dobjstr: msg, Ticks: m.Ticks - 100})
+			RawMsg(Message{From: DefaultSystemCore, Player: player, Verb: "notify", Dobjstr: msg, Ticks: m.Ticks - 100})
 
 		} else {
 			this := ToStr(thisObj.Id)
@@ -317,7 +339,7 @@ func addPmooTypes(s xsh.State) {
 	s.TypeSigs["setprop"] = []string{"void", "string", "string", "string"}
 	s.TypeSigs["allobjects"] = []string{"list"}
 	s.TypeSigs["findobject"] = []string{"string", "string"}
-	s.TypeSigs["clone"] = []string{"string", "string"}
+	s.TypeSigs["clone"] = []string{"string", "string", "string"}
 	s.TypeSigs["formatobject"] = []string{"string", "string"}
 	s.TypeSigs["move"] = []string{"void", "string", "string"} //Should be bool?
 	s.TypeSigs["getprop"] = []string{"string", "string", "string"}
@@ -348,7 +370,7 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 			case "getprop":
 				return xsh.N(GetProp(c[1], c[2])), true
 			case "clone":
-				return xsh.N(Clone(c[1])), true
+				return xsh.N(Clone(c[1], c[2])), true
 			case "formatobject":
 				fmt.Printf("Formatting object from args: %v\n", c)
 				return xsh.N(FormatObject(c[1])), true
@@ -437,19 +459,21 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 			code = code + verbStruct.Value
 			Eval(goScript, code)
 		case "xsh":
-			log.Println("xsh program: ", code)
+
+			xsh.WantDebug = false
 			state := xsh.New()
 			addPmooTypes(state)
 			state.ExtraBuiltins = xshBuiltins
 			state.UserData = player
 			code = BuildXshCode(verbStruct.Value, player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr)
-
+			log.Println("xsh program: ", code)
 			std := xsh.Parse(xsh.Stdlib_str, "stdlib")
 			xsh.Run(state, std)
-
+			xsh.WantDebug = pmooDebug
 			tr := xsh.Parse(code, "pmoo")
-			//fmt.Printf("Substituting pmoo vars\n")
+			fmt.Printf("Substituting pmoo vars\n")
 			tr = subsitutePmooVars(tr)
+			log.Printf("Running xsh program: %v\n", tr)
 			xsh.Run(state, tr)
 		default:
 			log.Println("Unknown interpreter: ", verbStruct.Interpreter)
@@ -468,7 +492,7 @@ func subsitutePmooVars(code []autoparser.Node) []autoparser.Node {
 			fmt.Printf("Matched object ref: %v\n", res)
 			objStr := string(res[1:])
 			fmt.Printf("Looking up object '%v'\n", objStr)
-			id := GetObjectByName("7", objStr)
+			id := GetObjectByName(DefaultPlayerId, objStr)
 			fmt.Printf("Found object %v\n", id)
 			return xsh.N(fmt.Sprintf("%v", id))
 		}

@@ -19,7 +19,7 @@ func drintf(formatStr string, args ...interface{}) {
 }
 
 func drintln(args ...interface{}) {
-	out := fmt.Sprintf("%+v,\n", args...)
+	out := fmt.Sprintln(args...)
 	if WantDebug {
 		if UsePterm {
 			header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgLightMagenta))
@@ -48,7 +48,7 @@ func XshWarn(formatStr string, args ...interface{}) {
 		pterm.DefaultCenter.Println(header.Sprint(out))
 	} else {
 		fmt.Println("Warn:", out)
-        }
+	}
 }
 
 func XshInform(formatStr string, args ...interface{}) {
@@ -56,9 +56,9 @@ func XshInform(formatStr string, args ...interface{}) {
 	if UsePterm {
 		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgBlue))
 		pterm.DefaultCenter.Println(header.Sprint(out))
-	}else {
-                fmt.Println("Info:", out)
-        }
+	} else {
+		fmt.Println("Info:", out)
+	}
 }
 
 func XshTrace(formatStr string, args ...interface{}) {
@@ -66,7 +66,7 @@ func XshTrace(formatStr string, args ...interface{}) {
 	if UsePterm {
 		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgGreen))
 		pterm.DefaultCenter.Println(header.Sprint(out))
-	}else {
-                fmt.Println("Trace:", out)
-        }
+	} else {
+		fmt.Println("Trace:", out)
+	}
 }
