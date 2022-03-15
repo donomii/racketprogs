@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/donomii/goof"
 	"github.com/google/uuid"
 	"github.com/traefik/yaegi/interp"
 	"github.com/traefik/yaegi/stdlib"
