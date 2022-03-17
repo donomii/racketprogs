@@ -471,7 +471,7 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 			xsh.Run(state, std)
 			xsh.WantDebug = pmooDebug
 			tr := xsh.Parse(code, "pmoo")
-			fmt.Printf("Substituting pmoo vars\n")
+			//fmt.Printf("Substituting pmoo vars\n")
 			tr = subsitutePmooVars(tr)
 			log.Printf("Running xsh program: %v\n", tr)
 			xsh.Run(state, tr)
