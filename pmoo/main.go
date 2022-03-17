@@ -237,8 +237,10 @@ func main() {
 			SetQueueServer(QueueServer)
 			go Receiver(QueueServer, func(b []byte) {
 				var m Message
-				json.Unmarshal(b, &m)
-				Q <- &m
+				err := json.Unmarshal(b, &m)
+				if err == nil {
+					inQ <- &m
+				}
 			})
 			log.Println("Using MOO in cluster", QueueServer)
 		} else {
