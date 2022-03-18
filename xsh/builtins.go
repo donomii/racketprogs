@@ -76,7 +76,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			}
 		}
 		letbod := CopyTree(args[3].List)
-		fmt.Printf("Replacing %v with %v\n", TreeToXsh(letparams), TreeToXsh(evalledArgs))
+		//fmt.Printf("Replacing %v with %v\n", TreeToXsh(letparams), TreeToXsh(evalledArgs))
 		nbod := ReplaceArgs(evalledArgs, letparams, letbod)
 		drintf("Calling function %+v\n", TreeToXsh(nbod))
 		return blockReduce(s, nbod, parent, 0)
