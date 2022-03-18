@@ -11,6 +11,7 @@ build: *.go Makefile ../xsh/main.go ../xsh/stdlib.xsh ../pmoolib/main.go ../xsh/
 	mkdir build/objects || true
 	go build -o build/pmoo -v .
 	go build -o build/queue -v ../queue/
+	go build -o build/xshguardian -v ../xsh/cmd/xshguardian/
 
 init:
 	cd build && ./pmoo --init
