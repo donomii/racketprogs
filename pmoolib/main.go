@@ -27,17 +27,17 @@ import (
 //go:embed fallback/*
 var fallback_objs embed.FS
 
+//The default amount of ticks to allocate to a new message.
 var DefaultTicks = 1000
+
+//Operate in cluster mode.  i.e. use the networked object store and networked queue
 var Cluster bool
-var ClusterQueue bool
+
+//the IP address of the queue and object server
 var QueueServer string
+
+//If using the filesystem data store, objects will be stored in this directory
 var DataDir string = "objects"
-
-var EtcdServers []string //= []string{"localhost:2379"}
-
-func SetEtcdServers(s []string) {
-	EtcdServers = s
-}
 
 //Choose the network Queue server
 func SetQueueServer(s string) {
@@ -50,16 +50,17 @@ func SetDataDir(s string) {
 }
 
 type Message struct {
-	Player                                                    string
-	This                                                      string
+	Player string //The player id (the object id)
+	This   string //The object that is currently executing the method (i.e. the usual OO "this")
+	// The parts of speech from the sentence that the user typed in.  Not all of them will be present, e.g. the indirect object may be missing.
 	Verb                                                      string
 	Dobj, Dpropstr, Prepstr, Iobj, Ipropstr, Dobjstr, Iobjstr string
-	Data                                                      string
-	From                                                      string
-	Trace                                                     string
-	Affinity                                                  string
-	Args                                                      []string
-	Ticks                                                     int
+	Data                                                      string   //An arbitary data field
+	From                                                      string   //The object that sent the message (i.e. the caller)
+	Trace                                                     string   //Switch on message tracing for this message and all its consequents
+	Affinity                                                  string   //Force this message to be processed on a node with matching affinity (i.e. force it to run on a particular computer)
+	Args                                                      []string //An alternate way of passing method args, for more traditional methods that are not exposed to the user.
+	Ticks                                                     int      //The amount of allowed runtime remaining.  Stops infinite loops.
 }
 
 var Q chan *Message
@@ -84,11 +85,13 @@ func Msg(from, target, verb, dobjstr, prep, iobjstr string) {
 	log.Printf("Audit: Message %v\n", m)
 }
 
+//Submit a constructed message struct to the queue
 func RawMsg(m Message) {
 	Q <- &m
 	log.Printf("Audit: Message %v\n", m)
 }
 
+//An object property
 type Property struct {
 	Value       string
 	Verb        bool
@@ -96,17 +99,20 @@ type Property struct {
 	Interpreter string
 }
 
+//An object
 type Object struct {
 	Properties map[string]Property
 	Id         string
 }
 
+//If error is not nil, panic
 func panicErr(err error) {
 	if err != nil {
 		panic(err)
 	}
 }
 
+//Convert anything to a string
 func ToStr(i interface{}) string {
 	return fmt.Sprintf("%v", i)
 }
@@ -724,6 +730,7 @@ func GetObjectByName(player, name string) string {
 	return ""
 }
 
+//List all verbs from all objects visible to the player
 func VerbList(player string) []string {
 	o := LoadObject(player)
 	out := []string{}
@@ -849,6 +856,8 @@ func ParseDirectObject(s string, playerId string) (string, string) {
 
 	return "", ""
 }
+
+//Find a string in a list of strings
 func Find(a []string, x string) int {
 	for i, n := range a {
 		if x == n {
@@ -872,6 +881,7 @@ func FindPreposition(words []string) int {
 	return -1
 }
 
+//Parse a sentence into a verb, direct object, indirect object, and preposition
 func BreakSentence(s string) (string, string, string, string) {
 	x, _ := LexLine(s)
 	log.Printf("Parsed line into %v", strings.Join(x, ":"))
@@ -898,6 +908,8 @@ func BreakSentence(s string) (string, string, string, string) {
 	return verb, strings.Join(do, " "), prep, strings.Join(io, " ")
 
 }
+
+//Set a verb property on an object
 func SetThroffVerb(obj, name, code string) {
 	log.Println("SetThroffVerb: ", obj, name, code)
 	o := LoadObject(obj)
@@ -910,7 +922,7 @@ func SetThroffVerb(obj, name, code string) {
 	o.Properties[name] = v
 	SaveObject(o)
 }
-
+//Set a verb property on an object
 func SetXshVerb(obj, name, code string) {
 	log.Println("SetXshVerb: ", obj, name, code)
 	o := LoadObject(obj)

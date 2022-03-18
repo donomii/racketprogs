@@ -8,14 +8,16 @@ import (
 	"net/http"
 )
 
-func Receiver(url string, callback func([]byte)) {
+func Receiver(url, channel string, callback func([]byte)) {
 	for {
 		resp, err := http.Get(url + "/subscribe/main")
 		if err != nil {
 			//log.Fatalln(err)
 		} else {
-			data, _ := ioutil.ReadAll(resp.Body)
-			callback(data)
+			data, err := ioutil.ReadAll(resp.Body)
+			if err == nil && data != nil {
+				callback(data)
+			}
 		}
 	}
 }
