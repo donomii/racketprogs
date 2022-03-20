@@ -1,7 +1,7 @@
 all: deps build init install
 
 deps:
-	go get -v "github.com/google/uuid" "github.com/gin-gonic/gin" "github.com/philippgille/gokv/badgerdb" "github.com/donomii/throfflib"
+	go get -v "github.com/google/uuid" "github.com/gin-gonic/gin" "github.com/philippgille/gokv/badgerdb" "github.com/donomii/throfflib" "github.com/pterm/pterm" "github.com/nsf/termbox-go"
 
 clean:
 	rm -r build
