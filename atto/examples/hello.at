@@ -1,0 +1,29 @@
+fn ++ a b is __strconcat a b
+
+fn hello is 
+	print fuse "hello " "world"
+
+fn testwords is
+	print  tail words "hello world"
+
+fn greet name is
+	print ++ "Hello " ++ name ", how are you?" 
+
+fn testQuote is
+	# print "greet"
+	# print "fn"
+	  print "lalala"
+
+fn testHead is 
+	# print head pair "hello" "world"
+	# print head "world"
+	print head null
+
+fn main is 
+	# hello
+	# testwords
+	# print ++ 2 ++ " plus " ++ 3 ++ " is "  + 2 3
+	# testQuote
+	# testHead
+	greet input "What is your name?"
+

@@ -457,10 +457,6 @@ You will see different options depending on whether you put the cursor on a word
 [define [load-ctags-file a-path] [map [lambda [x] [string-split  x #px"\t+|\\s+" ]] [file->lines a-path] ]]
 
 
-
-
-
-
 [define [format-ctags-results results]
   [debug "Formatting ctags results: ~a" results]
   [map [lambda [tag-data]

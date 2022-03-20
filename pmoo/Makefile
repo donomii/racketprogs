@@ -1,23 +1,31 @@
-all: deps build install
+all: deps build init install
 
 deps:
-	go get -u -v "github.com/google/uuid" "github.com/gin-gonic/gin" "github.com/philippgille/gokv/badgerdb" "github.com/donomii/throfflib"
+	go get -v "github.com/google/uuid" "github.com/gin-gonic/gin" "github.com/philippgille/gokv/badgerdb" "github.com/donomii/throfflib"
 
 clean:
 	rm -r build
 
-build: *.go
+build: *.go Makefile ../xsh/main.go ../xsh/stdlib.xsh ../pmoolib/main.go ../xsh/*
 	mkdir build || true
 	mkdir build/objects || true
 	go build -o build/pmoo -v .
 	go build -o build/queue -v ../queue/
+	go build -o build/xshguardian -v ../xsh/cmd/xshguardian/
+
+init:
 	cd build && ./pmoo --init
-	cd build && cat ../create.txt | ./pmoo --batch --debug
+	cd build && cat ../create.txt | ./pmoo  --debug --raw --batch
+
+localinstall: build
+	cp build/pmoo ~/.local/bin/
+	cp build/pmoo ~/.local/bin/p
+	cp build/queue ~/.local/bin/
 
 install: build
-	cp pmoo ~/.local/bin/
-	cp pmoo ~/.local/bin/p
-	cp queue ~/.local/bin/
+	cp build/pmoo /usr/local/bin/
+	cp build/pmoo /usr/local/bin/p
+	cp build/queue /usr/local/bin/
 
 run:
 	./pmoo

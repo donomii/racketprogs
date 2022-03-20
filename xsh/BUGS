@@ -1,0 +1,15 @@
+Parser
+
+{x| puts x} works fine.
+
+{x|puts x} fails.
+
+Parser
+
+A comment causes the next line to fail.
+
+	#A comment
+	puts x
+
+
+prints nothing

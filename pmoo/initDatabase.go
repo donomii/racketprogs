@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	. "./pmoolib"
+	. "../pmoolib"
 )
 
 //Writes the core objects to disk. Overwrites any that already exist.
@@ -31,11 +31,14 @@ func initDB() {
 	prop := Property{Value: ` SetProp dobj dpropstr iobjstr `, Verb: true, Throff: true, Interpreter: "throff"}
 	rootObj.Properties["property"] = prop
 
-	ver := Property{Value: `SetVerb dobj dpropstr iobjstr`, Verb: true, Interpreter: "yaegi"}
+	ver := Property{Value: `SetVerb dobj dpropstr iobjstr yaegi`, Verb: true, Interpreter: "throff"}
 	rootObj.Properties["verb.goscript"] = ver
 
 	thr := Property{Value: `SetThroffVerb dobj dpropstr iobjstr`, Verb: true, Throff: true, Interpreter: "throff"}
 	rootObj.Properties["verb.throff"] = thr
+
+	xsh := Property{Value: `SetXshVerb dobj dpropstr iobjstr`, Verb: true, Throff: true, Interpreter: "throff"}
+	rootObj.Properties["verb.xsh"] = xsh
 
 	log.Println("Overwriting Player 1")
 	playerobj := Object{}

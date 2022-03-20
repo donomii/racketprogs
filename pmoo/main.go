@@ -1,41 +1,72 @@
 package main
 
 import (
-	"time"
 	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
+	"regexp"
 	"runtime/debug"
 	"strings"
+	"time"
+
+	"../xsh"
 
 	"github.com/chzyer/readline"
 	"github.com/donomii/goof"
 
 	//. "github.com/donomii/pmoo"
-	. "./pmoolib"
-	pmoo "./pmoolib"
+	"../autoparser"
+	. "../pmoolib"
+	pmoo "../pmoolib"
 	"github.com/donomii/throfflib"
 	"github.com/traefik/yaegi/interp"
 )
+
+var DefaultPlayerId = "2"
+var DefaultSystemCore = "7"
 
 func ConsoleInputHandler(queue chan *Message) {
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
 		//fmt.Print("Enter text: ")
-		text, _ := reader.ReadString('\n')
+		text, err := reader.ReadString('\n')
+		if err != nil {
+
+			if batch {
+				log.Println("Waiting for commands to finish...")
+				time.Sleep(time.Millisecond * 5000)
+			}
+			if err == io.EOF {
+				log.Println("Input complete")
+				os.Exit(0)
+			} else {
+				log.Println("Readline error:", err)
+				os.Exit(1)
+			}
+		}
 		text = strings.TrimSuffix(text, "\r\n")
 		text = strings.TrimSuffix(text, "\n")
 		if text != "" {
-			//Console is always the wizard, at least for now
-			InputMsg("2", "7", "input", text)
+			//fmt.Printf("Examining input: %s\n", text[:2])
+			if text[:2] == "x " {
+				fmt.Println(xshRun(text[2:], DefaultPlayerId))
+			} else {
+				fmt.Printf("ConsoleInputHandler: %s\n", text)
+				//Console is always the wizard, at least for now
+				InputMsg(DefaultPlayerId, DefaultSystemCore, "input", text)
+			}
 		}
+		time.Sleep(time.Millisecond * 2000)
+
 	}
+
 }
 
 func listVerbs(player string) func(string) []string {
@@ -46,10 +77,57 @@ func listVerbs(player string) func(string) []string {
 	}
 }
 
-func ReadLineInputHandler(queue chan *Message, player string) {
+func xshRun(text, player string) string {
+	//fmt.Printf("Evalling xsh %v\n", text)
+	xsh.WantDebug = false
+	state := xsh.New()
+	addPmooTypes(state)
+	xsh.UsePterm = false
+	state.UserData = player
+	state.ExtraBuiltins = xshBuiltins
+	//xsh.Eval(state, xsh.Stdlib_str, "stdlib")
+	//res := xsh.Eval(state, text, "pmoo")
+	//fmt.Printf("Result: %+v\n", res)
+	//l := []autoparser.Node{res}
+	//resstr := xsh.TreeToXsh(l)
+	//fmt.Printf("Result: %+v\n", resstr)
+	std := xsh.Parse(xsh.Stdlib_str, "stdlib")
+	xsh.Run(state, std)
+	xsh.WantDebug = pmooDebug
+
+	tr := xsh.Parse(text, "pmoo")
+	//fmt.Printf("Substituting pmoo vars\n")
+	tr = subsitutePmooVars(tr)
+	res := xsh.Run(state, tr)
+	l := []autoparser.Node{res}
+	resstr := xsh.TreeToXsh(l)
+
+	return resstr
+}
+
+func keys(m map[string][]string) []string {
+	out := []string{}
+	for k, _ := range m {
+		out = append(out, k)
+	}
+	return out
+}
+
+func listFuncs(xshEngine xsh.State) func(string) []string {
+	return func(string) []string {
+		return keys(xshEngine.TypeSigs)
+	}
+}
+func ReadLineInputHandler(queue chan *Message) {
+	xsh.WantDebug = false
+	xshEngine := xsh.New()
+	addPmooTypes(xshEngine)
+	xshEngine.ExtraBuiltins = xshBuiltins
+	xsh.WantDebug = pmooDebug
 
 	var completer = readline.NewPrefixCompleter(
-		readline.PcItemDynamic(listVerbs(player)))
+		readline.PcItemDynamic(listVerbs(DefaultPlayerId)),
+		readline.PcItem("x", readline.PcItemDynamic(listFuncs(xshEngine))))
 
 	l, err := readline.NewEx(&readline.Config{
 		Prompt:          "",
@@ -65,8 +143,9 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 	}
 	for {
 		completer = readline.NewPrefixCompleter(
-		readline.PcItemDynamic(listVerbs(player)))
-		fmt.Print ("\033[31m»\033[0m ")
+			readline.PcItemDynamic(listVerbs(DefaultPlayerId)),
+			readline.PcItem("x", readline.PcItemDynamic(listFuncs(xshEngine))))
+		fmt.Print("\033[31m»\033[0m ")
 		text, err := l.Readline()
 		if batch {
 			fmt.Print(text)
@@ -79,81 +158,93 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 		}
 
 		if err != nil {
-			log.Println("Readline error:", err,"Exiting once queue is empty")
-			QuitOnEmptyQueue = true
+			log.Println("Readline error:", err, "Exiting...")
+
+			os.Exit(1)
 		}
 		text = strings.TrimSuffix(text, "\r\n")
 		text = strings.TrimSuffix(text, "\n")
 		if text == "exit" {
+			fmt.Println("Exiting...")
 			os.Exit(0)
 		}
 		if text != "" {
-			//Console is always the wizard, at least for now
-			InputMsg("2", "7", "input", text)
+			if len(text) < 3 {
+				fmt.Println("Too short")
+				continue
+			}
+			//fmt.Printf("Examining input: '%s'\n", text[:2])
+			if text[:2] == "x " {
+				fmt.Println(xshRun(text[2:], DefaultPlayerId))
+			} else {
+				//Console is always the wizard, at least for now
+				InputMsg(DefaultPlayerId, DefaultSystemCore, "input", text)
+			}
 		}
 	}
 	l.Close()
 }
 
 var Affinity string
-var QuitOnEmptyQueue bool
 var batch bool
+var pmooDebug bool
 
 func main() {
-	etcdServer := ""
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	var init bool
 	var RawTerm bool
 	var inQ chan *Message = make(chan *Message, 100)
-	player := "2"
 	cmdProg := path.Base(os.Args[0])
-	debug := false
+	pmooDebug = false
 
-	flag.BoolVar(&debug, "debug", false, "Print log messages")
+	flag.BoolVar(&pmooDebug, "debug", false, "Print log messages")
 	flag.BoolVar(&init, "init", false, "Create basic objects.  Overwrites existing")
 	flag.BoolVar(&batch, "batch", false, "Batch mode.  Wait for each command to finish before starting next.")
 	flag.BoolVar(&Cluster, "cluster", false, "Run in cluster mode.  See instructions in README.")
-	flag.BoolVar(&ClusterQueue, "clusterQ", false, "Run messages in cluster mode.  See instructions in README.")
-	//flag.StringVar(&queueServer, "queue", "127.0.0.1:2888", "Location of queue server.")
 	flag.StringVar(&QueueServer, "queue", "http://127.0.0.1:8080", "Location of queue server.")
-	flag.StringVar(&Affinity, "affinity", "7", "Will process all messages with this affinity id.")
+	flag.StringVar(&Affinity, "affinity", DefaultSystemCore, "Will exclusively process all messages with this affinity id.")
 	flag.BoolVar(&RawTerm, "raw", false, "Batch mode.  No shell enhancements, read directly from STDIN.  Works with rlwrap.")
 
 	flag.Parse()
-
-	if !debug {
+	if pmooDebug {
+		xsh.WantDebug = true
+	} else {
 		log.SetOutput(ioutil.Discard)
-		}
+	}
 
 	SetQ(inQ)
 
 	if cmdProg == "p" {
-
 		//fmt.Println("Single command mode")
 		dataDir := goof.HomeDirectory() + "/.pmoo/objects"
 		os.MkdirAll(dataDir, 0600)
 		SetDataDir(dataDir)
 		log.Println("Using MOO in", pmoo.DataDir)
-		QuitOnEmptyQueue = true
 		args := append(flag.Args(), "", "", "")
-		RawMsg(Message{Player: player, This: "7", Verb: "%commandline", Args: args, Ticks: DefaultTicks})
+		RawMsg(Message{Player: DefaultPlayerId, This: DefaultSystemCore, Verb: "%commandline", Args: args, Ticks: DefaultTicks})
 	} else {
-
-		SetEtcdServers([]string{etcdServer})
 		if Cluster {
 			//okdb.Connect("192.168.178.22:7778")
 
-		}
-		if ClusterQueue {
 			//go StartClient(QueueServer)
 			SetQueueServer(QueueServer)
-			go Receiver(QueueServer, func(b []byte) {
+			go Receiver(QueueServer, "main", func(b []byte) {
 				var m Message
-				json.Unmarshal(b, &m)
-				Q <- &m
+				err := json.Unmarshal(b, &m)
+				if err == nil {
+					inQ <- &m
+				}
+			})
+			go Receiver(QueueServer, DefaultSystemCore, func(b []byte) {
+				var m Message
+				err := json.Unmarshal(b, &m)
+				if err == nil {
+					inQ <- &m
+				}
 			})
 			log.Println("Using MOO in cluster", QueueServer)
 		} else {
-			if !goof.Exists(pmoo.DataDir){
+			if !goof.Exists(pmoo.DataDir) {
 				dataDir := goof.HomeDirectory() + "/.pmoo/objects"
 				os.MkdirAll(dataDir, 0600)
 				SetDataDir(dataDir)
@@ -163,37 +254,35 @@ func main() {
 
 		if init {
 			initDB()
+			fmt.Println("Initialised database, exiting\n")
 			os.Exit(0)
 		}
 
 		if RawTerm {
 			go ConsoleInputHandler(inQ)
 		} else {
-			go ReadLineInputHandler(inQ, player)
+			go ReadLineInputHandler(inQ)
 		}
 	}
 
-	MOOloop(inQ, player)
+	MOOloop(inQ)
 }
-func MOOloop(inQ chan *Message, player string) {
+func MOOloop(inQ chan *Message) {
 	for {
-		log.Println("Waiting on Q")
-		if QuitOnEmptyQueue && len(inQ) == 0 {
-			log.Println("queue empty, exiting")
-			os.Exit(0)
-		}
+		log.Println("Waiting on queue", len(inQ), "/", cap(inQ))
+
 		m := <-inQ
 		log.Println("Q:", m)
 		if m.Ticks < 1 {
 			log.Println("Audit: Dropped message because it timed out:", m)
 		}
-		if m.Affinity != "" && m.Affinity != Affinity && ClusterQueue && Affinity != "" {
+		if m.Affinity != "" && m.Affinity != Affinity && Cluster && Affinity != "" {
 			//Put this message back in the queue so the right server can get it
 			//FIXME add queues for each server so we can send it directly to the right machine
 			MyQMessage(QueueServer, m)
 			continue
 		}
-		if m.This != "7" {
+		if m.This != DefaultSystemCore {
 			log.Println("Handling direct message")
 
 			if m.This != "" && m.Player != "" && m.Verb != "" { //Skip broken messages
@@ -219,15 +308,14 @@ func MOOloop(inQ chan *Message, player string) {
 		}
 
 		log.Println(strings.Join([]string{verb, dobjstr, prepstr, iobjstr}, ":"))
-		dobj, dpropstr := ParseDo(dobjstr, player)
-		iobj, ipropstr := ParseDo(iobjstr, player)
+		dobj, dpropstr := ParseDirectObject(dobjstr, DefaultPlayerId)
+		iobj, ipropstr := ParseDirectObject(iobjstr, DefaultPlayerId)
 
-		log.Printf("Searching for verb '%v' in '%v'", verb, player)
-		thisObj, _ := VerbSearch(LoadObject(player), verb)
+		thisObj, _ := VerbSearch(DefaultPlayerId, verb)
 
 		if thisObj == nil {
 			msg := fmt.Sprintf("Verb '%v' not found!\n", verb)
-			RawMsg(Message{From: "7", Player: player, Verb: "notify", Dobjstr: msg, Ticks: m.Ticks - 100})
+			RawMsg(Message{From: DefaultSystemCore, Player: DefaultPlayerId, Verb: "notify", Dobjstr: msg, Ticks: m.Ticks - 100})
 
 		} else {
 			this := ToStr(thisObj.Id)
@@ -235,18 +323,108 @@ func MOOloop(inQ chan *Message, player string) {
 			log.Println("Props", thisObj.Properties)
 			log.Println("Found affinity:", affin)
 
-			if ClusterQueue {
+			if Cluster {
 				log.Println("Handling input - Queueing direct message")
 				//SendNetMessage(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: this.affin})
-				MyQMessage(QueueServer, Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: affin, Args: args, Ticks: m.Ticks})
+				MyQMessage(QueueServer, Message{Player: DefaultPlayerId, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: affin, Args: args, Ticks: m.Ticks})
 				//time.Sleep(1 * time.Second) //FIXME
 			} else {
-				RawMsg(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Args: args, Ticks: m.Ticks - 100})
+				RawMsg(Message{Player: DefaultPlayerId, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Args: args, Ticks: m.Ticks - 100})
 			}
 
 		}
 
 	}
+}
+
+func addPmooTypes(s xsh.State) {
+	s.TypeSigs["setprop"] = []string{"void", "string", "string", "string"}
+	s.TypeSigs["allobjects"] = []string{"list"}
+	s.TypeSigs["findobject"] = []string{"string", "string"}
+	s.TypeSigs["clone"] = []string{"string", "string", "string"}
+	s.TypeSigs["formatobject"] = []string{"string", "string"}
+	s.TypeSigs["move"] = []string{"void", "string", "string"} //Should be bool?
+	s.TypeSigs["getprop"] = []string{"string", "string", "string"}
+	s.TypeSigs["setverb"] = []string{"void", "string", "string", "string", "string"}
+	s.TypeSigs["msg"] = []string{"void", "string", "string", "string", "string", "string", "string"}
+	s.TypeSigs["become"] = []string{"bool", "string", "string"}
+	s.TypeSigs["o"] = []string{"string", "string"}
+}
+func become(player, affinity string) bool {
+	DefaultPlayerId = player
+	pmoo.SetProp(player, "affinity", affinity)
+	fmt.Printf("Became player id: %v on node: %v\n", DefaultPlayerId, affinity)
+	return true
+}
+func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node, level int) (autoparser.Node, bool) {
+	player := s.UserData.(string)
+	if len(command) > 0 {
+		c, err := xsh.ListToStrings(command)
+		if err != nil {
+			//log.Println("Error converting command to string:", err)
+		} else {
+			//fmt.Printf("Running custom handler for command %v\n", c)
+			switch c[0] {
+			case "become":
+				return xsh.Bool(become(c[1], c[2])), become(c[1], c[2])
+			case "setprop":
+				SetProp(c[1], c[2], c[3])
+				return command[3], true
+			case "findobject":
+				num := GetObjectByName(player, c[1])
+				fmt.Println("Searched for object", c[1], "found", num)
+				if num != "" {
+					return xsh.N(num), true
+				}
+				return xsh.Void(command[0]), true
+			case "getprop":
+				return xsh.N(GetProp(c[1], c[2])), true
+			case "clone":
+				return xsh.N(Clone(c[1], c[2])), true
+			case "formatobject":
+				fmt.Printf("Formatting object from args: %v\n", c)
+				return xsh.N(FormatObject(c[1])), true
+			case "move":
+				return xsh.Bool(MoveObj(c[1], c[2])), true
+			case "setverb":
+				obj := c[1]
+				prop := c[2]
+				interpreter := c[3]
+				value := c[4]
+				SetVerb(obj, prop, value, interpreter)
+				return xsh.Void(command[0]), true
+			case "msg":
+				from := c[1]
+				target := c[2]
+				verb := c[3]
+				dobj := c[4]
+				prep := c[5]
+				iobj := c[6]
+
+				thisObj := LoadObject(target)
+				affin := thisObj.Properties["affinity"].Value
+				//log.Printf("From: %v, Target: %v, Verb: %v, Dobj: %v, Prep: %v, Iobj: %v\n", from.GetString(), target.GetString(), verb.GetString(), dobj.GetString(), prep.GetString(), iobj.GetString())
+
+				if Cluster {
+					//SendNetMessage(Message{From: from.GetString(), Player: player, This: target.GetString(), Verb: verb.GetString(), Dobj: dobj.GetString(), Prepstr: prep.GetString(), Iobj: iobj.GetString(), Trace: traceId})
+					MyQMessage(QueueServer, Message{From: from, Player: player, This: target, Verb: verb, Dobj: dobj, Prepstr: prep, Iobj: iobj, Trace: "FIXME", Affinity: affin, Ticks: DefaultTicks})
+				} else {
+					RawMsg(Message{From: player, Player: player, This: target, Verb: verb, Dobj: dobj, Prepstr: prep, Iobj: iobj, Trace: "FIXME", Ticks: DefaultTicks})
+				}
+				return xsh.Void(command[0]), true
+			case "o":
+				num := GetObjectByName(player, c[1])
+				fmt.Println("Searched for object", c[1], "found", num)
+				if num != "" {
+					return xsh.N(num), true
+				}
+				return xsh.Void(command[0]), true
+
+			}
+		}
+	}
+	return autoparser.Node{}, false
+
 }
 
 //Actually evaluate the verb
@@ -263,18 +441,23 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 	if verbStruct == nil {
 		fmt.Printf("Failed to lookup '%v' on %v\n", verb, this)
 	} else {
-		if verbStruct.Throff {
+		log.Printf("Starting %+v\n", verbStruct)
+
+		switch verbStruct.Interpreter {
+		case "":
+			fallthrough
+		case "throff":
 			t := throfflib.MakeEngine()
 			AddEngineFuncs(t, player, this, "0")
 			t = t.RunString(throfflib.BootStrapString(), "Internal Bootstrap")
 			args := throfflib.StringsToArray(m.Args)
-			code = verbStruct.Value
+			code = code + verbStruct.Value
 			log.Println("Throff program: ", code)
 			//code = code + "  PRINTLN A[ ^player: player ]A PRINTLN A[ ^this: this ]A PRINTLN  A[ ^verb: verb ]A PRINTLN   A[ ^dobjstr: dobjstr ]A PRINTLN A[ ^dpropstr: dpropstr ]A PRINTLN  A[ ^prepstr: prepstr ]A  PRINTLN A[ ^iobjstr: iobjstr ]A   PRINTLN A[ ^ipropstr: ipropstr ]A PRINTLN [ ]  "
 			code = code + " ARG args TOK ARG player TOK   ARG  this TOK   ARG verb TOK   ARG  dobj TOK   ARG dpropstr TOK   ARG prepstr TOK  ARG iobj TOK   ARG ipropstr TOK   ARG dobjstr TOK   ARG iobjstr TOK SAFETYON "
 			t = throfflib.PushData(t, args)
 			t.CallArgs(code, player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr)
-		} else {
+		case "yaegi":
 			log.Println("Goscript program: ", code)
 			var goScript *interp.Interpreter
 			goScript = NewInterpreter()
@@ -285,6 +468,47 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 			code = BuildDefinitions(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr)
 			code = code + verbStruct.Value
 			Eval(goScript, code)
+		case "xsh":
+
+			xsh.WantDebug = false
+			state := xsh.New()
+			addPmooTypes(state)
+			state.ExtraBuiltins = xshBuiltins
+			state.UserData = player
+			code = BuildXshCode(verbStruct.Value, player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr)
+			log.Println("xsh program: ", code)
+			std := xsh.Parse(xsh.Stdlib_str, "stdlib")
+			xsh.Run(state, std)
+			xsh.WantDebug = pmooDebug
+			tr := xsh.Parse(code, "pmoo")
+			//fmt.Printf("Substituting pmoo vars\n")
+			tr = subsitutePmooVars(tr)
+			log.Printf("Running xsh program: %v\n", tr)
+			xsh.Run(state, tr)
+		default:
+			log.Println("Unknown interpreter: ", verbStruct.Interpreter)
 		}
 	}
+}
+
+func subsitutePmooVars(code []autoparser.Node) []autoparser.Node {
+	//fmt.Printf("Substituting vars in %+v\n", code)
+	out := xsh.TreeMap(func(n autoparser.Node) autoparser.Node {
+		str := xsh.S(n)
+		//fmt.Printf("Examining %v\n", str)
+		if strings.HasPrefix(str, "%") {
+			re := regexp.MustCompile("\\%([^.])+\\.?(.+)?")
+			res := re.FindString(str)
+			fmt.Printf("Matched object ref: %v\n", res)
+			objStr := string(res[1:])
+			fmt.Printf("Looking up object '%v'\n", objStr)
+			id := GetObjectByName(DefaultPlayerId, objStr)
+			fmt.Printf("Found object %v\n", id)
+			return xsh.N(fmt.Sprintf("%v", id))
+		}
+
+		return n
+
+	}, code)
+	return out
 }

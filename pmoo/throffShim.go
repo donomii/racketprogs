@@ -2,7 +2,7 @@ package main
 
 import (
 	//. "github.com/donomii/pmoo"
-	. "./pmoolib"
+	. "../pmoolib"
 	"github.com/donomii/throfflib"
 )
 
@@ -33,7 +33,7 @@ func AddEngineFuncs(e *throfflib.Engine, player, from, traceId string) {
 		affin := thisObj.Properties["affinity"].Value
 		//log.Printf("From: %v, Target: %v, Verb: %v, Dobj: %v, Prep: %v, Iobj: %v\n", from.GetString(), target.GetString(), verb.GetString(), dobj.GetString(), prep.GetString(), iobj.GetString())
 
-		if ClusterQueue {
+		if Cluster {
 			//SendNetMessage(Message{From: from.GetString(), Player: player, This: target.GetString(), Verb: verb.GetString(), Dobj: dobj.GetString(), Prepstr: prep.GetString(), Iobj: iobj.GetString(), Trace: traceId})
 			MyQMessage(QueueServer, Message{From: from.GetString(), Player: player, This: target.GetString(), Verb: verb.GetString(), Dobj: dobj.GetString(), Prepstr: prep.GetString(), Iobj: iobj.GetString(), Trace: traceId, Affinity: affin, Ticks: DefaultTicks})
 		} else {
@@ -61,7 +61,7 @@ func AddEngineFuncs(e *throfflib.Engine, player, from, traceId string) {
 		obj, ne := throfflib.PopData(ne)
 
 		//do something with it
-		out := Clone(obj.GetString())
+		out := Clone(obj.GetString(), GetProp(player, "location"))
 
 		//Push the result into the engine
 		o := throfflib.NewString(out, throfflib.Environment(e))
@@ -90,14 +90,6 @@ func AddEngineFuncs(e *throfflib.Engine, player, from, traceId string) {
 		return ne
 	}))
 
-	e = throfflib.Add(e, "FINDOBJECT", throfflib.NewCode("FINDOBJECT", 1, 1, 0, func(ne *throfflib.Engine, c *throfflib.Thingy) *throfflib.Engine {
-
-		name, ne := throfflib.PopData(ne)
-
-		FindObjectByName(player, name.GetString())
-		return ne
-	}))
-
 	e = throfflib.Add(e, "SetThroffVerb", throfflib.NewCode("SetThroffVerb", 3, 3, 0, func(ne *throfflib.Engine, c *throfflib.Thingy) *throfflib.Engine {
 
 		obj, ne := throfflib.PopData(ne)
@@ -105,6 +97,16 @@ func AddEngineFuncs(e *throfflib.Engine, player, from, traceId string) {
 		code, ne := throfflib.PopData(ne)
 
 		SetThroffVerb(obj.GetString(), name.GetString(), code.GetString())
+		return ne
+	}))
+
+	e = throfflib.Add(e, "SetXshVerb", throfflib.NewCode("SetXshVerb", 3, 3, 0, func(ne *throfflib.Engine, c *throfflib.Thingy) *throfflib.Engine {
+
+		obj, ne := throfflib.PopData(ne)
+		name, ne := throfflib.PopData(ne)
+		code, ne := throfflib.PopData(ne)
+
+		SetXshVerb(obj.GetString(), name.GetString(), code.GetString())
 		return ne
 	}))
 
