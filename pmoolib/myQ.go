@@ -3,6 +3,7 @@ package pmoo
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 
 	"net/http"
@@ -23,15 +24,19 @@ func Receiver(url, channel string, callback func([]byte)) {
 }
 
 func MyQMessage(url string, mess interface{}) {
-	json, _ := json.Marshal(mess)
+	json, err := json.Marshal(mess)
+	if err != nil {
+		panic("could not marshal message" + fmt.Sprintf("%v:%v", err, mess))
+	}
 	Send(url, json)
 }
 
 func Send(url string, data []byte) {
 	resp, err := http.Post(url+"/publish/main", "who/cares", bytes.NewReader(data))
 	if err != nil {
+		fmt.Printf("Could not send message: %v\n", err)
 		return
-		//log.Fatalln(err)
+		//log.Fatall(err)
 	}
 	defer resp.Body.Close()
 }

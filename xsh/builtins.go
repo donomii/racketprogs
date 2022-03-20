@@ -54,10 +54,15 @@ func addBuiltinTypes(s State) {
 	s.TypeSigs["id"] = []string{"any", "any"}
 	s.TypeSigs["and"] = []string{"string", "string"}
 	s.TypeSigs["or"] = []string{"string", "string"}
-	s.TypeSigs["tron"] = []string{"void", "string"}
+	s.TypeSigs["tron"] = []string{"void"}
 	s.TypeSigs["troff"] = s.TypeSigs["tron"]
 	s.TypeSigs["dron"] = s.TypeSigs["tron"]
 	s.TypeSigs["droff"] = s.TypeSigs["tron"]
+	s.TypeSigs["debug"] = []string{"void", "string"}
+	s.TypeSigs["trace"] = s.TypeSigs["debug"]
+	s.TypeSigs["warn"] = s.TypeSigs["debug"]
+	s.TypeSigs["errors"] = s.TypeSigs["debug"]
+	s.TypeSigs["inform"] = s.TypeSigs["debug"]
 }
 func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f string, args []autoparser.Node, level int) autoparser.Node {
 	switch f {

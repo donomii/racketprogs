@@ -12,6 +12,7 @@ import (
 	"path"
 	"regexp"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"time"
 
@@ -324,12 +325,15 @@ func MOOloop(inQ chan *Message) {
 			log.Println("Found affinity:", affin)
 
 			if Cluster {
-				log.Println("Handling input - Queueing direct message")
+				msg := Message{Player: DefaultPlayerId, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: affin, Args: args, Ticks: m.Ticks}
+				log.Println("Handling input - Queueing direct message:", msg)
 				//SendNetMessage(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: this.affin})
-				MyQMessage(QueueServer, Message{Player: DefaultPlayerId, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: affin, Args: args, Ticks: m.Ticks})
+				MyQMessage(QueueServer, msg)
 				//time.Sleep(1 * time.Second) //FIXME
 			} else {
-				RawMsg(Message{Player: DefaultPlayerId, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Args: args, Ticks: m.Ticks - 100})
+				msg := Message{Player: DefaultPlayerId, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Args: args, Ticks: m.Ticks - 100}
+				log.Println("Handling input - Invoking direct message:", msg)
+				RawMsg(msg)
 			}
 
 		}
@@ -348,6 +352,7 @@ func addPmooTypes(s xsh.State) {
 	s.TypeSigs["setverb"] = []string{"void", "string", "string", "string", "string"}
 	s.TypeSigs["msg"] = []string{"void", "string", "string", "string", "string", "string", "string"}
 	s.TypeSigs["become"] = []string{"bool", "string", "string"}
+	s.TypeSigs["sleep"] = []string{"void", "string"}
 	s.TypeSigs["o"] = []string{"string", "string"}
 }
 func become(player, affinity string) bool {
@@ -365,6 +370,9 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 		} else {
 			//fmt.Printf("Running custom handler for command %v\n", c)
 			switch c[0] {
+			case "sleep":
+				duration, _ := strconv.ParseInt(c[1], 10, 64)
+				time.Sleep(time.Duration(duration) * time.Millisecond)
 			case "become":
 				return xsh.Bool(become(c[1], c[2])), become(c[1], c[2])
 			case "setprop":
