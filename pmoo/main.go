@@ -12,6 +12,7 @@ import (
 	"path"
 	"regexp"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"time"
 
@@ -31,7 +32,7 @@ import (
 var DefaultPlayerId = "2"
 var DefaultSystemCore = "7"
 
-func ConsoleInputHandler(queue chan *Message, player string) {
+func ConsoleInputHandler(queue chan *Message) {
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
@@ -56,11 +57,11 @@ func ConsoleInputHandler(queue chan *Message, player string) {
 		if text != "" {
 			//fmt.Printf("Examining input: %s\n", text[:2])
 			if text[:2] == "x " {
-				fmt.Println(xshRun(text[2:], player))
+				fmt.Println(xshRun(text[2:], DefaultPlayerId))
 			} else {
 				fmt.Printf("ConsoleInputHandler: %s\n", text)
 				//Console is always the wizard, at least for now
-				InputMsg(player, DefaultSystemCore, "input", text)
+				InputMsg(DefaultPlayerId, DefaultSystemCore, "input", text)
 			}
 		}
 		time.Sleep(time.Millisecond * 2000)
@@ -118,7 +119,7 @@ func listFuncs(xshEngine xsh.State) func(string) []string {
 		return keys(xshEngine.TypeSigs)
 	}
 }
-func ReadLineInputHandler(queue chan *Message, player string) {
+func ReadLineInputHandler(queue chan *Message) {
 	xsh.WantDebug = false
 	xshEngine := xsh.New()
 	addPmooTypes(xshEngine)
@@ -126,7 +127,7 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 	xsh.WantDebug = pmooDebug
 
 	var completer = readline.NewPrefixCompleter(
-		readline.PcItemDynamic(listVerbs(player)),
+		readline.PcItemDynamic(listVerbs(DefaultPlayerId)),
 		readline.PcItem("x", readline.PcItemDynamic(listFuncs(xshEngine))))
 
 	l, err := readline.NewEx(&readline.Config{
@@ -143,7 +144,7 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 	}
 	for {
 		completer = readline.NewPrefixCompleter(
-			readline.PcItemDynamic(listVerbs(player)),
+			readline.PcItemDynamic(listVerbs(DefaultPlayerId)),
 			readline.PcItem("x", readline.PcItemDynamic(listFuncs(xshEngine))))
 		fmt.Print("\033[31m»\033[0m ")
 		text, err := l.Readline()
@@ -175,7 +176,7 @@ func ReadLineInputHandler(queue chan *Message, player string) {
 			}
 			//fmt.Printf("Examining input: '%s'\n", text[:2])
 			if text[:2] == "x " {
-				fmt.Println(xshRun(text[2:], player))
+				fmt.Println(xshRun(text[2:], DefaultPlayerId))
 			} else {
 				//Console is always the wizard, at least for now
 				InputMsg(DefaultPlayerId, DefaultSystemCore, "input", text)
@@ -191,11 +192,9 @@ var pmooDebug bool
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	etcdServer := ""
 	var init bool
 	var RawTerm bool
 	var inQ chan *Message = make(chan *Message, 100)
-	player := DefaultPlayerId
 	cmdProg := path.Base(os.Args[0])
 	pmooDebug = false
 
@@ -203,14 +202,11 @@ func main() {
 	flag.BoolVar(&init, "init", false, "Create basic objects.  Overwrites existing")
 	flag.BoolVar(&batch, "batch", false, "Batch mode.  Wait for each command to finish before starting next.")
 	flag.BoolVar(&Cluster, "cluster", false, "Run in cluster mode.  See instructions in README.")
-	flag.BoolVar(&ClusterQueue, "clusterQ", false, "Run messages in cluster mode.  See instructions in README.")
-	//flag.StringVar(&queueServer, "queue", "127.0.0.1:2888", "Location of queue server.")
 	flag.StringVar(&QueueServer, "queue", "http://127.0.0.1:8080", "Location of queue server.")
-	flag.StringVar(&Affinity, "affinity", DefaultSystemCore, "Will process all messages with this affinity id.")
+	flag.StringVar(&Affinity, "affinity", DefaultSystemCore, "Will exclusively process all messages with this affinity id.")
 	flag.BoolVar(&RawTerm, "raw", false, "Batch mode.  No shell enhancements, read directly from STDIN.  Works with rlwrap.")
 
 	flag.Parse()
-
 	if pmooDebug {
 		xsh.WantDebug = true
 	} else {
@@ -226,16 +222,21 @@ func main() {
 		SetDataDir(dataDir)
 		log.Println("Using MOO in", pmoo.DataDir)
 		args := append(flag.Args(), "", "", "")
-		RawMsg(Message{Player: player, This: DefaultSystemCore, Verb: "%commandline", Args: args, Ticks: DefaultTicks})
+		RawMsg(Message{Player: DefaultPlayerId, This: DefaultSystemCore, Verb: "%commandline", Args: args, Ticks: DefaultTicks})
 	} else {
-		SetEtcdServers([]string{etcdServer})
 		if Cluster {
 			//okdb.Connect("192.168.178.22:7778")
-		}
-		if ClusterQueue {
+
 			//go StartClient(QueueServer)
 			SetQueueServer(QueueServer)
-			go Receiver(QueueServer, func(b []byte) {
+			go Receiver(QueueServer, "main", func(b []byte) {
+				var m Message
+				err := json.Unmarshal(b, &m)
+				if err == nil {
+					inQ <- &m
+				}
+			})
+			go Receiver(QueueServer, DefaultSystemCore, func(b []byte) {
 				var m Message
 				err := json.Unmarshal(b, &m)
 				if err == nil {
@@ -259,15 +260,15 @@ func main() {
 		}
 
 		if RawTerm {
-			go ConsoleInputHandler(inQ, player)
+			go ConsoleInputHandler(inQ)
 		} else {
-			go ReadLineInputHandler(inQ, player)
+			go ReadLineInputHandler(inQ)
 		}
 	}
 
-	MOOloop(inQ, player)
+	MOOloop(inQ)
 }
-func MOOloop(inQ chan *Message, player string) {
+func MOOloop(inQ chan *Message) {
 	for {
 		log.Println("Waiting on queue", len(inQ), "/", cap(inQ))
 
@@ -276,7 +277,7 @@ func MOOloop(inQ chan *Message, player string) {
 		if m.Ticks < 1 {
 			log.Println("Audit: Dropped message because it timed out:", m)
 		}
-		if m.Affinity != "" && m.Affinity != Affinity && ClusterQueue && Affinity != "" {
+		if m.Affinity != "" && m.Affinity != Affinity && Cluster && Affinity != "" {
 			//Put this message back in the queue so the right server can get it
 			//FIXME add queues for each server so we can send it directly to the right machine
 			MyQMessage(QueueServer, m)
@@ -308,14 +309,14 @@ func MOOloop(inQ chan *Message, player string) {
 		}
 
 		log.Println(strings.Join([]string{verb, dobjstr, prepstr, iobjstr}, ":"))
-		dobj, dpropstr := ParseDirectObject(dobjstr, player)
-		iobj, ipropstr := ParseDirectObject(iobjstr, player)
+		dobj, dpropstr := ParseDirectObject(dobjstr, DefaultPlayerId)
+		iobj, ipropstr := ParseDirectObject(iobjstr, DefaultPlayerId)
 
-		thisObj, _ := VerbSearch(player, verb)
+		thisObj, _ := VerbSearch(DefaultPlayerId, verb)
 
 		if thisObj == nil {
 			msg := fmt.Sprintf("Verb '%v' not found!\n", verb)
-			RawMsg(Message{From: DefaultSystemCore, Player: player, Verb: "notify", Dobjstr: msg, Ticks: m.Ticks - 100})
+			RawMsg(Message{From: DefaultSystemCore, Player: DefaultPlayerId, Verb: "notify", Dobjstr: msg, Ticks: m.Ticks - 100})
 
 		} else {
 			this := ToStr(thisObj.Id)
@@ -323,13 +324,16 @@ func MOOloop(inQ chan *Message, player string) {
 			log.Println("Props", thisObj.Properties)
 			log.Println("Found affinity:", affin)
 
-			if ClusterQueue {
-				log.Println("Handling input - Queueing direct message")
+			if Cluster {
+				msg := Message{Player: DefaultPlayerId, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: affin, Args: args, Ticks: m.Ticks}
+				log.Println("Handling input - Queueing direct message:", msg)
 				//SendNetMessage(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: this.affin})
-				MyQMessage(QueueServer, Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Affinity: affin, Args: args, Ticks: m.Ticks})
+				MyQMessage(QueueServer, msg)
 				//time.Sleep(1 * time.Second) //FIXME
 			} else {
-				RawMsg(Message{Player: player, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Args: args, Ticks: m.Ticks - 100})
+				msg := Message{Player: DefaultPlayerId, This: this, Verb: verb, Dobj: dobj, Dpropstr: dpropstr, Prepstr: prepstr, Iobj: iobj, Ipropstr: ipropstr, Dobjstr: dobjstr, Iobjstr: iobjstr, Trace: m.Trace, Args: args, Ticks: m.Ticks - 100}
+				log.Println("Handling input - Invoking direct message:", msg)
+				RawMsg(msg)
 			}
 
 		}
@@ -347,9 +351,16 @@ func addPmooTypes(s xsh.State) {
 	s.TypeSigs["getprop"] = []string{"string", "string", "string"}
 	s.TypeSigs["setverb"] = []string{"void", "string", "string", "string", "string"}
 	s.TypeSigs["msg"] = []string{"void", "string", "string", "string", "string", "string", "string"}
+	s.TypeSigs["become"] = []string{"bool", "string", "string"}
+	s.TypeSigs["sleep"] = []string{"void", "string"}
 	s.TypeSigs["o"] = []string{"string", "string"}
 }
-
+func become(player, affinity string) bool {
+	DefaultPlayerId = player
+	pmoo.SetProp(player, "affinity", affinity)
+	fmt.Printf("Became player id: %v on node: %v\n", DefaultPlayerId, affinity)
+	return true
+}
 func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node, level int) (autoparser.Node, bool) {
 	player := s.UserData.(string)
 	if len(command) > 0 {
@@ -359,6 +370,11 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 		} else {
 			//fmt.Printf("Running custom handler for command %v\n", c)
 			switch c[0] {
+			case "sleep":
+				duration, _ := strconv.ParseInt(c[1], 10, 64)
+				time.Sleep(time.Duration(duration) * time.Millisecond)
+			case "become":
+				return xsh.Bool(become(c[1], c[2])), become(c[1], c[2])
 			case "setprop":
 				SetProp(c[1], c[2], c[3])
 				return command[3], true
@@ -397,7 +413,7 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 				affin := thisObj.Properties["affinity"].Value
 				//log.Printf("From: %v, Target: %v, Verb: %v, Dobj: %v, Prep: %v, Iobj: %v\n", from.GetString(), target.GetString(), verb.GetString(), dobj.GetString(), prep.GetString(), iobj.GetString())
 
-				if ClusterQueue {
+				if Cluster {
 					//SendNetMessage(Message{From: from.GetString(), Player: player, This: target.GetString(), Verb: verb.GetString(), Dobj: dobj.GetString(), Prepstr: prep.GetString(), Iobj: iobj.GetString(), Trace: traceId})
 					MyQMessage(QueueServer, Message{From: from, Player: player, This: target, Verb: verb, Dobj: dobj, Prepstr: prep, Iobj: iobj, Trace: "FIXME", Affinity: affin, Ticks: DefaultTicks})
 				} else {

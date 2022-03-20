@@ -33,6 +33,9 @@ type Function struct {
 var UsePterm = true
 var WantDebug bool = false
 var WantTrace bool = false
+var WantInform bool = false
+var WantWarn bool = true
+var WantErrors bool = true
 
 type State struct {
 	Functions     map[string]Function
@@ -168,7 +171,7 @@ func searchPath(execName string) string {
 		fullPath := path + "/" + execName
 		if _, err := os.Stat(fullPath); err == nil {
 
-			XshInform("Found %s\n", fullPath)
+			//XshInform("Found %s\n", fullPath)
 			return fullPath
 		}
 	}
@@ -184,7 +187,7 @@ func FindGuardian() string {
 		guardianPath = bindir + "/xshguardian"
 	}
 
-	XshInform("Found guardian at %s\n", guardianPath)
+	//XshInform("Found guardian at %s\n", guardianPath)
 	return guardianPath
 }
 func runWithGuardian(cmd []string) error {
@@ -211,6 +214,7 @@ func runWithGuardianCapture(cmd []string) (string, error) {
 	}
 	cmd[0] = fullPath
 	cmd = append([]string{guardianPath}, cmd...)
+	XshTrace("Command: %+v\n", cmd)
 	XshInform("Running %+v for capture with guardian %v\n", cmd, guardianPath)
 	return goof.QC(cmd)
 }
