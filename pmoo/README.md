@@ -79,11 +79,12 @@ and script it using bash/zsh/whatever
 There should be only one queue server running, it is the coordinator for the cluster.
 
 
-	cat create.txt | ./pmoo --cluster --queue http://127.0.0.1:8080 --batch --init
+	./pmoo --cluster --queue http://127.0.0.1:8080 --init
+	cat create.txt | ./pmoo --cluster --queue http://127.0.0.1:8080 --batch --init --raw
 
 Now, to add a computer to the cluster
 
-	rlwrap ./pmoo --cluster --clusterQ --queue http://192.168.178.22:8080
+	./pmoo --cluster --clusterQ --queue http://192.168.178.22:8080
 
 
 Nodes are part of the cluster so long as the command is running.  Message processing happens in the background.
@@ -128,7 +129,6 @@ Properties and verbs are now stored in the same data structure with a flag to te
 
 You can enter scripting commands by starting them with "x ".
 
-* x allobjects
 * x setprop object_id property_name value
 * x findobject "The First Room"
 * x getprop object_id property_name
