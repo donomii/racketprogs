@@ -8,6 +8,7 @@ import (
 )
 
 var chans map[string]chan []byte
+var mode string = "files"
 
 func GetChan(key string) chan []byte {
 	ch, ok := chans[key]
@@ -70,22 +71,31 @@ func StartKVstore() {
 }
 
 func StoreObject(id string, m []byte) {
-	err := KVstore.Set(id, m)
-	if err != nil {
-		panic(err)
+	if mode == "files" {
+		ioutil.WriteFile("objects/"+id+".json", m, 0644)
+	} else {
+		err := KVstore.Set(id, m)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
 func LoadObject(id string) []byte {
-	retrievedVal := new([]byte)
-	found, err := KVstore.Get(id, retrievedVal)
-	if err != nil {
-		panic(err)
+	if mode == "files" {
+		data, _ := ioutil.ReadFile("objects/" + id + ".json")
+		return data
+	} else {
+		retrievedVal := new([]byte)
+		found, err := KVstore.Get(id, retrievedVal)
+		if err != nil {
+			panic(err)
+		}
+		if !found {
+			panic("Value not found")
+		}
+		return *retrievedVal
 	}
-	if !found {
-		panic("Value not found")
-	}
-	return *retrievedVal
 }
 
 func DeleteObject(id string) {
