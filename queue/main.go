@@ -36,6 +36,7 @@ func main() {
 		if elapsed.Seconds() > 20 {
 			ch <- msg
 			c.Writer.Write([]byte{})
+			return
 		}
 		c.Writer.Write(msg)
 	})
