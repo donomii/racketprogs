@@ -2,6 +2,8 @@ package main
 
 import (
 	"io/ioutil"
+	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/philippgille/gokv/file"
@@ -28,7 +30,14 @@ func main() {
 	r.GET("/subscribe/:topic", func(c *gin.Context) {
 		key := c.Param("topic")
 		ch := GetChan(key)
-		c.Writer.Write(<-ch)
+		start := time.Now()
+		msg := <-ch
+		elapsed := time.Since(start)
+		if elapsed.Seconds() > 20 {
+			ch <- msg
+			c.Writer.Write([]byte{})
+		}
+		c.Writer.Write(msg)
 	})
 	r.POST("/publish/:topic", func(c *gin.Context) {
 		data, _ := ioutil.ReadAll(c.Request.Body)
@@ -99,8 +108,12 @@ func LoadObject(id string) []byte {
 }
 
 func DeleteObject(id string) {
-	err := KVstore.Delete(id)
-	if err != nil {
-		panic(err)
+	if mode == "files" {
+		os.Remove("objects/" + id + ".json")
+	} else {
+		err := KVstore.Delete(id)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
