@@ -31,42 +31,49 @@ func drintln(args ...interface{}) {
 }
 
 func XshErr(formatStr string, args ...interface{}) {
-	out := fmt.Sprintf(formatStr, args...)
-	if UsePterm {
-		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgRed))
-		pterm.DefaultCenter.Println(header.Sprint(out))
-	} else {
-		fmt.Println("Err:", out)
+	if WantErrors {
+		out := fmt.Sprintf(formatStr, args...)
+		if UsePterm {
+			header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgRed))
+			pterm.DefaultCenter.Println(header.Sprint(out))
+		} else {
+			fmt.Println("Err:", out)
+		}
 	}
-
 }
 
 func XshWarn(formatStr string, args ...interface{}) {
-	out := fmt.Sprintf(formatStr, args...)
-	if UsePterm {
-		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgYellow))
-		pterm.DefaultCenter.Println(header.Sprint(out))
-	} else {
-		fmt.Println("Warn:", out)
+	if WantWarn {
+		out := fmt.Sprintf(formatStr, args...)
+		if UsePterm {
+			header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgYellow))
+			pterm.DefaultCenter.Println(header.Sprint(out))
+		} else {
+			fmt.Println("Warn:", out)
+		}
 	}
 }
 
 func XshInform(formatStr string, args ...interface{}) {
-	out := fmt.Sprintf(formatStr, args...)
-	if UsePterm {
-		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgBlue))
-		pterm.DefaultCenter.Println(header.Sprint(out))
-	} else {
-		fmt.Println("Info:", out)
+	if WantInform {
+		out := fmt.Sprintf(formatStr, args...)
+		if UsePterm {
+			header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgBlue))
+			pterm.DefaultCenter.Println(header.Sprint(out))
+		} else {
+			fmt.Println("Info:", out)
+		}
 	}
 }
 
 func XshTrace(formatStr string, args ...interface{}) {
-	out := fmt.Sprintf(formatStr, args...)
-	if UsePterm {
-		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgGreen))
-		pterm.DefaultCenter.Println(header.Sprint(out))
-	} else {
-		fmt.Println("Trace:", out)
+	if WantTrace {
+		out := fmt.Sprintf(formatStr, args...)
+		if UsePterm {
+			header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgGreen))
+			pterm.DefaultCenter.Println(header.Sprint(out))
+		} else {
+			fmt.Println("Trace:", out)
+		}
 	}
 }

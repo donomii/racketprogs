@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 
 	"github.com/gin-gonic/gin"
-	"github.com/philippgille/gokv/badgerdb"
+	"github.com/philippgille/gokv/file"
 )
 
 var chans map[string]chan []byte
@@ -55,14 +55,14 @@ func main() {
 	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
 
-var KVstore badgerdb.Store
+var KVstore file.Store
 var err error
 
 func StartKVstore() {
-	options := badgerdb.DefaultOptions // Address: "localhost:6379", Password: "", DB: 0
-
+	options := file.DefaultOptions // Address: "localhost:6379", Password: "", DB: 0
+	options.Directory = "objects"
 	// Create client
-	KVstore, err = badgerdb.NewStore(options)
+	KVstore, err = file.NewStore(options)
 	if err != nil {
 		panic(err)
 	}
