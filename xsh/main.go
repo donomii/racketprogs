@@ -34,7 +34,7 @@ var UsePterm = true
 var WantDebug bool = false
 var WantTrace bool = false
 var WantInform bool = false
-var WantWarning bool = true
+var WantWarn bool = true
 var WantErrors bool = true
 
 type State struct {
