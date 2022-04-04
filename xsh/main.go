@@ -52,13 +52,23 @@ func New() State {
 	return s
 }
 
-func Eval(s State, code, fname string) autoparser.Node {
-	//fmt.Printf("Evalling: %v\n", code)
+func ShellEval(s State, code, fname string) autoparser.Node {
+	XshTrace("Evalling: %v\n", code)
 	tree := autoparser.ParseXSH(code, fname)
-	//fmt.Printf("Tree: %v\n", tree)
+	drintf("Tree: %v\n", tree)
 	s.Tree = tree
-	res := treeReduce(s, tree, nil, 2)
-	//fmt.Printf("Res: %+v\n", res)
+	res := treeReduce(s, tree, nil, 1)
+	drintf("Res: %+v\n", res)
+	return res
+}
+
+func Eval(s State, code, fname string) autoparser.Node {
+	XshTrace("Evalling: %v\n", code)
+	tree := autoparser.ParseXSH(code, fname)
+	drintf("Tree: %v\n", tree)
+	s.Tree = tree
+	res := treeReduce(s, tree, nil, -1)
+	drintf("Res: %+v\n", res)
 	return res
 }
 
@@ -92,7 +102,6 @@ func checkArgs(args []autoparser.Node, params []autoparser.Node) error {
 			if p.Raw == v.Raw {
 				XshErr("%v,%v,%v: Cannot shadow args in lambda: %+v, %+v\n", v.File, v.Line, v.Column, v, p)
 				os.Exit(1)
-				//panic(fmt.Sprintf("Cannot shadow args in lambda: %+v, %+v\n", v, p))
 			}
 		}
 	}
@@ -124,10 +133,10 @@ func ReplaceArg(args, params, t []autoparser.Node) []autoparser.Node {
 				for parami, param := range params {
 
 					//drintf("Comparing function arg: %+v with node %+v\n", farg, v)
-					//log.Printf("Comparing function arg: %+v with node %+v\n", args[parami].Raw, v.Raw)
+					//drintf("Comparing function arg: %+v with node %+v\n", args[parami].Raw, v.Raw)
 					//We found a variable to replace
 					if param.Raw == v.Raw {
-						//log.Printf("Replacing param %+v with %+v\n", param, args[parami])
+						drintf("Replacing param %+v with %+v\n", param, args[parami])
 						new := CopyNode(args[parami])
 						//New node is assumed to be from a different scope, so we need to set the scope barrier
 						new.ScopeBarrier = true
@@ -210,7 +219,7 @@ func runWithGuardianCapture(cmd []string) (string, error) {
 	binfile := cmd[0]
 	fullPath := searchPath(binfile)
 	if fullPath == "" && !goof.Exists(binfile) {
-		return "", fmt.Errorf("Could not find %v in path\n", binfile)
+		return "", fmt.Errorf("Could not find application %v in search path: %v\n", binfile, os.Getenv("PATH"))
 	}
 	cmd[0] = fullPath
 	cmd = append([]string{guardianPath}, cmd...)
@@ -221,7 +230,7 @@ func runWithGuardianCapture(cmd []string) (string, error) {
 func Void(command autoparser.Node) autoparser.Node {
 	drintf("Creating void at %+v\n", command.Line)
 	if command.ChrPos < 1 {
-		XshWarn("Warning: Create void with no line number.  This is probably an error.")
+		XshWarn("Warning: Create void with no line number.  This is probably an error.  Code: %+v\n", command)
 	}
 	return autoparser.Node{"", "", nil, "VOID", command.Line, command.Column, command.ChrPos, command.File, command.ScopeBarrier}
 }
@@ -267,7 +276,7 @@ func isLambda(e autoparser.Node) bool {
 
 func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int) autoparser.Node {
 	if len(command) == 0 {
-		return autoparser.Node{}
+		return Void(autoparser.Node{File: "eval", Line: 1, Column: 0, ChrPos: 1, Note: "empty eval"})
 	}
 	drintf("Evaluating: %v\n", TreeToXsh(command))
 	//If list, assume it is a lambda function and evaluate it
@@ -379,7 +388,7 @@ Given:
 
 	}
 	//Maybe we should return a warning here?  Or even exit?  Need a strict mode.
-	return Void(command[0])
+
 }
 func blockReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel int) autoparser.Node {
 

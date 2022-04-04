@@ -77,3 +77,13 @@ func XshTrace(formatStr string, args ...interface{}) {
 		}
 	}
 }
+
+func XshResponse(formatStr string, args ...interface{}) {
+	out := fmt.Sprintf(formatStr, args...)
+	if UsePterm {
+		header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgBlue))
+		pterm.Println(header.Sprint(out))
+	} else {
+		fmt.Println("xsh:", out)
+	}
+}

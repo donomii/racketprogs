@@ -64,7 +64,7 @@ func main() {
 		xsh.LoadEval(state, *resumeFile)
 	case wantShell:
 		//fmt.Printf("%+v\n", xsh.TreeToTcl(xsh.Eval(state, xsh.Stdlib_str, "stdlib").List))
-		xsh.TreeToXsh(xsh.Eval(state, xsh.Stdlib_str, "stdlib").List)
+		xsh.Eval(state, xsh.Stdlib_str, "stdlib")
 		shell(state)
 	default:
 		xsh.Eval(state, xsh.Stdlib_str, "stdlib")
@@ -181,6 +181,6 @@ func shell(state xsh.State) {
 		}
 
 		line = strings.TrimSpace(line)
-		xsh.XshInform("%+v\n", xsh.TreeToXsh([]autoparser.Node{xsh.Eval(state, line, "shell")}))
+		xsh.XshResponse("%+v\n", xsh.TreeToXsh([]autoparser.Node{xsh.ShellEval(state, line, "shell")}))
 	}
 }
