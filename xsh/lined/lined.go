@@ -31,7 +31,7 @@ var selectPosX = 11
 var selectPosY = 1
 var focus = "input"
 var inputPos = 0
-var searchStr string
+var InputLine string
 var debugStr = ""
 var client *rpc.Client
 
@@ -79,7 +79,7 @@ func refreshTerm() {
 		defer refreshMutex.Unlock()
 		//termbox.Clear(foreGround(), backGround())
 		putStr(0, 0, debugStr)
-		putStr(0, height-1, fmt.Sprintf("%v%v%v", prompt, searchStr, strings.Repeat(" ", width-len(searchStr)-len(prompt)))) //FIXME
+		putStr(0, height-1, fmt.Sprintf("%v%v%v", prompt, InputLine, strings.Repeat(" ", width-len(InputLine)-len(prompt)))) //FIXME
 
 		itempos = 0
 
@@ -153,9 +153,9 @@ func doInput() {
 			if ev.Mod == termbox.ModAlt {
 				switch ev.Key {
 				case termbox.KeyArrowRight:
-					inputPos = searchRight(searchStr, inputPos)
+					inputPos = searchRight(InputLine, inputPos)
 				case termbox.KeyArrowLeft:
-					inputPos = searchLeft(searchStr, inputPos)
+					inputPos = searchLeft(InputLine, inputPos)
 				}
 			} else {
 				//statuses["Input"] = fmt.Sprintf("%v", ev.Key) //"Processing"
@@ -163,6 +163,14 @@ func doInput() {
 				switch ev.Key {
 				case termbox.KeyF1:
 					CallKeyHook("F1")
+				case termbox.KeyF2:
+					CallKeyHook("F2")
+				case termbox.KeyF3:
+					CallKeyHook("F3")
+				case termbox.KeyF4:
+					CallKeyHook("F4")
+				case termbox.KeyF5:
+					CallKeyHook("F5")
 				case termbox.KeyArrowRight:
 
 				case termbox.KeyArrowDown:
@@ -175,8 +183,8 @@ func doInput() {
 				case termbox.KeyEsc:
 					shutdown()
 				case termbox.KeyBackspace, termbox.KeyBackspace2:
-					if len(searchStr) > 0 {
-						searchStr = searchStr[0 : len(searchStr)-1]
+					if len(InputLine) > 0 {
+						InputLine = InputLine[0 : len(InputLine)-1]
 						inputPos -= 1
 					}
 
@@ -186,15 +194,15 @@ func doInput() {
 
 					completeVersion = completeVersion + 1
 				case termbox.KeySpace:
-					searchStr = fmt.Sprintf("%s ", searchStr)
+					InputLine = fmt.Sprintf("%s ", InputLine)
 					inputPos += 1
 					refreshTerm()
 
 				default:
 					//statuses["Input"] = ev.Key
-					searchStr = fmt.Sprintf("%s%c", searchStr, ev.Ch)
+					InputLine = fmt.Sprintf("%s%c", InputLine, ev.Ch)
 					inputPos += 1
-					cursorX = 11 + len(searchStr)
+					cursorX = 11 + len(InputLine)
 					cursorY = 1
 					focus = "input"
 					refreshTerm()
@@ -202,6 +210,10 @@ func doInput() {
 			}
 		}
 	}
+}
+
+func FinishInput() {
+	completeVersion = completeVersion + 1
 }
 
 //ForeGround colour
@@ -263,7 +275,7 @@ func shutdown() {
 
 func Init() {
 	LineCache = map[string]string{}
-	searchStr = ""
+	InputLine = ""
 
 	refreshMutex = sync.Mutex{}
 	predictResults = []string{}
@@ -274,7 +286,7 @@ func Init() {
 }
 func ReadLine() string {
 	completeVersion = completeVersion + 1
-	searchStr = ""
+	InputLine = ""
 	inputPos = 0
 
 	//termbox.SetInputMode(termbox.InputAlt)
@@ -290,7 +302,7 @@ func ReadLine() string {
 	}
 	use_gui = false
 
-	return searchStr
+	return InputLine
 }
 
 /*

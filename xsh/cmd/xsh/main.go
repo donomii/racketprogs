@@ -210,16 +210,25 @@ func NewShell(state xsh.State) {
 	}()
 	lined.Init()
 	lined.KeyHook = func(key string) {
-		if key == "F1" {
-			xsh.XshWarn("Help")
-		}
+		command := os.Getenv(key)
+		lined.InputLine = command
+		lined.FinishInput()
 	}
+	os.Setenv("F1", `puts "ICE - Interactive Command Environment
+
+	ICE is a shell that allows you to write and run commands in a Text UI.  At its core is
+	XSH, a simple scripting language.  ICE
+	
+	"`)
 	for {
 		fmt.Printf("\n\n")
 		line := lined.ReadLine()
 
 		line = strings.TrimSpace(line)
 		fmt.Println()
-		xsh.XshResponse("%+v\n", xsh.TreeToXsh([]autoparser.Node{xsh.ShellEval(state, line, "shell")}))
+		res := xsh.TreeToXsh([]autoparser.Node{xsh.ShellEval(state, line, "shell")})
+		if res != "" && res != "\"\"" {
+			xsh.XshResponse("%+v\n", res)
+		}
 	}
 }
