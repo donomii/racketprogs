@@ -1,6 +1,7 @@
 package main
 
 import (
+	lined "../../lined"
 	"os/signal"
 
 	xsh "../.."
@@ -11,7 +12,7 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/nsf/termbox-go"
+	"github.com/donomii/termbox-go"
 
 	"os"
 
@@ -65,7 +66,7 @@ func main() {
 	case wantShell:
 		//fmt.Printf("%+v\n", xsh.TreeToTcl(xsh.Eval(state, xsh.Stdlib_str, "stdlib").List))
 		xsh.Eval(state, xsh.Stdlib_str, "stdlib")
-		shell(state)
+		NewShell(state)
 	default:
 		xsh.Eval(state, xsh.Stdlib_str, "stdlib")
 		xsh.LoadEval(state, fname)
@@ -121,6 +122,7 @@ func tbprint(x, y int, fg, bg termbox.Attribute, msg string) {
 		x += runewidth.RuneWidth(c)
 	}
 }
+
 func shell(state xsh.State) {
 
 	var completer = readline.NewPrefixCompleter(
@@ -159,6 +161,7 @@ func shell(state xsh.State) {
 	go func() {
 		for sig := range c {
 			// sig is a ^C, handle it
+			//Kill any running guardians?
 			fmt.Printf("\n%v\n", sig)
 			xsh.XshWarn("Break")
 		}
@@ -181,6 +184,42 @@ func shell(state xsh.State) {
 		}
 
 		line = strings.TrimSpace(line)
+		xsh.XshResponse("%+v\n", xsh.TreeToXsh([]autoparser.Node{xsh.ShellEval(state, line, "shell")}))
+	}
+}
+
+func NewShell(state xsh.State) {
+
+	if usePterm {
+		// Print a large text banner with differently colored letters.
+		pterm.DefaultBigText.WithLetters(
+			pterm.NewLettersFromStringWithStyle("X", pterm.NewStyle(pterm.FgLightMagenta)),
+			pterm.NewLettersFromStringWithStyle("Shell", pterm.NewStyle(pterm.FgCyan))).
+			Render()
+	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for sig := range c {
+			// sig is a ^C, handle it
+			//Kill any running guardians?
+			fmt.Printf("\n%v\n", sig)
+			xsh.XshWarn("Break")
+		}
+	}()
+	lined.Init()
+	lined.KeyHook = func(key string) {
+		if key == "F1" {
+			xsh.XshWarn("Help")
+		}
+	}
+	for {
+		fmt.Printf("\n\n")
+		line := lined.ReadLine()
+
+		line = strings.TrimSpace(line)
+		fmt.Println()
 		xsh.XshResponse("%+v\n", xsh.TreeToXsh([]autoparser.Node{xsh.ShellEval(state, line, "shell")}))
 	}
 }

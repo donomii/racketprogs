@@ -205,7 +205,7 @@ func runWithGuardian(cmd []string) error {
 	binfile := cmd[0]
 	fullPath := searchPath(binfile)
 	if fullPath == "" && !goof.Exists(binfile) {
-		return fmt.Errorf("Could not find %v in path\n", binfile)
+		return fmt.Errorf("Could not find application %v in search path: %v\n", binfile, os.Getenv("PATH"))
 	}
 	cmd[0] = fullPath
 	cmd = append([]string{guardianPath}, cmd...)
