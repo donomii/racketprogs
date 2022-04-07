@@ -545,7 +545,7 @@ func TreeToXsh(t []autoparser.Node) string {
 }
 
 // Function constructor - constructs new function for listing given directory
-func listFiles(path string) func(string) []string {
+func ListFiles(path string) func(string) []string {
 	return func(line string) []string {
 		names := make([]string, 0)
 		files, _ := ioutil.ReadDir(path)
@@ -557,7 +557,7 @@ func listFiles(path string) func(string) []string {
 }
 
 //List all executable files in PATH
-func listPathExecutables() func(string) []string {
+func ListPathExecutables() func(string) []string {
 	return func(line string) []string {
 		names := make([]string, 0)
 		paths := strings.Split(os.Getenv("PATH"), ":")
@@ -573,7 +573,7 @@ func listPathExecutables() func(string) []string {
 	}
 }
 
-func listBuiltins() func(string) []string {
+func ListBuiltins() func(string) []string {
 	return func(line string) []string {
 		return []string{"id", "and", "or", "join", "split", "puts", "+", "-", "*", "/", "+.", "-.", "*.", "/.", "loadfile", "set", "run", "seq", "with", "cd"}
 	}

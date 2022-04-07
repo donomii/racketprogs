@@ -21,8 +21,8 @@ import (
 
 var completeVersion = 1
 var use_gui = true
-
-var statuses map[string]string
+var History []string
+var Statuses map[string]string
 var selection = 0
 var itempos = 0
 var cursorX = 11
@@ -30,10 +30,11 @@ var cursorY = 1
 var selectPosX = 11
 var selectPosY = 1
 var focus = "input"
-var inputPos = 0
+var InputPos = 0
 var InputLine string
 var debugStr = ""
 var client *rpc.Client
+var prompt = "xsh:"
 
 var predictResults []string
 
@@ -70,20 +71,39 @@ func isDarwin() bool {
 	return (runtime.GOOS == "darwin")
 }
 
+func blankPanel() {
+	width, height := termbox.Size()
+	char := " "
+	putStr(0, height-4, strings.Repeat(char, width))
+	putStr(0, height-3, strings.Repeat(char, width))
+	putStr(0, height-2, strings.Repeat(char, width))
+	putStr(0, height-1, strings.Repeat(char, width))
+
+}
+
+func setTrans() {
+	width, height := termbox.Size()
+	char := string([]byte{0})
+	for i := 0; i < height; i++ {
+		putStr(0, i, strings.Repeat(char, width))
+	}
+}
 func refreshTerm() {
-	prompt := "xsh:"
+
 	//statuses["Screen"] = "Refresh"
 	if use_gui {
+		blankPanel()
 		width, height := termbox.Size()
 		refreshMutex.Lock()
 		defer refreshMutex.Unlock()
 		//termbox.Clear(foreGround(), backGround())
-		putStr(0, 0, debugStr)
+		//		putStr(0, 0, debugStr)
+
 		putStr(0, height-1, fmt.Sprintf("%v%v%v", prompt, InputLine, strings.Repeat(" ", width-len(InputLine)-len(prompt)))) //FIXME
 
 		itempos = 0
 
-		putStr(20, height-4, fmt.Sprintf("%v", statuses))
+		putStr(20, height-4, fmt.Sprintf("%v", Statuses))
 		putStr(1, height-3, fmt.Sprintf("Type your search terms, add a - to the end of word to remove that word (word-)"))
 		putStr(1, height-2, fmt.Sprintf("Up/Down Arrows to select a result, Right Arrow to edit that file, Escape Quits"))
 		if focus == "input" {
@@ -99,7 +119,7 @@ func refreshTerm() {
 		}
 
 		if focus == "input" {
-			termbox.SetCursor(len(prompt)+inputPos, height-1)
+			termbox.SetCursor(len(prompt)+InputPos, height-1)
 		} else {
 			termbox.SetCursor(selectPosX, selectPosY)
 		}
@@ -131,7 +151,7 @@ func searchRight(aStr string, pos int) int {
 	return len(aStr) - 1
 }
 
-func extractWord(aLine string, pos int) string {
+func ExtractWord(aLine string, pos int) string {
 	start := searchLeft(aLine, pos)
 	return aLine[start:pos]
 }
@@ -153,14 +173,16 @@ func doInput() {
 			if ev.Mod == termbox.ModAlt {
 				switch ev.Key {
 				case termbox.KeyArrowRight:
-					inputPos = searchRight(InputLine, inputPos)
+					InputPos = searchRight(InputLine, InputPos)
 				case termbox.KeyArrowLeft:
-					inputPos = searchLeft(InputLine, inputPos)
+					InputPos = searchLeft(InputLine, InputPos)
 				}
 			} else {
 				//statuses["Input"] = fmt.Sprintf("%v", ev.Key) //"Processing"
 				//debugStr = fmt.Sprintf("key: %v, %v, %v", ev.Key, ev.Ch, ev)
 				switch ev.Key {
+				case termbox.KeyTab:
+					CallKeyHook("TAB")
 				case termbox.KeyF1:
 					CallKeyHook("F1")
 				case termbox.KeyF2:
@@ -172,38 +194,71 @@ func doInput() {
 				case termbox.KeyF5:
 					CallKeyHook("F5")
 				case termbox.KeyArrowRight:
+					InputPos++
+					if InputPos > len(InputLine) {
+						InputPos = len(InputLine)
+					}
+				case termbox.KeyArrowLeft:
+					InputPos--
+					if InputPos < 0 {
+						InputPos = 0
+					}
 
 				case termbox.KeyArrowDown:
-				case termbox.KeyArrowUp:
-					selection--
-					if selection < 0 {
-						selection = 0
+					if len(History) > 0 {
+						selection++
+						if selection >= len(History) {
+							selection = 0
+
+						}
+						InputLine = History[selection]
+						InputPos = 0
+						Statuses["selection"] = fmt.Sprintf("%v", selection)
 					}
-					focus = "selection"
+					focus = "input"
+					refreshTerm()
+				case termbox.KeyArrowUp:
+					if len(History) > 0 {
+						selection--
+						if selection < 0 {
+							selection = len(History) - 1
+
+						}
+						InputLine = History[selection]
+						InputPos = 0
+						Statuses["selection"] = fmt.Sprintf("%v", selection)
+					}
+					focus = "input"
+					refreshTerm()
 				case termbox.KeyEsc:
 					shutdown()
 				case termbox.KeyBackspace, termbox.KeyBackspace2:
-					if len(InputLine) > 0 {
-						InputLine = InputLine[0 : len(InputLine)-1]
-						inputPos -= 1
+					if len(InputLine) > 0 && InputPos > 0 {
+						before := InputLine[:InputPos-1]
+						after := InputLine[InputPos:]
+						InputLine = fmt.Sprintf("%s%s", before, after)
+
+						cursorX = len(prompt) + len(InputLine)
+						InputPos -= 1
 					}
 
 					focus = "input"
 					refreshTerm()
 				case termbox.KeyEnter:
-
+					blankPanel()
 					completeVersion = completeVersion + 1
 				case termbox.KeySpace:
 					InputLine = fmt.Sprintf("%s ", InputLine)
-					inputPos += 1
+					InputPos += 1
 					refreshTerm()
 
 				default:
 					//statuses["Input"] = ev.Key
-					InputLine = fmt.Sprintf("%s%c", InputLine, ev.Ch)
-					inputPos += 1
-					cursorX = 11 + len(InputLine)
-					cursorY = 1
+					before := InputLine[:InputPos]
+					after := InputLine[InputPos:]
+					InputLine = fmt.Sprintf("%s%c%s", before, ev.Ch, after)
+					InputPos += 1
+					cursorX = len(prompt) + len(InputLine)
 					focus = "input"
 					refreshTerm()
 				}
@@ -267,7 +322,7 @@ func automaticdoInput(threadVer int) {
 func shutdown() {
 	//Shut down resources so the display thread doesn't panic when the display driver goes away first
 	//When we get a file persistence layer, it will go here
-	statuses["Status"] = "Shutting down"
+	Statuses["Status"] = "Shutting down"
 	use_gui = false
 	os.Exit(0)
 
@@ -279,7 +334,7 @@ func Init() {
 
 	refreshMutex = sync.Mutex{}
 	predictResults = []string{}
-	statuses = map[string]string{}
+	Statuses = map[string]string{}
 	completeVersion = completeVersion + 1
 	termbox.Init()
 	termbox.SetInputMode(termbox.InputEsc)
@@ -287,12 +342,13 @@ func Init() {
 func ReadLine() string {
 	completeVersion = completeVersion + 1
 	InputLine = ""
-	inputPos = 0
+	InputPos = 0
 
 	//termbox.SetInputMode(termbox.InputAlt)
 	//defer termbox.Close()
 	use_gui = true
 	defer func() { use_gui = false }()
+	setTrans()
 	go automaticRefreshTerm(completeVersion)
 	go automaticdoInput(completeVersion)
 
@@ -301,7 +357,15 @@ func ReadLine() string {
 		time.Sleep(10 * time.Millisecond)
 	}
 	use_gui = false
+	if len(History) > 0 {
+		if History[0] != InputLine {
+			History = append([]string{InputLine}, History...)
+		}
+	} else {
+		History = append([]string{InputLine}, History...)
+	}
 
+	Statuses["history"] = fmt.Sprintf("%v", History)
 	return InputLine
 }
 

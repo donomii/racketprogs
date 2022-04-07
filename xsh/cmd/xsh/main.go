@@ -210,9 +210,24 @@ func NewShell(state xsh.State) {
 	}()
 	lined.Init()
 	lined.KeyHook = func(key string) {
-		command := os.Getenv(key)
-		lined.InputLine = command
-		lined.FinishInput()
+		switch key {
+		case "TAB":
+			lined.Statuses["complete"] = lined.ExtractWord(lined.InputLine, lined.InputPos)
+			words := append(xsh.ListBuiltins()("lalala"), xsh.ListPathExecutables()("lalala")...)
+			words = append(words, xsh.ListFiles("./")("./")...)
+			completions := make([]string, 0)
+			for _, w := range words {
+				if strings.HasPrefix(w, lined.Statuses["complete"]) {
+					completions = append(completions, w)
+
+				}
+			}
+			lined.Statuses["complete"] = fmt.Sprintf("%v", completions)
+		default:
+			command := os.Getenv(key)
+			lined.InputLine = command
+			lined.FinishInput()
+		}
 	}
 	os.Setenv("F1", `puts "ICE - Interactive Command Environment
 
