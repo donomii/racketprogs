@@ -93,7 +93,11 @@ func listFiles(path string) func(string) []string {
 func listPathExecutables() func(string) []string {
 	return func(line string) []string {
 		names := make([]string, 0)
-		paths := strings.Split(os.Getenv("PATH"), ":")
+		sep := ":"
+		if runtime.GOOS == "windows" {
+			sep = ";"
+		}
+		paths := strings.Split(os.Getenv("PATH"), sep)
 		for _, p := range paths {
 			files, _ := ioutil.ReadDir(p)
 			for _, f := range files {
