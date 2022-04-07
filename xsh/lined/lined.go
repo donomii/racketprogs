@@ -3,8 +3,10 @@ package lined
 import (
 	//"strings"
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"runtime"
@@ -15,7 +17,7 @@ import (
 	"net/rpc"
 
 	"github.com/donomii/termbox-go"
-
+	"path/filepath"
 	"sync"
 )
 
@@ -35,12 +37,19 @@ var InputLine string
 var debugStr = ""
 var client *rpc.Client
 var prompt = "xsh:"
+var confPath string
 
 var predictResults []string
 
 var refreshMutex sync.Mutex
 
 var LineCache map[string]string
+
+type Config struct {
+	History []string
+}
+
+var conf Config
 
 func FetchLine(f string, lineNum int) (line string, lastLine int, err error) {
 	key := fmt.Sprintf("%v%v", f, lineNum)
@@ -104,7 +113,8 @@ func refreshTerm() {
 		itempos = 0
 
 		putStr(20, height-4, fmt.Sprintf("%v", Statuses))
-		putStr(1, height-3, fmt.Sprintf("Type your search terms, add a - to the end of word to remove that word (word-)"))
+		dir, _ := os.Getwd()
+		putStr(1, height-3, fmt.Sprintf("CWD: %v", dir))
 		putStr(1, height-2, fmt.Sprintf("Up/Down Arrows to select a result, Right Arrow to edit that file, Escape Quits"))
 		if focus == "input" {
 			putStr(8, 9, "                    ")
@@ -178,9 +188,13 @@ func doInput() {
 					InputPos = searchLeft(InputLine, InputPos)
 				}
 			} else {
-				//statuses["Input"] = fmt.Sprintf("%v", ev.Key) //"Processing"
+				Statuses["Input"] = fmt.Sprintf("%v", ev) //"Processing"
 				//debugStr = fmt.Sprintf("key: %v, %v, %v", ev.Key, ev.Ch, ev)
 				switch ev.Key {
+				case 4:
+					if InputLine == "" {
+						shutdown()
+					}
 				case termbox.KeyTab:
 					CallKeyHook("TAB")
 				case termbox.KeyF1:
@@ -231,7 +245,10 @@ func doInput() {
 					focus = "input"
 					refreshTerm()
 				case termbox.KeyEsc:
-					shutdown()
+					//FIXME need a thread local check to see if we are in a prompt
+					//or if a sub-process is running
+					//Only quit if we are definitely in a prompt
+					//shutdown()
 				case termbox.KeyBackspace, termbox.KeyBackspace2:
 					if len(InputLine) > 0 && InputPos > 0 {
 						before := InputLine[:InputPos-1]
@@ -299,7 +316,7 @@ func putStr(x, y int, aStr string) {
 func automaticRefreshTerm(threadVer int) {
 	for i := 0; i < 1; i = 0 {
 		if threadVer < completeVersion {
-			log.Println("Exiting automatic refresh")
+			//log.Println("Exiting automatic refresh")
 			return
 		}
 		refreshTerm()
@@ -310,7 +327,7 @@ func automaticRefreshTerm(threadVer int) {
 func automaticdoInput(threadVer int) {
 	for i := 0; i < 1; i = 0 {
 		if threadVer < completeVersion {
-			log.Println("Exiting automatic doInput")
+			//log.Println("Exiting automatic doInput")
 			return
 		}
 		doInput()
@@ -328,7 +345,14 @@ func shutdown() {
 
 }
 
-func Init() {
+func Init(configPath string) {
+	confPath = configPath
+	confJson, _ := ioutil.ReadFile(confPath)
+	err := json.Unmarshal(confJson, &conf)
+	if err != nil {
+		log.Println("Error reading config file", err)
+	}
+	History = conf.History
 	LineCache = map[string]string{}
 	InputLine = ""
 
@@ -366,6 +390,14 @@ func ReadLine() string {
 	}
 
 	Statuses["history"] = fmt.Sprintf("%v", History)
+	conf.History = History
+	confJson, err := json.Marshal(conf)
+	if err != nil {
+		log.Println("Error marshalling config file", err)
+	} else {
+		os.Mkdir(filepath.Dir(confPath), 0777)
+		ioutil.WriteFile(confPath, confJson, 0644)
+	}
 	return InputLine
 }
 

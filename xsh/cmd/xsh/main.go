@@ -5,9 +5,9 @@ import (
 	"os/signal"
 
 	xsh "../.."
-
 	"flag"
 	"fmt"
+	"runtime"
 
 	"io"
 	"io/ioutil"
@@ -66,7 +66,11 @@ func main() {
 	case wantShell:
 		//fmt.Printf("%+v\n", xsh.TreeToTcl(xsh.Eval(state, xsh.Stdlib_str, "stdlib").List))
 		xsh.Eval(state, xsh.Stdlib_str, "stdlib")
-		NewShell(state)
+		if runtime.GOOS == "windows" {
+			shell(state)
+		} else {
+			NewShell(state)
+		}
 	default:
 		xsh.Eval(state, xsh.Stdlib_str, "stdlib")
 		xsh.LoadEval(state, fname)
@@ -208,7 +212,7 @@ func NewShell(state xsh.State) {
 			xsh.XshWarn("Break")
 		}
 	}()
-	lined.Init()
+	lined.Init(os.Getenv("HOME") + "/.xsh/history")
 	lined.KeyHook = func(key string) {
 		switch key {
 		case "TAB":
