@@ -52,8 +52,6 @@ func addBuiltinTypes(s State) {
 	s.TypeSigs["saveInterpreter"] = []string{"void string"}
 	s.TypeSigs["return"] = []string{"any", "any"}
 	s.TypeSigs["id"] = []string{"any", "any"}
-	s.TypeSigs["and"] = []string{"string", "string"}
-	s.TypeSigs["or"] = []string{"string", "string"}
 	s.TypeSigs["tron"] = []string{"void"}
 	s.TypeSigs["troff"] = s.TypeSigs["tron"]
 	s.TypeSigs["dron"] = s.TypeSigs["tron"]
@@ -66,6 +64,12 @@ func addBuiltinTypes(s State) {
 }
 func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f string, args []autoparser.Node, level int) autoparser.Node {
 	switch f {
+	case "nand":
+		if S(args[0]) == "1" && S(args[1]) == "1" {
+			return Bool(false)
+		} else {
+			return Bool(true)
+		}
 	case "seq":
 		//log.Printf("seq %v\n", TreeToTcl(args))
 		return args[len(args)-1]
@@ -98,7 +102,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			os.Setenv("OLDPWD", os.Getenv("PWD"))
 			os.Chdir(S(args[0]))
 		}
-		XshInform("Cuurent working directory:", goof.Cwd())
+		XshResponse("Current working directory: %v", goof.Cwd())
 	case "\n":
 		//Fuck
 		return Void(command[0])
@@ -165,6 +169,37 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 	case "droff":
 		WantDebug = false
 		return N("Debug off")
+		//FIXME replace with an options hash later on
+	case "debug":
+		if S(args[0]) == "1" || S(args[0]) == "on" {
+			WantDebug = true
+		} else {
+			WantDebug = false
+		}
+	case "inform":
+		if S(args[0]) == "1" || S(args[0]) == "on" {
+			WantInform = true
+		} else {
+			WantInform = false
+		}
+	case "trace":
+		if S(args[0]) == "1" || S(args[0]) == "on" {
+			WantTrace = true
+		} else {
+			WantTrace = false
+		}
+	case "errors":
+		if S(args[0]) == "1" || S(args[0]) == "on" {
+			WantErrors = true
+		} else {
+			WantErrors = false
+		}
+	case "warn":
+		if S(args[0]) == "1" || S(args[0]) == "on" {
+			WantWarn = true
+		} else {
+			WantWarn = false
+		}
 	case "put":
 		for i, v := range args {
 			if i != 0 {
@@ -358,22 +393,6 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 		return args[0]
 	case "list":
 		return autoparser.Node{List: args, Note: "{"}
-	case "and":
-		if atoi(S(args[0])) != 0 {
-			if atoi(S(args[1])) != 0 {
-				return N("1")
-			}
-		}
-		return N("0")
-	case "or":
-		if atoi(S(args[0])) != 0 {
-			return N("1")
-		}
-		if atoi(S(args[1])) != 0 {
-			return N("1")
-		}
-
-		return N("0")
 	default:
 		//It is an external call, prepare the shell command then run it
 		//fixme warn user on verbose?
