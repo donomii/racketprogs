@@ -2,13 +2,15 @@ package main
 
 import (
 	"bytes"
-	"github.com/chzyer/readline"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
 	"time"
+
+	"github.com/chzyer/readline"
 
 	"github.com/nsf/termbox-go"
 )
@@ -70,7 +72,7 @@ func main() {
 
 	log.Printf("Guardian: starting %+v\n", command)
 	var err error
-	if false {
+	if runtime.GOOS == "windows" {
 		l, _ := readline.New("")
 		l.Terminal.EnterRawMode()
 		err = cmd.Start()
