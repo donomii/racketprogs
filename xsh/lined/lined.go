@@ -342,10 +342,11 @@ func shutdown() {
 
 func Init(configPath string) {
 	confPath = configPath
+	log.Printf("Reading config from: %v", confPath)
 	confJson, _ := ioutil.ReadFile(confPath)
 	err := json.Unmarshal(confJson, &conf)
 	if err != nil {
-		log.Println("Error reading config file", err)
+		log.Printf("Error reading config file %v: %v", confPath, err)
 	}
 	History = conf.History
 	LineCache = map[string]string{}
