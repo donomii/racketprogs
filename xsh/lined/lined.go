@@ -264,11 +264,6 @@ func doInput() {
 				case termbox.KeyEnter:
 					blankPanel()
 					completeVersion = completeVersion + 1
-				case termbox.KeySpace:
-					InputLine = fmt.Sprintf("%s ", InputLine)
-					InputPos += 1
-					refreshTerm()
-
 				default:
 					//statuses["Input"] = ev.Key
 					before := InputLine[:InputPos]
