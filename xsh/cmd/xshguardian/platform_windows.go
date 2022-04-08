@@ -1,3 +1,6 @@
 package main
 
-func ptycall() {}
+import "os/exec"
+func ptycall(c *exec.Cmd) error {
+	return nil
+}
