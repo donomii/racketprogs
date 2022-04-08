@@ -176,6 +176,9 @@ func FunctionsToTcl(functions map[string]Function) string {
 func searchPath(execName string) string {
 	pathStr := os.Getenv("PATH")
 	paths := strings.Split(pathStr, ":")
+	if runtime.GOOS == "windows" {
+		paths = strings.Split(pathStr, ";")
+	}
 	for _, path := range paths {
 		fullPath := path + "/" + execName
 		if _, err := os.Stat(fullPath); err == nil {
@@ -561,6 +564,9 @@ func ListPathExecutables() func(string) []string {
 	return func(line string) []string {
 		names := make([]string, 0)
 		paths := strings.Split(os.Getenv("PATH"), ":")
+		if runtime.GOOS == "windows" {
+			paths = strings.Split(os.Getenv("PATH"), ";")
+		}
 		for _, p := range paths {
 			files, _ := ioutil.ReadDir(p)
 			for _, f := range files {
