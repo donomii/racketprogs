@@ -68,7 +68,7 @@ func batchMangle(command []string) []string {
 		return command
 	}
 	if strings.HasSuffix(command[0], ".bat") {
-		return append([]string{"cmd", "/c"}, command...)
+		return append([]string{"cmd", "/c", "call"}, command...)
 	}
 
 	return command
