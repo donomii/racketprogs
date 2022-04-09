@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/mitchellh/go-homedir"
 	"io"
 	"io/ioutil"
 
@@ -216,7 +217,8 @@ func NewShell(state xsh.State) {
 			xsh.XshWarn("Break")
 		}
 	}()
-	lined.Init(os.Getenv("HOME") + "/.xsh/history")
+	dir, _ := homedir.Dir()
+	lined.Init(dir + "/.xsh/history")
 	lined.KeyHook = func(key string) {
 		switch key {
 		case "TAB":
