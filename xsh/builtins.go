@@ -182,6 +182,12 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 		} else {
 			WantInform = false
 		}
+	case "helpful":
+		if S(args[0]) == "1" || S(args[0]) == "on" {
+			WantHelp = true
+		} else {
+			WantHelp = false
+		}
 	case "trace":
 		if S(args[0]) == "1" || S(args[0]) == "on" {
 			WantTrace = true

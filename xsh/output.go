@@ -66,6 +66,18 @@ func XshInform(formatStr string, args ...interface{}) {
 	}
 }
 
+func XshHelpful(formatStr string, args ...interface{}) {
+	if WantHelp {
+		out := fmt.Sprintf(formatStr, args...)
+		if UsePterm {
+			header := pterm.DefaultHeader.WithBackgroundStyle(pterm.NewStyle(pterm.BgBlue))
+			pterm.DefaultCenter.Println(header.Sprint(out))
+		} else {
+			fmt.Println("Help:", out)
+		}
+	}
+}
+
 func XshTrace(formatStr string, args ...interface{}) {
 	if WantTrace {
 		out := fmt.Sprintf(formatStr, args...)

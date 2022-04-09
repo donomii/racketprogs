@@ -34,6 +34,7 @@ var UsePterm = true
 var WantDebug bool = false
 var WantTrace bool = false
 var WantInform bool = false
+var WantHelp bool = true
 var WantWarn bool = true
 var WantErrors bool = true
 
@@ -204,17 +205,31 @@ func FindGuardian() string {
 	//XshInform("Found guardian at %s\n", guardianPath)
 	return guardianPath
 }
+
+func clampString(s string, max int) string {
+	if len(s) > max {
+		return s[:max]
+	}
+	return s
+}
 func runWithGuardian(cmd []string) error {
 	guardianPath := FindGuardian()
 	drintf("Launching guardian for %+v from %v\n", cmd, guardianPath)
 	binfile := cmd[0]
 	fullPath := searchPath(binfile)
-	if fullPath == "" && !goof.Exists(binfile) {
-		return fmt.Errorf("Could not find application %v in search path: %v\n", binfile, os.Getenv("PATH"))
+	if fullPath == "" {
+		XshWarn("Could not find %s in PATH\n", binfile)
+		if runtime.GOOS == "windows" && (goof.Exists(binfile) || goof.Exists(binfile+".exe") || goof.Exists(binfile+".bat")) {
+			XshHelpful("Your file is in the current directory, but not in PATH.  Xsh does not automatically run programs in the current directory.  To do so, add '.' to PATH with 'set PATH [join [list $PATH \".\"] \";\"].\n")
+		}
+		return fmt.Errorf("Could not find application %v in search path: %v\n", binfile, clampString(os.Getenv("PATH"), 100))
+	}
+	if fullPath == "" {
+		fullPath = binfile
 	}
 	cmd[0] = fullPath
 	cmd = append([]string{guardianPath}, cmd...)
-	XshInform("Running %+v interactively with guardian %v\n", cmd, guardianPath)
+	XshInform("Running %+v interactively with guardian %v\n", cmd[1:], guardianPath)
 	return goof.QCI(cmd)
 }
 
@@ -225,6 +240,9 @@ func runWithGuardianCapture(cmd []string) (string, error) {
 	fullPath := searchPath(binfile)
 	if fullPath == "" && !goof.Exists(binfile) {
 		return "", fmt.Errorf("Could not find application %v in search path: %v\n", binfile, os.Getenv("PATH"))
+	}
+	if fullPath == "" {
+		fullPath = binfile
 	}
 	cmd[0] = fullPath
 	cmd = append([]string{guardianPath}, cmd...)
