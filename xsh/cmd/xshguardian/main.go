@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/chzyer/readline"
@@ -62,11 +63,23 @@ func QuickCommandInteractivePrep(strs []string) (*subprocpipes, *exec.Cmd) {
 	sub := subprocpipes{stdinwriter, outreader, errreader}
 	return &sub, cmd
 }
+func batchMangle(command []string) []string {
+	if len(command) == 0 {
+		return command
+	}
+	if strings.HasSuffix(command[0], ".bat") {
+		return append([]string{"cmd", "/c"}, command...)
+	}
 
+	return command
+}
 func main() {
 	log.SetOutput(ioutil.Discard)
 	//termbox.Init()
 	command := os.Args[1:]
+	if runtime.GOOS == "windows" {
+		command = batchMangle(command)
+	}
 	_, cmd := QuickCommandInteractivePrep(command)
 	SubProcHandle = cmd
 
