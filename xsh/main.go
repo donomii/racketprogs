@@ -208,7 +208,11 @@ func FindGuardian() string {
 
 func clampString(s string, max int) string {
 	if len(s) > max {
-		return s[:max]
+		if max > 3 {
+			return s[:max-3] + "..."
+		} else {
+			return s[:max]
+		}
 	}
 	return s
 }
