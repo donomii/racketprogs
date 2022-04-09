@@ -6,6 +6,7 @@ x setverb 2 describe throff " *> Msg this player ^tell +> GetProp dobj ^descript
 x setverb 1 shutdown xsh "exit 0"
 x setverb 1 examine xsh "puts [formatobject dobj]"
 x setverb 1 sleep xsh "sleep dobjstr"
+x setverb 1 rename xsh "setprop dobj \"name\" iobjstr" 
 
 x setverb 1 create xsh "with {o} = {[clone dobj here]} { seq [setprop o name iobjstr] [setprop o owner playerid] [return o]} "
 x setverb 1 alias yaegi "p:=GetProperty(dobj, `aliases`,10);v:=p.Value+`,`+iobjstr; SetProperty(dobj, `aliases`,v);SaveObject(dobj)"

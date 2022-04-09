@@ -373,6 +373,7 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 			case "sleep":
 				duration, _ := strconv.ParseInt(c[1], 10, 64)
 				time.Sleep(time.Duration(duration) * time.Millisecond)
+				return xsh.Bool(true), true
 			case "become":
 				return xsh.Bool(become(c[1], c[2])), become(c[1], c[2])
 			case "setprop":
@@ -443,8 +444,16 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 			log.Println("Paniced:", r)
 			log.Println("Failed to eval:", player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr, "code:", code, r)
 			log.Println("stacktrace from panic in eval: \n" + string(debug.Stack()))
+			Msg(this, player, "notify", fmt.Sprintf("Failed to %v %v, because %v %v", verb, dobjstr, r, string(debug.Stack())), "", "")
 		}
 	}()
+	if verb != "tell" && verb != "notify" {
+		objstr := dobjstr
+		if objstr == "me" {
+			objstr = "yourself"
+		}
+		Msg(this, player, "notify", fmt.Sprintf("You %v %v %v %v", verb, dobjstr, prepstr, iobjstr), "", "")
+	}
 	verbStruct := GetVerbStruct(LoadObject(this), verb, 10)
 	if verbStruct == nil {
 		fmt.Printf("Failed to lookup '%v' on %v\n", verb, this)
