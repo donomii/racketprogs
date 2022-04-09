@@ -187,7 +187,7 @@ func doInput() {
 					InputPos = searchLeft(InputLine, InputPos)
 				}
 			} else {
-				Statuses["Input"] = fmt.Sprintf("%v", ev) //"Processing"
+				Statuses["Input"] = fmt.Sprintf("%+v", ev) //"Processing"
 				//debugStr = fmt.Sprintf("key: %v, %v, %v", ev.Key, ev.Ch, ev)
 				switch ev.Key {
 				case 4:
@@ -267,6 +267,10 @@ func doInput() {
 					//statuses["Input"] = ev.Key
 					before := InputLine[:InputPos]
 					after := InputLine[InputPos:]
+					//WTF windows?
+					if ev.Ch == 0 {
+						ev.Ch = 32
+					}
 					InputLine = fmt.Sprintf("%s%c%s", before, ev.Ch, after)
 					InputPos += 1
 					cursorX = len(prompt) + len(InputLine)
