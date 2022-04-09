@@ -179,12 +179,14 @@ func searchPath(execName string) string {
 	if runtime.GOOS == "windows" {
 		paths = strings.Split(pathStr, ";")
 	}
-	for _, path := range paths {
-		fullPath := path + "/" + execName
-		if _, err := os.Stat(fullPath); err == nil {
+	for _, extension := range []string{"", ".exe", ".bat", ".cmd"} {
+		for _, path := range paths {
+			fullPath := path + "/" + execName + extension
+			if _, err := os.Stat(fullPath); err == nil {
 
-			//XshInform("Found %s\n", fullPath)
-			return fullPath
+				//XshInform("Found %s\n", fullPath)
+				return fullPath
+			}
 		}
 	}
 	return ""
