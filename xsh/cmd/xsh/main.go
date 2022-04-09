@@ -68,7 +68,7 @@ func main() {
 		//fmt.Printf("%+v\n", xsh.TreeToTcl(xsh.Eval(state, xsh.Stdlib_str, "stdlib").List))
 		xsh.Eval(state, xsh.Stdlib_str, "stdlib")
 		if runtime.GOOS == "windows" {
-			shell(state)
+			NewShell(state)
 		} else {
 			NewShell(state)
 		}
