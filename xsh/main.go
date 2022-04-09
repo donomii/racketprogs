@@ -224,7 +224,7 @@ func runWithGuardian(cmd []string) error {
 	if fullPath == "" {
 		XshWarn("Could not find %s in PATH\n", binfile)
 		if runtime.GOOS == "windows" && (goof.Exists(binfile) || goof.Exists(binfile+".exe") || goof.Exists(binfile+".bat")) {
-			XshHelpful("Your file is in the current directory, but not in PATH.  Xsh does not automatically run programs in the current directory.  To do so, add '.' to PATH with 'set PATH [join [list $PATH \".\"] \";\"].\n")
+			XshHelpful("Your file is in the current directory, but not in PATH.  Xsh does not automatically run programs in the current directory.  To do so, add '.' to PATH with 'set PATH [join [list $PATH \".\"] \";\"]'.\n")
 		}
 		return fmt.Errorf("Could not find application %v in search path: %v\n", binfile, clampString(os.Getenv("PATH"), 100))
 	}
