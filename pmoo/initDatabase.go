@@ -58,6 +58,7 @@ func initDB() {
 	oops.Properties = map[string]Property{}
 	oops.Properties["description"] = Property{Value: "The system garbage bin, and default error object.  If you are reading this, there was probably an error."}
 	oops.Properties["location"] = Property{Value: `0`}
+	oops.Properties["parent"] = Property{Value: `0`}
 	SaveObject(&oops)
 
 	log.Println("Overwriting First room")
