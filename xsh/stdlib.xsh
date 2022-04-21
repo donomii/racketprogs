@@ -5,6 +5,8 @@ func sayHello { name |
 	puts "Hello " name
 }
 
+#The classic lisp map
+
 func map  { f alist |
 	if [eq [length alist] 1] {		
 			return {[f [lindex alist 0]]}
@@ -13,7 +15,7 @@ func map  { f alist |
 	}
 }
 
-#The classic lisp map
+
 
 func fold { f accum alist |
 	if [eq [length alist] 0] {
@@ -39,5 +41,35 @@ func LF {| chr 10 }
 func range_rec {start end step accum| if [gt start end] { return accum } else { range_rec [+ start step] end step [cons start accum] } }
 
 #Generate a list
+
 func range {start end step| reverse [range_rec start end step {} ] }
 
+
+func not {A| nand A A}
+func and {A B|
+    nand [nand A B] [nand A B]
+}
+func or {A B|
+    nand [nand A A] [nand B B]
+}
+func nor{A B|
+    nand [not A] [not B]
+}
+
+func xor {A B|
+    nand [nand A [nand A B]] [nand B [nand A B]]
+}
+
+func true {| 1}
+
+func false {| 0}
+
+func test {description expected actual|
+    if [eq expected actual] {
+        puts description ": OK"
+    } else {
+        puts description ": FAILED"
+        puts "expected: "expected
+        puts "actual:" actual
+    }
+}

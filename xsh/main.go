@@ -34,6 +34,7 @@ var UsePterm = true
 var WantDebug bool = false
 var WantTrace bool = false
 var WantInform bool = false
+var WantHelp bool = true
 var WantWarn bool = true
 var WantErrors bool = true
 
@@ -52,13 +53,23 @@ func New() State {
 	return s
 }
 
-func Eval(s State, code, fname string) autoparser.Node {
-	//fmt.Printf("Evalling: %v\n", code)
+func ShellEval(s State, code, fname string) autoparser.Node {
+	XshTrace("Evalling: %v\n", code)
 	tree := autoparser.ParseXSH(code, fname)
-	//fmt.Printf("Tree: %v\n", tree)
+	drintf("Tree: %v\n", tree)
 	s.Tree = tree
-	res := treeReduce(s, tree, nil, 2)
-	//fmt.Printf("Res: %+v\n", res)
+	res := treeReduce(s, tree, nil, 1)
+	drintf("Res: %+v\n", res)
+	return res
+}
+
+func Eval(s State, code, fname string) autoparser.Node {
+	XshTrace("Evalling: %v\n", code)
+	tree := autoparser.ParseXSH(code, fname)
+	drintf("Tree: %v\n", tree)
+	s.Tree = tree
+	res := treeReduce(s, tree, nil, -1)
+	drintf("Res: %+v\n", res)
 	return res
 }
 
@@ -92,7 +103,6 @@ func checkArgs(args []autoparser.Node, params []autoparser.Node) error {
 			if p.Raw == v.Raw {
 				XshErr("%v,%v,%v: Cannot shadow args in lambda: %+v, %+v\n", v.File, v.Line, v.Column, v, p)
 				os.Exit(1)
-				//panic(fmt.Sprintf("Cannot shadow args in lambda: %+v, %+v\n", v, p))
 			}
 		}
 	}
@@ -124,10 +134,10 @@ func ReplaceArg(args, params, t []autoparser.Node) []autoparser.Node {
 				for parami, param := range params {
 
 					//drintf("Comparing function arg: %+v with node %+v\n", farg, v)
-					//log.Printf("Comparing function arg: %+v with node %+v\n", args[parami].Raw, v.Raw)
+					//drintf("Comparing function arg: %+v with node %+v\n", args[parami].Raw, v.Raw)
 					//We found a variable to replace
 					if param.Raw == v.Raw {
-						//log.Printf("Replacing param %+v with %+v\n", param, args[parami])
+						drintf("Replacing param %+v with %+v\n", param, args[parami])
 						new := CopyNode(args[parami])
 						//New node is assumed to be from a different scope, so we need to set the scope barrier
 						new.ScopeBarrier = true
@@ -167,12 +177,17 @@ func FunctionsToTcl(functions map[string]Function) string {
 func searchPath(execName string) string {
 	pathStr := os.Getenv("PATH")
 	paths := strings.Split(pathStr, ":")
-	for _, path := range paths {
-		fullPath := path + "/" + execName
-		if _, err := os.Stat(fullPath); err == nil {
+	if runtime.GOOS == "windows" {
+		paths = strings.Split(pathStr, ";")
+	}
+	for _, extension := range []string{"", ".exe", ".bat", ".cmd"} {
+		for _, path := range paths {
+			fullPath := path + "/" + execName + extension
+			if _, err := os.Stat(fullPath); err == nil {
 
-			//XshInform("Found %s\n", fullPath)
-			return fullPath
+				//XshInform("Found %s\n", fullPath)
+				return fullPath
+			}
 		}
 	}
 	return ""
@@ -190,17 +205,35 @@ func FindGuardian() string {
 	//XshInform("Found guardian at %s\n", guardianPath)
 	return guardianPath
 }
+
+func clampString(s string, max int) string {
+	if len(s) > max {
+		if max > 3 {
+			return s[:max-3] + "..."
+		} else {
+			return s[:max]
+		}
+	}
+	return s
+}
 func runWithGuardian(cmd []string) error {
 	guardianPath := FindGuardian()
 	drintf("Launching guardian for %+v from %v\n", cmd, guardianPath)
 	binfile := cmd[0]
 	fullPath := searchPath(binfile)
-	if fullPath == "" && !goof.Exists(binfile) {
-		return fmt.Errorf("Could not find %v in path\n", binfile)
+	if fullPath == "" {
+		XshWarn("Could not find %s in PATH\n", binfile)
+		if runtime.GOOS == "windows" && (goof.Exists(binfile) || goof.Exists(binfile+".exe") || goof.Exists(binfile+".bat")) {
+			XshHelpful("Your file is in the current directory, but not in PATH.  Xsh does not automatically run programs in the current directory.  To do so, add '.' to PATH with 'set PATH [join [list $PATH \".\"] \";\"]'.\n")
+		}
+		return fmt.Errorf("Could not find application %v in search path: %v\n", binfile, clampString(os.Getenv("PATH"), 100))
+	}
+	if fullPath == "" {
+		fullPath = binfile
 	}
 	cmd[0] = fullPath
 	cmd = append([]string{guardianPath}, cmd...)
-	XshInform("Running %+v interactively with guardian %v\n", cmd, guardianPath)
+	XshInform("Running %+v interactively with guardian %v\n", cmd[1:], guardianPath)
 	return goof.QCI(cmd)
 }
 
@@ -210,7 +243,10 @@ func runWithGuardianCapture(cmd []string) (string, error) {
 	binfile := cmd[0]
 	fullPath := searchPath(binfile)
 	if fullPath == "" && !goof.Exists(binfile) {
-		return "", fmt.Errorf("Could not find %v in path\n", binfile)
+		return "", fmt.Errorf("Could not find application %v in search path: %v\n", binfile, os.Getenv("PATH"))
+	}
+	if fullPath == "" {
+		fullPath = binfile
 	}
 	cmd[0] = fullPath
 	cmd = append([]string{guardianPath}, cmd...)
@@ -221,7 +257,7 @@ func runWithGuardianCapture(cmd []string) (string, error) {
 func Void(command autoparser.Node) autoparser.Node {
 	drintf("Creating void at %+v\n", command.Line)
 	if command.ChrPos < 1 {
-		XshWarn("Warning: Create void with no line number.  This is probably an error.")
+		XshWarn("Warning: Create void with no line number.  This is probably an error.  Code: %+v\n", command)
 	}
 	return autoparser.Node{"", "", nil, "VOID", command.Line, command.Column, command.ChrPos, command.File, command.ScopeBarrier}
 }
@@ -267,7 +303,7 @@ func isLambda(e autoparser.Node) bool {
 
 func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int) autoparser.Node {
 	if len(command) == 0 {
-		return autoparser.Node{}
+		return Void(autoparser.Node{File: "eval", Line: 1, Column: 0, ChrPos: 1, Note: "empty eval"})
 	}
 	drintf("Evaluating: %v\n", TreeToXsh(command))
 	//If list, assume it is a lambda function and evaluate it
@@ -379,7 +415,7 @@ Given:
 
 	}
 	//Maybe we should return a warning here?  Or even exit?  Need a strict mode.
-	return Void(command[0])
+
 }
 func blockReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel int) autoparser.Node {
 
@@ -536,7 +572,7 @@ func TreeToXsh(t []autoparser.Node) string {
 }
 
 // Function constructor - constructs new function for listing given directory
-func listFiles(path string) func(string) []string {
+func ListFiles(path string) func(string) []string {
 	return func(line string) []string {
 		names := make([]string, 0)
 		files, _ := ioutil.ReadDir(path)
@@ -548,10 +584,13 @@ func listFiles(path string) func(string) []string {
 }
 
 //List all executable files in PATH
-func listPathExecutables() func(string) []string {
+func ListPathExecutables() func(string) []string {
 	return func(line string) []string {
 		names := make([]string, 0)
 		paths := strings.Split(os.Getenv("PATH"), ":")
+		if runtime.GOOS == "windows" {
+			paths = strings.Split(os.Getenv("PATH"), ";")
+		}
 		for _, p := range paths {
 			files, _ := ioutil.ReadDir(p)
 			for _, f := range files {
@@ -564,7 +603,7 @@ func listPathExecutables() func(string) []string {
 	}
 }
 
-func listBuiltins() func(string) []string {
+func ListBuiltins() func(string) []string {
 	return func(line string) []string {
 		return []string{"id", "and", "or", "join", "split", "puts", "+", "-", "*", "/", "+.", "-.", "*.", "/.", "loadfile", "set", "run", "seq", "with", "cd"}
 	}

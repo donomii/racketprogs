@@ -189,13 +189,14 @@ func ReadLineInputHandler(queue chan *Message) {
 var Affinity string
 var batch bool
 var pmooDebug bool
+var cmdProg = path.Base(os.Args[0])
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	var init bool
 	var RawTerm bool
 	var inQ chan *Message = make(chan *Message, 100)
-	cmdProg := path.Base(os.Args[0])
+	cmdProg = path.Base(os.Args[0])
 	pmooDebug = false
 
 	flag.BoolVar(&pmooDebug, "debug", false, "Print log messages")
@@ -271,7 +272,9 @@ func main() {
 func MOOloop(inQ chan *Message) {
 	for {
 		log.Println("Waiting on queue", len(inQ), "/", cap(inQ))
-
+		if cmdProg == "p" && len(inQ) == 0 {
+			os.Exit(0)
+		}
 		m := <-inQ
 		log.Println("Q:", m)
 		if m.Ticks < 1 {
@@ -370,9 +373,147 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 		} else {
 			//fmt.Printf("Running custom handler for command %v\n", c)
 			switch c[0] {
+			case "help":
+				if len(c) == 1 {
+					c = []string{"help", "all"}
+				}
+				switch c[1] {
+				case "cluster":
+					return xsh.N(`
+PMOO  - Personal MUD Object Oriented
+
+*** WARNING Cluster mode has no security! ***
+
+Running in cluster mode allows any hacker to log in and delete your computer!  Do not run cluster mode
+unless you are sure you have complete network security.
+
+PMOO has a cluster mode that allows multiple computers to run the same PMOO.  This mostly works, except
+that there is no protection against concurrent updates to an object overwriting each other.  This may
+be solved by only allowing an object to update itself, allowing it to enforce consistency for itself.
+
+Setting up the cluster is covered elsewhere.  The important thing to know inside the MOO is 'affinity'.
+
+Affinity is a string that identifies the node that an object is on.  This is used to determine which nodes
+will actually run verbs on an object.  For example, the player object has an affinity set to the player's 
+computer.  When someone sends a 'tell player that ...'message the tell verb will only run on the player's
+computer, displaying a message on the player's screen.  If there was no affinity, the tell verb would run
+on any node that picked it off the queue.
+
+The affinity is set by the 'become' verb for players, otherwise the normal 'setprop' command works.
+
+setprop shell affinity "Node A"
+
+The affinity of a node is set on the command line (or in the config file) when the node is started.  There is 
+currently no way to list all the nodes in the cluster.
+					`), true
+				case "scripting":
+					return xsh.N(`
+PMOO - Personal MUD Object Oriented 
+
+PMOO is a 'live object' system.  You create objects and verbs, and then use them.  Objects have inheritence through their 'parent'
+property.  All commands are executed in parallel.  You cannot rely on commands running in the same order that you give them, as one
+might be held up, allowing the next one to run first.
+
+PMOO is scripted in the xsh language.  You can learn about xsh at: xxxx add url here.  Xsh has been extended with 
+several commands to work with PMOO.  These commands are:
+
+sleep 1000 - Sleep for 1000 milliseconds
+become UUID - Become the player with the given UUID
+setprop UUID PROP VALUE - Set the property PROP to VALUE on the object with the given UUID
+getprop UUID PROP - Get the property PROP from the object with the given UUID
+findobject NAME - Find the object with the given name
+clone UUID NAME - Clone the object with the given UUID and give it the given NAME and new UUID.
+formatobject UUID - Format the object with the given UUID as a string
+move UUID TO_UUID- Move the object with the given UUID into the object with the given TO_UUID
+setverb UUID PROP "xsh" PROGRAM - Set the verb PROP to the given PROGRAM on the object with the given UUID.
+msg FROM_UUID TO_UUID VERB OBJ PREP IOBJ - Send a message from FROM_UUID to TO_UUID.
+o NAME - Get the object with the given name
+
+All verb scripts are started with some standard variables available:
+	here - The location that the caller is located
+	playerid - The player id of the player who sent the message
+	this - The object id of the object that the verb is being called on
+	verb - The verb that is being called
+	dobj - The direct object of the verb
+	dpropstr - The direct property of the dobj
+	prepstr - The preposition of the verb
+	iobj - The indirect object of the verb
+	ipropstr - The indirect property of the iobj
+	dobjstr - The direct object of the verb as a string
+	iobjstr - The indirect object of the verb as a string
+	trace - The trace of the message
+	args - The arguments of the message, parsed as a posix shell command
+	ticks - The number of ticks that have passed since the message was sent
+
+
+You can run scripts directly by typing 'x command', e.g.
+
+x puts hello world
+
+or create your own verb with
+
+x setverb 4 help xsh "msg playerid playerid \"tell\" [help dobj] 0 0"
+
+Note that you do not write %4 for the object UUID in xsh, just use the number directly.
+					`), true
+				case "moo":
+					return xsh.N(`
+PMOO - Personal MUD Object Oriented Programming
+
+MOOs are an online, multiuser version of old text adventure games like Zork or Adventure.  MOOs were briefly 
+popular in the 90s, but have since been replaced by more modern games that are actually fun.  You can still 
+find the original MOOs online, the wikipedia page is a good place to start: https://en.wikipedia.org/wiki/LambdaMOO
+
+PMOO is an experiment to use MOOs beyond their original purpose, and has ended up being a kind of virtual world
+command shell.  It is still possible to use it as a multiplayer environment, but it lacks any of the security
+features that would make that possible.  In particular, it does not prevent players from formatting the 
+computer if they want to!
+
+Players can move around the MOO using the traditional commands:
+> go east
+> take box
+> open door
+> say hello to Bob
+> say "What do you want to do?" to Bob
+
+There are some shortcut words for common objects:
+
+> examine me
+> examine here
+
+If you want to use the UUID of an object directly, put a % in front of it:
+
+> examine %1
+
+Writing your own commands is encouraged.  The scripting language is XSH, you can learn more with 'help scripting'.
+					`), true
+				default:
+					return xsh.N(`
+PMOO - Personal MUD Object Oriented
+
+PMOO is a Personal MOO.  Rather than duplicating the original MOOs, it builds on their ideas and combines it with 
+modern concepts, like clusters, or running on your laptop.  It is not sandboxed off from your computer, so you can 
+create MOO objects that manipulate your computer.
+
+A quick feature list:
+- MOO objects are saved to files and be can checked into git.  Your entire MOO can be branched and reverted.
+- No sandbox.  You can create MOO objects that manipulate your computer, using the built in scripting language
+- Cluster operation.  Multiple computers can run the MOO at the same time.
+- Disconnected operation.  MOO objects now have UUIDs, so disconnected operation is possible.
+- Multiple scripting languages.  Adding more is possible, if not easy.
+
+Additional help is available for:
+
+moo - what is a MOO?
+scripting - writing commands to control the MOO
+cluster - cluster mode
+					`), true
+				}
+
 			case "sleep":
 				duration, _ := strconv.ParseInt(c[1], 10, 64)
 				time.Sleep(time.Duration(duration) * time.Millisecond)
+				return xsh.Bool(true), true
 			case "become":
 				return xsh.Bool(become(c[1], c[2])), become(c[1], c[2])
 			case "setprop":
@@ -387,6 +528,9 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 				return xsh.Void(command[0]), true
 			case "getprop":
 				return xsh.N(GetProp(c[1], c[2])), true
+			case "delprop":
+				DelProp(c[1], c[2])
+				return xsh.N(c[2]), true
 			case "clone":
 				return xsh.N(Clone(c[1], c[2])), true
 			case "formatobject":
@@ -410,7 +554,11 @@ func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node
 				iobj := c[6]
 
 				thisObj := LoadObject(target)
-				affin := thisObj.Properties["affinity"].Value
+				affProp, ok := thisObj.Properties["affinity"]
+				affin := ""
+				if ok {
+					affin = affProp.Value
+				}
 				//log.Printf("From: %v, Target: %v, Verb: %v, Dobj: %v, Prep: %v, Iobj: %v\n", from.GetString(), target.GetString(), verb.GetString(), dobj.GetString(), prep.GetString(), iobj.GetString())
 
 				if Cluster {
@@ -443,8 +591,16 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 			log.Println("Paniced:", r)
 			log.Println("Failed to eval:", player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr, "code:", code, r)
 			log.Println("stacktrace from panic in eval: \n" + string(debug.Stack()))
+			Msg(this, player, "notify", fmt.Sprintf("Failed to %v %v, because %v %v", verb, dobjstr, r, string(debug.Stack())), "", "")
 		}
 	}()
+	if verb != "tell" && verb != "notify" {
+		objstr := dobjstr
+		if objstr == "me" {
+			objstr = "yourself"
+		}
+		Msg(this, player, "notify", fmt.Sprintf("You %v %v %v %v", verb, dobjstr, prepstr, iobjstr), "", "")
+	}
 	verbStruct := GetVerbStruct(LoadObject(this), verb, 10)
 	if verbStruct == nil {
 		fmt.Printf("Failed to lookup '%v' on %v\n", verb, this)

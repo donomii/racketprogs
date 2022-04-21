@@ -2,13 +2,16 @@ package main
 
 import (
 	"bytes"
-	"github.com/chzyer/readline"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
+	"strings"
 	"time"
+
+	"github.com/chzyer/readline"
 
 	"github.com/nsf/termbox-go"
 )
@@ -60,26 +63,44 @@ func QuickCommandInteractivePrep(strs []string) (*subprocpipes, *exec.Cmd) {
 	sub := subprocpipes{stdinwriter, outreader, errreader}
 	return &sub, cmd
 }
+func batchMangle(command []string) []string {
+	if len(command) == 0 {
+		return command
+	}
+	if strings.HasSuffix(command[0], ".bat") {
+		return append([]string{"cmd", "/c", "call"}, command...)
+	}
 
+	return command
+}
 func main() {
 	log.SetOutput(ioutil.Discard)
 	//termbox.Init()
 	command := os.Args[1:]
+	if runtime.GOOS == "windows" {
+		command = batchMangle(command)
+	}
 	_, cmd := QuickCommandInteractivePrep(command)
 	SubProcHandle = cmd
 
 	log.Printf("Guardian: starting %+v\n", command)
-	l, _ := readline.New("")
-	l.Terminal.EnterRawMode()
-	err := cmd.Start()
-	/*
-		for cmd.ProcessState==nil {
-			time.Sleep(time.Second)
-		}
-		for ! cmd.ProcessState.Exited() {
-			time.Sleep(time.Second)
-		}
-	*/
+	var err error
+	if runtime.GOOS == "windows" {
+		l, _ := readline.New("")
+		l.Terminal.EnterRawMode()
+		err = cmd.Start()
+		/*
+			for cmd.ProcessState==nil {
+				time.Sleep(time.Second)
+			}
+			for ! cmd.ProcessState.Exited() {
+				time.Sleep(time.Second)
+			}
+		*/
+	} else {
+		cmd = exec.Command(command[0], command[1:]...)
+		err = ptycall(cmd)
+	}
 	if err == nil {
 		cmd.Process.Wait()
 
@@ -89,10 +110,11 @@ func main() {
 		//termbox.Close()
 		//l.Terminal.Close()
 
-		l.Terminal.ExitRawMode()
+		//l.Terminal.ExitRawMode()
 		os.Exit(0)
 	} else {
 		log.Println("Error: ", err)
+		os.Exit(1)
 	}
 
 }

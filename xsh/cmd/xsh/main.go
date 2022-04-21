@@ -1,17 +1,19 @@
 package main
 
 import (
+	lined "../../lined"
 	"os/signal"
 
 	xsh "../.."
-
 	"flag"
 	"fmt"
+	"runtime"
 
+	"github.com/mitchellh/go-homedir"
 	"io"
 	"io/ioutil"
 
-	"github.com/nsf/termbox-go"
+	"github.com/donomii/termbox-go"
 
 	"os"
 
@@ -64,8 +66,12 @@ func main() {
 		xsh.LoadEval(state, *resumeFile)
 	case wantShell:
 		//fmt.Printf("%+v\n", xsh.TreeToTcl(xsh.Eval(state, xsh.Stdlib_str, "stdlib").List))
-		xsh.TreeToXsh(xsh.Eval(state, xsh.Stdlib_str, "stdlib").List)
-		shell(state)
+		xsh.Eval(state, xsh.Stdlib_str, "stdlib")
+		if runtime.GOOS == "windows" {
+			NewShell(state)
+		} else {
+			NewShell(state)
+		}
 	default:
 		xsh.Eval(state, xsh.Stdlib_str, "stdlib")
 		xsh.LoadEval(state, fname)
@@ -88,7 +94,11 @@ func listFiles(path string) func(string) []string {
 func listPathExecutables() func(string) []string {
 	return func(line string) []string {
 		names := make([]string, 0)
-		paths := strings.Split(os.Getenv("PATH"), ":")
+		sep := ":"
+		if runtime.GOOS == "windows" {
+			sep = ";"
+		}
+		paths := strings.Split(os.Getenv("PATH"), sep)
 		for _, p := range paths {
 			files, _ := ioutil.ReadDir(p)
 			for _, f := range files {
@@ -121,6 +131,7 @@ func tbprint(x, y int, fg, bg termbox.Attribute, msg string) {
 		x += runewidth.RuneWidth(c)
 	}
 }
+
 func shell(state xsh.State) {
 
 	var completer = readline.NewPrefixCompleter(
@@ -159,6 +170,7 @@ func shell(state xsh.State) {
 	go func() {
 		for sig := range c {
 			// sig is a ^C, handle it
+			//Kill any running guardians?
 			fmt.Printf("\n%v\n", sig)
 			xsh.XshWarn("Break")
 		}
@@ -181,6 +193,67 @@ func shell(state xsh.State) {
 		}
 
 		line = strings.TrimSpace(line)
-		xsh.XshInform("%+v\n", xsh.TreeToXsh([]autoparser.Node{xsh.Eval(state, line, "shell")}))
+		xsh.XshResponse("%+v\n", xsh.TreeToXsh([]autoparser.Node{xsh.ShellEval(state, line, "shell")}))
+	}
+}
+
+func NewShell(state xsh.State) {
+
+	if usePterm {
+		// Print a large text banner with differently colored letters.
+		pterm.DefaultBigText.WithLetters(
+			pterm.NewLettersFromStringWithStyle("X", pterm.NewStyle(pterm.FgLightMagenta)),
+			pterm.NewLettersFromStringWithStyle("Shell", pterm.NewStyle(pterm.FgCyan))).
+			Render()
+	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for sig := range c {
+			// sig is a ^C, handle it
+			//Kill any running guardians?
+			fmt.Printf("\n%v\n", sig)
+			xsh.XshWarn("Break")
+		}
+	}()
+	dir, _ := homedir.Dir()
+	lined.Init(dir + "/.xsh/history")
+	lined.KeyHook = func(key string) {
+		switch key {
+		case "TAB":
+			lined.Statuses["complete"] = lined.ExtractWord(lined.InputLine, lined.InputPos)
+			words := append(xsh.ListBuiltins()("lalala"), xsh.ListPathExecutables()("lalala")...)
+			words = append(words, xsh.ListFiles("./")("./")...)
+			completions := make([]string, 0)
+			for _, w := range words {
+				if strings.HasPrefix(w, lined.Statuses["complete"]) {
+					completions = append(completions, w)
+
+				}
+			}
+			lined.Statuses["complete"] = fmt.Sprintf("%v", completions)
+		default:
+			command := os.Getenv(key)
+			lined.InputLine = command
+			lined.FinishInput()
+		}
+	}
+	os.Setenv("F1", `puts "ICE - Interactive Command Environment
+
+	ICE is a shell that allows you to write and run commands in a Text UI.  At its core is
+	XSH, a simple scripting language.  ICE
+	
+	"`)
+	for {
+		fmt.Printf("\n\n")
+		line := lined.ReadLine()
+
+		line = strings.TrimSpace(line)
+		fmt.Println()
+		res := xsh.TreeToXsh([]autoparser.Node{xsh.ShellEval(state, line, "shell")})
+		if res != "" && res != "\"\"" {
+			xsh.XshResponse("%+v\n", res)
+		}
 	}
 }
