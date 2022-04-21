@@ -176,6 +176,23 @@ func ReadLineInputHandler(queue chan *Message) {
 			}
 			//fmt.Printf("Examining input: '%s'\n", text[:2])
 			if text[:2] == "x " {
+
+				state := xsh.New()
+				addPmooTypes(state)
+				state.ExtraBuiltins = xshBuiltins
+				state.UserData = DefaultPlayerId
+				std := xsh.Parse(xsh.Stdlib_str, "stdlib")
+				xsh.Run(state, std)
+				xsh.WantDebug = pmooDebug
+				code := text[2:]
+				code = BuildXshCode(code, DefaultPlayerId, DefaultPlayerId, "", "", "", "", "", "", "", "")
+				log.Println("xsh program: ", code)
+
+				tr := xsh.Parse(code, "pmoo")
+				//fmt.Printf("Substituting pmoo vars\n")
+				tr = subsitutePmooVars(tr)
+				log.Printf("Running xsh program: %v\n", tr)
+				xsh.Run(state, tr)
 				fmt.Println(xshRun(text[2:], DefaultPlayerId))
 			} else {
 				//Console is always the wizard, at least for now
@@ -292,6 +309,8 @@ func MOOloop(inQ chan *Message) {
 			if m.This != "" && m.Player != "" && m.Verb != "" { //Skip broken messages
 				log.Printf("Invoking direct message %+v", m)
 				invoke(m.Player, m.This, m.Verb, m.Dobj, m.Dpropstr, m.Prepstr, m.Iobj, m.Ipropstr, m.Dobjstr, m.Iobjstr, *m)
+			} else {
+				log.Println("Dropped message because it was malformed:", m)
 			}
 			continue
 		}

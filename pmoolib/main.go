@@ -220,7 +220,8 @@ func LoadObject(id string) *Object {
 		return FetchObject(QueueServer, id)
 	} else {
 		if id == "" {
-			panic("LoadObject called with empty id")
+			log.Println("LoadObject called with empty id")
+			return nil
 		}
 		name := DataDir + "/" + id + ".json"
 		//fmt.Println("Loading '" + name + "'")
@@ -418,7 +419,24 @@ func SetProp(objstr, name, value string) {
 	if o == nil {
 		log.Printf("Object '%v' not found!\n", objstr)
 	}
+	//Send message to player that the object does not exist
 	SetProperty(o, name, value)
+}
+
+//Delete a property from an object
+func DeleteProperty(o *Object, name string) {
+	log.Printf("Deleting property %v on object %v\n", name, o.Id)
+	delete(o.Properties, name)
+	log.Printf("Audit: Deleted property %v on %v\n", name, o.Id)
+	SaveObject(o)
+}
+func DelProp(objstr, name string) {
+	log.Printf("Deleting prop %v on object %v\n", name, objstr)
+	o := LoadObject(objstr)
+	if o == nil {
+		log.Printf("Object '%v' not found!\n", objstr)
+	}
+	DeleteProperty(o, name)
 }
 
 func SetVerbStruct(o *Object, name, value, interpreter string) {
@@ -921,6 +939,7 @@ func SetThroffVerb(obj, name, code string) {
 	o.Properties[name] = v
 	SaveObject(o)
 }
+
 //Set a verb property on an object
 func SetXshVerb(obj, name, code string) {
 	log.Println("SetXshVerb: ", obj, name, code)
