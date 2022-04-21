@@ -247,9 +247,7 @@ func LoadObject(id string) *Object {
 		return &data
 	}
 }
-
-//Fixme copied
-func GetPropertyStruct(o *Object, name string, timeout int) *Property {
+func RecFindProp(o *Object, name string, timeout int) *Object {
 	//log.Println(o)
 	if timeout < 1 {
 		log.Printf("Timeout while looking up %v on %v\n", name, o.Id)
@@ -261,12 +259,8 @@ func GetPropertyStruct(o *Object, name string, timeout int) *Property {
 	log.Printf("Searching for property %v in %v(%v)\n", name, o.Id, o.Properties["name"].Value)
 	val, ok := o.Properties[name]
 	if ok {
-		if val.Verb {
-			fmt.Printf("Can't find property '%v', but could find verb '%v'\n", name, name)
-			return nil
-		}
 		log.Printf("Found %v\n", val)
-		return &val
+		return o
 	}
 	parentProp, ok := o.Properties["parent"]
 	log.Printf("Moving to parent %v\n", parentProp)
@@ -280,7 +274,16 @@ func GetPropertyStruct(o *Object, name string, timeout int) *Property {
 	if parent == fmt.Sprintf("%v", o.Id) {
 		return nil
 	}
-	return GetPropertyStruct(LoadObject(parent), name, timeout-1)
+	return RecFindProp(LoadObject(parent), name, timeout-1)
+}
+
+//Fixme copied
+func GetPropertyStruct(o *Object, name string, timeout int) *Property {
+	val, ok := o.Properties[name]
+	if ok {
+		return &val
+	}
+	return nil
 }
 
 //Load a property from an object (given object id)
@@ -288,9 +291,11 @@ func GetProp(objstr, name string) string {
 	if objstr == "" {
 		panic("GetProp called with empty object id")
 	}
-	o := LoadObject(objstr)
+	o := RecFindProp(LoadObject(objstr), name, 10)
+	//fmt.Println("GetProp", objstr, name, o)
 	if o == nil {
-		panic("GetProp called with invalid object id")
+		return ""
+		//FIXME panic(fmt.Sprintf("GetProp called with invalid object id '%v'", objstr))
 	}
 	p := GetPropertyStruct(o, name, 10)
 	if p != nil {
@@ -302,7 +307,8 @@ func GetProp(objstr, name string) string {
 
 //Load a verb from an object (given object id)
 func GetVerb(objstr, name string) string {
-	p := GetVerbStruct(LoadObject(objstr), name, 10)
+	o := RecFindProp(LoadObject(objstr), name, 10)
+	p := GetVerbStruct(o, name, 10)
 	if p != nil {
 		return p.Value
 	} else {
@@ -312,12 +318,6 @@ func GetVerb(objstr, name string) string {
 
 func GetVerbStruct(o *Object, name string, timeout int) *Property {
 	if o == nil {
-		return nil
-	}
-	log.Printf("Searching for verb '%v' in '%v'(%v)", name, o.Id, GetProp(o.Id, "name"))
-	//log.Println(o)
-	if timeout < 1 {
-		log.Printf("Timeout while looking up %v on %v\n", name, o.Id)
 		return nil
 	}
 
@@ -332,20 +332,7 @@ func GetVerbStruct(o *Object, name string, timeout int) *Property {
 		//log.Printf("Verb not found in %v", o.Properties)
 	}
 
-	parentProp, ok := o.Properties["parent"]
-	if !ok {
-		//All objects must have a parent
-		panic(fmt.Sprintf("No parent for %v when looking for verb %v in %v", o.Id, name, o.Id))
-	}
-	parent := parentProp.Value
-	//log.Printf("Searching %v, then parent %v\n", fmt.Sprintf("%v", o.Id), parent)
-	//Object points to itself, time to quit
-	if parent == o.Id {
-		log.Printf("No more parents to search.  Search failed\n")
-		return nil
-	}
-
-	return GetVerbStruct(LoadObject(parent), name, timeout-1)
+	return nil
 }
 
 //Allocate a new GUID for an object.  GUID will be ASCII, and hopefully unique
@@ -707,16 +694,22 @@ func VerbSearch(oid, aName string) (*Object, *Property) {
 	locId := GetPropertyStruct(o, "location", 10).Value
 	loc := LoadObject(locId)
 	roomContents := SplitStringList(GetPropertyStruct(loc, "contents", 10).Value)
-	playerContents := SplitStringList(GetPropertyStruct(o, "contents", 10).Value)
 	contents := append([]string{o.Id, locId}, roomContents...)
-	contents = append(contents, playerContents...)
+	contentsStruct := GetPropertyStruct(o, "contents", 10)
+	if contentsStruct != nil {
+		playerContents := SplitStringList(contentsStruct.Value)
+		contents = append(contents, playerContents...)
+	}
 	for _, objId := range contents {
 		if objId != "" {
 			log.Println("Loading object from contents: '" + objId + "'")
 			obj := LoadObject(objId)
-			nameProp := GetVerbStruct(obj, aName, 10)
-			if nameProp != nil {
-				return obj, nameProp
+			vobj := RecFindProp(obj, aName, 10)
+			if vobj != nil {
+				nameProp := GetVerbStruct(vobj, aName, 10)
+				if nameProp != nil {
+					return obj, nameProp
+				}
 			}
 		}
 	}
@@ -778,8 +771,14 @@ func NameSearch(o *Object, aName, player string) (*Object, *Property) {
 	locId := GetPropertyStruct(o, "location", 10).Value
 	loc := LoadObject(locId)
 	contents := SplitStringList(GetPropertyStruct(loc, "contents", 10).Value)
-	playerContents := SplitStringList(GetPropertyStruct(LoadObject(player), "contents", 10).Value)
-	contents = append(contents, playerContents...)
+	playerObj := LoadObject(player)
+
+	propStruct := GetPropertyStruct(playerObj, "contents", 10)
+
+	if propStruct != nil {
+		playerContents := SplitStringList(propStruct.Value)
+		contents = append(contents, playerContents...)
+	}
 	contents = append([]string{o.Id, locId}, contents...)
 	log.Println("Searching these objects:", contents)
 	for _, objId := range contents {

@@ -239,8 +239,20 @@ func main() {
 		os.MkdirAll(dataDir, 0600)
 		SetDataDir(dataDir)
 		log.Println("Using MOO in", pmoo.DataDir)
-		args := append(flag.Args(), "", "", "")
-		RawMsg(Message{Player: DefaultPlayerId, This: DefaultSystemCore, Verb: "%commandline", Args: args, Ticks: DefaultTicks})
+		//FIXME duplicate code
+		text := strings.Join(flag.Args(), " ")
+		text = strings.TrimSuffix(text, "\r\n")
+		text = strings.TrimSuffix(text, "\n")
+		if text != "" {
+			//fmt.Printf("Examining input: %s\n", text[:2])
+			if text[:2] == "x " {
+				fmt.Println(xshRun(text[2:], DefaultPlayerId))
+			} else {
+				fmt.Printf("p input handler: %s\n", text)
+				//Console is always the wizard, at least for now
+				InputMsg(DefaultPlayerId, DefaultSystemCore, "input", text)
+			}
+		}
 	} else {
 		if Cluster {
 			//okdb.Connect("192.168.178.22:7778")
@@ -610,7 +622,9 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 			log.Println("Paniced:", r)
 			log.Println("Failed to eval:", player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr, iobjstr, "code:", code, r)
 			log.Println("stacktrace from panic in eval: \n" + string(debug.Stack()))
-			Msg(this, player, "notify", fmt.Sprintf("Failed to %v %v, because %v %v", verb, dobjstr, r, string(debug.Stack())), "", "")
+			if verb != "notify" {
+				Msg(this, player, "notify", fmt.Sprintf("Failed to %v %v, because %v %v", verb, dobjstr, r, string(debug.Stack())), "", "")
+			}
 		}
 	}()
 	if verb != "tell" && verb != "notify" {
@@ -620,7 +634,13 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 		}
 		Msg(this, player, "notify", fmt.Sprintf("You %v %v %v %v", verb, dobjstr, prepstr, iobjstr), "", "")
 	}
-	verbStruct := GetVerbStruct(LoadObject(this), verb, 10)
+
+	vobj := RecFindProp(LoadObject(this), verb, 10)
+	if vobj == nil {
+		log.Println("Failed to find verb", verb, "in object", this)
+		return
+	}
+	verbStruct := GetVerbStruct(vobj, verb, 10)
 	if verbStruct == nil {
 		fmt.Printf("Failed to lookup '%v' on %v\n", verb, this)
 	} else {
