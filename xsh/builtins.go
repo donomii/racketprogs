@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 func addBuiltinTypes(s State) {
@@ -64,6 +65,11 @@ func addBuiltinTypes(s State) {
 }
 func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f string, args []autoparser.Node, level int) autoparser.Node {
 	switch f {
+	case "sleep":
+		if len(args) == 1 {
+			t := atoi(S(args[0]))
+			time.Sleep(time.Duration(t) * time.Millisecond)
+		}
 	case "nand":
 		if S(args[0]) == "1" && S(args[1]) == "1" {
 			return Bool(false)
@@ -230,7 +236,11 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			}
 		}
 		fmt.Println()
-		return N(TreeToXsh(args))
+		if len(args) > 0 {
+			return N(TreeToXsh(args))
+		} else {
+			return N("")
+		}
 	case "format":
 		return N(TreeToXsh(args))
 	case "loadfile":

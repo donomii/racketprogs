@@ -175,6 +175,13 @@ func FunctionsToTcl(functions map[string]Function) string {
 }
 
 func searchPath(execName string) string {
+	drintf("Searching path for '%v'\n", execName)
+	if execName == "" {
+		return ""
+	}
+	if execName[0] == '/' {
+		return execName
+	}
 	pathStr := os.Getenv("PATH")
 	paths := strings.Split(pathStr, ":")
 	if runtime.GOOS == "windows" {
@@ -228,28 +235,28 @@ func runWithGuardian(cmd []string) error {
 		}
 		return fmt.Errorf("Could not find application %v in search path: %v\n", binfile, clampString(os.Getenv("PATH"), 100))
 	}
-	if fullPath == "" {
-		fullPath = binfile
-	}
+
 	cmd[0] = fullPath
-	cmd = append([]string{guardianPath}, cmd...)
+	cmd = append([]string{guardianPath, "interactive"}, cmd...)
 	XshInform("Running %+v interactively with guardian %v\n", cmd[1:], guardianPath)
 	return goof.QCI(cmd)
 }
 
 func runWithGuardianCapture(cmd []string) (string, error) {
 	guardianPath := FindGuardian()
-	drintf("Launching guardian for %+v from %v\n", cmd, guardianPath)
+	drintf("Launching guardian for capturing %+v from %v\n", cmd, guardianPath)
 	binfile := cmd[0]
 	fullPath := searchPath(binfile)
 	if fullPath == "" && !goof.Exists(binfile) {
-		return "", fmt.Errorf("Could not find application %v in search path: %v\n", binfile, os.Getenv("PATH"))
+		XshWarn("Could not find %s in PATH\n", binfile)
+		if runtime.GOOS == "windows" && (goof.Exists(binfile) || goof.Exists(binfile+".exe") || goof.Exists(binfile+".bat")) {
+			XshHelpful("Your file is in the current directory, but not in PATH.  Xsh does not automatically run programs in the current directory.  To do so, add '.' to PATH with 'set PATH [join [list $PATH \".\"] \";\"]'.\n")
+		}
+		return "", fmt.Errorf("Could not find application %v in search path: %v\n", binfile, clampString(os.Getenv("PATH"), 100))
 	}
-	if fullPath == "" {
-		fullPath = binfile
-	}
+
 	cmd[0] = fullPath
-	cmd = append([]string{guardianPath}, cmd...)
+	cmd = append([]string{guardianPath, "noninteractive"}, cmd...)
 	XshTrace("Command: %+v\n", cmd)
 	XshInform("Running %+v for capture with guardian %v\n", cmd, guardianPath)
 	return goof.QC(cmd)
@@ -344,9 +351,13 @@ func eval(s State, command []autoparser.Node, parent *autoparser.Node, level int
 	//Do we have a type for this function?
 	ftype, ok := s.TypeSigs[f]
 	if ok {
-		last := ftype[len(ftype)-1]
+		lastArgType := ftype[len(ftype)-1]
+		fixedArgs := []string{}
+		if len(ftype)-2 > 0 {
+			fixedArgs = ftype[1 : len(ftype)-2]
+		}
 		if len(ftype) != len(args)+1 {
-			if last != "..." {
+			if lastArgType != "..." {
 				XshErr(`Error %v,%v,%v: Mismatched function args to %v
 
 Expected:
@@ -361,22 +372,30 @@ Given:
 		}
 		//Different checks for variadic functions
 		//FIXME refactor duplicate code
-		if last == "..." {
-			lastType := ftype[len(ftype)-2]
-			for i, v := range ftype[1 : len(ftype)-1] {
+		if lastArgType == "..." {
+			varArgsType := ftype[len(ftype)-2]
+			varArgs := []autoparser.Node{}
+			if len(ftype)-2 < len(args) {
+				varArgs = args[len(ftype)-2:]
+			}
+			//First, check that the specified types match
+			//This is the fixed args array
+			for i, v := range fixedArgs {
 				drintf("Checking type %v against arg %v\n", v, typeOf(args[i]))
 				if typeOf(args[i]) != v && v != "any" {
 					XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v, got %v\n", command[0].File, command[0].Line, TreeToXsh(command), i+1, v, typeOf(args[i]))
 				}
 			}
-			drintf("Checking remaining args %v against last type %v\n", TreeToXsh(args[len(ftype)-2:]), lastType)
-			for i, v := range args[len(ftype)-2:] {
-				drintf("Checking type %v against arg %v\n", typeOf(v), lastType)
-				if typeOf(v) != lastType && lastType != "any" {
-					XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v (in ...), got %v\n", command[0].File, command[0].Line, TreeToXsh(command), i+len(ftype)-1, lastType, typeOf(v))
+			//Now check that the remaining args are of the varargs type
+			drintf("Checking remaining args %v against varargs type %v\n", TreeToXsh(varArgs), varArgsType)
+			for i, v := range varArgs {
+				drintf("Checking type %v against arg %v\n", typeOf(v), varArgsType)
+				if typeOf(v) != varArgsType && varArgsType != "any" {
+					XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v (in ...), got %v\n", command[0].File, command[0].Line, TreeToXsh(command), i+len(ftype)-1, varArgsType, typeOf(v))
 				}
 			}
 		} else {
+			//There are no varags, simply check that the types match, and there are the correct number of args
 			for i, v := range ftype[1:] {
 				if typeOf(args[i]) != v && v != "any" {
 					XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v, got %v\n", command[0].File, command[0].Line, TreeToXsh(command), i+1, v, typeOf(args[i]))

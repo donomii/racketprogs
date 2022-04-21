@@ -1,17 +1,21 @@
 package main
 
 import (
-	lined "../../lined"
 	"os/signal"
+	"path"
 
-	xsh "../.."
+	lined "../../lined"
+
 	"flag"
 	"fmt"
 	"runtime"
 
-	"github.com/mitchellh/go-homedir"
+	xsh "../.."
+
 	"io"
 	"io/ioutil"
+
+	"github.com/mitchellh/go-homedir"
 
 	"github.com/donomii/termbox-go"
 
@@ -197,6 +201,40 @@ func shell(state xsh.State) {
 	}
 }
 
+//Count the number of spaces in a string
+func countSpaces(s string) int {
+	count := 0
+	for _, c := range s {
+		if c == ' ' {
+			count++
+		}
+	}
+	return count
+}
+
+//Take a relative path and turn it into an absolute path.  Expand ~ to home directory, and expand
+//other shell shortcuts.
+func expandPath(s string) string {
+	if s == "" {
+		return ""
+	}
+	if s[0] == '~' {
+		return os.Getenv("HOME") + s[1:]
+	}
+	if s[0] == '.' {
+		return "./" + s[1:]
+	}
+	if s[0] == '/' {
+		return s
+	}
+	return s
+}
+
+//FIXME
+var current_completions = []string{}
+var current_completion_word = ""
+var current_completion_index = 0
+
 func NewShell(state xsh.State) {
 
 	if usePterm {
@@ -221,18 +259,109 @@ func NewShell(state xsh.State) {
 	lined.Init(dir + "/.xsh/history")
 	lined.KeyHook = func(key string) {
 		switch key {
-		case "TAB":
-			lined.Statuses["complete"] = lined.ExtractWord(lined.InputLine, lined.InputPos)
-			words := append(xsh.ListBuiltins()("lalala"), xsh.ListPathExecutables()("lalala")...)
-			words = append(words, xsh.ListFiles("./")("./")...)
-			completions := make([]string, 0)
-			for _, w := range words {
-				if strings.HasPrefix(w, lined.Statuses["complete"]) {
-					completions = append(completions, w)
-
-				}
+		case "F1":
+			if usePterm {
+				// Print a large text banner with differently colored letters.
+				pterm.DefaultBigText.WithLetters(
+					pterm.NewLettersFromStringWithStyle("X", pterm.NewStyle(pterm.FgLightMagenta)),
+					pterm.NewLettersFromStringWithStyle("Shell", pterm.NewStyle(pterm.FgCyan))).
+					Render()
 			}
-			lined.Statuses["complete"] = fmt.Sprintf("%v", completions)
+			//Display help message, eventually context sensitive help
+			xsh.XshResponse(`
+			XSHELL HELP
+
+			Xshell is a command shell and scripting language.  It is not compatible with POSIX shells, 
+			but is still similar.
+
+			Basic commands and environment variables work as usual:
+
+			ls -lh
+			set LISTDIR /home
+			ls -lh $LISTDIR
+
+
+			Key shortcuts function roughly as usual:
+
+			TAB - rotate through completion suggestions
+			F5 - auto-complete
+			F1 - help
+			Up/Down - history
+			Ctrl-D - exit
+
+			More help is available by typing "help" or "?" followed by one of these topics:
+
+			online, scripting, builtins, variables, history, shell, environment
+			`)
+
+		case "F2":
+		case "TAB":
+			//Accept the completion of the current line
+			//Insert the first element of current_completions into lined.InputLine at lined.InputPos
+			completion_word := current_completions[current_completion_index]
+			current_word := lined.ExtractWord(lined.InputLine, lined.InputPos)
+			completion_string := completion_word
+			if completion_word[len(completion_word)-1] != '/' {
+				//remove current_word from the start of completion_word, and add a space
+				completion_string = completion_word[len(current_word):]
+			}
+			//If the last letter of completion_string is not a "/", add a space
+			if completion_string[len(completion_string)-1] != '/' {
+				completion_string = completion_string + " "
+			}
+			lined.InputLine = strings.Join([]string{lined.InputLine[:lined.InputPos], completion_string, lined.InputLine[lined.InputPos:]}, "")
+			lined.InputPos += len(completion_string)
+		case "F5":
+			current_word := lined.ExtractWord(lined.InputLine, lined.InputPos)
+			lined.Statuses["aword"] = current_word
+			lined.Statuses["accw"] = current_completion_word
+			completions := current_completions
+			if current_word == current_completion_word {
+				//If the current word is the same as the last completion word, then we are cycling through the
+				//completions.
+				if current_completion_index < len(current_completions)-1 {
+					current_completion_index++
+				} else {
+					current_completion_index = 0
+				}
+			} else {
+				lined.Statuses["complete"] = current_word
+				current_completion_word = current_word
+				current_completion_index = 0
+				current_completions = []string{}
+				completions = []string{}
+				words := []string{}
+				if countSpaces(lined.InputLine[:lined.InputPos]) == 0 {
+					words = append(xsh.ListBuiltins()("lalala"), xsh.ListPathExecutables()("lalala")...)
+				}
+				//Separate current word into path and partial filename
+				//If path is empty, use current directory
+				//If path is not empty, use path
+				userpath, filename := path.Split(current_word)
+				path := expandPath(userpath)
+				if path == "" {
+					path = "./"
+				}
+
+				words = append(words, xsh.ListFiles(path)(path)...)
+
+				for _, w := range words {
+					if strings.HasPrefix(w, filename) {
+						completions = append(completions, w)
+					}
+				}
+				current_completions = completions
+			}
+
+			//Build a string from completions, put a * next to the current completion
+			completion_string := ""
+			for i, c := range completions {
+				if i == current_completion_index {
+					completion_string += "*"
+				}
+				completion_string += c + " "
+			}
+			lined.Statuses["complete"] = completion_string
 		default:
 			command := os.Getenv(key)
 			lined.InputLine = command
@@ -246,11 +375,12 @@ func NewShell(state xsh.State) {
 	
 	"`)
 	for {
-		fmt.Printf("\n\n")
+		fmt.Printf("\n\n\n\n\n")
 		line := lined.ReadLine()
 
 		line = strings.TrimSpace(line)
 		fmt.Println()
+
 		res := xsh.TreeToXsh([]autoparser.Node{xsh.ShellEval(state, line, "shell")})
 		if res != "" && res != "\"\"" {
 			xsh.XshResponse("%+v\n", res)
