@@ -1,4 +1,8 @@
-all: clean xsh xshguardian xshwatch libxsh
+all: clean deps xsh xshguardian xshwatch libxsh localinstall install
+
+deps:
+	go get -v .
+	go get -v github.com/donomii/termbox-go github.com/mitchellh/go-homedir github.com/radovskyb/watcher
 
 xsh:./cmd/xsh/main.go ./*.go
 	go build ./cmd/xsh
