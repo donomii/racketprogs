@@ -441,11 +441,9 @@ func DelProp(objstr, name string) {
 
 func SetVerbStruct(o *Object, name, value, interpreter string) {
 	//fmt.Printf("Setting verb %v on object %v to %v\n", name, o, value)
-	prop := GetVerbStruct(o, name, 10)
-	if prop == nil {
-		log.Printf("Verb '%v' not found, creating new verb on object %v(%v)\n", name, o.Id, GetProp(o.Id, "name"))
-		prop = &Property{Verb: true}
-	}
+
+	prop := &Property{Verb: true}
+
 	prop.Verb = true
 	p := *prop
 	p.Value = value
