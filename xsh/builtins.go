@@ -19,7 +19,7 @@ func addBuiltinTypes(s State) {
 	s.TypeSigs["seq"] = []string{"any", "any", "..."}
 	s.TypeSigs["set"] = []string{"void", "string", "any"}
 	s.TypeSigs["run"] = []string{"string", "string", "..."}
-
+	s.TypeSigs["shell"] = []string{"string", "string"}
 	s.TypeSigs["map"] = []string{"list", "lambda", "list"}
 	s.TypeSigs["fold"] = []string{"any", "lambda", "any", "list"}
 	s.TypeSigs["cd"] = []string{"void", "string"}
@@ -274,6 +274,9 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 				return N(err.Error())
 			}
 		}
+	case "shell":
+		shellcmd := S(args[0])
+		return N(goof.Shell(shellcmd))
 	case "func":
 		/*
 			func procedureName {arguments|
