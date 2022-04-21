@@ -17,6 +17,7 @@ import (
 
 	"github.com/donomii/termbox-go"
 	"path/filepath"
+	"sort"
 	"sync"
 )
 
@@ -96,6 +97,21 @@ func setTrans() {
 		putStr(0, i, strings.Repeat(char, width))
 	}
 }
+
+//build a map into a string, sorting by key
+func mapToString(aMap map[string]string) string {
+	var keys []string
+	for k := range aMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	var result string
+	for _, k := range keys {
+		result = result + fmt.Sprintf("[%v] %v ", k, aMap[k])
+	}
+	return result
+}
+
 func refreshTerm() {
 
 	//statuses["Screen"] = "Refresh"
@@ -111,10 +127,10 @@ func refreshTerm() {
 
 		itempos = 0
 
-		putStr(20, height-4, fmt.Sprintf("%v", Statuses))
+		putStr(1, height-4, fmt.Sprintf("%v", mapToString(Statuses)))
 		dir, _ := os.Getwd()
 		putStr(1, height-3, fmt.Sprintf("CWD: %v", dir))
-		putStr(1, height-2, fmt.Sprintf("Up/Down Arrows to select a result, Right Arrow to edit that file, Escape Quits"))
+		putStr(1, height-2, fmt.Sprintf("F1 help F5 autocomplete TAB cycle autocomplete CTRL-D exit"))
 		if focus == "input" {
 			putStr(8, 9, "                    ")
 			for i, v := range predictResults {
@@ -187,7 +203,7 @@ func doInput() {
 					InputPos = searchLeft(InputLine, InputPos)
 				}
 			} else {
-				Statuses["Input"] = fmt.Sprintf("%+v", ev) //"Processing"
+				Statuses["Input"] = fmt.Sprintf("%+v", ev.Ch) //"Processing"
 				//debugStr = fmt.Sprintf("key: %v, %v, %v", ev.Key, ev.Ch, ev)
 				switch ev.Key {
 				case 4:
@@ -219,19 +235,6 @@ func doInput() {
 
 				case termbox.KeyArrowDown:
 					if len(History) > 0 {
-						selection++
-						if selection >= len(History) {
-							selection = 0
-
-						}
-						InputLine = History[selection]
-						InputPos = 0
-						Statuses["selection"] = fmt.Sprintf("%v", selection)
-					}
-					focus = "input"
-					refreshTerm()
-				case termbox.KeyArrowUp:
-					if len(History) > 0 {
 						selection--
 						if selection < 0 {
 							selection = len(History) - 1
@@ -243,6 +246,21 @@ func doInput() {
 					}
 					focus = "input"
 					refreshTerm()
+
+				case termbox.KeyArrowUp:
+					if len(History) > 0 {
+						selection++
+						if selection >= len(History) {
+							selection = 0
+
+						}
+						InputLine = History[selection]
+						InputPos = 0
+						Statuses["selection"] = fmt.Sprintf("%v", selection)
+					}
+					focus = "input"
+					refreshTerm()
+
 				case termbox.KeyEsc:
 					//FIXME need a thread local check to see if we are in a prompt
 					//or if a sub-process is running

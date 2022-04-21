@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/chzyer/readline"
+	"github.com/donomii/goof"
 
 	"github.com/nsf/termbox-go"
 )
@@ -76,7 +78,8 @@ func batchMangle(command []string) []string {
 func main() {
 	log.SetOutput(ioutil.Discard)
 	//termbox.Init()
-	command := os.Args[1:]
+	interactive := os.Args[1]
+	command := os.Args[2:]
 	if runtime.GOOS == "windows" {
 		command = batchMangle(command)
 	}
@@ -99,7 +102,14 @@ func main() {
 		*/
 	} else {
 		cmd = exec.Command(command[0], command[1:]...)
-		err = ptycall(cmd)
+		if interactive == "interactive" {
+			err = ptycall(cmd)
+		} else {
+			var res string
+			res, err = goof.QuickCommand(cmd)
+			fmt.Print(res)
+			os.Exit(0)
+		}
 	}
 	if err == nil {
 		cmd.Process.Wait()
