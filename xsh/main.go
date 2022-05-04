@@ -5,10 +5,12 @@ import (
 
 	"io/ioutil"
 
-	"github.com/nsf/termbox-go"
 	"os"
 	"runtime"
 	"strings"
+
+	"github.com/nsf/termbox-go"
+	"github.com/pterm/pterm"
 
 	"github.com/mattn/go-runewidth"
 
@@ -38,6 +40,9 @@ var WantHelp bool = true
 var WantWarn bool = true
 var WantErrors bool = true
 
+var WantEvents bool = true
+var Events = [][]string{}
+
 type State struct {
 	Functions     map[string]Function
 	Globals       map[string]string
@@ -58,7 +63,7 @@ func ShellEval(s State, code, fname string) autoparser.Node {
 	tree := autoparser.ParseXSH(code, fname)
 	drintf("Tree: %v\n", tree)
 	s.Tree = tree
-	res := treeReduce(s, tree, nil, 1)
+	res := treeReduce(s, tree, nil, 1, tree)
 	drintf("Res: %+v\n", res)
 	return res
 }
@@ -68,7 +73,7 @@ func Eval(s State, code, fname string) autoparser.Node {
 	tree := autoparser.ParseXSH(code, fname)
 	drintf("Tree: %v\n", tree)
 	s.Tree = tree
-	res := treeReduce(s, tree, nil, -1)
+	res := treeReduce(s, tree, nil, -1, tree)
 	drintf("Res: %+v\n", res)
 	return res
 }
@@ -78,7 +83,7 @@ func Parse(code, fname string) []autoparser.Node {
 }
 func Run(s State, tree []autoparser.Node) autoparser.Node {
 	s.Tree = tree
-	res := treeReduce(s, tree, nil, 2)
+	res := treeReduce(s, tree, nil, 2, tree)
 	return res
 }
 func LoadEval(s State, fname string) autoparser.Node {
@@ -233,7 +238,7 @@ func runWithGuardian(cmd []string) error {
 		if runtime.GOOS == "windows" && (goof.Exists(binfile) || goof.Exists(binfile+".exe") || goof.Exists(binfile+".bat")) {
 			XshHelpful("Your file is in the current directory, but not in PATH.  Xsh does not automatically run programs in the current directory.  To do so, add '.' to PATH with 'set PATH [join [list $PATH \".\"] \";\"]'.\n")
 		}
-		return fmt.Errorf("Could not find application %v in search path: %v\n", binfile, clampString(os.Getenv("PATH"), 100))
+		return fmt.Errorf("Could not find application %v in search path: %v\nTo see full path: puts $PATH\n", binfile, clampString(os.Getenv("PATH"), 100))
 	}
 
 	cmd[0] = fullPath
@@ -252,7 +257,7 @@ func runWithGuardianCapture(cmd []string) (string, error) {
 		if runtime.GOOS == "windows" && (goof.Exists(binfile) || goof.Exists(binfile+".exe") || goof.Exists(binfile+".bat")) {
 			XshHelpful("Your file is in the current directory, but not in PATH.  Xsh does not automatically run programs in the current directory.  To do so, add '.' to PATH with 'set PATH [join [list $PATH \".\"] \";\"]'.\n")
 		}
-		return "", fmt.Errorf("Could not find application %v in search path: %v\n", binfile, clampString(os.Getenv("PATH"), 100))
+		return "", fmt.Errorf("Could not find application %v in search path: %v\nTo see full path: puts $PATH\n", binfile, clampString(os.Getenv("PATH"), 100))
 	}
 
 	cmd[0] = fullPath
@@ -455,18 +460,94 @@ func blockReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel
 		//It is a multi line lambda, eval as statements, return the last
 
 		for i, v := range t {
-			out = treeReduce(s, v.List, parent, toplevel)
+			out = treeReduce(s, v.List, parent, toplevel, v.List)
 			t[i] = out
 		}
 	} else {
 		//It is a single line lambda, eval it as an expression
-		out = treeReduce(s, t, parent, toplevel)
+		out = treeReduce(s, t, parent, toplevel, t)
 	}
 
 	drintf("Returning from BlockReduce: %v\n", TreeToXsh([]autoparser.Node{out}))
 	return out
 }
-func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel int) autoparser.Node {
+
+//Build a node location string from file, line, and column
+func Loc(n autoparser.Node) string {
+	return fmt.Sprintf("%v:%v:%v", n.File, n.Line, n.Column)
+}
+
+//Recurse through program tree, printing each node
+func PrintTree(t []autoparser.Node, subTree autoparser.Node) {
+	highlight := pterm.NewStyle(pterm.FgRed, pterm.Bold)
+	//function := pterm.NewStyle(pterm.FgMagenta, pterm.Bold)
+
+	/*if Loc(t[0]) == Loc(subTree) {
+		highlight.Print("(")
+		function.Printf("%v", S(t[0]))
+	} else {
+		fmt.Printf("(%v", S(t[0]))
+	}*/
+
+	for i, v := range t {
+
+		if i != 0 {
+
+			fmt.Print(" ")
+		}
+
+		switch {
+		case v.Note == "VOID":
+		case v.List != nil:
+			switch v.Note {
+			case "{":
+				if Loc(v) == Loc(subTree) {
+					highlight.Print("{")
+					PrintTree(v.List, subTree)
+					highlight.Print("}")
+				} else {
+					fmt.Print("{")
+					PrintTree(v.List, subTree)
+					fmt.Print("}")
+				}
+			case "|":
+				PrintTree(v.List, subTree)
+				fmt.Print("|")
+			default:
+				if Loc(v) == Loc(subTree) {
+					highlight.Print("(")
+					PrintTree(v.List, subTree)
+					highlight.Print(")")
+				} else {
+					fmt.Print("(")
+					PrintTree(v.List, subTree)
+					fmt.Print(")")
+				}
+
+			}
+		case v.Raw != "":
+			if Loc(v) == Loc(subTree) {
+				highlight.Print(v.Raw) //FIXME escape string properly to include in JSON
+			} else {
+				fmt.Print(v.Raw)
+			}
+		default:
+			if Loc(v) == Loc(subTree) {
+				highlight.Print("\"" + v.Str + "\"") //FIXME escape string properly for JSON
+			} else {
+				fmt.Print("\"" + v.Str + "\"")
+			}
+		}
+	}
+	/*
+		if Loc(t[0]) == Loc(subTree) {
+			highlight.Print(")")
+		} else {
+			fmt.Print(")")
+		}*/
+}
+
+func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel int, orig []autoparser.Node) autoparser.Node {
 	drintf("Reducing: %+v\n", TreeToXsh(t))
 
 	if (parent != nil) && parent.ScopeBarrier {
@@ -479,8 +560,10 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 	*/
 	out := []autoparser.Node{}
 	for i, v := range t {
-		if WantTrace {
-			XshTrace("%v,%v: %v\n", v.Line, v.Column, TreeToXsh(t))
+		if WantTrace && v.File != "" { //FIXME this is just masking a problem
+			fmt.Printf("In:%v: ", Loc(v))
+			PrintTree(orig, v)
+			fmt.Print("\n")
 		}
 
 		switch {
@@ -489,7 +572,7 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 		case v.List != nil:
 			if v.Note == "[" || v.Note == "\n" || v.Note == ";" {
 				//log.Println("Command:", TreeToTcl(v.List))
-				atom := treeReduce(s, v.List, &t[i], toplevel-1)
+				atom := treeReduce(s, v.List, &t[i], toplevel-1, orig)
 				out = append(out, atom)
 				t[i] = atom
 			} else {
@@ -500,18 +583,30 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 		default:
 			atom := autoparser.Node{ChrPos: -1}
 			if strings.HasPrefix(S(v), "$") {
-				drintf("Variable lookup: %+v\n", S(v))
+				//Environment variable
+				drintf("Environment variable lookup: %+v\n", S(v))
 				vname := S(v)[1:]
 				drintf("Fetching %v from Globals: %+v\n", vname, s.Globals)
 				if vname == "" {
 					XshErr("$ found without variable name.  $ defines a variable, and cannot be used on its own.")
 					os.Exit(1)
 				} else {
+					//FIXME: globals should go away?
 					if _, ok := s.Globals[vname]; ok {
 						atom = N(s.Globals[vname])
+						//FIXME
+						atom.File = v.File
+						atom.Line = v.Line
+						atom.Column = v.Column
+						atom.ChrPos = v.ChrPos
 					} else {
+						//Load value from environment
 						if val := os.Getenv(vname); val != "" {
 							atom = N(val)
+							atom.File = v.File
+							atom.Line = v.Line
+							atom.Column = v.Column
+							atom.ChrPos = v.ChrPos
 						} else {
 							XshErr("Global variable $%v not found.  You must define a variable before you use it.", vname)
 							os.Exit(1)
@@ -530,7 +625,9 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 	//Run command
 	if len(out) > 0 {
 		if WantTrace {
-			XshTrace("%v,%v: %v\n", out[0].Line, out[0].Column, TreeToXsh(out))
+			fmt.Printf("Out:%v: ", Loc(out[0]))
+			PrintTree(orig, out[0])
+			fmt.Print("\n")
 		}
 	}
 	ret := eval(s, out, parent, toplevel)

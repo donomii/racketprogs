@@ -1,4 +1,4 @@
-all: clean deps xsh xshguardian xshwatch libxsh localinstall install
+all: clean deps xsh xshguardian xshwatch localinstall install
 
 deps:
 	go get -v .
@@ -31,3 +31,4 @@ install: xsh xshguardian xshwatch
 
 clean:
 	rm xsh xshguardian xshwatch libxsh.h libxsh.so || true
+	go clean -a

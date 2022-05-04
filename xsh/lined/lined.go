@@ -182,10 +182,17 @@ func ExtractWord(aLine string, pos int) string {
 }
 
 var KeyHook func(key string)
+var EveryKeyHook func(key rune)
 
 func CallKeyHook(key string) {
 	if KeyHook != nil {
 		KeyHook(key)
+	}
+}
+
+func CallEveryKeyHook(key rune) {
+	if EveryKeyHook != nil {
+		EveryKeyHook(key)
 	}
 }
 
@@ -205,6 +212,7 @@ func doInput() {
 			} else {
 				Statuses["Input"] = fmt.Sprintf("%+v", ev.Ch) //"Processing"
 				//debugStr = fmt.Sprintf("key: %v, %v, %v", ev.Key, ev.Ch, ev)
+
 				switch ev.Key {
 				case 4:
 					if InputLine == "" {
@@ -295,6 +303,7 @@ func doInput() {
 					focus = "input"
 					refreshTerm()
 				}
+				CallEveryKeyHook(ev.Ch)
 			}
 		}
 	}

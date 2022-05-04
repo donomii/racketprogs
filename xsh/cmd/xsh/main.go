@@ -257,7 +257,18 @@ func NewShell(state xsh.State) {
 	}()
 	dir, _ := homedir.Dir()
 	lined.Init(dir + "/.xsh/history")
+	lined.EveryKeyHook = func(key rune) {
+		newFunction()
+	}
 	lined.KeyHook = func(key string) {
+
+		xsh.XshInform("KeyHook: %s", key)
+		if key != "TAB" {
+			current_completion_index = 0
+
+			//Also need to generate new completions
+			//Probably async
+		}
 		switch key {
 		case "F1":
 			if usePterm {
@@ -268,100 +279,39 @@ func NewShell(state xsh.State) {
 					Render()
 			}
 			//Display help message, eventually context sensitive help
-			xsh.XshResponse(`
-			XSHELL HELP
-
-			Xshell is a command shell and scripting language.  It is not compatible with POSIX shells, 
-			but is still similar.
-
-			Basic commands and environment variables work as usual:
-
-			ls -lh
-			set LISTDIR /home
-			ls -lh $LISTDIR
-
-
-			Key shortcuts function roughly as usual:
-
-			TAB - rotate through completion suggestions
-			F5 - auto-complete
-			F1 - help
-			Up/Down - history
-			Ctrl-D - exit
-
-			More help is available by typing "help" or "?" followed by one of these topics:
-
-			online, scripting, builtins, variables, history, shell, environment
-			`)
+			xsh.XshResponse(xsh.Help("intro"))
 
 		case "F2":
 		case "TAB":
 			//Accept the completion of the current line
 			//Insert the first element of current_completions into lined.InputLine at lined.InputPos
-			completion_word := current_completions[current_completion_index]
-			current_word := lined.ExtractWord(lined.InputLine, lined.InputPos)
-			completion_string := completion_word
-			if completion_word[len(completion_word)-1] != '/' {
-				//remove current_word from the start of completion_word, and add a space
-				completion_string = completion_word[len(current_word):]
-			}
-			//If the last letter of completion_string is not a "/", add a space
-			if completion_string[len(completion_string)-1] != '/' {
-				completion_string = completion_string + " "
-			}
-			lined.InputLine = strings.Join([]string{lined.InputLine[:lined.InputPos], completion_string, lined.InputLine[lined.InputPos:]}, "")
-			lined.InputPos += len(completion_string)
-		case "F5":
-			current_word := lined.ExtractWord(lined.InputLine, lined.InputPos)
-			lined.Statuses["aword"] = current_word
-			lined.Statuses["accw"] = current_completion_word
-			completions := current_completions
-			if current_word == current_completion_word {
-				//If the current word is the same as the last completion word, then we are cycling through the
-				//completions.
-				if current_completion_index < len(current_completions)-1 {
-					current_completion_index++
-				} else {
-					current_completion_index = 0
-				}
-			} else {
-				lined.Statuses["complete"] = current_word
-				current_completion_word = current_word
-				current_completion_index = 0
-				current_completions = []string{}
-				completions = []string{}
-				words := []string{}
-				if countSpaces(lined.InputLine[:lined.InputPos]) == 0 {
-					words = append(xsh.ListBuiltins()("lalala"), xsh.ListPathExecutables()("lalala")...)
-				}
-				//Separate current word into path and partial filename
-				//If path is empty, use current directory
-				//If path is not empty, use path
-				userpath, filename := path.Split(current_word)
-				path := expandPath(userpath)
-				if path == "" {
-					path = "./"
-				}
 
-				words = append(words, xsh.ListFiles(path)(path)...)
+			if current_completion_index < len(current_completions) {
+				completion_word := current_completions[current_completion_index]
+				current_word := lined.ExtractWord(lined.InputLine, lined.InputPos)
+				completion_string := completion_word
 
-				for _, w := range words {
-					if strings.HasPrefix(w, filename) {
-						completions = append(completions, w)
+				if completion_word[len(completion_word)-1] != '/' {
+					//remove current_word from the start of completion_word, and add a space
+					completion_string = completion_word[len(current_word):]
+				}
+				if len(completion_string) > 0 {
+					//If the last letter of completion_string is not a "/", add a space
+					if completion_string[len(completion_string)-1] != '/' {
+						completion_string = completion_string + " "
 					}
+					lined.InputLine = strings.Join([]string{lined.InputLine[:lined.InputPos], completion_string, lined.InputLine[lined.InputPos:]}, "")
+					lined.InputPos += len(completion_string)
 				}
-				current_completions = completions
 			}
-
+		case "F5":
+			//If the current word is the same as the last completion word, then we are cycling through the
+			//completions.
+			//Separate current word into path and partial filename
+			//If path is empty, use current directory
+			//If path is not empty, use path
 			//Build a string from completions, put a * next to the current completion
-			completion_string := ""
-			for i, c := range completions {
-				if i == current_completion_index {
-					completion_string += "*"
-				}
-				completion_string += c + " "
-			}
-			lined.Statuses["complete"] = completion_string
+			newFunction()
 		default:
 			command := os.Getenv(key)
 			lined.InputLine = command
@@ -385,5 +335,69 @@ func NewShell(state xsh.State) {
 		if res != "" && res != "\"\"" {
 			xsh.XshResponse("%+v\n", res)
 		}
+		for _, v := range xsh.Events {
+			fc := v[0]
+			if fc == "cd" {
+				//Get a list of files in the current directory
+				files := xsh.ListFiles(".")(".")
+				//If the list of files is longer than 10, take the first ten elements of the list
+				if len(files) > 10 {
+					files = files[:10]
+					files = append(files, "...")
+				}
+				xsh.XshResponse("%v\n", files)
+			}
+		}
+		xsh.Events = [][]string{}
 	}
+}
+
+func newFunction() {
+	xsh.XshInform("Generating new completions")
+	current_word := lined.ExtractWord(lined.InputLine, lined.InputPos)
+	lined.Statuses["current_word"] = current_word
+	lined.Statuses["current_completion_word"] = current_completion_word
+	completions := current_completions
+	if current_word == current_completion_word {
+
+		if current_completion_index < len(current_completions)-1 {
+			current_completion_index++
+		} else {
+			current_completion_index = 0
+		}
+	} else {
+		lined.Statuses["complete"] = current_word
+		current_completion_word = current_word
+		current_completion_index = 0
+		current_completions = []string{}
+		completions = []string{}
+		words := []string{}
+		if countSpaces(lined.InputLine[:lined.InputPos]) == 0 {
+			words = append(xsh.ListBuiltins()("lalala"), xsh.ListPathExecutables()("lalala")...)
+		}
+
+		userpath, filename := path.Split(current_word)
+		path := expandPath(userpath)
+		if path == "" {
+			path = "./"
+		}
+
+		words = append(words, xsh.ListFiles(path)(path)...)
+
+		for _, w := range words {
+			if strings.HasPrefix(w, filename) {
+				completions = append(completions, w)
+			}
+		}
+		current_completions = completions
+	}
+
+	completion_string := ""
+	for i, c := range completions {
+		if i == current_completion_index {
+			completion_string += "*"
+		}
+		completion_string += c + " "
+	}
+	lined.Statuses["complete"] = completion_string
 }
