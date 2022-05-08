@@ -415,7 +415,7 @@ PMOO  - Personal MUD Object Oriented
 
 *** WARNING Cluster mode has no security! ***
 
-Running in cluster mode allows any hacker to log in and delete your computer!  Do not run cluster mode
+Running in cluster mode allows any user to potentially delete your computer!  Do not run cluster mode
 unless you are sure you have complete network security.
 
 PMOO has a cluster mode that allows multiple computers to run the same PMOO.  This mostly works, except
@@ -424,11 +424,11 @@ be solved by only allowing an object to update itself, allowing it to enforce co
 
 Setting up the cluster is covered elsewhere.  The important thing to know inside the MOO is 'affinity'.
 
-Affinity is a string that identifies the node that an object is on.  This is used to determine which nodes
-will actually run verbs on an object.  For example, the player object has an affinity set to the player's 
-computer.  When someone sends a 'tell player that ...'message the tell verb will only run on the player's
+Affinity is a string that identifies the node that an object is limited to.  This is used to determine which nodes
+will actually run the code for an object.  For example, the player object has an affinity set to the player's 
+computer.  When someone sends a 'tell player that ...' message, the tell verb will only run on the player's
 computer, displaying a message on the player's screen.  If there was no affinity, the tell verb would run
-on any node that picked it off the queue.
+on any node that picked it off the queue.  The message would appear on a random screen in the cluster.
 
 The affinity is set by the 'become' verb for players, otherwise the normal 'setprop' command works.
 
@@ -445,7 +445,43 @@ PMOO is a 'live object' system.  You create objects and verbs, and then use them
 property.  All commands are executed in parallel.  You cannot rely on commands running in the same order that you give them, as one
 might be held up, allowing the next one to run first.
 
-PMOO is scripted in the xsh language.  You can learn about xsh at: xxxx add url here.  Xsh has been extended with 
+Pmoo is a relatively complex system to program in.  There are multiple levels to program in:
+
+- The user level, which uses pseudo-english to give commands
+- The object level, where objects receive direct messages
+- The verb level, where verbs are executed in one of many scripting languages
+
+The following example follows a "snap photo" command, which uses the computer's camera to take a photo. 
+
+When the user types 'snap photo', the system will break the sentence up to find the verb and direct object.  The verb
+is 'snap', and the direct object is 'photo'.  The parser then searches for an object that can handle the 'snap' verb, 
+generates a message, and sends it to that object.  If running in cluster mode, the message might be sent to another computer
+before it is executed.
+
+Messages are exchanged as JSON data.  They are added to a queue, and later on are removed and processed by a random node (or the 
+affinity node, if set).  They might be delayed - even by a couple of seconds.  There is currently no way to tell if a message
+succeeded or failed.  There is also no way to get the result value of a message.  To do that, the receiving object must create a new
+message and send that back to the sender.  There is also no way to tell if this message succeeds.
+
+The object receives the message, and then runs the verb.  The code might look something like:
+
+    raspistill -o /tmp/snap.jpg
+	setprop this data [contents /tmp/snap.jpg]
+
+the first line is a system command that uses the raspistill program to take a photo.  The second line is a PMOO command that
+sets the 'data' property of the current object (the camera) to the contents of the photo.  A better version would perhaps create
+a new object called 'picture', and set the 'data' property of that picture object to the contents of the photo.
+
+There are currently 3 options for writing code in PMOO:  
+
+yaegi, a scripted version of go that allows most access to the underlying
+PMOO engine.  Yaegi is unfortunately a bit unstable and incomplete.
+
+sh, the original system shell.  sh has almost no access to PMOO.  It is handy for controlling the system, not so much for extracting data for processing it.
+
+Xsh, a shell-like scripting language.  It is much more regular and safe than traditional POSIX shells.  It has access to most of PMOO.
+
+PMOO is mostly scripted in the xsh language.  You can learn about xsh at: xxxx add url here.  Xsh has been extended with 
 several commands to work with PMOO.  These commands are:
 
 sleep 1000 - Sleep for 1000 milliseconds

@@ -27,7 +27,7 @@ x setverb 1 debugParser throff "  PRINTLN A[ ^player: player ]A PRINTLN A[ ^this
 x setverb 4 go throff " WHEN EQUAL dobjstr GetProp this ^name [ MoveObj player this ] "
 create $thing named shell
 x setverb [o shell] ls throff " Msg this player ^tell DIRECTORY-LIST  IF EQUAL args [] THEN [ ^. ] ELSE [ args ]  [] [] "
-x setverb [o shell] ; throff " Msg this player ^tell SHELL args  [] [] "
+x setverb [o shell] ";" "xsh" "msg this playerid notify [shell dobjstr] 0 0"
 x setverb [o shell] ? throff " Msg this player ^tell args [] [] "
 x setverb [o shell] t throff " Msg this player ^tell RUNSTRING args ENVIRONMENTOF [ THIS ] "
                    
