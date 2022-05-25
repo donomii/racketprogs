@@ -54,7 +54,7 @@ func ParseGo(code, filename string) []Node {
 	//fmt.Printf("%+v\n", r)
 }
 
-func ParseXSH(code, filename string) []Node {
+func ParseXSH(code, filename string) Node {
 
 	l := NewTree(code, filename)
 	//FIXME we need to run both of these in parallel
@@ -72,7 +72,8 @@ func ParseXSH(code, filename string) []Node {
 	r = StripWhiteSpace(r)
 	StripEmptyLists(r)
 	//PrintTree(r, 0, false)
-	return r
+	n := Node{List: r, File: filename, Line: r[0].Line, Column: r[0].Column, ChrPos: r[0].ChrPos}
+	return n
 	//fmt.Printf("%+v\n", r)
 }
 
@@ -201,7 +202,7 @@ func Stringify(in []Node, start, end, escape, strMode string) ([]Node, []Node) {
 					sublist, in = Stringify(in[i+len(start):], start, end, escape, end)
 					i = -1
 					//fmt.Printf("Found string: %s\n", joinRaw(sublist))
-					n := Node{Str: joinRaw(sublist), Note: start}
+					n := Node{Str: joinRaw(sublist), Note: start, File: sublist[0].File, Line: sublist[0].Line, Column: sublist[0].Column, ChrPos: sublist[0].ChrPos}
 					//fmt.Printf("Found node: %+v\n", n)
 					accum = append(accum, n)
 

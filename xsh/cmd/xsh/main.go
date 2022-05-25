@@ -197,7 +197,7 @@ func shell(state xsh.State) {
 		}
 
 		line = strings.TrimSpace(line)
-		xsh.XshResponse("%+v\n", xsh.TreeToXsh([]autoparser.Node{xsh.ShellEval(state, line, "shell")}))
+		xsh.XshResponse("%+v\n", xsh.TreeToXsh(xsh.ShellEval(state, line, "shell")))
 	}
 }
 
@@ -331,7 +331,7 @@ func NewShell(state xsh.State) {
 		line = strings.TrimSpace(line)
 		fmt.Println()
 
-		res := xsh.TreeToXsh([]autoparser.Node{xsh.ShellEval(state, line, "shell")})
+		res := xsh.TreeToXsh(xsh.ShellEval(state, line, "shell"))
 		if res != "" && res != "\"\"" {
 			xsh.XshResponse("%+v\n", res)
 		}
