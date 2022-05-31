@@ -54,7 +54,7 @@ func main() {
 			fmt.Println("Config file not found: ", configFile)
 			fmt.Println("Falling back to local file in ~/.local/etc/nursemaid/services.txt")
 		}
-		configFile = "~/.local/etc/nursemaid/services.txt"
+		configFile = goof.HomePath(".local/etc/nursemaid/services.txt")
 	}
 
 	log.Println("Nursemaid reading config from: ", configFile)

@@ -7,7 +7,7 @@ clean:
 	rm -r build || true
 	rm -r logs || true
 
-build: *.go services.txt Makefile 
+build: *.go Makefile 
 	mkdir build || true
 	go build -o build/nursemaid -v .
 
