@@ -1,7 +1,7 @@
 all: clean deps build localinstall install
 
 deps:
-	go get -v "github.com/arkady-emelyanov/go-shellparse" "github.com/nightlyone/lockfile" "github.com/donomii/goof"
+	go get -v "github.com/arkady-emelyanov/go-shellparse" "github.com/nightlyone/lockfile" "github.com/donomii/goof" || true
 
 clean:
 	rm -r build || true

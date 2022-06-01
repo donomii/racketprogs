@@ -1,1 +1,1 @@
-Passwords cat /etc/passwd
+Date date

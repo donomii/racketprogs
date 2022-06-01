@@ -18,10 +18,23 @@ import (
 	"github.com/nightlyone/lockfile"
 )
 
-var configFile = "services.txt"
 var logsDir = "logs"
 
+type ConfigsValue []string
+
+var configs = ConfigsValue{}
+
+func (arr *ConfigsValue) String() string {
+	return ""
+}
+
+func (arr *ConfigsValue) Set(value string) error {
+	*arr = append(*arr, strings.TrimSpace(value))
+	return nil
+}
+
 func main() {
+	services := [][]string{}
 
 	lock, err := lockfile.New(filepath.Join(os.TempDir(), "nursemaid.lck"))
 	if err != nil {
@@ -44,39 +57,50 @@ func main() {
 	}()
 
 	//Set configFile to the path to a config file
-	flag.StringVar(&configFile, "config", "services.txt", "Path to config file")
+	//flag.StringVar(&configFile, "config", "services.txt", "Path to config file")
+	flag.Var(&configs, "config", "Path to config file (can repeat)")
 	flag.Parse()
 
-	//If config file doesn't exist, fallback to local file
-	_, err = os.Stat(configFile)
-	if configFile == "" || os.IsNotExist(err) {
-		if configFile != "" {
-			fmt.Println("Config file not found: ", configFile)
-			fmt.Println("Falling back to local file in ~/.local/etc/nursemaid/services.txt")
+	if configs == nil || len(configs) == 0 {
+		configs = []string{"/etc/nursemaid/services.txt", goof.HomePath(".local/etc/nursemaid/services.txt"), "services.txt"}
+	}
+
+	for _, configFile := range configs {
+		//If config file doesn't exist, fallback to local file
+		_, err = os.Stat(configFile)
+		if configFile == "" || os.IsNotExist(err) {
+			if configFile != "" {
+				log.Printf("Config file not found, skipping: %v", configFile)
+				continue
+			}
+			continue
 		}
-		configFile = goof.HomePath(".local/etc/nursemaid/services.txt")
+
+		log.Println("Nursemaid reading config from: ", configFile)
+
+		//Read the config file
+		text, err := ioutil.ReadFile(configFile)
+		if err != nil {
+			log.Printf("Error reading %v: %v", configFile, err)
+			continue
+		}
+		//Split text into lines
+		lines := strings.Split(string(text), "\n")
+		for i, line := range lines {
+			parts := strings.SplitN(line, " ", 2)
+			if len(parts) != 2 {
+				log.Printf("Invalid service definition at line %v: %v", i, line)
+				continue
+			}
+			services = append(services, parts)
+		}
 	}
-
-	log.Println("Nursemaid reading config from: ", configFile)
-
-	//Read the config file
-	text, err := ioutil.ReadFile(configFile)
-	if err != nil {
-		panic(err)
-	}
-	//Split text into lines
-	lines := strings.Split(string(text), "\n")
-
 	//Make logs directory
 	os.Mkdir(logsDir, 0777)
 
-	//For each line, create a worker to run the service
-	for _, line := range lines {
-		//Split the line into the service name and the command
-		parts := strings.SplitN(line, " ", 2)
-		if len(parts) != 2 {
-			continue
-		}
+	//For each service, create a worker to run the service
+	for _, parts := range services {
+
 		//Create a worker to run the service
 		go runService(parts[0], parts[1])
 	}
@@ -125,7 +149,8 @@ func runService(name, command string) {
 				//Read the STDERR
 				_, err := stderr.Read(stderrBuf)
 				if err != nil {
-					log.Println("Stderr reader for", name, "failed:", err)
+					//log.Println("Stderr reader for", name, "failed:", err)
+					return
 				}
 				//Print the STDERR
 				fmt.Println(string(stderrBuf))
@@ -142,7 +167,8 @@ func runService(name, command string) {
 				//Read the STDOUT
 				_, err := stdout.Read(stdoutBuf)
 				if err != nil {
-					log.Println("Stdout reader for", name, "failed:", err)
+					//log.Println("Stdout reader for", name, "failed:", err)
+					return
 				}
 				//Print the STDOUT
 				fmt.Println(string(stdoutBuf))
@@ -156,7 +182,7 @@ func runService(name, command string) {
 		if err != nil {
 			fmt.Println("Service: ", name, " stopped with error: ", err)
 		}
-		fmt.Println("Service: ", name, " stopped")
+		fmt.Println("Service: ", name, " completed.  Restarting...")
 		time.Sleep(time.Second * 5)
 
 	}
