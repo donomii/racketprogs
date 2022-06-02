@@ -33,8 +33,12 @@ func (arr *ConfigsValue) Set(value string) error {
 	return nil
 }
 
+//Keep a map of all currently running commands
+var running map[string]*exec.Cmd
+
 func main() {
 	services := [][]string{}
+	running = map[string]*exec.Cmd{}
 
 	lock, err := lockfile.New(filepath.Join(os.TempDir(), "nursemaid.lck"))
 	if err != nil {
@@ -130,6 +134,8 @@ func runService(name, command string) {
 
 		bin, args, err := shellparse.Command(command)
 		cmd := exec.Command(bin, args...)
+		//Close stdin
+		cmd.Stdin = nil
 		//Capture the command STDERR
 		stderr, err := cmd.StderrPipe()
 		if err != nil {
@@ -178,6 +184,7 @@ func runService(name, command string) {
 		fmt.Println("Starting service: ", name, " with command: ", bin, args)
 		//Start the command
 		cmd.Start()
+		running[name] = cmd
 		err = cmd.Wait()
 		if err != nil {
 			fmt.Println("Service: ", name, " stopped with error: ", err)
@@ -194,6 +201,10 @@ func handleSignals(sigChan chan os.Signal) {
 		switch sig {
 		case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
 			fmt.Println("\nExiting...")
+			for name, cmd := range running {
+				log.Printf("Killing %v", name)
+				cmd.Process.Kill()
+			}
 			os.Exit(0)
 		case syscall.SIGHUP:
 			fmt.Println("\nReloading config...")
