@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -34,11 +35,14 @@ func (arr *ConfigsValue) Set(value string) error {
 }
 
 //Keep a map of all currently running commands
-var running map[string]*exec.Cmd
+var running sync.Map
+
+//Signal all threads to exit
+var wantShutdown bool
 
 func main() {
 	services := [][]string{}
-	running = map[string]*exec.Cmd{}
+	running = sync.Map{}
 
 	lock, err := lockfile.New(filepath.Join(os.TempDir(), "nursemaid.lck"))
 	if err != nil {
@@ -129,6 +133,9 @@ func runService(name, command string) {
 		panic(err)
 	}
 	for {
+		if wantShutdown {
+			return
+		}
 		//Run the service
 		//Create command
 
@@ -152,6 +159,9 @@ func runService(name, command string) {
 		//Create a worker to monitor the STDERR pipe
 		go func() {
 			for {
+				if wantShutdown {
+					return
+				}
 				//Read the STDERR
 				_, err := stderr.Read(stderrBuf)
 				if err != nil {
@@ -170,6 +180,9 @@ func runService(name, command string) {
 		//Create a worker to monitor the STDOUT pipe
 		go func() {
 			for {
+				if wantShutdown {
+					return
+				}
 				//Read the STDOUT
 				_, err := stdout.Read(stdoutBuf)
 				if err != nil {
@@ -184,13 +197,17 @@ func runService(name, command string) {
 		fmt.Println("Starting service: ", name, " with command: ", bin, args)
 		//Start the command
 		cmd.Start()
-		running[name] = cmd
+		running.Store(name, cmd)
 		err = cmd.Wait()
 		if err != nil {
 			fmt.Println("Service: ", name, " stopped with error: ", err)
 		}
-		fmt.Println("Service: ", name, " completed.  Restarting...")
-		time.Sleep(time.Second * 5)
+		fmt.Println("Service: ", name, " completed.")
+		running.Delete(name)
+		if !wantShutdown {
+			log.Println("Restarting", name, "...")
+			time.Sleep(time.Second * 5)
+		}
 
 	}
 }
@@ -201,10 +218,33 @@ func handleSignals(sigChan chan os.Signal) {
 		switch sig {
 		case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
 			fmt.Println("\nExiting...")
-			for name, cmd := range running {
+			wantShutdown = true
+			var wg sync.WaitGroup
+			running.Range(func(keyi, vali interface{}) bool {
+				name := keyi.(string)
+				cmd := vali.(*exec.Cmd)
 				log.Printf("Killing %v", name)
-				cmd.Process.Kill()
-			}
+				wg.Add(1)
+				go func() {
+					cmd.Process.Signal(syscall.SIGHUP)
+					time.Sleep(1 * time.Second)
+					cmd.Process.Signal(syscall.SIGQUIT)
+					time.Sleep(1 * time.Second)
+					cmd.Process.Signal(syscall.SIGKILL)
+					time.Sleep(1 * time.Second)
+					cmd.Process.Signal(syscall.SIGTERM)
+					time.Sleep(1 * time.Second)
+					cmd.Process.Kill()
+					var keepWaiting = true
+					for keepWaiting {
+						_, keepWaiting = running.Load(name)
+						time.Sleep(100 * time.Millisecond)
+					}
+					wg.Done()
+				}()
+				return true
+			})
+			wg.Wait()
 			os.Exit(0)
 		case syscall.SIGHUP:
 			fmt.Println("\nReloading config...")
