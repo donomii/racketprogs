@@ -1,1 +1,2 @@
-Date date
+vterm9 /sbin/getty --autologin root 38400 tty9
+vterm10 /sbin/getty --autologin root 38400 tty10 vt100
