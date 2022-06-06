@@ -195,7 +195,7 @@ func runService(name, command string) {
 		}()
 
 		//Start a new process group
-		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Setsid: true, Pgid: 0, Noctty: true}
 
 		fmt.Println("Starting service: ", name, " with command: ", bin, args)
 		//Start the command
