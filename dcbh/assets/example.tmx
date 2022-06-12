@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.8" tiledversion="1.8.5" orientation="orthogonal" renderorder="right-down" width="50" height="50" tilewidth="32" tileheight="32" infinite="0" nextlayerid="4" nextobjectid="7">
+ <tileset firstgid="1" name="ts1" tilewidth="32" tileheight="32" tilecount="72" columns="12">
+  <image source="grass-tiles-2-small.png" width="384" height="192"/>
+ </tileset>
+ <tileset firstgid="73" name="ts3" tilewidth="32" tileheight="32" tilecount="64" columns="8">
+  <image source="tree2-final.png" width="256" height="256"/>
+ </tileset>
+ <layer id="1" name="grass" width="50" height="50">
+  <data encoding="base64" compression="zlib">
+   eJztl0sOwjAMRNPsk+vAnvvfiVaqpWGwAxIoTqVZPJlaafFk8t1KKXVnAypF+835b+MM2k4/Iz9jvtKz5bz23vsz+NTvnG9Q55G7L+AH9qvV1s+858doDEb+zNTi/Z/pMQ1GK6+6LUa+zKrf6hjpwJrRI+97WX5EOnh+dHrniDfwwRtr2RrMD68/vflserLnx6jvGhG9b+Mve35wvVg3rrNYN465FfYPrpH7E+cHarI8zpPM/QP7mNcnbMP7DOvP9mM0PrBGrtMbS1l+oB7E09GdPPuVvZ93B6+Nt95m+9HKe51ePdF59rGQH9F5ifdvPKes6EdEpzar+zG6z/FdI2qHerLvg7/GaC1ewY9/xKv5scL5Sn7IDyGEEEIIIYQQQgghxLV4AjUPGwQ=
+  </data>
+ </layer>
+ <layer id="2" name="trees" width="50" height="50">
+  <data encoding="base64" compression="zlib">
+   eJzt18dOQzEQheHweHRIIHRCJ/Tee89j518jJCt3jn1HaI70La2xZuEZNxr/J8MYwSjGMI4JTGKqxnsNmmk00cIMZtHGHOYTZz31YAGLWMIyVrCKDtYSZy09UGcdG9jEFraxg110E2ctPVBnD/s4wCGOcIwTnCbOWnqgzhnOcYFLXOEaN7hNnLX0QJ073OMBj3jCM17wmjhr6YE6b3jHBz7xhW/8oJc4a+mBp1h64ClDdV/gVzzMM8UdPMwzxR08zDPFHTzMM8UdPMwzxR2qzjPl+6CYqVXnmfJ9UMzUqvNM+T7UOVM9vA+KeHgfFPG071oS+24kEolE/krJ/27OWiX/uzlrlfzv5qxVcp/NWavkPpuzVsl9Nmetkvtszlol99nYnSORSCQSiUT8pA+u67bi
+  </data>
+ </layer>
+ <imagelayer id="3" name="clouds">
+  <image source="cloud.png" width="400" height="218"/>
+ </imagelayer>
+</map>
