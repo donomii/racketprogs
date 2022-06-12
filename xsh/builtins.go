@@ -1,14 +1,15 @@
 package xsh
 
 import (
-	autoparser "../autoparser"
 	"fmt"
-	"github.com/donomii/goof"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 	"time"
+
+	autoparser "../autoparser"
+	"github.com/donomii/goof"
 )
 
 func addBuiltinTypes(s State) {
@@ -408,7 +409,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			return N(os.Getenv(S(args[0])))
 		}
 	case "eval":
-		res := Run(s, args[0])
+		res := RunTree(s, args[0])
 		return res
 	case "run":
 		NotifyEvent(cmd)
@@ -565,7 +566,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 		}
 		*parent = Void(command[0])
 		rest := TreeToXsh(s.Tree)
-		funcs := FunctionsToTcl(s.Functions)
+		funcs := FunctionsToXsh(s.Functions)
 		code := funcs + "\n\n" + rest
 		fmt.Printf("Function defs: %v\n\nRemaining code: %v\n", funcs, rest)
 

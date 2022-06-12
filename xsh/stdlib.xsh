@@ -9,7 +9,7 @@ func sayHello { name |
 
 func map  { f alist |
 	if [eq [length alist] 1] {		
-			return {[f [lindex alist 0]]}
+			return [list [f [lindex alist 0]]]
         } else {
 			cons [f [lindex alist 0]] [map f [lrange alist 1 end]]
 	}

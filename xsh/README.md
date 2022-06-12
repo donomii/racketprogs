@@ -7,6 +7,11 @@ A cross platform shell and scripting language
 A cross platform shell and scripting language.
 
 A homoiconic functional scripting language that works by tree reduction.
+
+Focusses on being pleasant to debug and introspect.
+
+It's not Lisp.
+
 ## Examples
 
     set greet "Hello world"
@@ -14,7 +19,7 @@ A homoiconic functional scripting language that works by tree reduction.
 
 Run programs like normal
 
-    ls
+    xsh> ls
     BUGS                     builtins.go              main.go.works            stdlib.xsh.works         xshguardian
     Makefile                 cmd                      savefile.cont            workspace.code-workspace xshwatch
     README.md                main.go                  stdlib.xsh               xsh
@@ -29,6 +34,46 @@ Functions also work like normal shell commands. Use [ ] brackets to call sub-fun
     puts 2 + 2 equals [+ 2 2]
 
 ## The language
+
+### Lists
+
+A list
+
+    {1 2 3}
+
+Lists are not evaluated in any way
+
+    {1 [puts hello world] 3}
+
+will print
+
+    {1 [puts hello world] 3}
+
+
+If you want to create a list and calculate some values, use the [list ...] function
+
+    [list 1 [+ 1 1] 3]
+
+prints
+
+    {1 2 3}
+
+### Blocks
+
+Code goes in multi line blocks:
+
+    {
+        puts hello
+        puts world
+    }
+
+If you want to put lots of commands on the same input line, you need to use the sequence function, [seq ...].
+
+    seq [puts hello] [puts world]
+
+or use [list ...] and throw away the result
+
+    list [puts hello] [puts world]
 
 ### If statements
 

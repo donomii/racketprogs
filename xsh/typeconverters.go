@@ -31,13 +31,13 @@ func ListToStrings(l []autoparser.Node) ([]string, error) {
 }
 
 //Converts a list of go strings into a list of nodes
-func StringsToList(s []string) autoparser.Node {
+func StringsToList(s []string, sourceNode autoparser.Node) autoparser.Node {
 	out := []autoparser.Node{}
 	for _, v := range s {
-		out = append(out, autoparser.Node{Str: v})
+		out = append(out, autoparser.Node{Str: v, File: sourceNode.File, Line: sourceNode.Line, Column: sourceNode.Column, ChrPos: sourceNode.ChrPos})
 	}
 
-	o := EmptyList()
+	o := EmptyList(sourceNode)
 	o.List = out
 	return o
 }
@@ -49,11 +49,13 @@ func ListToStr(l []autoparser.Node) string {
 	return out
 }
 
+//String to int
 func atoi(s string) int {
 	i, _ := strconv.Atoi(s)
 	return i
 }
 
+//String to float
 func atof(s string) float64 {
 	i, _ := strconv.ParseFloat(s, 64)
 	return i

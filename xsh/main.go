@@ -9,10 +9,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/nsf/termbox-go"
 	"github.com/pterm/pterm"
-
-	"github.com/mattn/go-runewidth"
 
 	//"github.com/lmorg/readline"
 
@@ -58,6 +55,8 @@ func New() State {
 	return s
 }
 
+//Eval, but with options that make sense for interactive sessions.  i.e. run sub programs connected
+//to the terminal stdio so that text editors etc can work properly
 func ShellEval(s State, code, fname string) autoparser.Node {
 	XshTrace("Evalling: %v\n", code)
 	tree := autoparser.ParseXSH(code, fname)
@@ -68,6 +67,7 @@ func ShellEval(s State, code, fname string) autoparser.Node {
 	return res
 }
 
+//Eval, in "batch" mode.  STDIN is nil and STDOUT is collected into a string as the return value
 func Eval(s State, code, fname string) autoparser.Node {
 	//XshTrace("Evalling: %v\n", code)
 	tree := autoparser.ParseXSH(code, fname)
@@ -82,10 +82,13 @@ func Eval(s State, code, fname string) autoparser.Node {
 	return res
 }
 
+//Parse some xsh code into a tree
 func Parse(code, fname string) autoparser.Node {
 	return autoparser.ParseXSH(code, fname)
 }
-func Run(s State, tree autoparser.Node) autoparser.Node {
+
+//Run a tree (a program)
+func RunTree(s State, tree autoparser.Node) autoparser.Node {
 	s.Tree = tree
 	res := treeReduce(s, tree.List, &tree, 2, tree)
 	return res
@@ -107,9 +110,11 @@ func CopyTree(t autoparser.Node) autoparser.Node {
 	return r
 }
 
+//Is this still relevent?
 func checkArgs(args []autoparser.Node, params []autoparser.Node) error {
 	for _, v := range args {
 		for _, p := range params {
+
 			if p.Raw == v.Raw {
 				XshErr("%v,%v,%v: Cannot shadow args in lambda: %+v, %+v\n", v.File, v.Line, v.Column, v, p)
 				os.Exit(1)
@@ -119,6 +124,8 @@ func checkArgs(args []autoparser.Node, params []autoparser.Node) error {
 	return nil
 }
 
+//Recurse through the code tree, replacing any function calls with the function bodies, and any variables
+//with the values.
 func ReplaceArg(args, params []autoparser.Node, t autoparser.Node) autoparser.Node {
 	if len(args) != len(params) {
 		XshErr("Invalid number of arguments in function call: %v, %v\n", args, params)
@@ -130,14 +137,16 @@ func ReplaceArg(args, params []autoparser.Node, t autoparser.Node) autoparser.No
 		//The scope barrier exists to prevent variable names being incorrectly replaced in substitued code
 		//If there are multiple LET statements, or with some combinations of lambdas and recursion, it is possible
 		//that a lambda will be copied into the function tree, and then another variable replace pass runs, incorrectly replacing
-		//variables inside the lambda when they are really in a different scope and should not be replaced.
+		//variables inside the lambda when they are really in a different scope and should not be replaced.  (i.e. modifying the wrong lexical scope)
 		if v.ScopeBarrier {
 			out = append(out, CopyNode(v))
 		} else {
+			//If this element is a list
 			if v.List != nil {
 				if v.Note == "|" {
 					checkArgs(v.List, params)
 				}
+				//Recurse into it
 				out = append(out, autoparser.Node{v.Raw, v.Str, ReplaceArg(args, params, v).List, v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
 			} else {
 				replaced := 0
@@ -150,6 +159,7 @@ func ReplaceArg(args, params []autoparser.Node, t autoparser.Node) autoparser.No
 						drintf("Replacing param %+v with %+v\n", param, args[parami])
 						new := CopyNode(args[parami])
 						//New node is assumed to be from a different scope, so we need to set the scope barrier
+						//This will protect the subtree from further replacements
 						new.ScopeBarrier = true
 						out = append(out, new)
 						//log.Printf("Inserting: %v\n", S(args[parami]))
@@ -166,6 +176,8 @@ func ReplaceArg(args, params []autoparser.Node, t autoparser.Node) autoparser.No
 	return r
 }
 
+//Recurse through the code tree, replacing any function calls with the function bodies, and any variables
+//with the values.
 func ReplaceArgs(args, params []autoparser.Node, t autoparser.Node) autoparser.Node {
 	a, _ := ListToStrings(params)
 	b, _ := ListToStrings(args)
@@ -177,7 +189,8 @@ func ReplaceArgs(args, params []autoparser.Node, t autoparser.Node) autoparser.N
 	return t
 }
 
-func FunctionsToTcl(functions map[string]Function) string {
+//Print the global function definitions into a string, to be parsed later
+func FunctionsToXsh(functions map[string]Function) string {
 	out := ""
 	for _, v := range functions {
 		out += fmt.Sprintf("proc %s {%v} {\n", v.Name, TreeToXsh(v.Parameters))
@@ -187,6 +200,8 @@ func FunctionsToTcl(functions map[string]Function) string {
 	return out
 }
 
+//Search the current environment PATH for the named program.  Also searches for files ending in .exe, .bat, and .cmd.
+//Returns the full path to the program, including filename, or an empty string if the program was not found.
 func searchPath(execName string) string {
 	drintf("Searching path for '%v'\n", execName)
 	if execName == "" {
@@ -213,6 +228,7 @@ func searchPath(execName string) string {
 	return ""
 }
 
+//Searches for the XshGuardian program, which is used to launch other programs
 func FindGuardian() string {
 	bindir := goof.ExecutablePath()
 	var guardianPath string = "Guardian not found"
@@ -226,6 +242,7 @@ func FindGuardian() string {
 	return guardianPath
 }
 
+//Trim a string to the requested length, with an ellipsis if the string is longer than the requested length
 func clampString(s string, max int) string {
 	if len(s) > max {
 		if max > 3 {
@@ -236,13 +253,15 @@ func clampString(s string, max int) string {
 	}
 	return s
 }
+
+//Launch another program using XshGuardian, in interactive mode.
 func runWithGuardian(cmd []string) error {
 	guardianPath := FindGuardian()
 	drintf("Launching guardian for %+v from %v\n", cmd, guardianPath)
 	binfile := cmd[0]
 	fullPath := searchPath(binfile)
 	if fullPath == "" {
-		XshWarn("Could not find %s in PATH\n", binfile)
+		XshErr("Could not find %s in PATH\n", binfile)
 		if runtime.GOOS == "windows" && (goof.Exists(binfile) || goof.Exists(binfile+".exe") || goof.Exists(binfile+".bat")) {
 			XshHelpful("Your file is in the current directory, but not in PATH.  Xsh does not automatically run programs in the current directory.  To do so, add '.' to PATH with 'set PATH [join [list $PATH \".\"] \";\"]'.\n")
 		}
@@ -255,13 +274,15 @@ func runWithGuardian(cmd []string) error {
 	return goof.QCI(cmd)
 }
 
+//Launch another program using XshGuardian, and wait for it to finish.  Returns everything printed to
+//STDOUT as a string.
 func runWithGuardianCapture(cmd []string) (string, error) {
 	guardianPath := FindGuardian()
 	drintf("Launching guardian for capturing %+v from %v\n", cmd, guardianPath)
 	binfile := cmd[0]
 	fullPath := searchPath(binfile)
 	if fullPath == "" && !goof.Exists(binfile) {
-		XshWarn("Could not find %s in PATH\n", binfile)
+		XshErr("Could not find %s in PATH\n", binfile)
 		if runtime.GOOS == "windows" && (goof.Exists(binfile) || goof.Exists(binfile+".exe") || goof.Exists(binfile+".bat")) {
 			XshHelpful("Your file is in the current directory, but not in PATH.  Xsh does not automatically run programs in the current directory.  To do so, add '.' to PATH with 'set PATH [join [list $PATH \".\"] \";\"]'.\n")
 		}
@@ -274,6 +295,9 @@ func runWithGuardianCapture(cmd []string) (string, error) {
 	XshInform("Running %+v for capture with guardian %v\n", cmd, guardianPath)
 	return goof.QC(cmd)
 }
+
+//Create a Void node.  You must provide an existing node to copy the source location from.  The source
+//location is used by a lot of debugging and display code, returning 0,0,0 will result in a lot of glitches.
 func Void(command autoparser.Node) autoparser.Node {
 	drintf("Creating void at %+v\n", command.Line)
 	if command.ChrPos < 1 {
@@ -281,14 +305,18 @@ func Void(command autoparser.Node) autoparser.Node {
 	}
 	return autoparser.Node{"", "", nil, "VOID", command.Line, command.Column, command.ChrPos, command.File, command.ScopeBarrier}
 }
+
+//Is the Node a List?
 func isList(n autoparser.Node) bool {
 	return n.List != nil
 }
 
+//Creates a new copy of the node
 func CopyNode(n autoparser.Node) autoparser.Node {
 	return autoparser.Node{n.Raw, n.Str, n.List, n.Note, n.Line, n.Column, n.ChrPos, n.File, n.ScopeBarrier}
 }
 
+//Returns the node type
 func typeOf(e autoparser.Node) string {
 	if isLambda(e) {
 		return "lambda"
@@ -305,10 +333,12 @@ func typeOf(e autoparser.Node) string {
 	return "void"
 }
 
-func EmptyList() autoparser.Node {
-	return autoparser.Node{Note: "{", List: []autoparser.Node{}}
+//Create a new empty list.  You must provide a source node with valid location information.
+func EmptyList(sourceNode autoparser.Node) autoparser.Node {
+	return autoparser.Node{Note: "{", List: []autoparser.Node{}, File: sourceNode.File, Line: sourceNode.Line, Column: sourceNode.Column, ChrPos: sourceNode.ChrPos}
 }
 
+//Is the node a lambda?
 func isLambda(e autoparser.Node) bool {
 	command := e.List
 	if len(command) > 0 && isList(command[0]) {
@@ -321,6 +351,7 @@ func isLambda(e autoparser.Node) bool {
 	return false
 }
 
+//Evaluate a single function call.
 func eval(s State, command autoparser.Node, parent *autoparser.Node, level int) autoparser.Node {
 	if len(command.List) == 0 {
 		return Void(autoparser.Node{File: "eval", Line: 1, Column: 0, ChrPos: 1, Note: "empty eval"})
@@ -443,7 +474,7 @@ Given:
 		}
 
 		//This is for the embedded xsh, it allows the embeddor to add their own functions,
-		//most usually extra data sources and/or IO
+		//e.g. to connect to data sources or do IO
 		if s.ExtraBuiltins != nil {
 			ret, handled := s.ExtraBuiltins(s, command.List, parent, level)
 			if handled {
@@ -461,10 +492,16 @@ Given:
 	//Maybe we should return a warning here?  Or even exit?  Need a strict mode.
 
 }
+
+//BlockReduce operates a little bit oddly.  It evals a list of statements, and replaces each statement with
+//the result of the statement.  It then returns the last result.
+//The allows the debugger to show each statement as it is evaluated.
 func blockReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel int) autoparser.Node {
 
 	drintf("BlockReduce: starting %+v\n", TreeToXsh(autoparser.Node{List: t}))
 	//log.Printf("BlockReduce: starting %+v\n", t)
+
+	//Empty block
 	if len(t) == 0 {
 		return Void(*parent)
 	}
@@ -477,7 +514,7 @@ func blockReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel
 
 	var out autoparser.Node
 	if t[0].Note == "\n" && t[0].Raw == "\n" {
-		//It is a multi line lambda, eval as statements, return the last
+		//It is a multi line block, eval as statements, return the last
 
 		for i, v := range t {
 			out = treeReduce(s, v.List, parent, toplevel, v)
@@ -497,6 +534,8 @@ func Loc(n autoparser.Node) string {
 	return fmt.Sprintf("%v:%v:%v", n.File, n.Line, n.Column)
 }
 
+//Pretty print code.  The subTree will be highlighted if it is found in the tree.
+//This is used by the debugger to show the current statement being evaluated.
 func PrintTree(t autoparser.Node, subTree autoparser.Node) {
 	PrintTreeRec(t, subTree, true, 1)
 }
@@ -622,6 +661,8 @@ func PrintTreeRec(t autoparser.Node, subTree autoparser.Node, inBlock bool, leve
 		}*/
 }
 
+//Recursively evaluate a program tree down to the leaves, then "fold up" the results into a single value
+//This is the heart of the interpreter.
 func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel int, orig autoparser.Node) autoparser.Node {
 	drintf("Reducing: %+v\n", TreeListToXsh(t))
 
@@ -729,6 +770,7 @@ func TreeToJson(t autoparser.Node) string {
 	return out
 }
 
+//Convert a list of nodes into a string
 func TreeListToXsh(t []autoparser.Node) string {
 	out := ""
 	for _, v := range t {
@@ -737,6 +779,8 @@ func TreeListToXsh(t []autoparser.Node) string {
 	}
 	return out
 }
+
+//Convert a single tree into a string
 func TreeToXsh(t autoparser.Node) string {
 	out := ""
 	for i, v := range t.List {
@@ -804,13 +848,8 @@ func ListPathExecutables() func(string) []string {
 
 func ListBuiltins() func(string) []string {
 	return func(line string) []string {
+		//FIXME we can now read this dynamically from the types map[]
 		return []string{"id", "and", "or", "join", "split", "puts", "+", "-", "*", "/", "+.", "-.", "*.", "/.", "loadfile", "set", "run", "seq", "with", "cd"}
-	}
-}
-func tbprint(x, y int, fg, bg termbox.Attribute, msg string) {
-	for _, c := range msg {
-		termbox.SetCell(x, y, c, fg, bg)
-		x += runewidth.RuneWidth(c)
 	}
 }
 
