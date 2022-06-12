@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // Renders a textured spinning cube using GLFW 3 and OpenGL 4.1 core forward-compatible profile.
-package main // import "github.com/donomii/myvox"
+package main
 
 import (
 	"fmt"

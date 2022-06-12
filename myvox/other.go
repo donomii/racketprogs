@@ -30,7 +30,7 @@ func MakeBlocks(size int) [][][]Block {
 				blocks[i][j][k] = Block{
 					Active: false,
 					Color: mgl32.Vec4{
-						0.0,
+						1.0,
 						0.0,
 						0.0,
 						0.0,
