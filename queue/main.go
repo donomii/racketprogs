@@ -1,6 +1,8 @@
 package main
 
 import (
+	pmoolib "../pmoolib"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"time"
@@ -58,6 +60,14 @@ func main() {
 		c.Writer.Write(LoadObject(key))
 	})
 
+	r.GET("/find/:propname/:propval", func(c *gin.Context) {
+		propname := c.Param("propname")
+		propval := c.Param("propval")
+		res := findObjects(propname, propval)
+		out, _ := json.Marshal(res)
+		c.Writer.Write(out)
+	})
+
 	r.GET("/operational", func(c *gin.Context) {
 
 		c.Writer.Write([]byte("Database operational"))
@@ -68,6 +78,11 @@ func main() {
 
 var KVstore file.Store
 var err error
+
+func findObjects(propname, propval string) []string {
+	res := pmoolib.SearchObjects(propname, propval)
+	return res
+}
 
 func StartKVstore() {
 	options := file.DefaultOptions // Address: "localhost:6379", Password: "", DB: 0

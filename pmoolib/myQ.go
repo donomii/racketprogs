@@ -67,6 +67,23 @@ func FetchObject(url, id string) *Object {
 	json.Unmarshal(data, retrievedVal)
 	return retrievedVal
 }
+
+func ClusterSearchObjects(url, propname, propval string) []string {
+	resp, err := http.Get(url + "/find/" +propname+"/"+ propval)
+	if err != nil {
+		return nil
+		//log.Fatalln(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode > 299 {
+		return nil
+	}
+	data, _ := ioutil.ReadAll(resp.Body)
+
+	retrievedVal := []string{}
+	json.Unmarshal(data, retrievedVal)
+	return retrievedVal
+}
 func DatabaseConnection(url string) bool {
 	resp, err := http.Get(url + "/operational")
 	if err != nil {

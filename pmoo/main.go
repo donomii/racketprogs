@@ -100,8 +100,7 @@ func xshRun(text, player string) string {
 	//fmt.Printf("Substituting pmoo vars\n")
 	tr = subsitutePmooVars(tr)
 	res := xsh.Run(state, tr)
-	l := []autoparser.Node{res}
-	resstr := xsh.TreeToXsh(l)
+	resstr := xsh.TreeToXsh(res)
 
 	return resstr
 }
@@ -379,6 +378,7 @@ func addPmooTypes(s xsh.State) {
 	s.TypeSigs["setprop"] = []string{"void", "string", "string", "string"}
 	s.TypeSigs["allobjects"] = []string{"list"}
 	s.TypeSigs["findobject"] = []string{"string", "string"}
+	s.TypeSigs["search"] = []string{"string", "string", "search"}
 	s.TypeSigs["clone"] = []string{"string", "string", "string"}
 	s.TypeSigs["formatobject"] = []string{"string", "string"}
 	s.TypeSigs["move"] = []string{"void", "string", "string"} //Should be bool?
@@ -395,20 +395,20 @@ func become(player, affinity string) bool {
 	fmt.Printf("Became player id: %v on node: %v\n", DefaultPlayerId, affinity)
 	return true
 }
-func xshBuiltins(s xsh.State, command []autoparser.Node, parent *autoparser.Node, level int) (autoparser.Node, bool) {
+func xshBuiltins(s xsh.State, commandNodes []autoparser.Node, parent *autoparser.Node, level int) (autoparser.Node, bool) {
 	player := s.UserData.(string)
-	if len(command) > 0 {
-		c, err := xsh.ListToStrings(command)
+	if len(commandNodes) > 0 {
+		command, err := xsh.ListToStrings(commandNodes)
 		if err != nil {
 			//log.Println("Error converting command to string:", err)
 		} else {
 			//fmt.Printf("Running custom handler for command %v\n", c)
-			switch c[0] {
+			switch command[0] {
 			case "help":
-				if len(c) == 1 {
-					c = []string{"help", "all"}
+				if len(command) == 1 {
+					command = []string{"help", "all"}
 				}
-				switch c[1] {
+				switch command[1] {
 				case "cluster":
 					return xsh.N(`
 PMOO  - Personal MUD Object Oriented
@@ -578,47 +578,50 @@ cluster - cluster mode
 				}
 
 			case "sleep":
-				duration, _ := strconv.ParseInt(c[1], 10, 64)
+				duration, _ := strconv.ParseInt(command[1], 10, 64)
 				time.Sleep(time.Duration(duration) * time.Millisecond)
 				return xsh.Bool(true), true
 			case "become":
-				return xsh.Bool(become(c[1], c[2])), become(c[1], c[2])
+				return xsh.Bool(become(command[1], command[2])), become(command[1], command[2])
 			case "setprop":
-				SetProp(c[1], c[2], c[3])
-				return command[3], true
+				SetProp(command[1], command[2], command[3])
+				return commandNodes[3], true
 			case "findobject":
-				num := GetObjectByName(player, c[1])
-				fmt.Println("Searched for object", c[1], "found", num)
+				num := GetObjectByName(player, command[1])
+				fmt.Println("Searched for object", command[1], "found", num)
 				if num != "" {
 					return xsh.N(num), true
 				}
-				return xsh.Void(command[0]), true
+				return xsh.Void(commandNodes[0]), true
+			case "search":
+				objs := SearchObjects(command[1], command[2])
+				return xsh.StringsToList(objs, commandNodes[0]), true
 			case "getprop":
-				return xsh.N(GetProp(c[1], c[2])), true
+				return xsh.N(GetProp(command[1], command[2])), true
 			case "delprop":
-				DelProp(c[1], c[2])
-				return xsh.N(c[2]), true
+				DelProp(command[1], command[2])
+				return xsh.N(command[2]), true
 			case "clone":
-				return xsh.N(Clone(c[1], c[2])), true
+				return xsh.N(Clone(command[1], command[2])), true
 			case "formatobject":
-				fmt.Printf("Formatting object from args: %v\n", c)
-				return xsh.N(FormatObject(c[1])), true
+				fmt.Printf("Formatting object from args: %v\n", command)
+				return xsh.N(FormatObject(command[1])), true
 			case "move":
-				return xsh.Bool(MoveObj(c[1], c[2])), true
+				return xsh.Bool(MoveObj(command[1], command[2])), true
 			case "setverb":
-				obj := c[1]
-				prop := c[2]
-				interpreter := c[3]
-				value := c[4]
+				obj := command[1]
+				prop := command[2]
+				interpreter := command[3]
+				value := command[4]
 				SetVerb(obj, prop, value, interpreter)
-				return xsh.Void(command[0]), true
+				return xsh.Void(commandNodes[0]), true
 			case "msg":
-				from := c[1]
-				target := c[2]
-				verb := c[3]
-				dobj := c[4]
-				prep := c[5]
-				iobj := c[6]
+				from := command[1]
+				target := command[2]
+				verb := command[3]
+				dobj := command[4]
+				prep := command[5]
+				iobj := command[6]
 
 				thisObj := LoadObject(target)
 				affProp, ok := thisObj.Properties["affinity"]
@@ -634,14 +637,14 @@ cluster - cluster mode
 				} else {
 					RawMsg(Message{From: player, Player: player, This: target, Verb: verb, Dobj: dobj, Prepstr: prep, Iobj: iobj, Trace: "FIXME", Ticks: DefaultTicks})
 				}
-				return xsh.Void(command[0]), true
+				return xsh.Void(commandNodes[0]), true
 			case "o":
-				num := GetObjectByName(player, c[1])
-				fmt.Println("Searched for object", c[1], "found", num)
+				num := GetObjectByName(player, command[1])
+				fmt.Println("Searched for object", command[1], "found", num)
 				if num != "" {
 					return xsh.N(num), true
 				}
-				return xsh.Void(command[0]), true
+				return xsh.Void(commandNodes[0]), true
 
 			}
 		}
@@ -730,7 +733,7 @@ func invoke(player, this, verb, dobj, dpropstr, prepstr, iobj, ipropstr, dobjstr
 	}
 }
 
-func subsitutePmooVars(code []autoparser.Node) []autoparser.Node {
+func subsitutePmooVars(code autoparser.Node) autoparser.Node {
 	//fmt.Printf("Substituting vars in %+v\n", code)
 	out := xsh.TreeMap(func(n autoparser.Node) autoparser.Node {
 		str := xsh.S(n)

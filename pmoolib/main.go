@@ -111,6 +111,37 @@ func panicErr(err error) {
 	}
 }
 
+//SearchObjects returns a list of objects that have a property set to the given value
+func SearchObjects(propname, value string) []string {
+	if Cluster {
+		return ClusterSearchObjects(QueueServer, propname, value)
+	} else {
+		//List the objects directory to get the id of every object
+		objectfis, err := ioutil.ReadDir(DataDir)
+		panicErr(err)
+		//Convert array of fileinfo to array of strings
+		objectids := []string{}
+		for _, fi := range objectfis {
+			name := fi.Name()
+			if strings.HasSuffix(name, ".json") {
+				name = strings.TrimSuffix(name, ".json")
+				objectids = append(objectids, name)
+			}
+		}
+
+		var objects []string
+		for _, objid := range objectids {
+			//Load the object
+			fmt.Printf("Loading object %v\n", objid)
+			obj := LoadObject(objid)
+			if obj.Properties[propname].Value == value {
+				objects = append(objects, obj.Id)
+			}
+		}
+		return objects
+	}
+}
+
 //Convert anything to a string
 func ToStr(i interface{}) string {
 	return fmt.Sprintf("%v", i)
@@ -286,7 +317,7 @@ func GetPropertyStruct(o *Object, name string, timeout int) *Property {
 	return nil
 }
 
-//Load a property from an object (given object id)
+//Load a property from an object (given object id and property name)
 func GetProp(objstr, name string) string {
 	if objstr == "" {
 		panic("GetProp called with empty object id")
