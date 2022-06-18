@@ -42,7 +42,7 @@ func (f *BulletSystem) Update(dt float32) {
 
 		//e.SpaceComponent.Position.Y += speed
 
-		dir := e.GetSpaceComponent().Direction
+		dir := e.GetDirectionComponent().Direction
 
 		e.SpaceComponent.Position.Y = e.SpaceComponent.Position.Y - speed*dir.Y
 

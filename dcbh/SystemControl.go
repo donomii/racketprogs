@@ -4,7 +4,7 @@ import (
 	"github.com/EngoEngine/ecs"
 	"github.com/EngoEngine/engo"
 	"github.com/EngoEngine/engo/common"
-	"log"
+	//"log"
 )
 
 type controlEntity struct {
@@ -55,7 +55,7 @@ func (c *ControlSystem) Update(dt float32) {
 		e.SpaceComponent.Position.Y += speed * vert.Value()
 
 		if gamepad != nil {
-			log.Printf("gamepad %+v", gamepad)
+			//log.Printf("gamepad %+v", gamepad)
 			if gamepad.DpadUp.Down() {
 				e.SpaceComponent.Position.Y -= speed
 			} else if gamepad.DpadDown.Down() {

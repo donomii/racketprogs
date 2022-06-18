@@ -13,6 +13,7 @@ type Bullet struct {
 	common.CollisionComponent
 	common.RenderComponent
 	common.SpaceComponent
+	DirectionComponent
 	LifeTimeComponent
 }
 
@@ -52,13 +53,16 @@ func NewBullet(world *ecs.World, position engo.Point) {
 	bull.SetZIndex(1)
 	bull.SpaceComponent = common.SpaceComponent{
 		Position: position,
+
+		Width:    texture.Width() * bull.RenderComponent.Scale.X,
+		Height:   texture.Height() * bull.RenderComponent.Scale.Y,
+		Rotation: 45 * rand.Float32(),
+	}
+	bull.DirectionComponent = DirectionComponent{
 		Direction: engo.Point{
 			X: rand.Float32()*2 - 1,
 			Y: rand.Float32()*2 - 1,
 		},
-		Width:    texture.Width() * bull.RenderComponent.Scale.X,
-		Height:   texture.Height() * bull.RenderComponent.Scale.Y,
-		Rotation: 45 * rand.Float32(),
 	}
 
 	bull.CollisionComponent = common.CollisionComponent{Group: 2, Main: 2}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/EngoEngine/ecs"
 	"github.com/EngoEngine/engo"
 	"github.com/EngoEngine/engo/common"
@@ -8,7 +9,9 @@ import (
 )
 
 type DeathSystem struct {
-	world *ecs.World
+	world     *ecs.World
+	Score     int
+	HitPoints int
 }
 
 func (d *DeathSystem) New(w *ecs.World) {
@@ -20,12 +23,22 @@ func (d *DeathSystem) New(w *ecs.World) {
 
 		if isCollision {
 			if colMess.Entity.Name == "Player" {
-				log.Printf("Collsition: %+v, %+v", colMess.Entity.BasicEntity, colMess.To.BasicEntity)
+				player := colMess.Entity
+				d.HitPoints--
+				log.Printf("Collsition: %+v, %+v", player.BasicEntity, colMess.To.BasicEntity)
 				log.Println("DEAD")
 				d.Purge(*colMess.To.GetBasicEntity())
 			} else {
 				if colMess.To.BasicEntity.Name == "enemy" && colMess.Entity.BasicEntity.Name == "bullet" {
-					log.Printf("Collision: %+v, %+v", colMess.Entity.BasicEntity, colMess.To.BasicEntity)
+					d.Score++
+					//log.Printf("Collision: %+v, %+v", colMess.Entity.BasicEntity, colMess.To.BasicEntity)
+					log.Printf("Score: %+v", d.Score)
+					log.Printf("Hit points: %+v", d.HitPoints)
+					engo.Mailbox.Dispatch(HUDTextMessage{
+						BasicEntity: ecs.NewBasic(),
+						Text:        fmt.Sprintf("Score: %+v", d.Score),
+					})
+
 					d.Purge(*colMess.Entity.GetBasicEntity())
 					d.Purge(*colMess.To.GetBasicEntity())
 				}

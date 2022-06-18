@@ -4,12 +4,14 @@ import (
 	"image/color"
 	"log"
 
+	"bytes"
 	"github.com/EngoEngine/ecs"
 	"github.com/EngoEngine/engo"
 	"github.com/EngoEngine/engo/common"
+	"golang.org/x/image/font/gofont/gosmallcaps"
 )
 
-var haveGamepad = true
+var haveGamepad = false
 
 type Tile struct {
 	ecs.BasicEntity
@@ -38,11 +40,15 @@ func (*DefaultScene) Preload() {
 		log.Println(err)
 	}
 
+	engo.Files.LoadReaderData("go.ttf", bytes.NewReader(gosmallcaps.TTF))
+
 	// Register the gamepad
 	err = engo.Input.RegisterGamepad("Player1")
 	if err != nil {
 		println("Unable to find suitable Gamepad. Error was: ", err.Error())
 		haveGamepad = false
+	} else {
+		haveGamepad = true
 	}
 }
 
@@ -59,6 +65,8 @@ func (*DefaultScene) Setup(u engo.Updater) {
 
 	w.AddSystem(&ControlSystem{})
 	w.AddSystem(&RockSpawnSystem{})
+
+	w.AddSystem(&HUDTextSystem{})
 
 	texture, err := common.LoadedSprite("deep_elf_annihilator.png")
 	if err != nil {
@@ -97,12 +105,12 @@ func (*DefaultScene) Setup(u engo.Updater) {
 			sys.Add(&guy.BasicEntity, &guy.SpaceComponent)
 		}
 	}
-
-	err = engo.Input.RegisterGamepad("Player1")
-	if err != nil {
-		println("Unable to find suitable Gamepad. Error was: ", err.Error())
-	}
-
+	/*
+		err = engo.Input.RegisterGamepad("Player1")
+		if err != nil {
+			println("Unable to find suitable Gamepad. Error was: ", err.Error())
+		}
+	*/
 	initMap(&guy, w)
 }
 
@@ -110,15 +118,18 @@ func (*DefaultScene) Type() string { return "Game" }
 
 func main() {
 	opts := engo.RunOptions{
-		Title:          "Falling Demo",
+		Title:          "Dungeon Crawl Bullet Hell",
 		Width:          1024,
-		Height:         640,
+		Height:         1024,
 		StandardInputs: true,
+		Fullscreen:     false,
+		FPSLimit:       30,
 	}
 
 	engo.Run(opts, &DefaultScene{})
 }
 
+//Initialises the background map
 func initMap(character *Guy, w *ecs.World) {
 
 	resource, err := engo.Files.Resource("example.tmx")
