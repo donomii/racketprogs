@@ -2,7 +2,7 @@ package main
 
 import (
 	"image/color"
-	"log"
+	_ "log"
 
 	"github.com/EngoEngine/ecs"
 	"github.com/EngoEngine/engo"
@@ -16,14 +16,22 @@ type Text struct {
 	common.RenderComponent
 }
 
+type MyShape struct {
+	ecs.BasicEntity
+	common.SpaceComponent
+	common.RenderComponent
+}
+
 // HUDTextSystem prints the text to our HUD based on the current state of the game
 type HUDTextSystem struct {
-	text Text
+	text       Text
+	HpFraction float32
 }
 
 // New is called when the system is added to the world.
 // Adds text to our HUD that will update based on the state of the game.
 func (h *HUDTextSystem) New(w *ecs.World) {
+	h.HpFraction = 1.0
 	fnt := &common.Font{
 		URL:  "go.ttf",
 		FG:   color.Black,
@@ -51,11 +59,53 @@ func (h *HUDTextSystem) New(w *ecs.World) {
 	}
 
 	engo.Mailbox.Listen("HUDTextMessage", func(message engo.Message) {
-		log.Printf("Received message: %v", message.(HUDTextMessage))
+		//log.Printf("Received message: %v", message.(HUDTextMessage))
 		h.text.RenderComponent.Drawable = common.Text{
 			Font: fnt,
 			Text: message.(HUDTextMessage).Text,
 		}
+
+	})
+
+	rectangle1 := MyShape{BasicEntity: ecs.NewBasic()}
+	rectangle1.SpaceComponent = common.SpaceComponent{Position: engo.Point{10, 10}, Width: h.HpFraction * (engo.WindowWidth() - 20), Height: 50}
+	rectangle1.RenderComponent = common.RenderComponent{Drawable: common.Rectangle{BorderWidth: 1, BorderColor: color.White}, Color: color.RGBA{255, 255, 0, 255}}
+
+	for _, system := range w.Systems() {
+		switch sys := system.(type) {
+		case *common.RenderSystem:
+			sys.Add(&rectangle1.BasicEntity, &rectangle1.RenderComponent, &rectangle1.SpaceComponent)
+		}
+	}
+	rectangle1.SetZIndex(1001)
+	rectangle1.SetShader(common.LegacyHUDShader)
+
+	engo.Mailbox.Listen("WindowResizeMessage", func(msg engo.Message) {
+		//log.Printf("Received message: %v", msg.(engo.WindowResizeMessage))
+		winResMessage, ok := msg.(engo.WindowResizeMessage)
+		if !ok {
+			return
+		}
+
+		rectangle1.SpaceComponent.Width = float32(winResMessage.NewWidth-20) * h.HpFraction
+
+		//difW = winResMessage.NewWidth - winResMessage.OldWidth
+		//difH = winResMessage.NewHeight - winResMessage.OldHeight
+
+		//fmt.Println(winResMessage.NewWidth, winResMessage.OldWidth)
+
+	})
+
+	engo.Mailbox.Listen("PlayerStateChangeMessage", func(msg engo.Message) {
+		//log.Printf("Received message: %v", msg.(PlayerStateChangeMessage))
+		playerStateMessage, ok := msg.(PlayerStateChangeMessage)
+		if !ok {
+			return
+		}
+
+		h.HpFraction = float32(playerStateMessage.Player.HitPoints) / float32(playerStateMessage.Player.MaxHitPoints)
+
+		rectangle1.SpaceComponent.Width = (engo.WindowWidth() - 20) * h.HpFraction
 
 	})
 }

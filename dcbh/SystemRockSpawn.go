@@ -48,7 +48,7 @@ func NewRock(world *ecs.World, position engo.Point) {
 			Drawable: common.Circle{},
 			Color:    color.RGBA{0, 0, 0, 255},
 		}
-		rock.SetZIndex(1)
+		rock.SetZIndex(monsterLayer)
 		rock.SpaceComponent = common.SpaceComponent{
 			Position: position,
 			Width:    16 * 4,
@@ -69,7 +69,7 @@ func NewRock(world *ecs.World, position engo.Point) {
 			Drawable: texture,
 			Scale:    engo.Point{X: 4, Y: 4},
 		}
-		rock.SetZIndex(1)
+		rock.SetZIndex(monsterLayer)
 		rock.SpaceComponent = common.SpaceComponent{
 			Position: position,
 			Width:    texture.Width() * rock.RenderComponent.Scale.X,
@@ -98,7 +98,7 @@ func NewRock(world *ecs.World, position engo.Point) {
 			Drawable: texture,
 			Scale:    engo.Point{X: 2, Y: 2},
 		}
-		rock.SetZIndex(1)
+		rock.SetZIndex(monsterLayer)
 		rock.SpaceComponent = common.SpaceComponent{
 			Position: position,
 			Width:    texture.Width() * rock.RenderComponent.Scale.X,
@@ -106,8 +106,7 @@ func NewRock(world *ecs.World, position engo.Point) {
 			Rotation: 45 * rand.Float32(),
 		}
 	}
-	rock.CollisionComponent = common.CollisionComponent{Group: 1, Main: 1}
-	rock.CollisionComponent = common.CollisionComponent{Group: 2, Main: 2}
+	rock.CollisionComponent = common.CollisionComponent{Group: 1 | 2, Main: 1 | 2}
 
 	for _, system := range world.Systems() {
 		switch sys := system.(type) {

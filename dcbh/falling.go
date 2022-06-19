@@ -13,6 +13,17 @@ import (
 
 var haveGamepad = false
 
+//Create an enum to represent the rendering layers: guylayer, bulletlayer, treelayer, cloudlayer
+const ( // iota is reset to 0
+	grassLayer   = iota
+	guyLayer     = iota
+	monsterLayer = iota
+	bulletLayer  = iota
+	treeLayer    = iota
+	cloudLayer   = iota
+	hudLayer     = iota
+)
+
 type Tile struct {
 	ecs.BasicEntity
 	common.RenderComponent
@@ -24,6 +35,7 @@ type Guy struct {
 	common.CollisionComponent
 	common.RenderComponent
 	common.SpaceComponent
+	CreatureComponent
 }
 
 type GameData struct {
@@ -59,8 +71,8 @@ func (*DefaultScene) Setup(u engo.Updater) {
 
 	// Add all of the systems
 	w.AddSystem(&common.RenderSystem{})
-	w.AddSystem(&common.CollisionSystem{Solids: 1})
-	w.AddSystem(&DeathSystem{})
+	w.AddSystem(&common.CollisionSystem{Solids: 1 | 2})
+
 	//w.AddSystem(&FallingSystem{})
 
 	w.AddSystem(&ControlSystem{})
@@ -79,20 +91,23 @@ func (*DefaultScene) Setup(u engo.Updater) {
 	w.AddSystem(&ChasingSystem{target: &guy, world: w})
 	w.AddSystem(&BulletSpawnSystem{target: &guy, world: w})
 	w.AddSystem(&BulletSystem{target: &guy, world: w})
+	w.AddSystem(&DeathSystem{Player: &guy})
 	// Initialize the components, set scale to 4x
 	guy.RenderComponent = common.RenderComponent{
 		Drawable: texture,
 		Scale:    engo.Point{2, 2},
 	}
-	guy.SetZIndex(1)
+	guy.SetZIndex(guyLayer)
 	guy.SpaceComponent = common.SpaceComponent{
-		Position: engo.Point{0, 0},
+		Position: engo.Point{500, 500},
 		Width:    texture.Width() * guy.RenderComponent.Scale.X,
 		Height:   texture.Height() * guy.RenderComponent.Scale.Y,
 	}
 	guy.CollisionComponent = common.CollisionComponent{
-		Main: 1,
+		Main: 1, Group: 1,
 	}
+	guy.SetMaxHitPoints(10)
+	guy.SetHitPoints(10)
 
 	// Add it to appropriate systems
 	for _, system := range w.Systems() {
@@ -157,11 +172,11 @@ func initMap(character *Guy, w *ecs.World) {
 				}
 
 				if tileLayer.Name == "grass" {
-					tile.RenderComponent.SetZIndex(0)
+					tile.RenderComponent.SetZIndex(grassLayer)
 				}
 
 				if tileLayer.Name == "trees" {
-					tile.RenderComponent.SetZIndex(2)
+					tile.RenderComponent.SetZIndex(treeLayer)
 				}
 
 				tileComponents = append(tileComponents, tile)
@@ -185,7 +200,7 @@ func initMap(character *Guy, w *ecs.World) {
 				}
 
 				if imageLayer.Name == "clouds" {
-					tile.RenderComponent.SetZIndex(3)
+					tile.RenderComponent.SetZIndex(cloudLayer)
 				}
 
 				tileComponents = append(tileComponents, tile)

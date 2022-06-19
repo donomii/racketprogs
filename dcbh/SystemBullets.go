@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/EngoEngine/ecs"
 	"github.com/EngoEngine/engo"
+	_ "log"
 )
 
 type BulletSystem struct {
@@ -48,9 +49,6 @@ func (f *BulletSystem) Update(dt float32) {
 
 		e.SpaceComponent.Position.X -= speed * dir.X
 
-		if e.SpaceComponent.Position.Y > engo.GameHeight() {
-			f.Remove(e.BasicEntity)
-		}
 		e.GetLifeTimeComponent().AddTime(dt)
 		e.GetLifeTimeComponent().CheckDead(e.BasicEntity)
 	}
@@ -92,6 +90,7 @@ func (sc *LifeTimeComponent) GetMaxLifeTime() float32 {
 
 func (sc *LifeTimeComponent) CheckDead(ent ecs.BasicEntity) {
 	if sc.CurrentAge > sc.MaxLifeTime {
+		//log.Printf("Entity %v is dead", ent.ID())
 		engo.Mailbox.Dispatch(AgeDeathMessage{Entity: ent, Age: sc.CurrentAge})
 	}
 }

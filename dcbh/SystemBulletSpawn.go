@@ -50,7 +50,7 @@ func NewBullet(world *ecs.World, position engo.Point) {
 		Drawable: texture,
 		Scale:    engo.Point{X: 1, Y: 1},
 	}
-	bull.SetZIndex(1)
+	bull.SetZIndex(bulletLayer)
 	bull.SpaceComponent = common.SpaceComponent{
 		Position: position,
 
