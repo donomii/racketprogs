@@ -680,7 +680,7 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 	out := []autoparser.Node{}
 	for i, v := range t {
 		if WantTrace && v.File != "" { // FIXME this is just masking a problem
-			fmt.Printf("In:%v: ", Loc(v))
+			fmt.Printf("Trace: In %v: ", Loc(v))
 			PrintTree(orig, v)
 			fmt.Print("\n")
 		}
@@ -752,7 +752,7 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 	// Run command
 	if len(out) > 0 {
 		if WantTrace {
-			fmt.Printf("Out:%v: ", Loc(out[0]))
+			fmt.Printf("Trace: Out %v: ", Loc(out[0]))
 			PrintTree(orig, out[0])
 			fmt.Print("\n")
 		}
