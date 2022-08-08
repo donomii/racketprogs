@@ -12,32 +12,35 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
 	//"sort"
 	"net/rpc"
-
-	"github.com/donomii/termbox-go"
 	"path/filepath"
 	"sort"
 	"sync"
+
+	"github.com/donomii/termbox-go"
 )
 
-var completeVersion = 1
-var use_gui = true
-var History []string
-var Statuses map[string]string
-var selection = 0
-var itempos = 0
-var cursorX = 11
-var cursorY = 1
-var selectPosX = 11
-var selectPosY = 1
-var focus = "input"
-var InputPos = 0
-var InputLine string
-var debugStr = ""
-var client *rpc.Client
-var prompt = "xsh:"
-var confPath string
+var (
+	completeVersion = 1
+	use_gui         = true
+	History         []string
+	Statuses        map[string]string
+	selection       = -1
+	itempos         = 0
+	cursorX         = 11
+	cursorY         = 1
+	selectPosX      = 11
+	selectPosY      = 1
+	focus           = "input"
+	InputPos        = 0
+	InputLine       string
+	debugStr        = ""
+	client          *rpc.Client
+	prompt          = "xsh:"
+	confPath        string
+)
 
 var predictResults []string
 
@@ -87,7 +90,6 @@ func blankPanel() {
 	putStr(0, height-3, strings.Repeat(char, width))
 	putStr(0, height-2, strings.Repeat(char, width))
 	putStr(0, height-1, strings.Repeat(char, width))
-
 }
 
 func setTrans() {
@@ -98,7 +100,7 @@ func setTrans() {
 	}
 }
 
-//build a map into a string, sorting by key
+// build a map into a string, sorting by key
 func mapToString(aMap map[string]string) string {
 	var keys []string
 	for k := range aMap {
@@ -113,17 +115,16 @@ func mapToString(aMap map[string]string) string {
 }
 
 func refreshTerm() {
-
-	//statuses["Screen"] = "Refresh"
+	// statuses["Screen"] = "Refresh"
 	if use_gui {
 		blankPanel()
 		width, height := termbox.Size()
 		refreshMutex.Lock()
 		defer refreshMutex.Unlock()
-		//termbox.Clear(foreGround(), backGround())
+		// termbox.Clear(foreGround(), backGround())
 		//		putStr(0, 0, debugStr)
 
-		putStr(0, height-1, fmt.Sprintf("%v%v%v", prompt, InputLine, strings.Repeat(" ", width-len(InputLine)-len(prompt)))) //FIXME
+		putStr(0, height-1, fmt.Sprintf("%v%v%v", prompt, InputLine, strings.Repeat(" ", width-len(InputLine)-len(prompt)))) // FIXME
 
 		itempos = 0
 
@@ -152,7 +153,7 @@ func refreshTerm() {
 	}
 }
 
-//Find the first space character to the left of the cursor
+// Find the first space character to the left of the cursor
 func searchLeft(aStr string, pos int) int {
 	for i := pos; i > 0; i-- {
 		if aStr[i-1] == ' ' {
@@ -164,7 +165,7 @@ func searchLeft(aStr string, pos int) int {
 	return 0
 }
 
-//Find the first space character to the right of the cursor
+// Find the first space character to the right of the cursor
 func searchRight(aStr string, pos int) int {
 	for i := pos; i < len(aStr)-1; i++ {
 		if aStr[i+1] == ' ' {
@@ -181,8 +182,10 @@ func ExtractWord(aLine string, pos int) string {
 	return aLine[start:pos]
 }
 
-var KeyHook func(key string)
-var EveryKeyHook func(key rune)
+var (
+	KeyHook      func(key string)
+	EveryKeyHook func(key rune)
+)
 
 func CallKeyHook(key string) {
 	if KeyHook != nil {
@@ -198,8 +201,8 @@ func CallEveryKeyHook(key rune) {
 
 func doInput() {
 	if use_gui {
-		//statuses["Input"] = "Waiting"
-		//width, height := termbox.Size()
+		// statuses["Input"] = "Waiting"
+		// width, height := termbox.Size()
 		ev := termbox.PollEvent()
 		if ev.Type == termbox.EventKey {
 			if ev.Mod == termbox.ModAlt {
@@ -211,7 +214,7 @@ func doInput() {
 				}
 			} else {
 				Statuses["Input"] = fmt.Sprintf("%+v", ev.Ch) //"Processing"
-				//debugStr = fmt.Sprintf("key: %v, %v, %v", ev.Key, ev.Ch, ev)
+				// debugStr = fmt.Sprintf("key: %v, %v, %v", ev.Key, ev.Ch, ev)
 
 				switch ev.Key {
 				case 4:
@@ -246,7 +249,6 @@ func doInput() {
 						selection--
 						if selection < 0 {
 							selection = len(History) - 1
-
 						}
 						InputLine = History[selection]
 						InputPos = 0
@@ -260,7 +262,6 @@ func doInput() {
 						selection++
 						if selection >= len(History) {
 							selection = 0
-
 						}
 						InputLine = History[selection]
 						InputPos = 0
@@ -270,10 +271,11 @@ func doInput() {
 					refreshTerm()
 
 				case termbox.KeyEsc:
-					//FIXME need a thread local check to see if we are in a prompt
-					//or if a sub-process is running
-					//Only quit if we are definitely in a prompt
-					//shutdown()
+					// FIXME need a thread local check to see if we are in a prompt
+					// or if a sub-process is running
+					// Only quit if we are definitely in a prompt
+					// shutdown()
+					selection = -1
 				case termbox.KeyBackspace, termbox.KeyBackspace2:
 					if len(InputLine) > 0 && InputPos > 0 {
 						before := InputLine[:InputPos-1]
@@ -288,12 +290,13 @@ func doInput() {
 					refreshTerm()
 				case termbox.KeyEnter:
 					blankPanel()
+					selection = -1
 					completeVersion = completeVersion + 1
 				default:
-					//statuses["Input"] = ev.Key
+					// statuses["Input"] = ev.Key
 					before := InputLine[:InputPos]
 					after := InputLine[InputPos:]
-					//WTF windows?
+					// WTF windows?
 					if ev.Ch == 0 {
 						ev.Ch = 32
 					}
@@ -313,17 +316,17 @@ func FinishInput() {
 	completeVersion = completeVersion + 1
 }
 
-//ForeGround colour
+// ForeGround colour
 func foreGround() termbox.Attribute {
 	return termbox.ColorBlack
 }
 
-//Background colour
+// Background colour
 func backGround() termbox.Attribute {
 	return termbox.ColorWhite
 }
 
-//Display a string at XY
+// Display a string at XY
 func putStr(x, y int, aStr string) {
 	width, height := termbox.Size()
 	if y >= height {
@@ -337,11 +340,11 @@ func putStr(x, y int, aStr string) {
 	}
 }
 
-//Redraw screen every 200 Milliseconds
+// Redraw screen every 200 Milliseconds
 func automaticRefreshTerm(threadVer int) {
 	for i := 0; i < 1; i = 0 {
 		if threadVer < completeVersion {
-			//log.Println("Exiting automatic refresh")
+			// log.Println("Exiting automatic refresh")
 			return
 		}
 		refreshTerm()
@@ -352,7 +355,7 @@ func automaticRefreshTerm(threadVer int) {
 func automaticdoInput(threadVer int) {
 	for i := 0; i < 1; i = 0 {
 		if threadVer < completeVersion {
-			//log.Println("Exiting automatic doInput")
+			// log.Println("Exiting automatic doInput")
 			return
 		}
 		doInput()
@@ -360,14 +363,13 @@ func automaticdoInput(threadVer int) {
 	}
 }
 
-//Clean up and exit
+// Clean up and exit
 func shutdown() {
-	//Shut down resources so the display thread doesn't panic when the display driver goes away first
-	//When we get a file persistence layer, it will go here
+	// Shut down resources so the display thread doesn't panic when the display driver goes away first
+	// When we get a file persistence layer, it will go here
 	Statuses["Status"] = "Shutting down"
 	use_gui = false
 	os.Exit(0)
-
 }
 
 func Init(configPath string) {
@@ -389,13 +391,14 @@ func Init(configPath string) {
 	termbox.Init()
 	termbox.SetInputMode(termbox.InputEsc)
 }
+
 func ReadLine() string {
 	completeVersion = completeVersion + 1
 	InputLine = ""
 	InputPos = 0
 
-	//termbox.SetInputMode(termbox.InputAlt)
-	//defer termbox.Close()
+	// termbox.SetInputMode(termbox.InputAlt)
+	// defer termbox.Close()
 	use_gui = true
 	defer func() { use_gui = false }()
 	setTrans()

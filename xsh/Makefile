@@ -2,7 +2,7 @@ all: clean deps xsh xshguardian xshwatch localinstall install
 
 deps:
 	go get -v .
-	go get -v github.com/donomii/termbox-go github.com/mitchellh/go-homedir github.com/radovskyb/watcher
+	go get -v github.com/donomii/termbox-go github.com/mitchellh/go-homedir github.com/radovskyb/watcher github.com/chzyer/readline github.com/creack/pty github.com/nsf/termbox-go
 
 xsh:./cmd/xsh/main.go ./*.go
 	go build ./cmd/xsh

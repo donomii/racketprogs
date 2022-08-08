@@ -73,3 +73,5 @@ func test {description expected actual|
         puts "actual:" actual
     }
 }
+
+func lines {x| split x [LF]}

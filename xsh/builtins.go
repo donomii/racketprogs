@@ -423,12 +423,16 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			err = runWithGuardian(stringCommand)
 
 			if err == nil {
+
 				if res == "" {
 					return N("")
 				} else {
 					return N(fmt.Sprintf("%v", res))
 				}
 			} else {
+				//FIXME revisit this after adding proper error handling
+				fmt.Println("Exiting after critical error")
+				os.Exit(1)
 				return N(err.Error())
 			}
 		}
@@ -602,12 +606,16 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 				res, err = runWithGuardianCapture(stringCommand)
 			}
 			if err == nil {
+
 				if res == "" {
 					return N("")
 				} else {
 					return N(fmt.Sprintf("%v", res))
 				}
 			} else {
+				//FIXME revisit this after adding proper error handling
+				fmt.Println("Exiting after critical error")
+				os.Exit(1)
 				return N(err.Error())
 			}
 		}
