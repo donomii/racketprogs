@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"strings"
 	"unicode"
+	"log"
+
 )
 
 type Node struct {
@@ -38,8 +40,13 @@ func NewTree(s, filename string) []Node {
 
 func ParseGo(code, filename string) []Node {
 	l := NewTree(code, filename)
-	r, _ := Stringify(l, "//", "\n", "\\", "")
-	r, _ = Stringify(r, "\"", "\"", "\\", "")
+	//r, _ := Stringify(l, "//", "\n", "\\", "")
+	//r, _ = Stringify(r, "\"", "\"", "\\", "")
+
+	r, _ := MultiStringify(l, [][]string{
+		{"//", "\n", "\\"},
+		{"\"", "\"", "\\"},
+		{"/*", "*/", "\\"}})
 	// PrintTree(r, 0, false)
 	r, _, _ = Groupify(r)
 	r = KeywordBreak(r, []string{"import", "type", "func", "\n"})
@@ -188,74 +195,61 @@ func match(s string, l []Node) bool {
 	return false
 }
 
-func MultiStringify(in []Node, stringDelimiters [][]string, strMode *[]string) ([]Node, []Node) {
+func MultiStringify(in []Node, stringDelimiters [][]string) ([]Node, []Node) {
 	accum := []Node{}
 	// Walk through in, looking for string starts
 	for i := 0; i < len(in); i++ {
 		v := in[i]
+		log.Printf("Examinging %+v at %v\n", v,i)
 		if v.List != nil {
 			// Recurse down the tree, stringifying every branch we find
 			var ret []Node
-			ret, in = MultiStringify(v.List, stringDelimiters, strMode)
+			ret, in = MultiStringify(v.List, stringDelimiters)
 			i = -1
 			accum = append(accum, Node{List: ret})
 		} else {
-			// It's a letter or word, and might be part of an existing string
-			if strMode != nil {
-				// We are searching for the end of a string
-				// startChar := (*strMode)[0]
-				endChar := (*strMode)[1]
-				escapeChar := (*strMode)[2]
-				switch {
-				case match(escapeChar, in[i:]):
-					// We found the escape char, so we need to skip it and the next char, and continue
-					vv := in[i+len(escapeChar)]
-					accum = append(accum, vv)
-					i = i + len(escapeChar)
-				case match(endChar, in[i:]):
-					// We found the end of the string.  Skip the endchar, return the accumulated string
-					return accum, in[i+len(endChar):]
 
-				default:
-					// Add the individual element to the return accumulator
-					accum = append(accum, v)
-				}
-			} else {
-				// Build a list of all possible string start characters
-				startChars := []string{}
+			// Build a list of all possible string start characters
+			startChars := []string{}
+			var strMode []string
+			for _, v := range stringDelimiters {
+				startChars = append(startChars, v[0])
+			}
+			switch {
+			case matchList(startChars, in[i:]):
+				matchedStr := returnMatchList(startChars, in[i:])
+				// Locate the delimiters for matchedStr
 				for _, v := range stringDelimiters {
-					startChars = append(startChars, v[0])
-				}
-				switch {
-				case matchList(startChars, in[i:]):
-					matchedStr := returnMatchList(startChars, in[i:])
-					// Locate the delimiters for matchedStr
-					for _, v := range stringDelimiters {
-						if v[0] == matchedStr {
-							*strMode = v
-							break
-						}
+					if v[0] == matchedStr {
+						strMode = v
+						break
 					}
+				}
 
-					startChar := (*strMode)[0]
-					endChar := (*strMode)[1]
-					escapeChar := (*strMode)[2]
+				startChar := (strMode)[0]
+				endChar := (strMode)[1]
+				escapeChar := (strMode)[2]
 
-					var sublist []Node
-					sublist, in = Stringify(in[i+len(startChar):], startChar, endChar, escapeChar, endChar)
-					i = -1
-					// fmt.Printf("Found string: %s\n", joinRaw(sublist))
+				var sublist []Node
+				sublist, in = Stringify(in[i+len(startChar):], startChar, endChar, escapeChar, endChar)
+				i = -1
+				if len(sublist) > 0 {
 					n := Node{Str: joinRaw(sublist), Note: startChar, File: sublist[0].File, Line: sublist[0].Line, Column: sublist[0].Column, ChrPos: sublist[0].ChrPos}
 					// fmt.Printf("Found node: %+v\n", n)
 					accum = append(accum, n)
-
-				default:
-					accum = append(accum, v)
+				} else {
+					n := Node{Str: "", Note: startChar, File: v.File, Line: v.Line, Column: v.Column, ChrPos: v.ChrPos}
+					accum = append(accum, n)
 				}
+				
+
+			default:
+				accum = append(accum, v)
 			}
+
 		}
 	}
-	return nil, nil
+	return accum, in
 }
 
 func Stringify(in []Node, start, end, escape, strMode string) ([]Node, []Node) {

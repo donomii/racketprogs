@@ -103,3 +103,10 @@ func ato(s string) int {
 func N(s string) autoparser.Node {
 	return autoparser.Node{Str: s}
 }
+
+// Testing nested strings like" this
+/* And
+// this */
+func NN(s string) string {
+	return "//" + "/*"
+}
