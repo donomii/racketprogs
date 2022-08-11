@@ -2,9 +2,7 @@ package xsh
 
 import (
 	"fmt"
-
 	"io/ioutil"
-
 	"os"
 	"runtime"
 	"strings"
@@ -29,16 +27,20 @@ type Function struct {
 	Body       autoparser.Node
 }
 
-var UsePterm = true
-var WantDebug bool = false
-var WantTrace bool = false
-var WantInform bool = false
-var WantHelp bool = true
-var WantWarn bool = true
-var WantErrors bool = true
+var (
+	UsePterm        = true
+	WantDebug  bool = false
+	WantTrace  bool = false
+	WantInform bool = false
+	WantHelp   bool = true
+	WantWarn   bool = true
+	WantErrors bool = true
+)
 
-var WantEvents bool = true
-var Events = [][]string{}
+var (
+	WantEvents bool = true
+	Events          = [][]string{}
+)
 
 type State struct {
 	Functions     map[string]Function
@@ -55,10 +57,16 @@ func New() State {
 	return s
 }
 
-//Eval, but with options that make sense for interactive sessions.  i.e. run sub programs connected
-//to the terminal stdio so that text editors etc can work properly
+// Eval, but with options that make sense for interactive sessions.  i.e. run sub programs connected
+// to the terminal stdio so that text editors etc can work properly
 func ShellEval(s State, code, fname string) autoparser.Node {
-	XshTrace("Evalling: %v\n", code)
+	// Trim spaces from both ends of the code
+	code = strings.TrimSpace(code)
+	if code == "" {
+		XshTrace("ShellEval: Empty code\n")
+		return Void(autoparser.Node{Line: 1, Column: 0, ChrPos: 1, File: fname})
+	}
+	XshTrace("Evaluating shell command: %v\n", code)
 	tree := autoparser.ParseXSH(code, fname)
 	drintf("Tree: %+v\n", tree)
 	s.Tree = tree
@@ -67,14 +75,14 @@ func ShellEval(s State, code, fname string) autoparser.Node {
 	return res
 }
 
-//Eval, in "batch" mode.  STDIN is nil and STDOUT is collected into a string as the return value
+// Eval, in "batch" mode.  STDIN is nil and STDOUT is collected into a string as the return value
 func Eval(s State, code, fname string) autoparser.Node {
-	//XshTrace("Evalling: %v\n", code)
+	// XshTrace("Evalling: %v\n", code)
 	tree := autoparser.ParseXSH(code, fname)
-	//drintf("Tree: %+v\n", tree)
-	//drintf("[Eval] Tree: %+v\n", TreeToXsh(tree))
-	//fmt.Println("[Eval] PrintTree")
-	//PrintTree(tree, New().Tree)
+	// drintf("Tree: %+v\n", tree)
+	// drintf("[Eval] Tree: %+v\n", TreeToXsh(tree))
+	// fmt.Println("[Eval] PrintTree")
+	// PrintTree(tree, New().Tree)
 
 	s.Tree = tree
 	res := treeReduce(s, tree.List, &tree, -1, tree)
@@ -82,17 +90,18 @@ func Eval(s State, code, fname string) autoparser.Node {
 	return res
 }
 
-//Parse some xsh code into a tree
+// Parse some xsh code into a tree
 func Parse(code, fname string) autoparser.Node {
 	return autoparser.ParseXSH(code, fname)
 }
 
-//Run a tree (a program)
+// Run a tree (a program)
 func RunTree(s State, tree autoparser.Node) autoparser.Node {
 	s.Tree = tree
 	res := treeReduce(s, tree.List, &tree, 2, tree)
 	return res
 }
+
 func LoadEval(s State, fname string) autoparser.Node {
 	return Eval(s, autoparser.LoadFile(fname), fname)
 }
@@ -110,11 +119,10 @@ func CopyTree(t autoparser.Node) autoparser.Node {
 	return r
 }
 
-//Is this still relevent?
+// Is this still relevent?
 func checkArgs(args []autoparser.Node, params []autoparser.Node) error {
 	for _, v := range args {
 		for _, p := range params {
-
 			if p.Raw == v.Raw {
 				XshErr("%v,%v,%v: Cannot shadow args in lambda: %+v, %+v\n", v.File, v.Line, v.Column, v, p)
 				os.Exit(1)
@@ -124,45 +132,44 @@ func checkArgs(args []autoparser.Node, params []autoparser.Node) error {
 	return nil
 }
 
-//Recurse through the code tree, replacing any function calls with the function bodies, and any variables
-//with the values.
+// Recurse through the code tree, replacing any function calls with the function bodies, and any variables
+// with the values.
 func ReplaceArg(args, params []autoparser.Node, t autoparser.Node) autoparser.Node {
 	if len(args) != len(params) {
 		XshErr("Invalid number of arguments in function call: %v, %v\n", args, params)
 		panic(fmt.Sprintf("ReplaceArg: Args and params must be the same length: %+v, %+v\n", args, params))
-		//os.Exit(1)
+		// os.Exit(1)
 	}
 	out := []autoparser.Node{}
 	for _, v := range t.List {
-		//The scope barrier exists to prevent variable names being incorrectly replaced in substitued code
-		//If there are multiple LET statements, or with some combinations of lambdas and recursion, it is possible
-		//that a lambda will be copied into the function tree, and then another variable replace pass runs, incorrectly replacing
-		//variables inside the lambda when they are really in a different scope and should not be replaced.  (i.e. modifying the wrong lexical scope)
+		// The scope barrier exists to prevent variable names being incorrectly replaced in substitued code
+		// If there are multiple LET statements, or with some combinations of lambdas and recursion, it is possible
+		// that a lambda will be copied into the function tree, and then another variable replace pass runs, incorrectly replacing
+		// variables inside the lambda when they are really in a different scope and should not be replaced.  (i.e. modifying the wrong lexical scope)
 		if v.ScopeBarrier {
 			out = append(out, CopyNode(v))
 		} else {
-			//If this element is a list
+			// If this element is a list
 			if v.List != nil {
 				if v.Note == "|" {
 					checkArgs(v.List, params)
 				}
-				//Recurse into it
+				// Recurse into it
 				out = append(out, autoparser.Node{v.Raw, v.Str, ReplaceArg(args, params, v).List, v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
 			} else {
 				replaced := 0
 				for parami, param := range params {
-
-					//drintf("Comparing function arg: %+v with node %+v\n", farg, v)
-					//drintf("Comparing function arg: %+v with node %+v\n", args[parami].Raw, v.Raw)
-					//We found a variable to replace
+					// drintf("Comparing function arg: %+v with node %+v\n", farg, v)
+					// drintf("Comparing function arg: %+v with node %+v\n", args[parami].Raw, v.Raw)
+					// We found a variable to replace
 					if param.Raw == v.Raw {
 						drintf("Replacing param %+v with %+v\n", param, args[parami])
 						new := CopyNode(args[parami])
-						//New node is assumed to be from a different scope, so we need to set the scope barrier
-						//This will protect the subtree from further replacements
+						// New node is assumed to be from a different scope, so we need to set the scope barrier
+						// This will protect the subtree from further replacements
 						new.ScopeBarrier = true
 						out = append(out, new)
-						//log.Printf("Inserting: %v\n", S(args[parami]))
+						// log.Printf("Inserting: %v\n", S(args[parami]))
 						replaced = 1
 					}
 				}
@@ -176,20 +183,20 @@ func ReplaceArg(args, params []autoparser.Node, t autoparser.Node) autoparser.No
 	return r
 }
 
-//Recurse through the code tree, replacing any function calls with the function bodies, and any variables
-//with the values.
+// Recurse through the code tree, replacing any function calls with the function bodies, and any variables
+// with the values.
 func ReplaceArgs(args, params []autoparser.Node, t autoparser.Node) autoparser.Node {
 	a, _ := ListToStrings(params)
 	b, _ := ListToStrings(args)
 	drintf("Replacing function params %+v with %+v\n", a, b)
-	//log.Printf("Replacing function params %+v with %+v\n", TreeToTcl(params), TreeToTcl(args))
+	// log.Printf("Replacing function params %+v with %+v\n", TreeToTcl(params), TreeToTcl(args))
 
 	t = ReplaceArg(args, params, t)
 
 	return t
 }
 
-//Print the global function definitions into a string, to be parsed later
+// Print the global function definitions into a string, to be parsed later
 func FunctionsToXsh(functions map[string]Function) string {
 	out := ""
 	for _, v := range functions {
@@ -200,8 +207,8 @@ func FunctionsToXsh(functions map[string]Function) string {
 	return out
 }
 
-//Search the current environment PATH for the named program.  Also searches for files ending in .exe, .bat, and .cmd.
-//Returns the full path to the program, including filename, or an empty string if the program was not found.
+// Search the current environment PATH for the named program.  Also searches for files ending in .exe, .bat, and .cmd.
+// Returns the full path to the program, including filename, or an empty string if the program was not found.
 func searchPath(execName string) string {
 	drintf("Searching path for '%v'\n", execName)
 	if execName == "" {
@@ -219,8 +226,7 @@ func searchPath(execName string) string {
 		for _, path := range paths {
 			fullPath := path + "/" + execName + extension
 			if _, err := os.Stat(fullPath); err == nil {
-
-				//XshInform("Found %s\n", fullPath)
+				// XshInform("Found %s\n", fullPath)
 				return fullPath
 			}
 		}
@@ -228,7 +234,7 @@ func searchPath(execName string) string {
 	return ""
 }
 
-//Searches for the XshGuardian program, which is used to launch other programs
+// Searches for the XshGuardian program, which is used to launch other programs
 func FindGuardian() string {
 	bindir := goof.ExecutablePath()
 	var guardianPath string = "Guardian not found"
@@ -238,11 +244,11 @@ func FindGuardian() string {
 		guardianPath = bindir + "/xshguardian"
 	}
 
-	//XshInform("Found guardian at %s\n", guardianPath)
+	// XshInform("Found guardian at %s\n", guardianPath)
 	return guardianPath
 }
 
-//Trim a string to the requested length, with an ellipsis if the string is longer than the requested length
+// Trim a string to the requested length, with an ellipsis if the string is longer than the requested length
 func clampString(s string, max int) string {
 	if len(s) > max {
 		if max > 3 {
@@ -254,7 +260,7 @@ func clampString(s string, max int) string {
 	return s
 }
 
-//Launch another program using XshGuardian, in interactive mode.
+// Launch another program using XshGuardian, in interactive mode.
 func runWithGuardian(cmd []string) error {
 	guardianPath := FindGuardian()
 	drintf("Launching guardian for %+v from %v\n", cmd, guardianPath)
@@ -274,8 +280,8 @@ func runWithGuardian(cmd []string) error {
 	return goof.QCI(cmd)
 }
 
-//Launch another program using XshGuardian, and wait for it to finish.  Returns everything printed to
-//STDOUT as a string.
+// Launch another program using XshGuardian, and wait for it to finish.  Returns everything printed to
+// STDOUT as a string.
 func runWithGuardianCapture(cmd []string) (string, error) {
 	guardianPath := FindGuardian()
 	drintf("Launching guardian for capturing %+v from %v\n", cmd, guardianPath)
@@ -296,27 +302,27 @@ func runWithGuardianCapture(cmd []string) (string, error) {
 	return goof.QC(cmd)
 }
 
-//Create a Void node.  You must provide an existing node to copy the source location from.  The source
-//location is used by a lot of debugging and display code, returning 0,0,0 will result in a lot of glitches.
+// Create a Void node.  You must provide an existing node to copy the source location from.  The source
+// location is used by a lot of debugging and display code, returning 0,0,0 will result in a lot of glitches.
 func Void(command autoparser.Node) autoparser.Node {
 	drintf("Creating void at %+v\n", command.Line)
-	if command.ChrPos < 1 {
-		XshWarn("Warning: Create void with no line number.  This is probably an error.  Code: %+v\n", command)
+	if command.ChrPos == 0 {
+		XshWarn("Warning: Create void with invalid position.  This is probably an error.  Code: %+v\n", command)
 	}
 	return autoparser.Node{"", "", nil, "VOID", command.Line, command.Column, command.ChrPos, command.File, command.ScopeBarrier}
 }
 
-//Is the Node a List?
+// Is the Node a List?
 func isList(n autoparser.Node) bool {
 	return n.List != nil
 }
 
-//Creates a new copy of the node
+// Creates a new copy of the node
 func CopyNode(n autoparser.Node) autoparser.Node {
 	return autoparser.Node{n.Raw, n.Str, n.List, n.Note, n.Line, n.Column, n.ChrPos, n.File, n.ScopeBarrier}
 }
 
-//Returns the node type
+// Returns the node type
 func typeOf(e autoparser.Node) string {
 	if isLambda(e) {
 		return "lambda"
@@ -333,35 +339,34 @@ func typeOf(e autoparser.Node) string {
 	return "void"
 }
 
-//Create a new empty list.  You must provide a source node with valid location information.
+// Create a new empty list.  You must provide a source node with valid location information.
 func EmptyList(sourceNode autoparser.Node) autoparser.Node {
 	return autoparser.Node{Note: "{", List: []autoparser.Node{}, File: sourceNode.File, Line: sourceNode.Line, Column: sourceNode.Column, ChrPos: sourceNode.ChrPos}
 }
 
-//Is the node a lambda?
+// Is the node a lambda?
 func isLambda(e autoparser.Node) bool {
 	command := e.List
 	if len(command) > 0 && isList(command[0]) {
 		theLambdaFunction := command[0]
 		if theLambdaFunction.Note == "|" {
-
 			return true
 		}
 	}
 	return false
 }
 
-//Evaluate a single function call.
+// Evaluate a single function call.
 func eval(s State, command autoparser.Node, parent *autoparser.Node, level int) autoparser.Node {
 	if len(command.List) == 0 {
 		return Void(autoparser.Node{File: "eval", Line: 1, Column: 0, ChrPos: 1, Note: "empty eval"})
 	}
 	drintf("Evaluating: %v\n", TreeToXsh(command))
-	//If list, assume it is a lambda function and evaluate it
+	// If list, assume it is a lambda function and evaluate it
 	if isList(command.List[0]) {
 
 		theLambdaFunction := command.List[0]
-		drintf("Evalling lambda: %v\n", theLambdaFunction)
+		drintf("Evaluating lambda: %v\n", theLambdaFunction)
 		args := command.List[1:]
 
 		bod := CopyTree(theLambdaFunction)
@@ -377,24 +382,24 @@ func eval(s State, command autoparser.Node, parent *autoparser.Node, level int) 
 			drintf("Calling lambda %+v\n", nbod)
 			return blockReduce(s, nbod.List, parent, 0)
 		} else {
-			//Programmer is trying to return a list, it's not a lambda function
+			// Programmer is trying to return a list, it's not a lambda function
 			l := CopyNode(command)
 			return l
 		}
 	}
 
-	//If it s a string or symbol, look it up in the global
-	//functions map and return the result
+	// If it s a string or symbol, look it up in the global
+	// functions map and return the result
 	f := S(command.List[0])
 	preargs := command.List[1:]
 	args := []autoparser.Node{}
 	for _, v := range preargs {
-		//if typeOf(v) != "void" {  //FIXME causes map etc. to fail.  Filtering out void alters the number of args to some calls.  Need to improve type system so void can't be returned in those situations.
+		// if typeOf(v) != "void" {  //FIXME causes map etc. to fail.  Filtering out void alters the number of args to some calls.  Need to improve type system so void can't be returned in those situations.
 		args = append(args, v)
 		//}
 	}
 
-	//Do we have a type for this function?
+	// Do we have a type for this function?
 	ftype, ok := s.TypeSigs[f]
 	if ok {
 		lastArgType := ftype[len(ftype)-1]
@@ -416,23 +421,23 @@ Given:
 				os.Exit(1)
 			}
 		}
-		//Different checks for variadic functions
-		//FIXME refactor duplicate code
+		// Different checks for variadic functions
+		// FIXME refactor duplicate code
 		if lastArgType == "..." {
 			varArgsType := ftype[len(ftype)-2]
 			varArgs := []autoparser.Node{}
 			if len(ftype)-2 < len(args) {
 				varArgs = args[len(ftype)-2:]
 			}
-			//First, check that the specified types match
-			//This is the fixed args array
+			// First, check that the specified types match
+			// This is the fixed args array
 			for i, v := range fixedArgs {
 				drintf("Checking type %v against arg %v\n", v, typeOf(args[i]))
 				if typeOf(args[i]) != v && v != "any" {
 					XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v, got %v\n", command.List[0].File, command.List[0].Line, TreeToXsh(command), i+1, v, typeOf(args[i]))
 				}
 			}
-			//Now check that the remaining args are of the varargs type
+			// Now check that the remaining args are of the varargs type
 			drintf("Checking remaining args %v against varargs type %v\n", TreeToXsh(autoparser.Node{List: varArgs}), varArgsType)
 			for i, v := range varArgs {
 				drintf("Checking type %v against arg %v\n", typeOf(v), varArgsType)
@@ -441,7 +446,7 @@ Given:
 				}
 			}
 		} else {
-			//There are no varags, simply check that the types match, and there are the correct number of args
+			// There are no varags, simply check that the types match, and there are the correct number of args
 			for i, v := range ftype[1:] {
 				if typeOf(args[i]) != v && v != "any" {
 					XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v, got %v\n", command.List[0].File, command.List[0].Line, TreeToXsh(command), i+1, v, typeOf(args[i]))
@@ -452,7 +457,7 @@ Given:
 	}
 	fu, ok := s.Functions[f]
 	if ok {
-		//It's a user-defined function
+		// It's a user-defined function
 		bod := CopyTree(fu.Body)
 		fparams := fu.Parameters
 		if len(fparams.List) != len(args) {
@@ -467,14 +472,14 @@ Given:
 		drintf("Calling function %+v\n", TreeToXsh(nbod))
 		return blockReduce(s, nbod.List, parent, 0)
 	} else {
-		//It is a builtin function or an external call
+		// It is a builtin function or an external call
 		if f == "" {
-			//We shouldn't get an empty string here, but if we do, we ignore it and keep going
+			// We shouldn't get an empty string here, but if we do, we ignore it and keep going
 			return Void(command)
 		}
 
-		//This is for the embedded xsh, it allows the embeddor to add their own functions,
-		//e.g. to connect to data sources or do IO
+		// This is for the embedded xsh, it allows the embeddor to add their own functions,
+		// e.g. to connect to data sources or do IO
 		if s.ExtraBuiltins != nil {
 			ret, handled := s.ExtraBuiltins(s, command.List, parent, level)
 			if handled {
@@ -489,39 +494,37 @@ Given:
 		return builtin(s, command.List, parent, f, args, level, argsNode)
 
 	}
-	//Maybe we should return a warning here?  Or even exit?  Need a strict mode.
-
+	// Maybe we should return a warning here?  Or even exit?  Need a strict mode.
 }
 
-//BlockReduce operates a little bit oddly.  It evals a list of statements, and replaces each statement with
-//the result of the statement.  It then returns the last result.
-//The allows the debugger to show each statement as it is evaluated.
+// BlockReduce operates a little bit oddly.  It evals a list of statements, and replaces each statement with
+// the result of the statement.  It then returns the last result.
+// The allows the debugger to show each statement as it is evaluated.
 func blockReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel int) autoparser.Node {
-
 	drintf("BlockReduce: starting %+v\n", TreeToXsh(autoparser.Node{List: t}))
-	//log.Printf("BlockReduce: starting %+v\n", t)
+	// log.Printf("BlockReduce: starting %+v\n", t)
 
-	//Empty block
+	// Empty block
 	if len(t) == 0 {
 		return Void(*parent)
 	}
 
-	//The scopebarrier prevents variable substitution happening to a code branch that has been copied in
-	//from another function or scope.
+	// The scopebarrier prevents variable substitution happening to a code branch that has been copied in
+	// from another function or scope.
 	if (parent != nil) && parent.ScopeBarrier {
 		return *parent
 	}
 
 	var out autoparser.Node
 	if t[0].Note == "\n" && t[0].Raw == "\n" {
-		//It is a multi line block, eval as statements, return the last
+		// It is a multi line block, eval as statements, return the last
 
 		for i, v := range t {
 			out = treeReduce(s, v.List, parent, toplevel, v)
 			t[i] = out
 		}
 	} else {
-		//It is a single line lambda, eval it as an expression
+		// It is a single line lambda, eval it as an expression
 		out = treeReduce(s, t, parent, toplevel, *parent)
 	}
 
@@ -529,13 +532,13 @@ func blockReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel
 	return out
 }
 
-//Build a node location string from file, line, and column
+// Build a node location string from file, line, and column
 func Loc(n autoparser.Node) string {
 	return fmt.Sprintf("%v:%v:%v", n.File, n.Line, n.Column)
 }
 
-//Pretty print code.  The subTree will be highlighted if it is found in the tree.
-//This is used by the debugger to show the current statement being evaluated.
+// Pretty print code.  The subTree will be highlighted if it is found in the tree.
+// This is used by the debugger to show the current statement being evaluated.
 func PrintTree(t autoparser.Node, subTree autoparser.Node) {
 	PrintTreeRec(t, subTree, true, 1)
 }
@@ -556,10 +559,10 @@ func PrintNLindent(str string, level int) {
 	fmt.Print(NLindent(str, level))
 }
 
-//Recurse through program tree, printing each node
+// Recurse through program tree, printing each node
 func PrintTreeRec(t autoparser.Node, subTree autoparser.Node, inBlock bool, level int) {
 	highlight := pterm.NewStyle(pterm.FgRed, pterm.Bold)
-	//function := pterm.NewStyle(pterm.FgMagenta, pterm.Bold)
+	// function := pterm.NewStyle(pterm.FgMagenta, pterm.Bold)
 
 	/*if Loc(t[0]) == Loc(subTree) {
 		highlight.Print("(")
@@ -572,16 +575,15 @@ func PrintTreeRec(t autoparser.Node, subTree autoparser.Node, inBlock bool, leve
 
 		if i == 1 && isList(v) && len(v.List) == 1 && v.List[0].Raw == "|" {
 			inBlock = true
-			//fmt.Printf("%+v\n", v)
+			// fmt.Printf("%+v\n", v)
 			continue
 		}
 		if i == 0 && isList(v) && len(v.List) == 0 {
 			inBlock = true
-			//fmt.Printf("%+v\n", v)
+			// fmt.Printf("%+v\n", v)
 			continue
 		}
 		if i != 0 {
-
 			fmt.Print(" ")
 		}
 
@@ -628,7 +630,7 @@ func PrintTreeRec(t autoparser.Node, subTree autoparser.Node, inBlock bool, leve
 			}
 		case v.Raw != "":
 			if Loc(v) == Loc(subTree) {
-				highlight.Print(v.Raw) //FIXME escape string properly to include in JSON
+				highlight.Print(v.Raw) // FIXME escape string properly to include in JSON
 			} else {
 				fmt.Print(v.Raw)
 			}
@@ -642,8 +644,8 @@ func PrintTreeRec(t autoparser.Node, subTree autoparser.Node, inBlock bool, leve
 				}
 			} else {
 				if Loc(v) == Loc(subTree) {
-					//fmt.Printf("%+v", v)
-					highlight.Print("\"" + v.Str + "\"") //FIXME escape string properly for JSON
+					// fmt.Printf("%+v", v)
+					highlight.Print("\"" + v.Str + "\"") // FIXME escape string properly for JSON
 				} else {
 					fmt.Print("\"" + v.Str + "\"")
 				}
@@ -661,11 +663,12 @@ func PrintTreeRec(t autoparser.Node, subTree autoparser.Node, inBlock bool, leve
 		}*/
 }
 
-//Recursively evaluate a program tree down to the leaves, then "fold up" the results into a single value
-//This is the heart of the interpreter.
+// Recursively evaluate a program tree down to the leaves, then "fold up" the results into a single value
+// This is the heart of the interpreter.
 func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel int, orig autoparser.Node) autoparser.Node {
 	drintf("Reducing: %+v\n", TreeListToXsh(t))
 
+	// Because XSH replaces functions with their definitions, and then evals them, there are bits of "other scopes" that get pasted into the running code.  These must not be evaluated in the current function scope, but in their own scope.  So we stop processing when we discover that we are in a different scope.
 	if (parent != nil) && parent.ScopeBarrier {
 		return *parent
 	}
@@ -676,47 +679,54 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 	*/
 	out := []autoparser.Node{}
 	for i, v := range t {
-		if WantTrace && v.File != "" { //FIXME this is just masking a problem
-			fmt.Printf("In:%v: ", Loc(v))
+		if WantTrace && v.File != "" { // FIXME this is just masking a problem
+			fmt.Printf("Trace: In %v: ", Loc(v))
 			PrintTree(orig, v)
 			fmt.Print("\n")
 		}
-
 		switch {
 		case v.Note == "#":
+			// Comment node
 		case v.Raw == "#":
+			// Comment node
 		case v.List != nil:
+			// A list can be a function call or a normal list
 			if v.Note == "[" || v.Note == "\n" || v.Note == ";" {
-				//log.Println("Command:", TreeToTcl(v.List))
+				// Function call
+				// log.Println("Command:", TreeToTcl(v.List))
 				atom := treeReduce(s, v.List, &t[i], toplevel-1, orig)
 				out = append(out, atom)
 				t[i] = atom
 			} else {
+				// Normal list
 				drintln("treeReduce: found list ", TreeToXsh(v))
 				out = append(out, v)
 				t[i] = v
 			}
 		default:
+			// A literal or a variable
 			atom := autoparser.Node{ChrPos: -1}
 			if strings.HasPrefix(S(v), "$") {
-				//Environment variable
+				// Environment variable or global variable
 				drintf("Environment variable lookup: %+v\n", S(v))
-				vname := S(v)[1:]
+				vname := S(v)[1:] // Remove the $, this is the variable name
 				drintf("Fetching %v from Globals: %+v\n", vname, s.Globals)
 				if vname == "" {
 					XshErr("$ found without variable name.  $ defines a variable, and cannot be used on its own.")
 					os.Exit(1)
 				} else {
-					//FIXME: globals should go away?
+					// Valid variable name
 					if _, ok := s.Globals[vname]; ok {
+						// Global variable (like an environment variable, but inside xsh)
+						// FIXME: globals should go away?
 						atom = N(s.Globals[vname])
-						//FIXME
+						// FIXME
 						atom.File = v.File
 						atom.Line = v.Line
 						atom.Column = v.Column
 						atom.ChrPos = v.ChrPos
 					} else {
-						//Load value from environment
+						// Load value from environment
 						if val := os.Getenv(vname); val != "" {
 							atom = N(val)
 							atom.File = v.File
@@ -724,6 +734,7 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 							atom.Column = v.Column
 							atom.ChrPos = v.ChrPos
 						} else {
+							// FIXME detect if environment variable is not set, or just empty.  Only throw error on not set.
 							XshErr("Global variable $%v not found.  You must define a variable before you use it.", vname)
 							os.Exit(1)
 						}
@@ -738,10 +749,10 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 		}
 	}
 
-	//Run command
+	// Run command
 	if len(out) > 0 {
 		if WantTrace {
-			fmt.Printf("Out:%v: ", Loc(out[0]))
+			fmt.Printf("Trace: Out %v: ", Loc(out[0]))
 			PrintTree(orig, out[0])
 			fmt.Print("\n")
 		}
@@ -751,6 +762,7 @@ func treeReduce(s State, t []autoparser.Node, parent *autoparser.Node, toplevel 
 	return ret
 }
 
+// Turns a segment of a program tree into a json string
 func TreeToJson(t autoparser.Node) string {
 	out := ""
 	for _, v := range t.List {
@@ -759,28 +771,26 @@ func TreeToJson(t autoparser.Node) string {
 		case v.List != nil:
 			out = out + "[" + TreeToJson(v) + "]"
 		case v.Raw != "":
-			out = out + "\"" + v.Raw + "\"" + " " //FIXME escape string properly for JSON
+			out = out + "\"" + v.Raw + "\"" + " " // FIXME escape string properly for JSON
 
 		default:
-			out = out + "\"\\\"" + v.Str + "\\\"\"" + " " //FIXME escape string properly for JSON
+			out = out + "\"\\\"" + v.Str + "\\\"\"" + " " // FIXME escape string properly for JSON
 
 		}
-
 	}
 	return out
 }
 
-//Convert a list of nodes into a string
+// Convert a list of nodes into a string.
 func TreeListToXsh(t []autoparser.Node) string {
 	out := ""
 	for _, v := range t {
-
 		out = out + TreeToXsh(v)
 	}
 	return out
 }
 
-//Convert a single tree into a string
+// Convert a single tree into a string
 func TreeToXsh(t autoparser.Node) string {
 	out := ""
 	for i, v := range t.List {
@@ -802,13 +812,13 @@ func TreeToXsh(t autoparser.Node) string {
 			if i != 0 {
 				out = out + " "
 			}
-			out = out + v.Raw //FIXME escape string properly to include in JSON
+			out = out + v.Raw // FIXME escape string properly to include in JSON
 
 		default:
 			if i != 0 {
 				out = out + " "
 			}
-			out = out + "\"" + v.Str + "\"" //FIXME escape string properly for JSON
+			out = out + "\"" + v.Str + "\"" // FIXME escape string properly for JSON
 		}
 	}
 	return out
@@ -826,7 +836,7 @@ func ListFiles(path string) func(string) []string {
 	}
 }
 
-//List all executable files in PATH
+// List all executable files in PATH
 func ListPathExecutables() func(string) []string {
 	return func(line string) []string {
 		names := make([]string, 0)
@@ -848,7 +858,7 @@ func ListPathExecutables() func(string) []string {
 
 func ListBuiltins() func(string) []string {
 	return func(line string) []string {
-		//FIXME we can now read this dynamically from the types map[]
+		// FIXME we can now read this dynamically from the types map[]
 		return []string{"id", "and", "or", "join", "split", "puts", "+", "-", "*", "/", "+.", "-.", "*.", "/.", "loadfile", "set", "run", "seq", "with", "cd"}
 	}
 }

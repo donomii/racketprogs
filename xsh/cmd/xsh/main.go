@@ -66,12 +66,12 @@ func main() {
 
 	switch {
 	case *resumeFile != "":
-		xsh.Eval(state, xsh.Stdlib_str, "stdlib")
+		xsh.Eval(state, xsh.  Stdlib_str, "stdlib")
 		xsh.LoadEval(state, *resumeFile)
 	case wantShell:
 		//fmt.Printf("%+v\n", xsh.TreeToTcl(xsh.Eval(state, xsh.Stdlib_str, "stdlib").List))
 		xsh.Eval(state, xsh.Stdlib_str, "stdlib")
-		if runtime.GOOS == "windows" {
+		if runtime.GOOS == "win s" {
 			NewShell(state)
 		} else {
 			NewShell(state)

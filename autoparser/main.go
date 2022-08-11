@@ -37,44 +37,42 @@ func NewTree(s, filename string) []Node {
 }
 
 func ParseGo(code, filename string) []Node {
-
 	l := NewTree(code, filename)
 	r, _ := Stringify(l, "//", "\n", "\\", "")
 	r, _ = Stringify(r, "\"", "\"", "\\", "")
-	//PrintTree(r, 0, false)
+	// PrintTree(r, 0, false)
 	r, _, _ = Groupify(r)
 	r = KeywordBreak(r, []string{"import", "type", "func", "\n"})
 	r = MergeNonWhiteSpace(r)
 	r = StripNL(r)
 	r = StripWhiteSpace(r)
-	//Need to split on spaces and merge before doing binops
+	// Need to split on spaces and merge before doing binops
 	r = GroupBinops(r)
-	//PrintTree(r, 0, false)
+	// PrintTree(r, 0, false)
 	return r
-	//fmt.Printf("%+v\n", r)
+	// fmt.Printf("%+v\n", r)
 }
 
 func ParseXSH(code, filename string) Node {
-
 	l := NewTree(code, filename)
-	//FIXME we need to run both of these in parallel
+	// FIXME we need to run both of these in parallel
 	r, _ := Stringify(l, "\"", "\"", "\\", "")
 	r, _ = Stringify(r, "#", "\n", "\\", "")
 
-	//fmt.Printf("Stringified: ")
-	//PrintTree(r, 0, false)
+	// fmt.Printf("Stringified: ")
+	// PrintTree(r, 0, false)
 	r, _, _ = Groupify(r)
 	r = KeywordBreak(r, []string{"|", "\n"})
-	//r = KeywordBreak(r, []string{"|"})
+	// r = KeywordBreak(r, []string{"|"})
 	r = StripNL(r)
 	r = MergeNonWhiteSpace(r)
 
 	r = StripWhiteSpace(r)
 	StripEmptyLists(r)
-	//PrintTree(r, 0, false)
+	// PrintTree(r, 0, false)
 	n := Node{List: r, File: filename, Line: r[0].Line, Column: r[0].Column, ChrPos: r[0].ChrPos}
 	return n
-	//fmt.Printf("%+v\n", r)
+	// fmt.Printf("%+v\n", r)
 }
 
 func printIndent(i int, c string) {
@@ -93,7 +91,7 @@ func containsLists(l []Node, max int) bool {
 	return count > max
 }
 
-//Count the number of elements in a tree
+// Count the number of elements in a tree
 func countTree(t []Node) int {
 	count := 0
 	for _, v := range t {
@@ -111,14 +109,11 @@ func PrintTree(t []Node, indent int, newlines bool) {
 	for _, v := range t {
 		if v.List == nil {
 			if v.Str == "" {
-				//fmt.Print(".")
+				// fmt.Print(".")
 				fmt.Print(v.Raw, " ")
-
 			} else {
-
 				fmt.Print("『", v.Str, "』")
 			}
-
 		} else {
 			if containsLists(v.List, 3) {
 				if countTree(v.List) > 50 {
@@ -160,6 +155,25 @@ func joinRaw(in []Node) string {
 	}
 	return o
 }
+
+func matchList(ss []string, l []Node) bool {
+	for _, s := range ss {
+		if match(s, l) {
+			return true
+		}
+	}
+	return false
+}
+
+func returnMatchList(ss []string, l []Node) string {
+	for _, s := range ss {
+		if match(s, l) {
+			return s
+		}
+	}
+	return ""
+}
+
 func match(s string, l []Node) bool {
 	if len(s) == 0 {
 		return true
@@ -167,12 +181,83 @@ func match(s string, l []Node) bool {
 	if len(l) == 0 {
 		return false
 	}
-	//fmt.Println("Comparing ", s[0:1], "with", l[0].Raw)
+	// fmt.Println("Comparing ", s[0:1], "with", l[0].Raw)
 	if s[0:1] == l[0].Raw {
 		return match(s[1:], l[1:])
 	}
 	return false
 }
+
+func MultiStringify(in []Node, stringDelimiters [][]string, strMode *[]string) ([]Node, []Node) {
+	accum := []Node{}
+	// Walk through in, looking for string starts
+	for i := 0; i < len(in); i++ {
+		v := in[i]
+		if v.List != nil {
+			// Recurse down the tree, stringifying every branch we find
+			var ret []Node
+			ret, in = MultiStringify(v.List, stringDelimiters, strMode)
+			i = -1
+			accum = append(accum, Node{List: ret})
+		} else {
+			// It's a letter or word, and might be part of an existing string
+			if strMode != nil {
+				// We are searching for the end of a string
+				// startChar := (*strMode)[0]
+				endChar := (*strMode)[1]
+				escapeChar := (*strMode)[2]
+				switch {
+				case match(escapeChar, in[i:]):
+					// We found the escape char, so we need to skip it and the next char, and continue
+					vv := in[i+len(escapeChar)]
+					accum = append(accum, vv)
+					i = i + len(escapeChar)
+				case match(endChar, in[i:]):
+					// We found the end of the string.  Skip the endchar, return the accumulated string
+					return accum, in[i+len(endChar):]
+
+				default:
+					// Add the individual element to the return accumulator
+					accum = append(accum, v)
+				}
+			} else {
+				// Build a list of all possible string start characters
+				startChars := []string{}
+				for _, v := range stringDelimiters {
+					startChars = append(startChars, v[0])
+				}
+				switch {
+				case matchList(startChars, in[i:]):
+					matchedStr := returnMatchList(startChars, in[i:])
+					// Locate the delimiters for matchedStr
+					for _, v := range stringDelimiters {
+						if v[0] == matchedStr {
+							*strMode = v
+							break
+						}
+					}
+
+					startChar := (*strMode)[0]
+					endChar := (*strMode)[1]
+					escapeChar := (*strMode)[2]
+
+					var sublist []Node
+					sublist, in = Stringify(in[i+len(startChar):], startChar, endChar, escapeChar, endChar)
+					i = -1
+					// fmt.Printf("Found string: %s\n", joinRaw(sublist))
+					n := Node{Str: joinRaw(sublist), Note: startChar, File: sublist[0].File, Line: sublist[0].Line, Column: sublist[0].Column, ChrPos: sublist[0].ChrPos}
+					// fmt.Printf("Found node: %+v\n", n)
+					accum = append(accum, n)
+
+				default:
+					accum = append(accum, v)
+				}
+			}
+		}
+	}
+	return nil, nil
+}
+
 func Stringify(in []Node, start, end, escape, strMode string) ([]Node, []Node) {
 	accum := []Node{}
 	for i := 0; i < len(in); i++ {
@@ -201,10 +286,15 @@ func Stringify(in []Node, start, end, escape, strMode string) ([]Node, []Node) {
 					var sublist []Node
 					sublist, in = Stringify(in[i+len(start):], start, end, escape, end)
 					i = -1
-					//fmt.Printf("Found string: %s\n", joinRaw(sublist))
-					n := Node{Str: joinRaw(sublist), Note: start, File: sublist[0].File, Line: sublist[0].Line, Column: sublist[0].Column, ChrPos: sublist[0].ChrPos}
-					//fmt.Printf("Found node: %+v\n", n)
-					accum = append(accum, n)
+					fmt.Printf("Found string: %s\n", joinRaw(sublist))
+					if len(sublist) > 0 {
+						n := Node{Str: joinRaw(sublist), Note: start, File: sublist[0].File, Line: sublist[0].Line, Column: sublist[0].Column, ChrPos: sublist[0].ChrPos}
+						// fmt.Printf("Found node: %+v\n", n)
+						accum = append(accum, n)
+					} else {
+						n := Node{Str: "", Note: start, File: v.File, Line: v.Line, Column: v.Column, ChrPos: v.ChrPos}
+						accum = append(accum, n)
+					}
 
 				default:
 					accum = append(accum, v)
@@ -226,17 +316,17 @@ func Groupify(in []Node) ([]Node, []Node, int) {
 			var sublist []Node
 			sublist, in, i = Groupify(in[i+1:])
 			i = -1
-			accum = append(accum, Node{v.Raw, v.Str, sublist, "[", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier}) //Use the opening parenthesis to identify the list
+			accum = append(accum, Node{v.Raw, v.Str, sublist, "[", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier}) // Use the opening parenthesis to identify the list
 		case "{":
 			var sublist []Node
 			sublist, in, i = Groupify(in[i+1:])
 			i = -1
-			accum = append(accum, Node{v.Raw, v.Str, sublist, "{", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier}) //Use the opening parenthesis to identify the list
+			accum = append(accum, Node{v.Raw, v.Str, sublist, "{", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier}) // Use the opening parenthesis to identify the list
 		case "(":
 			var sublist []Node
 			sublist, in, i = Groupify(in[i+1:])
 			i = -1
-			accum = append(accum, Node{v.Raw, v.Str, sublist, "(", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier}) //Use the opening parenthesis to identify the list
+			accum = append(accum, Node{v.Raw, v.Str, sublist, "(", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier}) // Use the opening parenthesis to identify the list
 		case "]":
 			fallthrough
 		case "}":
@@ -261,13 +351,13 @@ func KeywordBreak(in []Node, keywords []string) []Node {
 		if v.List == nil {
 			for _, keyword := range keywords {
 				if match(keyword, in[i:]) {
-					//There are several different situations here
+					// There are several different situations here
 					// 1.Capture the accumulator (e.g. we are in a list)
 					// 2.Capture the next next subtree (or more), join with the current node
 					//   e.g. a type or function definition, or a procedure call
 					output = append(output, Node{v.Raw, v.Str, accum, keyword, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
 					accum = []Node{}
-					//accum = []Node{{"", "🛑", nil}}
+					// accum = []Node{{"", "🛑", nil}}
 					break
 				}
 			}
@@ -286,13 +376,14 @@ func GroupBinops(in []Node) []Node {
 		v := in[i]
 
 		if match(":=", in[i:]) {
-			//fmt.Printf("Found ==\n")
+			// fmt.Printf("Found ==\n")
 			first := in[0:i]
-			second := in[i+1:] //FIXME need to skip length of match
+			second := in[i+1:] // FIXME need to skip length of match
 			firstret := GroupBinops(first)
 			secondret := GroupBinops(second)
 			v.Raw = "define"
-			return []Node{v,
+			return []Node{
+				v,
 				{List: firstret},
 				{List: secondret},
 			}
@@ -345,9 +436,9 @@ func StripNL(in []Node) []Node {
 	for i := 0; i < len(in); i++ {
 		v := in[i]
 		if v.List == nil {
-			//fmt.Printf("Comparing %s to %s\n", v.Raw, "\n")
+			// fmt.Printf("Comparing %s to %s\n", v.Raw, "\n")
 			if v.Raw == "\n" {
-				//fmt.Printf("Found NL %v\n", v)
+				// fmt.Printf("Found NL %v\n", v)
 			} else {
 				accum = append(accum, v)
 			}
@@ -381,9 +472,9 @@ func StripWhiteSpace(in []Node) []Node {
 	for i := 0; i < len(in); i++ {
 		v := in[i]
 		if v.List == nil {
-			//fmt.Printf("Comparing %s to %s\n", v.Raw, "\n")
+			// fmt.Printf("Comparing %s to %s\n", v.Raw, "\n")
 			if isWhiteSpace(v.Raw) {
-				//fmt.Printf("Found NL %v\n", v)
+				// fmt.Printf("Found NL %v\n", v)
 			} else {
 				accum = append(accum, v)
 			}
@@ -393,8 +484,10 @@ func StripWhiteSpace(in []Node) []Node {
 	}
 	return append(output, accum...)
 }
+
 func LoadFile(path string) string {
 	fileb, _ := ioutil.ReadFile(path)
 	file := string(fileb)
+	// log.Println("Loaded file:", path, file)
 	return file
 }
