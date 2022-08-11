@@ -354,7 +354,7 @@ func KeywordBreak(in []Node, keywords []string) []Node {
 					// There are several different situations here
 					// 1.Capture the accumulator (e.g. we are in a list)
 					// 2.Capture the next next subtree (or more), join with the current node
-					//   e.g. a type or function definition, or aprocedure call
+					//   e.g. a type or function definition, or a procedure call
 					output = append(output, Node{v.Raw, v.Str, accum, keyword, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
 					accum = []Node{}
 					// accum = []Node{{"", "🛑", nil}}
