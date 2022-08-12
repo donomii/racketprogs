@@ -20,6 +20,7 @@
 [define my-frame-rate 0]
 [define frame-rate 0]
 [define file-list [directory-list]]
+[define frameRate [lambda [] [format "Frame rate: ~a" [round frame-rate]]]]
 [define m `
 
   [w "toplevel" [id "Toplevel container"] [type "toplevel"][dropzone #t]  [x 0] [y 0][draggable #t]
@@ -30,7 +31,7 @@
                    
           [w "A big container" [type "container"] [advancer vertical][w 200] [children
                                                                               [w "A h1container" [type "container"] [w 100] [min-w 100][expand 0.5] [advancer horizontal][children
-                                                                                                                                                                          [w ,[lambda [] [format "Frame rate: ~a" [round frame-rate]]]
+                                                                                                                                                                          [w ,frameRate
                                                                                                                                                                              [id "test text"] [type "text"][min-w 100][w 100] [h 100][expand 0.5][advancer vertical]]
                                                                                                                                                                           [w "OK" [id "ok button"] [type "button"][advancer vertical]]]]
                                                                               [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer horizontal][children
@@ -78,17 +79,17 @@
 ;set an initial state
 [define last-state `[
                      [mx . 0]
-                     [my . 0]  ;Current draw position
-                     [startx  . 0 ;Drag start x
+                     [my . 0]       ;Current draw position
+                     [startx . 0] ;Drag start x
                                                            
-                              ]
+                              
                      ;Drag start y
                      [starty . 0]
                      ;Mouse event in progress? (false, press, release)
                      [mouse-event . 'false]
                      [do-draw . #t]   ;do draw
                      [button-down? . #f] ;Is the button currently down?
-                     [advancer . vertical-advancer]
+                     [advancer . ,vertical-advancer]
                      [drag-target . #f]
                      [dragvecx . 0]
                      [dragvecy . 0] ;Total drag vector, x and y

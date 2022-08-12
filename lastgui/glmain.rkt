@@ -1,7 +1,7 @@
 #lang racket
 (displayln 'Start)
 (require (prefix-in easy. net/http-easy))
- (require (prefix-in  srfi_ srfi/1 ))
+(require (prefix-in  srfi_ srfi/1 ))
 (require net/uri-codec)
 
 [require "lastgui.rkt"]
@@ -101,8 +101,8 @@
       [w "Another Test Window" [id "Another Test window"][dropzone #t]  [draggable #t][type "window"] [x 150] [y 150][min-w 300][min-h 200]  [w 300] [h 400]
          [children
           [w "A h2container" [type "container"] [w 100] [min-w 100][expand 0.5][advancer vertical][children
-                                                                                                                      [w ,[map [lambda [x] [list x [format "dir/~a" x]]] file-list]
-                                                                                                                         [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
+                                                                                                   [w ,[map [lambda [x] [list x [format "dir/~a" x]]] file-list]
+                                                                                                      [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
                                                                                                    [w [[1 1] [2 2] [3 3] [4 4]]
                                                                                                       [type "list"][expand 1/3] [w 100][h 300][advancer horizontal]]
                                                                                                    [w [[1 1] [2 2] [3 3] [4 4]]
@@ -195,61 +195,63 @@
 
 
 (define (draw mouse-x mouse-y action)
-[let [[t  (current-inexact-milliseconds)]]
-;[displayln "Start draw"]
-  [when [equal? action "press"]
-    [set! persist-mouse-event 'press]
-    [set! button-down #t]]
+  [let [[t  (current-inexact-milliseconds)]]
+    ;[displayln "Start draw"]
+    [when [equal? action "press"]
+      [set! persist-mouse-event 'press]
+      [set! button-down #t]]
 
-  [when [equal? action "release"]
-    [set! persist-mouse-event 'release]
-    [set! button-down #f]]
-  [set! frame-count [add1 frame-count]]
-  [when [> [- (current-inexact-milliseconds)  last-frame-time] 1000]
-    [set! frame-rate [* 1000 [/ [- frame-count last-frame-count] [- (current-inexact-milliseconds)  last-frame-time]]]]
-    [set! last-frame-time (current-inexact-milliseconds) ]
-    [set! last-frame-count frame-count]]
-  ;clear the window
-  (easy.get (format "~aclear" immediate-url))
-  [background 255 255 0 255]
+    [when [equal? action "release"]
+      [set! persist-mouse-event 'release]
+      [set! button-down #t]]
+    [set! frame-count [add1 frame-count]]
+    [when [> [- (current-inexact-milliseconds)  last-frame-time] 1000]
+      [set! frame-rate [* 1000 [/ [- frame-count last-frame-count] [- (current-inexact-milliseconds)  last-frame-time]]]]
+      [set! last-frame-time (current-inexact-milliseconds) ]
+      [set! last-frame-count frame-count]]
+    ;clear the window
+    (easy.get (format "~aclear" immediate-url))
+    [background 255 255 0 255]
    
-  ;[when persist-mouse-event [printf "Mouse button: ~a~n" mouse-button]
-  ;   [printf "Mouse position: ~a~n"[list mouse-x mouse-y]]]
+    ;[when persist-mouse-event
+    ;  [printf "Mouse button down: ~a~n" button-down]
+    ;  [printf "Mouse position: ~a~n"[list mouse-x mouse-y]]]
 
-  [letrec [[alist [do-frame
-                   m
-                   `[[nextx . ,[car [s=f x [cddr m] '[0]]]];Current draw position
-                     [nexty . ,[car [s=f y [cddr m] '[0]]]];Current draw position
-                     [mx . ,mouse-x]
-                     [my . ,mouse-y]  
-                     [startx  .  ;Drag start x
+    [letrec [[alist [do-frame
+                     m
+                     `[[nextx . ,[car [s=f x [cddr m] '[0]]]];Current draw position
+                       [nexty . ,[car [s=f y [cddr m] '[0]]]];Current draw position
+                       [mx . ,mouse-x]
+                       [my . ,mouse-y]  
+                       [startx  .  ;Drag start x
                                                            
-                              ,[if [not button-down]
-                                   mouse-x
-                                   [startx last-state]]]
-                     ;Drag start y
-                     [starty . ,[if [not button-down]
+                                ,[if [not button-down]
+                                     mouse-x
+                                     [startx last-state]]]
+                       ;Drag start y
+                       [starty . ,[if [not button-down]
 
-                                    mouse-y
-                                    [starty last-state]]]
-                     ;Mouse event in progress? (false, press, release)
-                     [mouse-event . ,persist-mouse-event]
-                     [do-draw . #t]   ;do draw
-                     [button-down? . ,button-down] ;Is the button currently down?
-                     [advancer . ,vertical-advancer]
-                     [drag-target . ,[s= drag-target last-state]]
-                     [dragvecx . ,[- mouse-x [startx last-state]]]
-                     [dragvecy . ,[- mouse-y [starty last-state]]] ;Total drag vector, x and y
-                     ]
-                   [list 0 0 0 0]
-                   '[]]]
-           [new-state [cadr alist]]
-           [new-template [car alist]]
-           ]
+                                      mouse-y
+                                      [starty last-state]]]
+                       ;Mouse event in progress? (false, press, release)
+                       [mouse-event . ,persist-mouse-event]
+                       [do-draw . #t]   ;do draw
+                       [button-down? . ,button-down] ;Is the button currently down?
+                       [advancer . ,vertical-advancer]
+                       [drag-target . ,[s= drag-target last-state]]
+                       [dragvecx . ,[- mouse-x [startx last-state]]]
+                       [dragvecy . ,[- mouse-y [starty last-state]]] ;Total drag vector, x and y
+                       ]
+                     [list 0 0 0 0]
+                     '[]]]
+             [new-state [cadr alist]]
+             [new-template [car alist]]
+             ]
+      [displayln alist]
                                          
-    [set! last-state [srfi_delete-duplicates  new-state [lambda [x y] [equal? [car x] [car y]]]]]
-    [set! m new-template]
-    ]
+      [set! last-state [srfi_delete-duplicates  new-state [lambda [x y] [equal? [car x] [car y]]]]]
+      [set! m new-template]
+      ]
   
   
   
@@ -257,20 +259,20 @@
 
                      
 
-  [set! persist-mouse-event #f]
+    [set! persist-mouse-event #f]
  
   
   
-  ;[displayln (output-profile-results)]
-  ;[displayln (get-profile-results)]
+    ;[displayln (output-profile-results)]
+    ;[displayln (get-profile-results)]
   
-  ;[printf "Sending ~a~n" [format "~a~a" url (uri-encode commands)]]
-  [easy.post  batch-url  #:data commands]
-  (easy.get (format "~acommit" immediate-url))
-  [set! commands ""]
-  ;[displayln "Finish draw"]
-[printf "Draw completed in ~a milliseconds~n" (- (current-inexact-milliseconds) t)]
-  ]
+    ;[printf "Sending ~a~n" [format "~a~a" url (uri-encode commands)]]
+    [easy.post  batch-url  #:data commands]
+    (easy.get (format "~acommit" immediate-url))
+    [set! commands ""]
+    ;[displayln "Finish draw"]
+    [printf "Draw completed in ~a milliseconds~n" (- (current-inexact-milliseconds) t)]
+    ]
   )
 
 
