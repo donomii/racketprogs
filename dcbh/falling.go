@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"bytes"
+
 	"github.com/EngoEngine/ecs"
 	"github.com/EngoEngine/engo"
 	"github.com/EngoEngine/engo/common"
@@ -141,7 +142,9 @@ func main() {
 		FPSLimit:       30,
 	}
 
-	engo.Run(opts, &DefaultScene{})
+	engo.RegisterScene(&DefaultScene{})
+	engo.RegisterScene(&MenuScene{})
+	engo.Run(opts, &MenuScene{})
 }
 
 //Initialises the background map

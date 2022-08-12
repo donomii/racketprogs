@@ -103,7 +103,7 @@ func (h *HUDTextSystem) New(w *ecs.World) {
 			return
 		}
 
-		h.HpFraction = float32(playerStateMessage.Player.HitPoints) / float32(playerStateMessage.Player.MaxHitPoints)
+		h.HpFraction = float32(playerStateMessage.Score) / float32(playerStateMessage.Player.MaxHitPoints)
 
 		rectangle1.SpaceComponent.Width = (engo.WindowWidth() - 20) * h.HpFraction
 

@@ -1,27 +1,24 @@
 package main
 
 import (
+	"log"
+
 	"github.com/EngoEngine/ecs"
 	"github.com/EngoEngine/engo"
 	"github.com/EngoEngine/engo/common"
-	"log"
+	//"log"
 )
 
-type controlEntity struct {
-	*ecs.BasicEntity
-	*common.SpaceComponent
-}
-
-type ControlSystem struct {
+type MenuControlSystem struct {
 	entities []controlEntity
 	player   *Guy
 }
 
-func (c *ControlSystem) Add(basic *ecs.BasicEntity, space *common.SpaceComponent) {
+func (c *MenuControlSystem) Add(basic *ecs.BasicEntity, space *common.SpaceComponent) {
 	c.entities = append(c.entities, controlEntity{basic, space})
 }
 
-func (c *ControlSystem) Remove(basic ecs.BasicEntity) {
+func (c *MenuControlSystem) Remove(basic ecs.BasicEntity) {
 	delete := -1
 	for index, e := range c.entities {
 		if e.BasicEntity.ID() == basic.ID() {
@@ -34,9 +31,14 @@ func (c *ControlSystem) Remove(basic ecs.BasicEntity) {
 	}
 }
 
-func (c *ControlSystem) Update(dt float32) {
+func (c *MenuControlSystem) Update(dt float32) {
 	speed := 400 * dt
 
+	//log.Printf("MenuControlSystem update")
+	if engo.Input.Button("action").JustReleased() {
+		log.Printf("Action button pressed")
+		engo.SetSceneByName("Game", false)
+	}
 	var gamepad *engo.Gamepad
 	if haveGamepad {
 		// Retrieve the Gamepad
@@ -48,6 +50,7 @@ func (c *ControlSystem) Update(dt float32) {
 	}
 
 	for _, e := range c.entities {
+
 		hori := engo.Input.Axis(engo.DefaultHorizontalAxis)
 		e.SpaceComponent.Position.X += speed * hori.Value()
 
@@ -55,7 +58,7 @@ func (c *ControlSystem) Update(dt float32) {
 		e.SpaceComponent.Position.Y += speed * vert.Value()
 
 		if gamepad != nil {
-			log.Printf("gamepad %+v", gamepad)
+			//log.Printf("gamepad %+v", gamepad)
 			if gamepad.DpadUp.Down() {
 				e.SpaceComponent.Position.Y -= speed
 			} else if gamepad.DpadDown.Down() {

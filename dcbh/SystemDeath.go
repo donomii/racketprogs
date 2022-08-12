@@ -6,7 +6,6 @@ import (
 	"github.com/EngoEngine/engo"
 	"github.com/EngoEngine/engo/common"
 	"log"
-	"os"
 )
 
 type DeathSystem struct {
@@ -18,6 +17,7 @@ type DeathSystem struct {
 type PlayerStateChangeMessage struct {
 	ecs.BasicEntity
 	Player *Guy
+	Score  int
 }
 
 func (m PlayerStateChangeMessage) Type() string {
@@ -43,7 +43,7 @@ func (d *DeathSystem) New(w *ecs.World) {
 				d.Purge(*colMess.To.GetBasicEntity())
 				if d.Player.isDead() {
 					log.Printf("Player is dead")
-					os.Exit(0)
+					engo.SetSceneByName("Menu", false)
 				}
 			} else if colMess.To.Name == "Player" {
 				player := colMess.To
@@ -54,7 +54,8 @@ func (d *DeathSystem) New(w *ecs.World) {
 				d.Purge(*colMess.Entity.GetBasicEntity())
 				if d.Player.isDead() {
 					log.Printf("Player is dead")
-					os.Exit(0)
+					engo.SetSceneByName("Menu", false)
+					//os.Exit(0)
 				}
 
 			} else {
@@ -65,8 +66,9 @@ func (d *DeathSystem) New(w *ecs.World) {
 					log.Printf("Hit points: %+v", d.Player.GetHitPoints())
 					engo.Mailbox.Dispatch(HUDTextMessage{
 						BasicEntity: ecs.NewBasic(),
-						Text:        fmt.Sprintf("Score: %+v", d.Score),
+						Text:        fmt.Sprintf("%+v kills", d.Score),
 					})
+					engo.Mailbox.Dispatch(PlayerStateChangeMessage{BasicEntity: ecs.NewBasic(), Player: d.Player, Score: d.Score})
 
 					d.Purge(*colMess.Entity.GetBasicEntity())
 					d.Purge(*colMess.To.GetBasicEntity())
