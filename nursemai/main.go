@@ -233,7 +233,7 @@ func handleSignals(sigChan chan os.Signal) {
 					log.Printf("Sending signals to %v", pid)
 					syscall.Kill(pid, syscall.SIGHUP)
 					time.Sleep(1 * time.Second)
-					syscall.Kill(pid, syscall.SIGQUIT)
+					syscall.Kill(pid, syscall.SIGINT)
 					time.Sleep(1 * time.Second)
 					syscall.Kill(pid, syscall.SIGKILL)
 					time.Sleep(1 * time.Second)
