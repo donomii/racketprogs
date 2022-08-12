@@ -55,22 +55,18 @@ func main() {
 
 	flag.BoolVar(&wantDebug, "debug", false, "Enable debug output")
 	flag.Parse()
-	sourceFile := flag.Args()[0]
+
 	switch {
-	case sourceFile != "":
-		fmt.Println("Resuming from file: ", sourceFile)
+	case len(flag.Args()) > 0:
+		sourceFile := flag.Args()[0]
 		f := autoparser.LoadFile(sourceFile)
 		tree := autoparser.ParseGo(f, sourceFile)
 		drintf("%+v\n", tree)
-
 		autoparser.PrintTree(tree, 0, false)
 
 	default:
+		testCSV()
 
-		f := autoparser.LoadFile(sourceFile)
-		tree := autoparser.ParseGo(f, sourceFile)
-		drintf("%+v\n", tree)
-		autoparser.PrintTree(tree, 0, false)
 	}
 }
 
@@ -109,4 +105,31 @@ func N(s string) autoparser.Node {
 // this */
 func NN(s string) string {
 	return "//" + "/*"
+}
+
+func testCSV() {
+	l := autoparser.NewTree(CSVdata(), "inline")
+	// r, _ := Stringify(l, "//", "\n", "\\", "")
+	// r, _ = Stringify(r, "\"", "\"", "\\", "")
+
+	r := autoparser.KeywordBreak(l, []string{"\n"}, false)
+	r = autoparser.KeywordBreak(r, []string{";"}, false)
+	r = autoparser.MergeNonWhiteSpace(r)
+
+	r = autoparser.StripWhiteSpace(r)
+	// Need to split on spaces and merge before doing binops
+
+	autoparser.PrintTree(r, 0, false)
+
+	// fmt.Printf("%+v\n", r)
+	// fmt.Println()
+}
+
+func CSVdata() string {
+	return `Username; Identifier;One-time password;Recovery code;First name;Last name;Department;Location
+booker12;9012;12se74;rb9012;Rachel;Booker;Sales;Manchester
+grey07;2070;04ap67;lg2070;Laura;Grey;Depot;London
+johnson81;4081;30no86;cj4081;Craig;Johnson;Depot;London
+jenkins46;9346;14ju73;mj9346;Mary;Jenkins;Engineering;Manchester
+smith79;5079;09ja61;js5079;Jamie;Smith;Engineering;Manchester`
 }

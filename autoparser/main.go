@@ -3,10 +3,9 @@ package autoparser
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"strings"
 	"unicode"
-	"log"
-
 )
 
 type Node struct {
@@ -40,16 +39,17 @@ func NewTree(s, filename string) []Node {
 
 func ParseGo(code, filename string) []Node {
 	l := NewTree(code, filename)
-	//r, _ := Stringify(l, "//", "\n", "\\", "")
-	//r, _ = Stringify(r, "\"", "\"", "\\", "")
+	// r, _ := Stringify(l, "//", "\n", "\\", "")
+	// r, _ = Stringify(r, "\"", "\"", "\\", "")
 
 	r, _ := MultiStringify(l, [][]string{
 		{"//", "\n", "\\"},
 		{"\"", "\"", "\\"},
-		{"/*", "*/", "\\"}})
+		{"/*", "*/", "\\"},
+	})
 	// PrintTree(r, 0, false)
 	r, _, _ = Groupify(r)
-	r = KeywordBreak(r, []string{"import", "type", "func", "\n"})
+	r = KeywordBreak(r, []string{"import", "type", "func", "\n"}, true)
 	r = MergeNonWhiteSpace(r)
 	r = StripNL(r)
 	r = StripWhiteSpace(r)
@@ -69,7 +69,7 @@ func ParseXSH(code, filename string) Node {
 	// fmt.Printf("Stringified: ")
 	// PrintTree(r, 0, false)
 	r, _, _ = Groupify(r)
-	r = KeywordBreak(r, []string{"|", "\n"})
+	r = KeywordBreak(r, []string{"|", "\n"}, true)
 	// r = KeywordBreak(r, []string{"|"})
 	r = StripNL(r)
 	r = MergeNonWhiteSpace(r)
@@ -88,7 +88,7 @@ func printIndent(i int, c string) {
 	}
 }
 
-//Count the number of (sub)lists in this list of Nodes
+// Count the number of (sub)lists in this list of Nodes
 func containsLists(l []Node, max int) bool {
 	count := 0
 	for _, v := range l {
@@ -123,7 +123,7 @@ func PrintTree(t []Node, indent int, newlines bool) {
 				fmt.Print("『", v.Str, "』")
 			}
 		} else {
-			if len(v.List) == 0 && (v.Note == "\n" ||v.Note =="artifact"){
+			if len(v.List) == 0 && (v.Note == "\n" || v.Note == "artifact") {
 				fmt.Println("")
 				continue
 			}
@@ -142,7 +142,7 @@ func PrintTree(t []Node, indent int, newlines bool) {
 				fmt.Print(")\n")
 			} else {
 				fmt.Print("(")
-				//fmt.Print(v.Note, "current length: ",len(v.List))
+				// fmt.Print(v.Note, "current length: ",len(v.List))
 				PrintTree(v.List, indent+2, false)
 				fmt.Print(")")
 
@@ -210,13 +210,13 @@ func MultiStringify(in []Node, stringDelimiters [][]string) ([]Node, []Node) {
 	// Walk through in, looking for string starts
 	for i := 0; i < len(in); i++ {
 		v := in[i]
-		log.Printf("Examinging %+v at %v\n", v,i)
+		log.Printf("Examinging %+v at %v\n", v, i)
 		if v.List != nil {
 			// Recurse down the tree, stringifying every branch we find
 			var ret []Node
 			ret, in = MultiStringify(v.List, stringDelimiters)
 			i = -1
-			accum = append(accum, Node{Note: v.Raw ,List: ret, Line: v.Line, Column: v.Column, ChrPos: v.ChrPos})
+			accum = append(accum, Node{Note: v.Raw, List: ret, Line: v.Line, Column: v.Column, ChrPos: v.ChrPos})
 		} else {
 
 			// Build a list of all possible string start characters
@@ -251,7 +251,6 @@ func MultiStringify(in []Node, stringDelimiters [][]string) ([]Node, []Node) {
 					n := Node{Str: "", Note: startChar, File: v.File, Line: v.Line, Column: v.Column, ChrPos: v.ChrPos}
 					accum = append(accum, n)
 				}
-				
 
 			default:
 				accum = append(accum, v)
@@ -262,7 +261,7 @@ func MultiStringify(in []Node, stringDelimiters [][]string) ([]Node, []Node) {
 	return accum, in
 }
 
-//Searches through a list of nodes for a start string.  It collects the following nodes together until it finds the end string
+// Searches through a list of nodes for a start string.  It collects the following nodes together until it finds the end string
 func Stringify(in []Node, start, end, escape, strMode string) ([]Node, []Node) {
 	accum := []Node{}
 	for i := 0; i < len(in); i++ {
@@ -348,11 +347,14 @@ func Groupify(in []Node) ([]Node, []Node, int) {
 	return append(output, accum...), []Node{}, -1
 }
 
-func KeywordBreak(in []Node, keywords []string) []Node {
+// Starts a new sublist for each detected keyword.  Typically useful for e.g. function declarations.  If preserveKeyword is false, it throws
+// away the keyword, which makes it useful for lists (see CSV example)
+func KeywordBreak(in []Node, keywords []string, preserveKeyword bool) []Node {
 	output := []Node{}
 	accum := []Node{}
 	for i := 0; i < len(in); i++ {
 		v := in[i]
+		skipKeyword := false
 		if v.List == nil {
 			for _, keyword := range keywords {
 				if match(keyword, in[i:]) {
@@ -360,17 +362,27 @@ func KeywordBreak(in []Node, keywords []string) []Node {
 					// 1.Capture the accumulator (e.g. we are in a list)
 					// 2.Capture the next next subtree (or more), join with the current node
 					//   e.g. a type or function definition, or a procedure call
-					if len(accum)>0 {
-					output = append(output, Node{v.Raw, v.Str, accum, "artifact", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+					if len(accum) > 0 {
+						output = append(output, Node{v.Raw, v.Str, accum, "artifact", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+					} else {
+						output = append(output, Node{v.Raw, v.Str, accum, "artifact", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+					}
+
+					if !preserveKeyword {
+						fmt.Printf("Found keyword: %v at %v, next is %v\n", keyword, i, in[i+len(keyword)])
+						i = i + len(keyword) - 1
+						skipKeyword = true
 					}
 					accum = []Node{}
 					// accum = []Node{{"", "🛑", nil}}
 					break
 				}
 			}
-			accum = append(accum, v)
+			if !skipKeyword {
+				accum = append(accum, v)
+			}
 		} else {
-			accum = append(accum, Node{v.Raw, v.Str, KeywordBreak(v.List, keywords), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+			accum = append(accum, Node{v.Raw, v.Str, KeywordBreak(v.List, keywords, preserveKeyword), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
 		}
 	}
 	return append(output, accum...)
@@ -400,7 +412,6 @@ func GroupBinops(in []Node) []Node {
 			accum = append(accum, v)
 		} else {
 			accum = append(accum, Node{v.Raw, v.Str, GroupBinops(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
-		
 		}
 	}
 
@@ -445,7 +456,7 @@ func StripNL(in []Node) []Node {
 		v := in[i]
 		if v.List == nil {
 			// fmt.Printf("Comparing %s to %s\n", v.Raw, "\n")
-			if v.Raw == "\n"{
+			if v.Raw == "\n" {
 				// fmt.Printf("Found NL %v\n", v)
 			} else {
 				accum = append(accum, v)
