@@ -212,7 +212,8 @@ t:= time.Now()
 
 	if debug {
 	if len(thunkList) >0{
-		fmt.Printf("Rendered %v thunks in %v milliseconds\n", len(thunkList), time.Now().Sub(t).Milliseconds())
+		t=t
+		//fmt.Printf("Rendered %v thunks in %v milliseconds\n", len(thunkList), time.Now().Sub(t).Milliseconds())
 	}
 }
 }
