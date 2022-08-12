@@ -88,6 +88,7 @@ func printIndent(i int, c string) {
 	}
 }
 
+//Count the number of (sub)lists in this list of Nodes
 func containsLists(l []Node, max int) bool {
 	count := 0
 	for _, v := range l {
@@ -98,7 +99,7 @@ func containsLists(l []Node, max int) bool {
 	return count > max
 }
 
-// Count the number of elements in a tree
+// Recursively count the number of elements in a tree
 func countTree(t []Node) int {
 	count := 0
 	for _, v := range t {
@@ -122,6 +123,11 @@ func PrintTree(t []Node, indent int, newlines bool) {
 				fmt.Print("『", v.Str, "』")
 			}
 		} else {
+			if len(v.List) == 0 && (v.Note == "\n" ||v.Note =="artifact"){
+				fmt.Println("")
+				continue
+			}
+			// If the current expression contains 3 or more sub expressions, break it across lines
 			if containsLists(v.List, 3) {
 				if countTree(v.List) > 50 {
 
@@ -129,12 +135,14 @@ func PrintTree(t []Node, indent int, newlines bool) {
 					printIndent(indent+1, "_")
 				}
 				fmt.Print("(")
+
 				PrintTree(v.List, indent+2, true)
 				print("\n")
 				printIndent(indent, "_")
 				fmt.Print(")\n")
 			} else {
 				fmt.Print("(")
+				//fmt.Print(v.Note, "current length: ",len(v.List))
 				PrintTree(v.List, indent+2, false)
 				fmt.Print(")")
 
@@ -195,6 +203,8 @@ func match(s string, l []Node) bool {
 	return false
 }
 
+// Searches through a list of nodes for a node that matches one of the start strings, then gathers the following nodes into a string node.
+// This routine correctly handles strings that contain the start strings from other strings.
 func MultiStringify(in []Node, stringDelimiters [][]string) ([]Node, []Node) {
 	accum := []Node{}
 	// Walk through in, looking for string starts
@@ -206,7 +216,7 @@ func MultiStringify(in []Node, stringDelimiters [][]string) ([]Node, []Node) {
 			var ret []Node
 			ret, in = MultiStringify(v.List, stringDelimiters)
 			i = -1
-			accum = append(accum, Node{List: ret})
+			accum = append(accum, Node{Note: v.Raw ,List: ret, Line: v.Line, Column: v.Column, ChrPos: v.ChrPos})
 		} else {
 
 			// Build a list of all possible string start characters
@@ -252,6 +262,7 @@ func MultiStringify(in []Node, stringDelimiters [][]string) ([]Node, []Node) {
 	return accum, in
 }
 
+//Searches through a list of nodes for a start string.  It collects the following nodes together until it finds the end string
 func Stringify(in []Node, start, end, escape, strMode string) ([]Node, []Node) {
 	accum := []Node{}
 	for i := 0; i < len(in); i++ {
@@ -345,11 +356,13 @@ func KeywordBreak(in []Node, keywords []string) []Node {
 		if v.List == nil {
 			for _, keyword := range keywords {
 				if match(keyword, in[i:]) {
-					// There are several different situations here
+					// We want to
 					// 1.Capture the accumulator (e.g. we are in a list)
 					// 2.Capture the next next subtree (or more), join with the current node
 					//   e.g. a type or function definition, or a procedure call
-					output = append(output, Node{v.Raw, v.Str, accum, keyword, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+					if len(accum)>0 {
+					output = append(output, Node{v.Raw, v.Str, accum, "artifact", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+					}
 					accum = []Node{}
 					// accum = []Node{{"", "🛑", nil}}
 					break
@@ -386,7 +399,8 @@ func GroupBinops(in []Node) []Node {
 		if v.List == nil {
 			accum = append(accum, v)
 		} else {
-			accum = append(accum, Node{List: GroupBinops(v.List)})
+			accum = append(accum, Node{v.Raw, v.Str, GroupBinops(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+		
 		}
 	}
 
@@ -431,7 +445,7 @@ func StripNL(in []Node) []Node {
 		v := in[i]
 		if v.List == nil {
 			// fmt.Printf("Comparing %s to %s\n", v.Raw, "\n")
-			if v.Raw == "\n" {
+			if v.Raw == "\n"{
 				// fmt.Printf("Found NL %v\n", v)
 			} else {
 				accum = append(accum, v)
