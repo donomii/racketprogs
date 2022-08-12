@@ -1,5 +1,6 @@
 #Write an API server in python
 from transformers import pipeline
+from transformers import AutoModelForCausalLM, AutoTokenizer
 import http.server
 import socketserver
 import json
@@ -20,7 +21,7 @@ import urllib.parse
 pipeDict = {}
 modelName="bigscience/bloom-1b7"
 pipelineName="text-generation"
-generator = pipeline(pipelineName,model=modelName)
+generator = pipeline(pipelineName,model=modelName, max_length=200)
 pipeDict[modelName+pipelineName] = generator
 
 modelName="distilgpt2"
@@ -28,6 +29,13 @@ pipelineName="text-generation"
 generator = pipeline(pipelineName,model=modelName)
 pipeDict[modelName+pipelineName] = generator
 
+
+pipelineName="conversational"
+modelName="microsoft/DialoGPT-medium"
+tokenizerObj = AutoTokenizer.from_pretrained(modelName)
+modelObj = AutoModelForCausalLM.from_pretrained(modelName)
+generator = pipeline(pipelineName, model=modelObj, tokenizer=tokenizerObj)
+pipeDict[modelName+pipelineName] = generator
 
 text = "hello world"
 #split text into list of words
