@@ -356,6 +356,11 @@ func isLambda(e autoparser.Node) bool {
 	return false
 }
 
+allow users to define types for their functions so that they can use varargs
+possibly just have a type command, e.g. 
+    type joinArgs [string string ...]
+	func joinArgs {separator pieces ...| join separator pieces }
+	
 // Evaluate a single function call.
 func eval(s State, command autoparser.Node, parent *autoparser.Node, level int) autoparser.Node {
 	if len(command.List) == 0 {
@@ -434,7 +439,7 @@ Given:
 			for i, v := range fixedArgs {
 				drintf("Checking type %v against arg %v\n", v, typeOf(args[i]))
 				if typeOf(args[i]) != v && v != "any" {
-					XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v, got %v\n", command.List[0].File, command.List[0].Line, TreeToXsh(command), i+1, v, typeOf(args[i]))
+					XshWarn("Type error in named args at file %v line %v (command %v).  At argument %v, expected %v, got %v\n", command.List[0].File, command.List[0].Line, TreeToXsh(command), i+1, v, typeOf(args[i]))
 				}
 			}
 			// Now check that the remaining args are of the varargs type
@@ -442,14 +447,14 @@ Given:
 			for i, v := range varArgs {
 				drintf("Checking type %v against arg %v\n", typeOf(v), varArgsType)
 				if typeOf(v) != varArgsType && varArgsType != "any" {
-					XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v (in ...), got %v\n", command.List[0].File, command.List[0].Line, TreeToXsh(command), i+len(ftype)-1, varArgsType, typeOf(v))
+					XshWarn("Type error in vararg at file %v line %v (command %v).  At argument %v, expected %v (in ...), got %v\n", command.List[0].File, command.List[0].Line, TreeToXsh(command), i+len(ftype)-1, varArgsType, typeOf(v))
 				}
 			}
 		} else {
 			// There are no varags, simply check that the types match, and there are the correct number of args
 			for i, v := range ftype[1:] {
 				if typeOf(args[i]) != v && v != "any" {
-					XshWarn("Type error at file %v line %v (command %v).  At argument %v, expected %v, got %v\n", command.List[0].File, command.List[0].Line, TreeToXsh(command), i+1, v, typeOf(args[i]))
+					XshWarn("Type error in fixed args at file %v line %v (command %v).  At argument %v, expected %v, got %v\n", command.List[0].File, command.List[0].Line, TreeToXsh(command), i+1, v, typeOf(args[i]))
 				}
 			}
 		}

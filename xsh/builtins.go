@@ -72,6 +72,7 @@ func NotifyEvent(cmd []string) {
 }
 
 func Help(topic string) string {
+	XshInform("Help for: %s", topic)
 	switch topic {
 	case "builtins":
 		return `
@@ -108,6 +109,7 @@ Xsh does not have automatic type promotion, so you must use different functions 
   /.  	[integer] [integer]: Divides two floats.
   gt. 	a b: True if a < b.
   lt. 	a b: True if a < b.
+
   eq 	[string] [string]: Returns true if the strings are equal.
   loadfile	[string]: Loads a file.
   proc 	[string] [list] [list]: Creates a procedure.  See help syntax.
@@ -138,7 +140,35 @@ Xsh does not have automatic type promotion, so you must use different functions 
   inform on/off: Enables/disables informational messages.
 
 `
-	case "":
+case "scripting":
+	return `
+XSHELL scripting
+
+  The scripting language is a simple shell script.  Call any function the same way you run a program.
+  
+ 	ls $HOME
+	
+	puts $HOME
+	
+Xshell seamlessly combines functions and external programs.  To write subcommands, surround them with []s.
+
+	puts "2 + 2 = " [+ 2 2]
+
+	puts "Files in the current directory: " [ls]
+
+Create your own functions with the func command.
+
+	func add2 [x| + x 2]  #Add 2 to the input
+
+Xsh supports lambda functions, although scope does not work like other lambda languages.  Lambda functions are created with the [| ] syntax. [x| + x 2] is a lambda function that adds 2 to the input.  func  adds a lambda to the global namespace.
+
+Xsh supports varags.  Adding ... to the end of a function definition allows it to take any number of arguments.  The arguments are passed as a list.  e.g.
+
+	func joinArgs [separator pieces ...| join separator pieces ]
+
+`
+
+	case "flags":
 		return `
 XSHELL
 
@@ -170,6 +200,19 @@ Options:
 The xshell command line is shell that is not POSIX compatible, 
 but tries to look like it.  The basic operations are the same 
 to move around the disk, work on files and launch programs.
+
+Like most shells, xsh makes it easy to write scripts that call on other programs.  When you type a command, xsh first checks to see if it is an xsh command (function or procedure).  If that doesn't work, xsh checks the current $PATH to find a program with that name.
+
+Configure the shell with the following commands:
+
+    debug on/off: Enables/disables debug messages.
+	trace on/off: Enables/disables trace messages.
+	warn on/off : Enables/disables warning messages.
+	errors on/off: Enables/disables error messages.
+	inform on/off: Enables/disables informational messages.
+	helpful on/off: Enables/disables extra helpful messages.
+
+	tron,troff 	: Turns tracing on/off.
 
 The xsh scripting language is very different.  see 'help scripting'
 for more details.
@@ -203,14 +246,17 @@ online, scripting, builtins, variables, history, shell, environment
 `
 	}
 }
+
 func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f string, args []autoparser.Node, level int, argsNode autoparser.Node) autoparser.Node {
 	cmd, _ := ListToStrings(command)
 
 	switch f {
 	case "help":
 		if len(args) == 0 {
+			XshResponse(Help(""))
 			return N(Help(""))
 		} else {
+			XshResponse(Help(S(args[0])))
 			return N(Help(S(args[0])))
 		}
 	case "sleep":
@@ -225,7 +271,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			return Bool(true)
 		}
 	case "seq":
-		//log.Printf("seq %v\n", TreeToTcl(args))
+		// log.Printf("seq %v\n", TreeToTcl(args))
 		return args[len(args)-1]
 	case "with":
 		letparams := args[0].List
@@ -239,7 +285,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			}
 		}
 		letbod := CopyTree(args[3])
-		//fmt.Printf("Replacing %v with %v\n", TreeToXsh(letparams), TreeToXsh(evalledArgs))
+		// fmt.Printf("Replacing %v with %v\n", TreeToXsh(letparams), TreeToXsh(evalledArgs))
 		nbod := ReplaceArgs(evalledArgs, letparams, letbod)
 		drintf("Calling function %+v\n", TreeToXsh(nbod))
 		return blockReduce(s, nbod.List, parent, 0)
@@ -263,7 +309,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 		}
 		XshResponse("Current working directory: %v", goof.Cwd())
 	case "\n":
-		//Fuck
+		// Fuck
 		return Void(command[0])
 	case "+":
 		return N(fmt.Sprintf("%v", atoi(S(args[0]))+atoi(S(args[1]))))
@@ -306,7 +352,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			return N("0")
 		}
 	case "dump":
-		//fmt.Println(N(fmt.Sprintf("%+v", args)))
+		// fmt.Println(N(fmt.Sprintf("%+v", args)))
 		return N(fmt.Sprintf("%v", TreeToXsh(args[0])))
 
 	case "eq":
@@ -315,7 +361,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 		} else {
 			return N("0")
 		}
-		//FIXME dedupe
+		// FIXME dedupe
 	case "tron":
 		WantTrace = true
 		return N("Trace on")
@@ -328,7 +374,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 	case "droff":
 		WantDebug = false
 		return N("Debug off")
-		//FIXME replace with an options hash later on
+		// FIXME replace with an options hash later on
 	case "debug":
 		if S(args[0]) == "1" || S(args[0]) == "on" {
 			WantDebug = true
@@ -403,9 +449,9 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 	case "set":
 		if len(args) == 2 {
 			s.Globals[S(args[0])] = S(args[1])
-			os.Setenv(S(args[0]), S(args[1])) //FIXME add "use environment" toggle
+			os.Setenv(S(args[0]), S(args[1])) // FIXME add "use environment" toggle
 		} else {
-			//return N(globals[S(args[0])])
+			// return N(globals[S(args[0])])
 			return N(os.Getenv(S(args[0])))
 		}
 	case "eval":
@@ -423,14 +469,13 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			err = runWithGuardian(stringCommand)
 
 			if err == nil {
-
 				if res == "" {
 					return N("")
 				} else {
 					return N(fmt.Sprintf("%v", res))
 				}
 			} else {
-				//FIXME revisit this after adding proper error handling
+				// FIXME revisit this after adding proper error handling
 				fmt.Println("Exiting after critical error")
 				os.Exit(1)
 				return N(err.Error())
@@ -452,7 +497,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 
 			log.Panicf(msg)
 		}
-		//fmt.Printf("%+v\n", args)
+		// fmt.Printf("%+v\n", args)
 		body := args[1].List
 		s.Functions[S(args[0])] = Function{
 			Name:       S(args[0]),
@@ -460,7 +505,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			Body:       autoparser.Node{argsNode.Raw, argsNode.Str, body[1:], argsNode.Note, argsNode.Line, argsNode.Column, argsNode.ChrPos, argsNode.File, argsNode.ScopeBarrier},
 		}
 
-		//fmt.Printf("%+v\n", s.Functions[S(args[0])])
+		// fmt.Printf("%+v\n", s.Functions[S(args[0])])
 
 	case "proc":
 		/*
@@ -486,12 +531,12 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 			os.Exit(atoi(S(args[0])))
 		}
 	case "cons":
-		//log.Printf("Cons %+v\n", args)
+		// log.Printf("Cons %+v\n", args)
 		thing := args[0]
 		list := args[1].List
 		list = append([]autoparser.Node{thing}, list...)
 		out := autoparser.Node{List: list, File: command[0].File, Line: command[0].Line, Column: command[0].Column, ChrPos: command[0].ChrPos, Note: "{"}
-		//log.Printf("New consed node: %+v\n", out)
+		// log.Printf("New consed node: %+v\n", out)
 		return out
 	case "empty?":
 		if args[0].List == nil || len(args[0].List) == 0 {
@@ -534,7 +579,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 		}
 		return autoparser.Node{List: list, Note: "{"}
 	case "join":
-		//FIXME each element needs a unique id
+		// FIXME each element needs a unique id
 		list, _ := ListToStrings(args[0].List)
 		delim := S(args[1])
 		out := N(strings.Join(list, delim))
@@ -581,13 +626,13 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 	case "id":
 		return args[0]
 	case "list":
-		//FIXME need a unique id for each element in tree
+		// FIXME need a unique id for each element in tree
 		out := autoparser.Node{List: args, File: parent.File, Line: parent.Line, Column: parent.Column, ChrPos: parent.ChrPos, Note: "{"}
 		return out
 	default:
-		//It is an external call, prepare the shell command then run it
-		//fixme warn user on verbose?
-		//fmt.Printf("Unknown command: '%s', attempting shell\n", f)
+		// It is an external call, prepare the shell command then run it
+		// fixme warn user on verbose?
+		// fmt.Printf("Unknown command: '%s', attempting shell\n", f)
 		if command[0].Note == "\"" {
 			return command[0]
 		}
@@ -606,14 +651,13 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 				res, err = runWithGuardianCapture(stringCommand)
 			}
 			if err == nil {
-
 				if res == "" {
 					return N("")
 				} else {
 					return N(fmt.Sprintf("%v", res))
 				}
 			} else {
-				//FIXME revisit this after adding proper error handling
+				// FIXME revisit this after adding proper error handling
 				fmt.Println("Exiting after critical error")
 				os.Exit(1)
 				return N(err.Error())
