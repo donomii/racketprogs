@@ -124,7 +124,8 @@ func PrintTree(t []Node, indent int, newlines bool) {
 			}
 		} else {
 			if len(v.List) == 0 && (v.Note == "\n" || v.Note == "artifact") {
-				fmt.Println("")
+				print("\n")
+				printIndent(indent, "_")
 				continue
 			}
 			// If the current expression contains 3 or more sub expressions, break it across lines
@@ -363,9 +364,9 @@ func KeywordBreak(in []Node, keywords []string, preserveKeyword bool) []Node {
 					// 2.Capture the next next subtree (or more), join with the current node
 					//   e.g. a type or function definition, or a procedure call
 					if len(accum) > 0 {
-						output = append(output, Node{v.Raw, v.Str, accum, "artifact", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+						output = append(output, Node{keyword, v.Str, accum, "artifact", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
 					} else {
-						output = append(output, Node{v.Raw, v.Str, accum, "artifact", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+						output = append(output, Node{keyword, v.Str, accum, "artifact", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
 					}
 
 					if !preserveKeyword {

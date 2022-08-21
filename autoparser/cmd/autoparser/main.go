@@ -1,9 +1,7 @@
 package main
 
 import (
-	"errors"
 	"flag"
-	"fmt"
 	"log"
 	"runtime"
 	"strconv"
@@ -68,26 +66,6 @@ func main() {
 		testCSV()
 
 	}
-}
-
-func NodeToString(v autoparser.Node) string {
-	if v.Raw == "" {
-		return v.Str
-	} else {
-		return v.Raw
-	}
-}
-
-func ListToString(l []autoparser.Node) ([]string, error) {
-	out := []string{}
-	for _, v := range l {
-		if v.List != nil {
-			return nil, errors.New(fmt.Sprintf("ListToArray: List cannot be converted to string array: %+v\n", l))
-		} else {
-			out = append(out, NodeToString(v))
-		}
-	}
-	return out, nil
 }
 
 // This is ridiculous
