@@ -352,14 +352,14 @@ func isLambda(e autoparser.Node) bool {
 		if theLambdaFunction.Note == "|" {
 			return true
 		}
+		if theLambdaFunction.Raw == "||" {
+			return true
+		}
 	}
 	return false
 }
 
-allow users to define types for their functions so that they can use varargs
-possibly just have a type command, e.g. 
-    type joinArgs [string string ...]
-	func joinArgs {separator pieces ...| join separator pieces }
+
 	
 // Evaluate a single function call.
 func eval(s State, command autoparser.Node, parent *autoparser.Node, level int) autoparser.Node {
@@ -455,6 +455,7 @@ Given:
 			for i, v := range ftype[1:] {
 				if typeOf(args[i]) != v && v != "any" {
 					XshWarn("Type error in fixed args at file %v line %v (command %v).  At argument %v, expected %v, got %v\n", command.List[0].File, command.List[0].Line, TreeToXsh(command), i+1, v, typeOf(args[i]))
+					XshInform("Node: %+v\n", args[i])
 				}
 			}
 		}
@@ -465,6 +466,7 @@ Given:
 		// It's a user-defined function
 		bod := CopyTree(fu.Body)
 		fparams := fu.Parameters
+		//FIXME: Need to handle user varargs here
 		if len(fparams.List) != len(args) {
 			XshErr(`Error %v,%v,%v: Mismatched function args in call to ->|%v|<-, expected %v, got %v
 		
