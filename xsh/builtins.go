@@ -12,6 +12,11 @@ import (
 	"github.com/donomii/goof"
 )
 
+//Set the type for a function.  The type format is []string{return type, arg0, arg1, arg2 ....}
+func SetType (s State, fname string, t []string) {
+	s.TypeSigs[fname] = t
+}
+
 func addBuiltinTypes(s State) {
 	s.TypeSigs["puts"] = []string{"void", "any", "..."}
 	s.TypeSigs["put"] = []string{"void", "any", "..."}
@@ -162,9 +167,10 @@ Create your own functions with the func command.
 
 Xsh supports lambda functions, although scope does not work like other lambda languages.  Lambda functions are created with the [| ] syntax. [x| + x 2] is a lambda function that adds 2 to the input.  func  adds a lambda to the global namespace.
 
-Xsh supports varags.  Adding ... to the end of a function definition allows it to take any number of arguments.  The arguments are passed as a list.  e.g.
+Xsh supports varags.  Adding ... to the end of a type definition allows varags.  The varags are passed as a list.
 
-	func joinArgs [separator pieces ...| join separator pieces ]
+	type joinArgs string string ... string 
+	func joinArgs [separator pieces| join separator pieces ]
 
 `
 
@@ -258,6 +264,16 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 		} else {
 			XshResponse(Help(S(args[0])))
 			return N(Help(S(args[0])))
+		}
+	case "type":
+		if len(args) == 0 {
+			XshResponse(Help("type"))
+			return N(Help("type"))
+		} else {
+			types,_ := ListToStrings(args)
+			//Move the last element of types to the front
+			types[0], types[len(types)-1] = types[len(types)-1], types[0]
+			SetType(s, f, types)
 		}
 	case "sleep":
 		if len(args) == 1 {

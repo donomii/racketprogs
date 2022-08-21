@@ -74,4 +74,5 @@ func test {description expected actual|
     }
 }
 
+type lines string list
 func lines {x| split x [LF]}
