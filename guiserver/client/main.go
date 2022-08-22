@@ -1,10 +1,11 @@
 package main
 
-//Make a gui layout module
+// Make a gui layout module
 
 import (
 	"fmt"
 	"image/color"
+	"math/rand"
 
 	"github.com/donomii/goof"
 	"github.com/go-p5/p5"
@@ -18,8 +19,13 @@ type Box struct {
 	SplitLayout string
 	SplitRatio  float64
 	Children    []*Box
-	Callback    func(string, int, int)
+	Callback    func(*Box, *Box, string, int, int)
 }
+
+var (
+	top   *Box
+	boxes map[string]*Box
+)
 
 func Add(b *Box, child *Box) {
 	b.Children = append(b.Children, child)
@@ -58,14 +64,16 @@ var testbox *Box = &Box{
 	SplitLayout: "horizontal",
 	SplitRatio:  0.5,
 	Children: []*Box{
-		&Box{
+		{
 			Id: "testbox_child1",
 		},
-		&Box{
+		{
 			Id: "testbox_child2",
 		},
 	},
 }
+
+var testlist []*Box
 
 func Render(b *Box, parent *Box, hoverX, hoverY int) []string {
 	hoverTarget := []string{}
@@ -120,17 +128,30 @@ func setup() {
 	p5.Background(color.Gray{Y: 220})
 }
 
-var lastPress bool
-var dragTarget string
-var clickTarget string
-var dragStartX, dragStartY int
+var (
+	lastPress              bool
+	dragTarget             string
+	clickTarget            string
+	dragStartX, dragStartY int
+)
+
+func RenderAll(x, y int) []string {
+	hoverTarget := []string{}
+	for _, b := range top.Children {
+		targets := Render(b, nil, x, y)
+		if len(targets) > 0 {
+			hoverTarget = targets
+		}
+	}
+	return hoverTarget
+}
 
 func draw() {
 	mouseX := int(p5.Event.Mouse.Position.X)
 	mouseY := int(p5.Event.Mouse.Position.Y)
 
-	hoverTarget := Render(testbox, nil, int(p5.Event.Mouse.Position.X), int(p5.Event.Mouse.Position.Y))
-	fmt.Println("Hovering over:", hoverTarget)
+	hoverTarget := RenderAll(int(p5.Event.Mouse.Position.X), int(p5.Event.Mouse.Position.Y))
+
 	event := ""
 	if !lastPress && p5.Event.Mouse.Pressed {
 		event = "press"
@@ -152,15 +173,33 @@ func draw() {
 		fmt.Printf("Released at %v,%v\n", p5.Event.Mouse.Position.X, p5.Event.Mouse.Position.Y)
 		if goof.AbsInt(mouseX-dragStartX) > 5 || goof.AbsInt(mouseY-dragStartY) > 5 {
 			fmt.Printf("Dragged from %v,%v to %v,%v\n", dragStartX, dragStartY, mouseX, mouseY)
-			box := Get(testbox, dragTarget)
-			if box != nil && box.Callback != nil {
-				box.Callback("drop", mouseX, mouseY)
+			if len(hoverTarget) > 0 {
+				ht := hoverTarget[0]
+				fmt.Println("Hovering over:", ht)
+
+				hoverTargetBox := boxes[ht]
+				dragTargetBox := boxes[dragTarget]
+				if hoverTargetBox != nil {
+					box := Get(hoverTargetBox, dragTarget)
+					if box != nil && box.Callback != nil {
+						box.Callback(dragTargetBox, hoverTargetBox, "drop", mouseX, mouseY)
+					}
+				}
 			}
+
 		} else {
 			fmt.Printf("Clicked at %v,%v\n", p5.Event.Mouse.Position.X, p5.Event.Mouse.Position.Y)
-			box := Get(testbox, clickTarget)
-			if box != nil && box.Callback != nil {
-				box.Callback("click", mouseX, mouseY)
+			if len(hoverTarget) > 0 {
+				ht := hoverTarget[0]
+				fmt.Println("Hovering over:", ht)
+
+				activeBox := boxes[ht]
+				if activeBox != nil {
+					box := Get(activeBox, clickTarget)
+					if box != nil && box.Callback != nil {
+						box.Callback(activeBox, nil, "click", mouseX, mouseY)
+					}
+				}
 			}
 		}
 		dragTarget = ""
@@ -168,18 +207,56 @@ func draw() {
 	default:
 		if dragTarget != "" {
 			fmt.Printf("Dragging %v to %v,%v\n", dragTarget, p5.Event.Mouse.Position.X, p5.Event.Mouse.Position.Y)
-			box := Get(testbox, dragTarget)
-			if box != nil {
-				box.X = int(p5.Event.Mouse.Position.X)
-				box.Y = int(p5.Event.Mouse.Position.Y)
+
+			dragBox := boxes[dragTarget]
+			if dragBox != nil {
+				// box := Get(dragBox, dragTarget)
+				// if box != nil {
+				dragBox.X = int(p5.Event.Mouse.Position.X)
+				dragBox.Y = int(p5.Event.Mouse.Position.Y)
+				//}
 			}
 
 		}
-
 	}
 }
 
 func main() {
+	testlist = []*Box{}
+	boxes = map[string]*Box{}
+	// Generate 20 random testboxes
+	for i := 0; i < 20; i++ {
+		b := &Box{
+			Id:   fmt.Sprintf("testbox_%v", i),
+			Text: fmt.Sprintf("Testbox %v", i),
+			X:    rand.Intn(400),
+			Y:    rand.Intn(400),
+			W:    100,
+			H:    100,
+			Callback: func(from, to *Box, event string, x, y int) {
+				fmt.Printf("%v at %v,%v from %v, to %v\n", event, x, y, from.Id, to.Id)
+			},
+		}
+		boxes[b.Id] = b
+
+		testlist = append(testlist, b)
+	}
+	// dump boxes
+	for k, v := range boxes {
+		fmt.Println(k, v)
+	}
+	top = &Box{
+		Text:        "TestWindow",
+		Type:        "top",
+		Id:          "test",
+		X:           0,
+		Y:           0,
+		W:           400,
+		H:           400,
+		SplitLayout: "",
+		SplitRatio:  0.5,
+		Children:    testlist,
+	}
 
 	p5.Run(setup, draw)
 }
