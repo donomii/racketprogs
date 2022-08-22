@@ -169,8 +169,11 @@ Xsh supports lambda functions, although scope does not work like other lambda la
 
 Xsh supports varags.  Adding ... to the end of a type definition allows varags.  The varags are passed as a list.
 
+
 	type joinArgs string string ... string 
-	func joinArgs [separator pieces| join separator pieces ]
+	func joinArgs { separator pieces ... | join  pieces separator }
+	puts [ joinArgs , 1 2 3 4 5 6]        
+	1,2,3,4,5,6
 
 `
 

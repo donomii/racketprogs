@@ -463,10 +463,30 @@ Given:
 	}
 	fu, ok := s.Functions[f]
 	if ok {
+		XshTrace("Calling function %v with args %v\n", f, TreeToXsh(autoparser.Node{List: args}))
 		// It's a user-defined function
 		bod := CopyTree(fu.Body)
 		fparams := fu.Parameters
 		//FIXME: Need to handle user varargs here
+		//Is the last element a ...?
+		if len(fparams.List) > 0 && S(fparams.List[len(fparams.List)-1]) == "..." {
+			// Yes, it's a varargs function
+			//Remove the ... from fparams
+			fparams.List = fparams.List[:len(fparams.List)-1]
+			//Collect all the extra arguments into a list
+			varArgs := []autoparser.Node{}
+			if len(fparams.List)-1 < len(args) {
+				varArgs = append(varArgs, args[len(fparams.List)-1:]...)
+				
+				//trim the same extra arguments from args
+				args = args[:len(fparams.List)-1]
+			}
+			n:=command
+			// Add the extra arguments list to the end of args
+			varargList := autoparser.Node{"","", varArgs, "{", n.Line, n.Column, n.ChrPos, n.File, n.ScopeBarrier}
+			args = append(args, varargList)
+		} 
+			// Check that the number of args is correct
 		if len(fparams.List) != len(args) {
 			XshErr(`Error %v,%v,%v: Mismatched function args in call to ->|%v|<-, expected %v, got %v
 		
@@ -475,9 +495,11 @@ Given:
 `, command.List[0].File, command.List[0].Line, command.List[0].Column, TreeToXsh(command), len(fparams.List), len(args), TreeToXsh(fparams), TreeToXsh(autoparser.Node{List: args}))
 			os.Exit(1)
 		}
+	
 		nbod := ReplaceArgs(args, fparams.List, bod)
 		drintf("Calling function %+v\n", TreeToXsh(nbod))
 		return blockReduce(s, nbod.List, parent, 0)
+	
 	} else {
 		// It is a builtin function or an external call
 		if f == "" {
