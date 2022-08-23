@@ -3,9 +3,12 @@ package main
 // Make a gui layout module
 
 import (
+	"io/ioutil"
+	"log"
+
 	"fmt"
 	"image/color"
-	"math/rand"
+	//"math/rand"
 
 	"github.com/donomii/goof"
 	"github.com/go-p5/p5"
@@ -130,16 +133,27 @@ func setup() {
 
 var (
 	lastPress              bool
-	dragTarget             string
+	dragItem			   string
 	clickTarget            string
 	dragStartX, dragStartY int
 )
+
+
+func MoveToEnd(id string, boxes []*Box) {
+	for i, b := range boxes {
+		if b.Id == id {
+			boxes = append(boxes[:i], boxes[i+1:]...)
+			boxes = append(boxes, b)
+			return
+		}
+	}
+}
 
 func RenderAll(x, y int) []string {
 	hoverTarget := []string{}
 	for _, b := range top.Children {
 		targets := Render(b, nil, x, y)
-		if len(targets) > 0 {
+		if len(targets) > 0  && targets[0] != dragItem {
 			hoverTarget = targets
 		}
 	}
@@ -164,10 +178,11 @@ func draw() {
 	case "press":
 		fmt.Printf("Pressed at %v,%v\n", p5.Event.Mouse.Position.X, p5.Event.Mouse.Position.Y)
 		if len(hoverTarget) > 0 {
-			dragTarget = hoverTarget[0]
+			dragItem = hoverTarget[0]
 			clickTarget = hoverTarget[len(hoverTarget)-1]
 			dragStartX = int(p5.Event.Mouse.Position.X)
 			dragStartY = int(p5.Event.Mouse.Position.Y)
+			MoveToEnd(dragItem, top.Children)
 		}
 	case "release":
 		fmt.Printf("Released at %v,%v\n", p5.Event.Mouse.Position.X, p5.Event.Mouse.Position.Y)
@@ -175,14 +190,15 @@ func draw() {
 			fmt.Printf("Dragged from %v,%v to %v,%v\n", dragStartX, dragStartY, mouseX, mouseY)
 			if len(hoverTarget) > 0 {
 				ht := hoverTarget[0]
-				fmt.Println("Hovering over:", ht)
+				fmt.Println("Dropping over:", ht)
 
 				hoverTargetBox := boxes[ht]
-				dragTargetBox := boxes[dragTarget]
+				dragItemBox := boxes[dragItem]
 				if hoverTargetBox != nil {
-					box := Get(hoverTargetBox, dragTarget)
+					box := Get(hoverTargetBox, ht)
+					fmt.Printf("Found box: %+v\n", box)
 					if box != nil && box.Callback != nil {
-						box.Callback(dragTargetBox, hoverTargetBox, "drop", mouseX, mouseY)
+						box.Callback(dragItemBox, hoverTargetBox, "drop", mouseX, mouseY)
 					}
 				}
 			}
@@ -202,15 +218,17 @@ func draw() {
 				}
 			}
 		}
-		dragTarget = ""
+		dragItem = ""
 		clickTarget = ""
 	default:
-		if dragTarget != "" {
-			fmt.Printf("Dragging %v to %v,%v\n", dragTarget, p5.Event.Mouse.Position.X, p5.Event.Mouse.Position.Y)
-
-			dragBox := boxes[dragTarget]
+		if dragItem != "" {
+			fmt.Printf("Dragging %v to %v,%v\n", dragItem, p5.Event.Mouse.Position.X, p5.Event.Mouse.Position.Y)
+			if len(hoverTarget) > 0 {
+				fmt.Println("Hovering over:", hoverTarget[0])
+			}
+			dragBox := boxes[dragItem]
 			if dragBox != nil {
-				// box := Get(dragBox, dragTarget)
+				// box := Get(dragBox, dragItem)
 				// if box != nil {
 				dragBox.X = int(p5.Event.Mouse.Position.X)
 				dragBox.Y = int(p5.Event.Mouse.Position.Y)
@@ -224,23 +242,21 @@ func draw() {
 func main() {
 	testlist = []*Box{}
 	boxes = map[string]*Box{}
-	// Generate 20 random testboxes
-	for i := 0; i < 20; i++ {
-		b := &Box{
-			Id:   fmt.Sprintf("testbox_%v", i),
-			Text: fmt.Sprintf("Testbox %v", i),
-			X:    rand.Intn(400),
-			Y:    rand.Intn(400),
-			W:    100,
-			H:    100,
-			Callback: func(from, to *Box, event string, x, y int) {
-				fmt.Printf("%v at %v,%v from %v, to %v\n", event, x, y, from.Id, to.Id)
-			},
-		}
-		boxes[b.Id] = b
-
-		testlist = append(testlist, b)
+	//Load entire file main.go into var
+	data, err := ioutil.ReadFile("main.go")
+	if err != nil {
+		log.Fatal(err)
 	}
+	//Convert to string
+	source := string(data)
+	//Parse source into AST
+	ast:=ParseGo(source, "main.go")
+	//Print AST
+	BoxTree(ast, 0, true)
+
+
+	// Generate 20 random testboxes
+
 	// dump boxes
 	for k, v := range boxes {
 		fmt.Println(k, v)
@@ -259,4 +275,73 @@ func main() {
 	}
 
 	p5.Run(setup, draw)
+}
+
+var id int
+var cursorX, cursorY int = 0,50
+
+func AddBox(text string) {
+	b := &Box{
+		Id:   fmt.Sprintf("testbox_%v", id),
+		Text: text,
+		X:    cursorX,
+		Y:    cursorY,
+		W:    100,
+		H:    100,
+		Callback: func(from, to *Box, event string, x, y int) {
+			fmt.Printf("%v at %v,%v from %v, to %v\n", event, x, y, from.Id, to.Id)
+		},
+	}
+	id=id+1
+	cursorX=cursorX+100
+	boxes[b.Id] = b
+
+	testlist = append(testlist, b)
+}
+
+
+
+// lalala))) ululu
+func BoxTree(t []Node, indent int, newlines bool) {
+	for _, v := range t {
+		if v.List == nil {
+			if v.Str == "" {
+				// fmt.Print(".")
+				AddBox(v.Raw+ " ")
+			} else {
+				AddBox("『"+ v.Str+ "』")
+			}
+		} else {
+			if len(v.List) == 0 && (v.Note == "\n" || v.Note == "artifact") {
+				cursorY = cursorY + 100
+				cursorX = indent*100
+				continue
+			}
+			// If the current expression contains 3 or more sub expressions, break it across lines
+			if containsLists(v.List, 3) {
+				if countTree(v.List) > 50 {
+
+					cursorY = cursorY + 100
+				cursorX = (indent+1)*100
+				}
+				AddBox("(")
+
+				BoxTree(v.List, indent+2, true)
+				cursorY = cursorY + 100
+				cursorX = indent*100
+				AddBox(")")
+			} else {
+				AddBox("(")
+				// fmt.Print(v.Note, "current length: ",len(v.List))
+				BoxTree(v.List, indent+2, false)
+				AddBox(")")
+
+			}
+		}
+		if newlines {
+			cursorY = cursorY + 100
+			cursorX = indent*100
+
+		}
+	}
 }
