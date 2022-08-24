@@ -25,10 +25,12 @@ pipe = pipe.to(device)
 
 
 
-prompt = "a photo of the planet Earth in the shape of a pair of testicles"
+#prompt = "a photo of a giant scary koala striding through a scary moonlit forest"
+#prompt = "a photo of Margaret Thatcher naked on a cold day"
+prompt = "a photo of a fanged koala leaping out of a tree and attacking a pedestrian in Australia"
 #with autocast(device):
 #Loop from 0 to seed
 for i in range(seed):
     generator = torch.Generator("cpu").manual_seed(i)
     image = pipe(prompt, num_inference_steps=steps, generator=generator)["sample"][0]  
-    image.save("output_"+str(i)+".png")
+    image.save(prompt+"_"+str(i)+".png")
