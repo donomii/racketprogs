@@ -161,9 +161,30 @@ func RenderAll(x, y int) []string {
 	return hoverTarget
 }
 
+var scrollX, scrollY, lastScrollX, lastScrollY float64
+
 func draw() {
 	mouseX := int(p5.Event.Mouse.Position.X)
 	mouseY := int(p5.Event.Mouse.Position.Y)
+
+	scrollX = p5.Event.Mouse.Scroll.X - lastScrollX
+	scrollY = p5.Event.Mouse.Scroll.Y - lastScrollY
+	lastScrollX = p5.Event.Mouse.Scroll.X
+	lastScrollY = p5.Event.Mouse.Scroll.Y
+
+	fmt.Printf("mscrx mscry %v,%v scrollx scrolly %v %v\n", p5.Event.Mouse.Scroll.X, p5.Event.Mouse.Scroll.Y, scrollX, scrollY)
+	/*if scrollY > 1.0 {
+		scrollY = 1.0
+	}
+	if scrollY < -1.0 {
+		scrollY = -1.0
+	}*/
+
+	if p5.Event.Mouse.Scroll.Y >= 0 {
+		scale = 1.0 + p5.Event.Mouse.Scroll.Y/10.0
+	} else {
+		scale = 1.0 / 10.0 / goof.AbsFloat64(p5.Event.Mouse.Scroll.Y)
+	}
 
 	hoverTarget := RenderAll(int(p5.Event.Mouse.Position.X), int(p5.Event.Mouse.Position.Y))
 
