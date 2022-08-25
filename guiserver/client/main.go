@@ -28,6 +28,7 @@ type Box struct {
 var (
 	top   *Box
 	boxes map[string]*Box
+	scale float64 = 0.5
 )
 
 func Add(b *Box, child *Box) {
@@ -82,9 +83,9 @@ func Render(b *Box, parent *Box, hoverX, hoverY, offsetX, offsetY int) []string 
 	hoverTarget := []string{}
 
 	ch := b.Children
-	p5.TextSize(18)
-	p5.Text(b.Text, float64(b.X+offsetX), float64(b.Y))
-	if b.Id != "" && hoverX >= b.X && hoverX <= b.X+b.W && hoverY >= b.Y && hoverY <= b.Y+b.H {
+	p5.TextSize(scale * 18)
+	p5.Text(b.Text, scale*float64(b.X+offsetX), scale*float64(b.Y+offsetY))
+	if b.Id != "" && hoverX >= int(scale*float64(b.X+offsetX)) && hoverX <= int(scale*float64(b.X+offsetX+b.W)) && hoverY >= int(scale*float64(b.Y+offsetY)) && hoverY <= int(scale*float64(b.Y+offsetY+b.H)) {
 		hoverTarget = []string{b.Id}
 	}
 
@@ -92,20 +93,20 @@ func Render(b *Box, parent *Box, hoverX, hoverY, offsetX, offsetY int) []string 
 		switch b.SplitLayout {
 		case "horizontal":
 			ch[0].X = b.X + offsetX
-			ch[0].Y = b.Y
+			ch[0].Y = b.Y + offsetY
 			ch[0].W = int(float64(b.W) * b.SplitRatio)
 			ch[0].H = b.H
 			ch[1].X = ch[0].X + offsetX + ch[0].W
-			ch[1].Y = b.Y
+			ch[1].Y = b.Y + offsetY
 			ch[1].W = b.W - ch[0].W
 			ch[1].H = b.H
 		case "vertical":
 			ch[0].X = b.X + offsetX
-			ch[0].Y = b.Y
+			ch[0].Y = b.Y + offsetY
 			ch[0].W = b.W
 			ch[0].H = int(float64(b.H) * b.SplitRatio)
 			ch[1].X = b.X + offsetX
-			ch[1].Y = ch[0].Y + ch[0].H
+			ch[1].Y = ch[0].Y + offsetY + ch[0].H
 			ch[1].W = b.W
 			ch[1].H = b.H - ch[0].H
 		default:
@@ -116,9 +117,9 @@ func Render(b *Box, parent *Box, hoverX, hoverY, offsetX, offsetY int) []string 
 
 	p5.StrokeWidth(2)
 	p5.Fill(color.RGBA{B: 255, A: 208})
-	p5.Quad(float64(b.X+offsetX), float64(b.Y), float64(b.X+b.W), float64(b.Y), float64(b.X+offsetX+b.W), float64(b.Y+b.H), float64(b.X+offsetX), float64(b.Y+b.H))
+	p5.Quad(scale*float64(b.X+offsetX), scale*float64(b.Y+offsetY), scale*float64(b.X+offsetX+b.W), scale*float64(b.Y+offsetY), scale*float64(b.X+offsetX+b.W), scale*float64(b.Y+offsetY+b.H), scale*float64(b.X+offsetX), scale*float64(b.Y+offsetY+b.H))
 	for _, child := range b.Children {
-		res := Render(child, b, hoverX, hoverY, b.X+offsetX, offsetY)
+		res := Render(child, b, hoverX, hoverY, b.X+offsetX, b.Y+offsetY)
 
 		hoverTarget = append(hoverTarget, res...)
 
@@ -238,8 +239,8 @@ func draw() {
 			if dragBox != nil {
 				// box := Get(dragBox, dragItem)
 				// if box != nil {
-				dragBox.X = ItemPosStartX + int(p5.Event.Mouse.Position.X) - dragStartX
-				dragBox.Y = ItemPosStartY + int(p5.Event.Mouse.Position.Y) - dragStartY
+				dragBox.X = ItemPosStartX + int(float64(int(p5.Event.Mouse.Position.X)-dragStartX)/scale)
+				dragBox.Y = ItemPosStartY + int(float64(int(p5.Event.Mouse.Position.Y)-dragStartY)/scale)
 				//}
 			}
 
