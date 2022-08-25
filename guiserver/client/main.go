@@ -4,14 +4,15 @@ package main
 
 import (
 	"fmt"
-	"image/color"
 	"io/ioutil"
 	"log"
+	"runtime"
 
 	//"math/rand"
 
 	"github.com/donomii/goof"
-	"github.com/go-p5/p5"
+	"github.com/veandco/go-sdl2/sdl"
+	"github.com/veandco/go-sdl2/ttf"
 )
 
 type Box struct {
@@ -29,6 +30,19 @@ var (
 	top   *Box
 	boxes map[string]*Box
 	scale float64 = 0.5
+)
+
+var (
+	surface  *sdl.Surface
+	renderer sdl.Renderer
+	window   sdl.Window
+	font     *ttf.Font
+	text     *sdl.Surface
+)
+
+const (
+	fontPath = "test.ttf"
+	fontSize = 12
 )
 
 func Add(b *Box, child *Box) {
@@ -77,14 +91,49 @@ var testbox *Box = &Box{
 	},
 }
 
-var testlist []*Box
+type txtcall struct {
+	X, Y float64
+	Str  string
+	Size float64
+}
+
+var (
+	testlist []*Box
+	TextList []txtcall
+)
+
+func Text(x, y float64, str string, size float64) {
+	TextList = append(TextList, txtcall{x, y, str, size})
+}
+
+func drawText(x, y float64, str string, size float64) {
+	// Load the font for our text
+	var err error
+	//if font, err = ttf.OpenFont("test.ttf", int(size)); err != nil {
+	//	return
+	//}
+	//defer font.Close()
+	// Create a red text with the font
+	if text, err = font.RenderUTF8Blended(str, sdl.Color{R: 0, G: 255, B: 255, A: 255}); err != nil {
+		return
+	}
+	defer text.Free()
+
+	// Draw the text around the center of the window
+	if err = text.Blit(nil, surface, &sdl.Rect{X: int32(x), Y: int32(y), W: 0, H: 0}); err != nil {
+		return
+	}
+
+	// Update the window surface with what we have drawn
+	// window.UpdateSurface()
+}
 
 func Render(b *Box, parent *Box, hoverX, hoverY, offsetX, offsetY int) []string {
 	hoverTarget := []string{}
 
 	ch := b.Children
-	p5.TextSize(scale * 18)
-	p5.Text(b.Text, scale*float64(b.X+offsetX), scale*float64(b.Y+offsetY))
+	Text(scale*float64(b.X+offsetX), scale*float64(b.Y+offsetY), b.Text, scale*18)
+
 	if b.Id != "" && hoverX >= int(scale*float64(b.X+offsetX)) && hoverX <= int(scale*float64(b.X+offsetX+b.W)) && hoverY >= int(scale*float64(b.Y+offsetY)) && hoverY <= int(scale*float64(b.Y+offsetY+b.H)) {
 		hoverTarget = []string{b.Id}
 	}
@@ -115,9 +164,7 @@ func Render(b *Box, parent *Box, hoverX, hoverY, offsetX, offsetY int) []string 
 		}
 	}
 
-	p5.StrokeWidth(2)
-	p5.Fill(color.RGBA{B: 255, A: 208})
-	p5.Quad(scale*float64(b.X+offsetX), scale*float64(b.Y+offsetY), scale*float64(b.X+offsetX+b.W), scale*float64(b.Y+offsetY), scale*float64(b.X+offsetX+b.W), scale*float64(b.Y+offsetY+b.H), scale*float64(b.X+offsetX), scale*float64(b.Y+offsetY+b.H))
+	drawBox(scale*float64(b.X+offsetX), scale*float64(b.Y+offsetY), scale*float64(b.W), scale*float64(b.H), 0x99990000)
 	for _, child := range b.Children {
 		res := Render(child, b, hoverX, hoverY, b.X+offsetX, b.Y+offsetY)
 
@@ -125,11 +172,6 @@ func Render(b *Box, parent *Box, hoverX, hoverY, offsetX, offsetY int) []string 
 
 	}
 	return hoverTarget
-}
-
-func setup() {
-	p5.Canvas(400, 400)
-	p5.Background(color.Gray{Y: 220})
 }
 
 var (
@@ -161,18 +203,8 @@ func RenderAll(x, y int) []string {
 	return hoverTarget
 }
 
-var scrollX, scrollY, lastScrollX, lastScrollY float64
-
-func draw() {
-	mouseX := int(p5.Event.Mouse.Position.X)
-	mouseY := int(p5.Event.Mouse.Position.Y)
-
-	scrollX = p5.Event.Mouse.Scroll.X - lastScrollX
-	scrollY = p5.Event.Mouse.Scroll.Y - lastScrollY
-	lastScrollX = p5.Event.Mouse.Scroll.X
-	lastScrollY = p5.Event.Mouse.Scroll.Y
-
-	fmt.Printf("mscrx mscry %v,%v scrollx scrolly %v %v\n", p5.Event.Mouse.Scroll.X, p5.Event.Mouse.Scroll.Y, scrollX, scrollY)
+func draw(mouseX, mouseY int, action string) {
+	fmt.Printf("mscrx mscry %v,%v %v\n", mouseX, mouseY, action)
 	/*if scrollY > 1.0 {
 		scrollY = 1.0
 	}
@@ -180,27 +212,16 @@ func draw() {
 		scrollY = -1.0
 	}*/
 
-	if p5.Event.Mouse.Scroll.Y >= 0 {
-		scale = 1.0 + p5.Event.Mouse.Scroll.Y/10.0
-	} else {
-		scale = 1.0 / 10.0 / goof.AbsFloat64(p5.Event.Mouse.Scroll.Y)
+	hoverTarget := RenderAll(mouseX, mouseY)
+	if len(hoverTarget) > 0 {
+		fmt.Printf("hover %v\n", hoverTarget[0])
 	}
 
-	hoverTarget := RenderAll(int(p5.Event.Mouse.Position.X), int(p5.Event.Mouse.Position.Y))
-
-	event := ""
-	if !lastPress && p5.Event.Mouse.Pressed {
-		event = "press"
-		lastPress = true
-	} else if lastPress && !p5.Event.Mouse.Pressed {
-		event = "release"
-		lastPress = false
-	}
-	switch event {
+	switch action {
 	case "press":
-		fmt.Printf("Pressed at %v,%v\n", p5.Event.Mouse.Position.X, p5.Event.Mouse.Position.Y)
-		dragStartX = int(p5.Event.Mouse.Position.X)
-		dragStartY = int(p5.Event.Mouse.Position.Y)
+		fmt.Printf("Pressed at %v,%v\n", mouseX, mouseY)
+		dragStartX = int(mouseX)
+		dragStartY = int(mouseY)
 
 		dragItem = top.Id
 		if len(hoverTarget) > 0 {
@@ -213,7 +234,7 @@ func draw() {
 		ItemPosStartY = dragItemBox.Y
 
 	case "release":
-		fmt.Printf("Released at %v,%v\n", p5.Event.Mouse.Position.X, p5.Event.Mouse.Position.Y)
+		fmt.Printf("Released at %v,%v\n", mouseX, mouseY)
 		if goof.AbsInt(mouseX-dragStartX) > 5 || goof.AbsInt(mouseY-dragStartY) > 5 {
 			fmt.Printf("Dragged from %v,%v to %v,%v\n", dragStartX, dragStartY, mouseX, mouseY)
 			if len(hoverTarget) > 0 {
@@ -234,7 +255,7 @@ func draw() {
 			}
 
 		} else {
-			fmt.Printf("Clicked at %v,%v\n", p5.Event.Mouse.Position.X, p5.Event.Mouse.Position.Y)
+			fmt.Printf("Clicked at %v,%v\n", mouseX, mouseY)
 			if len(hoverTarget) > 0 {
 				ht := hoverTarget[0]
 				fmt.Println("Hovering over:", ht)
@@ -250,9 +271,12 @@ func draw() {
 		}
 		dragItem = ""
 		clickTarget = ""
+	case "wheel":
+		fmt.Printf("Wheel at %v,%v\n", mouseX, mouseY)
+		scale = scale + float64(mouseY)/100.0
 	default:
 		if dragItem != "" {
-			fmt.Printf("Dragging %v to %v,%v\n", dragItem, p5.Event.Mouse.Position.X, p5.Event.Mouse.Position.Y)
+			fmt.Printf("Dragging %v to %v,%v\n", dragItem, mouseX, mouseY)
 			if len(hoverTarget) > 0 {
 				fmt.Println("Hovering over:", hoverTarget[0])
 			}
@@ -260,13 +284,22 @@ func draw() {
 			if dragBox != nil {
 				// box := Get(dragBox, dragItem)
 				// if box != nil {
-				dragBox.X = ItemPosStartX + int(float64(int(p5.Event.Mouse.Position.X)-dragStartX)/scale)
-				dragBox.Y = ItemPosStartY + int(float64(int(p5.Event.Mouse.Position.Y)-dragStartY)/scale)
+				dragBox.X = ItemPosStartX + int(float64(int(mouseX)-dragStartX)/scale)
+				dragBox.Y = ItemPosStartY + int(float64(int(mouseY)-dragStartY)/scale)
 				//}
 			}
 
 		}
 	}
+}
+
+func drawBox(x, y, w, h float64, color uint32) {
+	rect := sdl.Rect{int32(x), int32(y), int32(w), int32(h)}
+	surface.FillRect(&rect, color)
+}
+
+func init() {
+	runtime.LockOSThread()
 }
 
 func main() {
@@ -305,7 +338,91 @@ func main() {
 	}
 	boxes[top.Id] = top
 
-	p5.Run(setup, draw)
+	if err = ttf.Init(); err != nil {
+		return
+	}
+	defer ttf.Quit()
+
+	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
+		panic(err)
+	}
+	defer sdl.Quit()
+
+	window, err := sdl.CreateWindow("test", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
+		800, 600, sdl.WINDOW_SHOWN)
+	if err != nil {
+		panic(err)
+	}
+	defer window.Destroy()
+
+	surface, err = window.GetSurface()
+	if err != nil {
+		panic(err)
+	}
+
+	// Load the font for our text
+	if font, err = ttf.OpenFont(fontPath, fontSize); err != nil {
+		return
+	}
+	defer font.Close()
+
+	surface.FillRect(nil, 0)
+	TextList = []txtcall{}
+	running := true
+	var mouseX, mouseY int = 0, 0
+	var action string
+	var updateNeeded bool = true
+	for running {
+		if updateNeeded {
+			surface.FillRect(nil, 0)
+			draw(mouseX, mouseY, action)
+			for _, v := range TextList {
+				drawText(v.X, v.Y, v.Str, v.Size)
+			}
+			TextList = []txtcall{}
+			updateNeeded = false
+		}
+		action = ""
+
+		// drawBox(0, 0, 200, 200, 0xffff0000)
+		// rect := sdl.Rect{0, 0, 200, 200}
+		// surface.FillRect(&rect, 0xffff0000)
+		window.UpdateSurface()
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			updateNeeded = true
+			switch t := event.(type) {
+			case *sdl.QuitEvent:
+				println("Quit")
+				running = false
+				break
+			case *sdl.MouseMotionEvent:
+				mouseX = int(t.X)
+				mouseY = int(t.Y)
+
+				// fmt.Println("Mouse", t.Which, "moved by", t.XRel, t.YRel, "at", t.X, t.Y)
+			case *sdl.MouseButtonEvent:
+				mouseX = int(t.X)
+				mouseY = int(t.Y)
+
+				if t.State == sdl.PRESSED {
+					action = "press"
+					// fmt.Println("Mouse", t.Which, "button", t.Button, "pressed at", t.X, t.Y)
+				} else {
+					action = "release"
+					// fmt.Println("Mouse", t.Which, "button", t.Button, "released at", t.X, t.Y)
+				}
+			case *sdl.MouseWheelEvent:
+				mouseX = int(t.X)
+				mouseY = int(t.Y)
+				action = "wheel"
+				if t.X != 0 {
+					// fmt.Println("Mouse", t.Which, "wheel scrolled horizontally by", t.X)
+				} else {
+					// fmt.Println("Mouse", t.Which, "wheel scrolled vertically by", t.Y)
+				}
+			}
+		}
+	}
 }
 
 var (
