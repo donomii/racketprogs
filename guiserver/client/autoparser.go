@@ -8,6 +8,7 @@ import (
 	"unicode"
 )
 
+// Warning, don't edit this, edit original
 type Node struct {
 	Raw          string
 	Str          string

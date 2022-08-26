@@ -7,24 +7,17 @@ import (
 	"io/ioutil"
 	"log"
 	"runtime"
+	"runtime/debug"
 
 	//"math/rand"
 
 	"github.com/donomii/goof"
-	"github.com/veandco/go-sdl2/sdl"
-	"github.com/veandco/go-sdl2/ttf"
 )
 
-type Box struct {
-	Text        string
-	Type        string
-	Id          string
-	X, Y, W, H  int
-	SplitLayout string
-	SplitRatio  float64
-	Children    []*Box
-	Callback    func(*Box, *Box, string, int, int)
-}
+var (
+	currentEditor  *GlobalConfig
+	currentEditBox *Box
+)
 
 var (
 	top   *Box
@@ -32,64 +25,10 @@ var (
 	scale float64 = 0.5
 )
 
-var (
-	surface  *sdl.Surface
-	renderer sdl.Renderer
-	window   sdl.Window
-	font     *ttf.Font
-	text     *sdl.Surface
-)
-
 const (
 	fontPath = "test.ttf"
 	fontSize = 12
 )
-
-func Add(b *Box, child *Box) {
-	b.Children = append(b.Children, child)
-}
-
-func Remove(b *Box, id string) {
-	for i, child := range b.Children {
-		if child.Id == id {
-			b.Children = append(b.Children[:i], b.Children[i+1:]...)
-			return
-		}
-	}
-}
-
-func Get(b *Box, id string) *Box {
-	if b.Id == id {
-		return b
-	}
-	for _, child := range b.Children {
-		res := Get(child, id)
-		if res != nil {
-			return res
-		}
-	}
-	return nil
-}
-
-var testbox *Box = &Box{
-	Text:        "TestWindow",
-	Type:        "window",
-	Id:          "testbox",
-	X:           50,
-	Y:           50,
-	W:           300,
-	H:           300,
-	SplitLayout: "horizontal",
-	SplitRatio:  0.5,
-	Children: []*Box{
-		{
-			Id: "testbox_child1",
-		},
-		{
-			Id: "testbox_child2",
-		},
-	},
-}
 
 type txtcall struct {
 	X, Y float64
@@ -97,45 +36,22 @@ type txtcall struct {
 	Size float64
 }
 
-var (
-	testlist []*Box
-	TextList []txtcall
-)
+var TextList []txtcall
 
+// Make list of text to draw, defer drawing until box layer is finished
 func Text(x, y float64, str string, size float64) {
 	TextList = append(TextList, txtcall{x, y, str, size})
-}
-
-func drawText(x, y float64, str string, size float64) {
-	// Load the font for our text
-	var err error
-	//if font, err = ttf.OpenFont("test.ttf", int(size)); err != nil {
-	//	return
-	//}
-	//defer font.Close()
-	// Create a red text with the font
-	if text, err = font.RenderUTF8Blended(str, sdl.Color{R: 0, G: 255, B: 255, A: 255}); err != nil {
-		return
-	}
-	defer text.Free()
-
-	// Draw the text around the center of the window
-	if err = text.Blit(nil, surface, &sdl.Rect{X: int32(x), Y: int32(y), W: 0, H: 0}); err != nil {
-		return
-	}
-
-	// Update the window surface with what we have drawn
-	// window.UpdateSurface()
 }
 
 func Render(b *Box, parent *Box, hoverX, hoverY, offsetX, offsetY int) []string {
 	hoverTarget := []string{}
 
 	ch := b.Children
-	Text(scale*float64(b.X+offsetX), scale*float64(b.Y+offsetY), b.Text, scale*18)
 
 	if b.Id != "" && hoverX >= int(scale*float64(b.X+offsetX)) && hoverX <= int(scale*float64(b.X+offsetX+b.W)) && hoverY >= int(scale*float64(b.Y+offsetY)) && hoverY <= int(scale*float64(b.Y+offsetY+b.H)) {
-		hoverTarget = []string{b.Id}
+		if b.Id != dragItem {
+			hoverTarget = []string{b.Id}
+		}
 	}
 
 	if ch != nil && len(ch) > 0 {
@@ -165,6 +81,7 @@ func Render(b *Box, parent *Box, hoverX, hoverY, offsetX, offsetY int) []string 
 	}
 
 	drawBox(scale*float64(b.X+offsetX), scale*float64(b.Y+offsetY), scale*float64(b.W), scale*float64(b.H), 0x99990000)
+	drawText(scale*float64(b.X+offsetX), scale*float64(b.Y+offsetY), b.Text, scale*18)
 	for _, child := range b.Children {
 		res := Render(child, b, hoverX, hoverY, b.X+offsetX, b.Y+offsetY)
 
@@ -182,16 +99,6 @@ var (
 	ItemPosStartX, ItemPosStartY int
 )
 
-func MoveToEnd(id string, boxes []*Box) {
-	for i, b := range boxes {
-		if b.Id == id {
-			boxes = append(boxes[:i], boxes[i+1:]...)
-			boxes = append(boxes, b)
-			return
-		}
-	}
-}
-
 func RenderAll(x, y int) []string {
 	hoverTarget := []string{}
 	for _, b := range top.Children {
@@ -204,7 +111,7 @@ func RenderAll(x, y int) []string {
 }
 
 func draw(mouseX, mouseY int, action string) {
-	fmt.Printf("mscrx mscry %v,%v %v\n", mouseX, mouseY, action)
+	//fmt.Printf("mscrx mscry %v,%v %v\n", mouseX, mouseY, action)
 	/*if scrollY > 1.0 {
 		scrollY = 1.0
 	}
@@ -227,25 +134,29 @@ func draw(mouseX, mouseY int, action string) {
 		if len(hoverTarget) > 0 {
 			dragItem = hoverTarget[0]
 			clickTarget = hoverTarget[len(hoverTarget)-1]
-			MoveToEnd(dragItem, top.Children)
+			MoveToEnd(dragItem, top.DrawOrderList)
 		}
 		dragItemBox := boxes[dragItem]
 		ItemPosStartX = dragItemBox.X
 		ItemPosStartY = dragItemBox.Y
 
 	case "release":
-		fmt.Printf("Released at %v,%v\n", mouseX, mouseY)
+		fmt.Printf("Released at %v,%v\n", mouseX, mouseY, hoverTarget)
+		// If the mouse has moved the minimum distance to not be a click
 		if goof.AbsInt(mouseX-dragStartX) > 5 || goof.AbsInt(mouseY-dragStartY) > 5 {
 			fmt.Printf("Dragged from %v,%v to %v,%v\n", dragStartX, dragStartY, mouseX, mouseY)
+			// if it released over a box
 			if len(hoverTarget) > 0 {
 				ht := hoverTarget[0]
 				fmt.Println("Dropping over:", ht)
 
+				// Not released over the background
 				if dragItem != top.Id {
 					hoverTargetBox := boxes[ht]
 					dragItemBox := boxes[dragItem]
+					// If we were able to find the box we are dropping onto
 					if hoverTargetBox != nil {
-						box := Get(hoverTargetBox, ht)
+						box := SearchChildTrees(hoverTargetBox, ht)
 						fmt.Printf("Found box: %+v\n", box)
 						if box != nil && box.Callback != nil {
 							box.Callback(dragItemBox, hoverTargetBox, "drop", mouseX, mouseY)
@@ -255,14 +166,28 @@ func draw(mouseX, mouseY int, action string) {
 			}
 
 		} else {
-			fmt.Printf("Clicked at %v,%v\n", mouseX, mouseY)
+			// It's a click
+			fmt.Printf("Clicked at %v,%v %v\n", mouseX, mouseY, hoverTarget)
+			if dragItem != "" {
+				dragItemBox := boxes[dragItem]
+				if dragItemBox != nil {
+
+					// Start editing ht
+					currentEditor = NewEditor()
+					currentEditBox = dragItemBox
+					ActiveBufferInsert(currentEditor, currentEditBox.Text)
+					fmt.Printf("Now editing %v\n", dragItem)
+
+				}
+			}
 			if len(hoverTarget) > 0 {
 				ht := hoverTarget[0]
 				fmt.Println("Hovering over:", ht)
 
 				activeBox := boxes[ht]
 				if activeBox != nil {
-					box := Get(activeBox, clickTarget)
+
+					box := SearchChildTrees(activeBox, clickTarget)
 					if box != nil && box.Callback != nil {
 						box.Callback(activeBox, nil, "click", mouseX, mouseY)
 					}
@@ -293,17 +218,15 @@ func draw(mouseX, mouseY int, action string) {
 	}
 }
 
-func drawBox(x, y, w, h float64, color uint32) {
-	rect := sdl.Rect{int32(x), int32(y), int32(w), int32(h)}
-	surface.FillRect(&rect, color)
-}
-
 func init() {
 	runtime.LockOSThread()
+	fmt.Println("Locked to main thread")
+	debug.SetGCPercent(-1)
+	InitGraphics()
+	currentEditor = NewEditor()
 }
 
 func main() {
-	testlist = []*Box{}
 	boxes = map[string]*Box{}
 
 	// Load entire file main.go into var
@@ -316,7 +239,6 @@ func main() {
 	// Parse source into AST
 	ast := ParseGo(source, "main.go")
 	// Print AST
-	BoxTree(ast, 0, true)
 
 	// Generate 20 random testboxes
 
@@ -334,95 +256,12 @@ func main() {
 		H:           400,
 		SplitLayout: "",
 		SplitRatio:  0.5,
-		Children:    testlist,
 	}
+	top.AstNode = Node{List: ast}
 	boxes[top.Id] = top
+	BoxTree(top, ast, 0, true)
 
-	if err = ttf.Init(); err != nil {
-		return
-	}
-	defer ttf.Quit()
-
-	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
-		panic(err)
-	}
-	defer sdl.Quit()
-
-	window, err := sdl.CreateWindow("test", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
-		800, 600, sdl.WINDOW_SHOWN)
-	if err != nil {
-		panic(err)
-	}
-	defer window.Destroy()
-
-	surface, err = window.GetSurface()
-	if err != nil {
-		panic(err)
-	}
-
-	// Load the font for our text
-	if font, err = ttf.OpenFont(fontPath, fontSize); err != nil {
-		return
-	}
-	defer font.Close()
-
-	surface.FillRect(nil, 0)
-	TextList = []txtcall{}
-	running := true
-	var mouseX, mouseY int = 0, 0
-	var action string
-	var updateNeeded bool = true
-	for running {
-		if updateNeeded {
-			surface.FillRect(nil, 0)
-			draw(mouseX, mouseY, action)
-			for _, v := range TextList {
-				drawText(v.X, v.Y, v.Str, v.Size)
-			}
-			TextList = []txtcall{}
-			updateNeeded = false
-		}
-		action = ""
-
-		// drawBox(0, 0, 200, 200, 0xffff0000)
-		// rect := sdl.Rect{0, 0, 200, 200}
-		// surface.FillRect(&rect, 0xffff0000)
-		window.UpdateSurface()
-		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			updateNeeded = true
-			switch t := event.(type) {
-			case *sdl.QuitEvent:
-				println("Quit")
-				running = false
-				break
-			case *sdl.MouseMotionEvent:
-				mouseX = int(t.X)
-				mouseY = int(t.Y)
-
-				// fmt.Println("Mouse", t.Which, "moved by", t.XRel, t.YRel, "at", t.X, t.Y)
-			case *sdl.MouseButtonEvent:
-				mouseX = int(t.X)
-				mouseY = int(t.Y)
-
-				if t.State == sdl.PRESSED {
-					action = "press"
-					// fmt.Println("Mouse", t.Which, "button", t.Button, "pressed at", t.X, t.Y)
-				} else {
-					action = "release"
-					// fmt.Println("Mouse", t.Which, "button", t.Button, "released at", t.X, t.Y)
-				}
-			case *sdl.MouseWheelEvent:
-				mouseX = int(t.X)
-				mouseY = int(t.Y)
-				action = "wheel"
-				if t.X != 0 {
-					// fmt.Println("Mouse", t.Which, "wheel scrolled horizontally by", t.X)
-				} else {
-					// fmt.Println("Mouse", t.Which, "wheel scrolled vertically by", t.Y)
-				}
-			}
-		}
-	}
+	MainGraphicsLoop()
 }
 
 var (
@@ -430,66 +269,28 @@ var (
 	cursorX, cursorY int = 0, 50
 )
 
-func AddBox(text string) {
-	b := &Box{
-		Id:   fmt.Sprintf("testbox_%v", id),
-		Text: text,
-		X:    cursorX,
-		Y:    cursorY,
-		W:    100,
-		H:    100,
-		Callback: func(from, to *Box, event string, x, y int) {
-			fmt.Printf("%v at %v,%v from %v, to %v\n", event, x, y, from.Id, to.Id)
-		},
-	}
-	id = id + 1
-	cursorX = cursorX + 100
-	boxes[b.Id] = b
-
-	testlist = append(testlist, b)
-}
-
-// lalala))) ululu
-func BoxTree(t []Node, indent int, newlines bool) {
-	for _, v := range t {
-		if v.List == nil {
-			if v.Str == "" {
-				// fmt.Print(".")
-				AddBox(v.Raw + " ")
-			} else {
-				AddBox("『" + v.Str + "』")
-			}
+func PrintBoxTree(t Box, indent int, newlines bool) {
+	for _, z := range t.Children {
+		if len(z.Children) == 0 {
+			fmt.Println(z.Text)
 		} else {
-			if len(v.List) == 0 && (v.Note == "\n" || v.Note == "artifact") {
-				cursorY = cursorY + 100
-				cursorX = indent * 100
-				continue
-			}
-			// If the current expression contains 3 or more sub expressions, break it across lines
-			if containsLists(v.List, 3) {
-				if countTree(v.List) > 50 {
 
-					cursorY = cursorY + 100
-					cursorX = (indent + 1) * 100
-				}
-				AddBox("(")
+			fmt.Print("\n")
+			printIndent(indent+1, "_")
 
-				BoxTree(v.List, indent+2, true)
-				cursorY = cursorY + 100
-				cursorX = indent * 100
-				AddBox(")")
-			} else {
-				AddBox("(")
-				// fmt.Print(v.Note, "current length: ",len(v.List))
-				BoxTree(v.List, indent+2, false)
-				AddBox(")")
+			fmt.Print("(")
 
-			}
-		}
-		if newlines {
-			cursorY = cursorY + 100
-			cursorX = indent * 100
+			PrintBoxTree(*z, indent+2, true)
+			fmt.Printf("\n")
+			printIndent(indent, "_")
+			fmt.Println(")!!!!!!!!!!!!!!!!!!!!!!!!!\n")
 
 		}
+	}
+	fmt.Print("\n")
+	printIndent(indent, "_")
+	if newlines {
+		fmt.Print("\n")
+		printIndent(indent, "_")
 	}
 }
