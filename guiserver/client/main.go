@@ -74,6 +74,8 @@ func Render(b *Box, parent *Box, hoverX, hoverY, offsetX, offsetY int) []string 
 			ch[1].Y = ch[0].Y + offsetY + ch[0].H
 			ch[1].W = b.W
 			ch[1].H = b.H - ch[0].H
+		case "free":
+			// Arbitrary layout
 		default:
 			panic("invalid split layout" + b.SplitLayout)
 
@@ -283,7 +285,7 @@ func PrintBoxTree(t Box, indent int, newlines bool) {
 			PrintBoxTree(*z, indent+2, true)
 			fmt.Printf("\n")
 			printIndent(indent, "_")
-			fmt.Println(")!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+			fmt.Print(")\n")
 
 		}
 	}
