@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -9,11 +10,10 @@ import (
 )
 
 var (
-	surface  *sdl.Surface
-	renderer sdl.Renderer
-	window   *sdl.Window
-	font     *ttf.Font
-	text     *sdl.Surface
+	surface *sdl.Surface
+	window  *sdl.Window
+	font    *ttf.Font
+	text    *sdl.Surface
 )
 
 func InitGraphics() {
@@ -73,18 +73,20 @@ func MainGraphicsLoop() {
 		// surface.FillRect(&rect, 0xffff0000)
 		window.UpdateSurface()
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			log.Printf("event: %+v\n", event)
+			log.Printf("type: %T\n", event)
 			updateNeeded = true
 			switch t := event.(type) {
 			case *sdl.QuitEvent:
 				println("Quit")
 				running = false
 				break
-			case *sdl.MouseMotionEvent:
+			case sdl.MouseMotionEvent:
 				mouseX = int(t.X)
 				mouseY = int(t.Y)
 
 				// fmt.Println("Mouse", t.Which, "moved by", t.XRel, t.YRel, "at", t.X, t.Y)
-			case *sdl.MouseButtonEvent:
+			case sdl.MouseButtonEvent:
 				mouseX = int(t.X)
 				mouseY = int(t.Y)
 
@@ -105,12 +107,12 @@ func MainGraphicsLoop() {
 					// fmt.Println("Mouse", t.Which, "wheel scrolled vertically by", t.Y)
 				}
 
-			case *sdl.KeyboardEvent:
+			case sdl.KeyboardEvent:
 				keyCode := t.Keysym.Sym
 				keys := ""
 
 				// Modifier keys
-				switch t.Keysym.Mod {
+				switch sdl.Keymod(t.Keysym.Mod) {
 				case sdl.KMOD_LALT:
 					keys += "Left Alt"
 				case sdl.KMOD_LCTRL:

@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	. "../../autoparser"
+	"fmt"
+)
 
 type Box struct {
 	Text          string
@@ -32,7 +35,9 @@ func AddBox(parent *Box, text string, n Node) {
 		W:    100,
 		H:    100,
 		Callback: func(from, to *Box, event string, x, y int) {
-			fmt.Printf("%v at %v,%v from %v, to %v\n", event, x, y, from.Id, to.Id)
+			if from != nil && to != nil {
+				fmt.Printf("%v at %v,%v from %v, to %v\n", event, x, y, from.Id, to.Id)
+			}
 		},
 		AstNode: n,
 	}
@@ -59,13 +64,13 @@ func BoxTree(b *Box, t []Node, indent int, newlines bool) {
 				continue
 			}
 			// If the current expression contains 3 or more sub expressions, break it across lines
-			if containsLists(v.List, 3) {
-				if countTree(v.List) > 50 {
+			if ContainsLists(v.List, 3) {
+				if CountTree(v.List) > 50 {
 
 					cursorY = cursorY + 100
 					cursorX = (indent + 1) * 100
 				}
-				n := &Box{SplitLayout: "free"}
+				n := &Box{SplitLayout: "free", AstNode: v}
 				Add(b, n)
 				// AddBox(n, "(", v)
 
@@ -74,12 +79,12 @@ func BoxTree(b *Box, t []Node, indent int, newlines bool) {
 				cursorX = indent * 100
 				// AddBox(n, ")", v)
 			} else {
-				n := &Box{SplitLayout: "free"}
+				n := &Box{SplitLayout: "free", AstNode: v}
 				Add(b, n)
-				AddBox(n, "(", v)
+				// AddBox(n, "(", v)
 				// fmt.Print(v.Note, "current length: ",len(v.List))
 				BoxTree(n, v.List, indent+2, false)
-				AddBox(n, ")", v)
+				// AddBox(n, ")", v)
 
 			}
 		}
