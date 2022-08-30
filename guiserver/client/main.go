@@ -7,6 +7,7 @@ package main
 // Make a gui layout module
 
 import (
+	. "../../autoparser"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -278,25 +279,24 @@ var (
 func PrintBoxTree(t Box, indent int, newlines bool) {
 	for _, z := range t.Children {
 		if len(z.Children) == 0 {
-			fmt.Println(z.Text)
+			fmt.Printf("%v:%v\n", t.AstNode.Kind, z.Text)
 		} else {
 
 			fmt.Print("\n")
-			printIndent(indent+1, "_")
-
+			PrintIndent(indent+1, " ")
+			fmt.Printf("%v:", t.AstNode.Kind)
 			fmt.Print("(")
 
 			PrintBoxTree(*z, indent+2, true)
 			fmt.Printf("\n")
-			printIndent(indent, "_")
+			PrintIndent(indent, " ")
 			fmt.Print(")\n")
 
 		}
 	}
-	fmt.Print("\n")
-	printIndent(indent, "_")
+
 	if newlines {
 		fmt.Print("\n")
-		printIndent(indent, "_")
+		PrintIndent(indent, " ")
 	}
 }
