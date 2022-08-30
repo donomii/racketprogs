@@ -1,4 +1,8 @@
+// #cgo pkg-config: sdl2
+
 package main
+
+
 
 // Make a gui layout module
 
