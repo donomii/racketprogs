@@ -1,3 +1,6 @@
+//go:build sdl
+// +build sdl
+
 package main
 
 import (
@@ -77,7 +80,7 @@ func MainGraphicsLoop() {
 			log.Printf("type: %T\n", event)
 			updateNeeded = true
 			switch t := event.(type) {
-			case *sdl.QuitEvent:
+			case sdl.QuitEvent:
 				println("Quit")
 				running = false
 				break
@@ -97,7 +100,7 @@ func MainGraphicsLoop() {
 					action = "release"
 					// fmt.Println("Mouse", t.Which, "button", t.Button, "released at", t.X, t.Y)
 				}
-			case *sdl.MouseWheelEvent:
+			case sdl.MouseWheelEvent:
 				mouseX = int(t.X)
 				mouseY = int(t.Y)
 				action = "wheel"

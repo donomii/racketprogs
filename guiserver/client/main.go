@@ -3,18 +3,26 @@ package main
 // Make a gui layout module
 
 import (
-	. "../../autoparser"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"runtime"
 	"runtime/debug"
 
+	. "../../autoparser"
+
 	//"math/rand"
 
 	"github.com/donomii/goof"
 )
 
+type Conf struct {
+	WantTransparent bool
+	RetinaMode      bool
+	AutoRetina      bool
+}
+
+var conf Conf
 var (
 	currentEditor  *GlobalConfig
 	currentEditBox *Box
@@ -83,7 +91,7 @@ func Render(b *Box, parent *Box, hoverX, hoverY, offsetX, offsetY int) []string 
 		}
 	}
 
-	drawBox(scale*float64(b.X+offsetX), scale*float64(b.Y+offsetY), scale*float64(b.W), scale*float64(b.H), 0x99990000)
+	drawBox(scale*float64(b.X+offsetX), scale*float64(b.Y+offsetY), scale*float64(b.W), scale*float64(b.H), 128, 0, 0, 255)
 	drawText(scale*float64(b.X+offsetX), scale*float64(b.Y+offsetY), b.Text, scale*18)
 	for _, child := range b.Children {
 		res := Render(child, b, hoverX, hoverY, b.X+offsetX, b.Y+offsetY)
@@ -225,11 +233,13 @@ func init() {
 	runtime.LockOSThread()
 	fmt.Println("Locked to main thread")
 	debug.SetGCPercent(-1)
-	InitGraphics()
+
 	currentEditor = NewEditor()
 }
 
 func main() {
+	InitGraphics()
+
 	boxes = map[string]*Box{}
 
 	// Load entire file main.go into var
@@ -263,8 +273,8 @@ func main() {
 	top.AstNode = Node{List: ast}
 	boxes[top.Id] = top
 	BoxTree(top, ast, 0, true)
-
-	MainGraphicsLoop()
+	fmt.Println("Starting main loop")
+	StartMain()
 }
 
 var (

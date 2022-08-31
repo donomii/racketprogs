@@ -1,8 +1,12 @@
+//go:build !sdl
+// +build !sdl
+
 package main
 
 import (
-	. "../../autoparser"
 	"fmt"
+
+	. "../../autoparser"
 )
 
 type Box struct {
