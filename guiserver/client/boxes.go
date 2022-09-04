@@ -18,26 +18,30 @@ type Box struct {
 	SplitRatio    float64
 	Children      []*Box
 	Callback      func(*Box, *Box, string, int, int)
-	AstNode       Node
+	AstNode       *Node
 	DrawOrderList []*Box
+	Scale float64
 }
 
-// Add a child to a box.  The child will be drawn after the box is drawn.
-func Add(b *Box, child *Box) {
+// Add a child to a parent box.  The child box  will be drawn after the parent box is drawn.
+func Add(b *Box, x,y int, child *Box) {
 	b.Children = append(b.Children, child)
 	b.DrawOrderList = append(b.DrawOrderList, child)
 	boxes[b.Id] = b //  For quick lookups by id
 }
 
-// Adds a box to the global box list
-func AddBox(parent *Box, text string, n Node) {
+// Creates a box and adds it to the given parent
+func AddBox(parent *Box,x,y int, text string, n *Node)int {
+	size:=int(36 *scale)
+	l := len(text)
 	b := &Box{
 		Id:   fmt.Sprintf("testbox_%v", id),
 		Text: text,
-		X:    cursorX,
-		Y:    cursorY,
-		W:    100,
+		X:    x,
+		Y:    y,
+		W:    l*size,
 		H:    100,
+		Scale: 1.0,
 		Callback: func(from, to *Box, event string, x, y int) {
 			if from != nil && to != nil {
 				fmt.Printf("%v at %v,%v from %v, to %v\n", event, x, y, from.Id, to.Id)
@@ -46,58 +50,65 @@ func AddBox(parent *Box, text string, n Node) {
 		AstNode: n,
 	}
 	id = id + 1
-	cursorX = cursorX + 100
+	cursorX = cursorX + l*size
 	boxes[b.Id] = b
 	parent.Children = append(parent.Children, b)
+	return l*size
 }
 
 // Takes an AST from autoparser and creates a box tree from it
-func BoxTree(b *Box, t []Node, indent int, newlines bool) {
+func BoxTree(b *Box,  x,y int,t []Node, indent int, newlines bool) (int,int){
+	ox:=x
+	oy := y
 	for _, v := range t {
+		
 		if v.List == nil {
+			dx := 0
 			if v.Str == "" {
 				// fmt.Print(".")
-				AddBox(b, v.Raw+" ", v)
+				dx=AddBox(b, x,y, v.Raw+" ", &v)
 			} else {
-				AddBox(b, "『"+v.Str+"』", v)
+				dx=AddBox(b, x,y,"『"+v.Str+"』", &v)
 			}
+			x=x+dx
 		} else {
 			if len(v.List) == 0 && (v.Note == "\n" || v.Note == "artifact") {
-				cursorY = cursorY + 100
-				cursorX = indent * 100
+				y=y+ 100
+				x = x+ 100
 				continue
 			}
 			// If the current expression contains 3 or more sub expressions, break it across lines
 			if ContainsLists(v.List, 3) {
 				if CountTree(v.List) > 50 {
 
-					cursorY = cursorY + 100
-					cursorX = (indent + 1) * 100
+					y=y + 100
+					x = (indent + 1) * 100
 				}
-				n := &Box{SplitLayout: "free", AstNode: v}
-				Add(b, n)
+				n := &Box{SplitLayout: "free", AstNode: &v, Scale:1}
+				Add(b,x,y, n)
 				// AddBox(n, "(", v)
 
-				BoxTree(n, v.List, indent+2, true)
-				cursorY = cursorY + 100
-				cursorX = indent * 100
+				_, dy := BoxTree(n,x,y, v.List, indent+2, true)
+				y=y + 100+ dy
+				x = x+ 100
 				// AddBox(n, ")", v)
 			} else {
-				n := &Box{SplitLayout: "free", AstNode: v}
-				Add(b, n)
+				n := &Box{SplitLayout: "free", AstNode: &v, Scale:1}
+				Add(b, x,y,n)
 				// AddBox(n, "(", v)
 				// fmt.Print(v.Note, "current length: ",len(v.List))
-				BoxTree(n, v.List, indent+2, false)
+				_,dy := BoxTree(n,x,y, v.List, indent+2, false)
+				y=y + dy
 				// AddBox(n, ")", v)
 
 			}
 		}
 		if newlines {
-			cursorY = cursorY + 100
-			cursorX = indent * 100
+			y=y + 100
 
 		}
 	}
+	return x-ox,y-oy
 }
 
 // Finds id in an array of boxes, and moves it to the end of the array

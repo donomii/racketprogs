@@ -75,6 +75,7 @@ func drawBox(x, y, w, h float64, r, g, b, a uint8) {
 
 func drawText(x, y float64, str string, size float64) {
 	f := glim.NewFormatter()
+	f.FontSize = fontSize*scale*2
 	f.Colour = &glim.RGBA{255, 255, 255, 255}
 	glim.RenderPara(f, int(x), int(y), 0, 0, edWidth, edHeight, edWidth, edHeight, 0, 0, transfer_texture, str, false, true, false)
 }

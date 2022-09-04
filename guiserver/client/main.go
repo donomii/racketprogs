@@ -11,6 +11,8 @@ import (
 	"io/ioutil"
 	"log"
 	"runtime"
+	"strings"
+	"strconv"
 	"runtime/debug"
 
 	. "../../autoparser"
@@ -56,7 +58,7 @@ func Text(x, y float64, str string, size float64) {
 	TextList = append(TextList, txtcall{x, y, str, size})
 }
 
-func Render(b *Box, parent *Box, hoverX, hoverY, offsetX, offsetY int) []string {
+func Render(b *Box, parent *Box, hoverX, hoverY, offsetX, offsetY int, localScale float64) []string {
 	hoverTarget := []string{}
 
 	ch := b.Children
@@ -66,6 +68,8 @@ func Render(b *Box, parent *Box, hoverX, hoverY, offsetX, offsetY int) []string 
 			hoverTarget = []string{b.Id}
 		}
 	}
+
+	localScale = localScale * b.Scale
 
 	if ch != nil && len(ch) > 0 {
 		switch b.SplitLayout {
@@ -95,10 +99,10 @@ func Render(b *Box, parent *Box, hoverX, hoverY, offsetX, offsetY int) []string 
 		}
 	}
 
-	drawBox(scale*float64(b.X+offsetX), scale*float64(b.Y+offsetY), scale*float64(b.W), scale*float64(b.H), 128, 0, 0, 255)
-	drawText(scale*float64(b.X+offsetX), scale*float64(b.Y+offsetY), b.Text, scale*18)
+	drawBox(localScale*scale*float64(b.X+offsetX), localScale*scale*float64(b.Y+offsetY), localScale*scale*float64(b.W), localScale*scale*float64(b.H), 128, 0, 0, 255)
+	drawText(localScale*scale*float64(b.X+offsetX), localScale*scale*float64(b.Y+offsetY), b.Text, scale*18)
 	for _, child := range b.Children {
-		res := Render(child, b, hoverX, hoverY, b.X+offsetX, b.Y+offsetY)
+		res := Render(child, b, hoverX, hoverY, b.X+offsetX, b.Y+offsetY, localScale)
 
 		hoverTarget = append(hoverTarget, res...)
 
@@ -114,10 +118,10 @@ var (
 	ItemPosStartX, ItemPosStartY int
 )
 
-func RenderAll(x, y int) []string {
+func RenderAll(x, y int, localScale float64) []string {
 	hoverTarget := []string{}
 	for _, b := range top.Children {
-		targets := Render(b, nil, x, y, top.X, top.Y)
+		targets := Render(b, nil, x, y, top.X, top.Y, localScale)
 		if len(targets) > 0 && targets[0] != dragItem {
 			hoverTarget = targets
 		}
@@ -134,7 +138,7 @@ func draw(mouseX, mouseY int, action string) {
 		scrollY = -1.0
 	}*/
 
-	hoverTarget := RenderAll(mouseX, mouseY)
+	hoverTarget := RenderAll(mouseX, mouseY, 1.0)
 	if len(hoverTarget) > 0 {
 		fmt.Printf("hover %v\n", hoverTarget[0])
 	}
@@ -241,23 +245,26 @@ func init() {
 	currentEditor = NewEditor()
 }
 
+func fileToAst(filename string) []Node {
+		// Load entire file main.go into var
+		data, err := ioutil.ReadFile(filename)
+		if err != nil {
+			log.Fatal(err)
+		}
+		// Convert to string
+		source := string(data)
+		// Parse source into AST
+		ast := ParseGo(source, filename)
+		return ast
+}
 func main() {
+	conf.AutoRetina = true
 	InitGraphics()
 
 	boxes = map[string]*Box{}
 
-	// Load entire file main.go into var
-	data, err := ioutil.ReadFile("main.go")
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Convert to string
-	source := string(data)
-	// Parse source into AST
-	ast := ParseGo(source, "main.go")
-	// Print AST
 
-	// Generate 20 random testboxes
+	ast := fileToAst("main.go")
 
 	// dump boxes
 	for k, v := range boxes {
@@ -271,12 +278,16 @@ func main() {
 		Y:           0,
 		W:           400,
 		H:           400,
+		Scale:1.0,
 		SplitLayout: "",
 		SplitRatio:  0.5,
 	}
-	top.AstNode = Node{List: ast}
+	top.AstNode = &Node{List: ast}
 	boxes[top.Id] = top
-	BoxTree(top, ast, 0, true)
+	//BoxTree(top,100,0, ast, 0, true)
+	files :=DirBoxes(100,0,".")
+	files.Scale = 0.2
+	Add(top, 100,0,files)
 	fmt.Println("Starting main loop")
 	StartMain()
 }
@@ -310,3 +321,53 @@ func PrintBoxTree(t Box, indent int, newlines bool) {
 		PrintIndent(indent, " ")
 	}
 }
+
+func DirBoxes(x,y int,dir string) *Box {
+
+	//recurse through the given directory and return a box tree
+	//of the files and directories
+	//if a file is a go file, parse it and add the ast to the box
+	//if a directory, recurse
+	
+	dirbox := &Box{
+		Text:        dir,
+		Id:          "dir_" + strconv.Itoa(id),
+		X:           x,
+		Y:           y,
+		W:           100,
+		H:           100,
+		Scale:1.0,
+		SplitLayout: "free",
+		SplitRatio:  0.5,
+	}
+	id++
+	x=x+100
+	boxes[dirbox.Id] = dirbox
+	files, err := ioutil.ReadDir(string(dir))
+	if err != nil {
+		return dirbox
+	}
+	for _, file := range files {
+		if file.IsDir() {
+			Add(dirbox,x,y, DirBoxes(x,y,dir +"/"+ file.Name()))
+		} else {
+			if strings.HasSuffix(file.Name(), ".go") {
+				// Parse source into AST
+				if err != nil {
+					continue
+				}
+				filepath := dir + "/" + file.Name()
+					//fileid:=         "file_" + strconv.Itoa(id)
+					AddBox(dirbox, x, y, file.Name(),nil)
+					ast := fileToAst(filepath)
+					BoxTree(dirbox,x,y, ast, 0, true)
+
+				id++
+			} 
+
+		}
+		y=y+100
+	}
+	return dirbox
+}
+
