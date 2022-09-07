@@ -2,8 +2,6 @@
 
 package main
 
-
-
 // Make a gui layout module
 
 import (
@@ -11,9 +9,9 @@ import (
 	"io/ioutil"
 	"log"
 	"runtime"
-	"strings"
-	"strconv"
 	"runtime/debug"
+	"strconv"
+	"strings"
 
 	. "../../autoparser"
 
@@ -218,6 +216,27 @@ func draw(mouseX, mouseY int, action string) {
 	case "wheel":
 		fmt.Printf("Wheel at %v,%v\n", mouseX, mouseY)
 		scale = scale + float64(mouseY)/100.0
+	case "wheel down":
+		if scale > 2 {
+			scale = scale - 1.0
+		} else {
+			if scale > 1 {
+				scale = scale - 0.1
+			} else {
+				scale = scale / 2
+			}
+		}
+	case "wheel up":
+		if scale > 2 {
+			scale = scale + 1.0
+		} else {
+			if scale > 1 {
+				scale = scale + 0.1
+			} else {
+				scale = scale * 2
+			}
+		}
+
 	default:
 		if dragItem != "" {
 			fmt.Printf("Dragging %v to %v,%v\n", dragItem, mouseX, mouseY)
@@ -246,23 +265,23 @@ func init() {
 }
 
 func fileToAst(filename string) []Node {
-		// Load entire file main.go into var
-		data, err := ioutil.ReadFile(filename)
-		if err != nil {
-			log.Fatal(err)
-		}
-		// Convert to string
-		source := string(data)
-		// Parse source into AST
-		ast := ParseGo(source, filename)
-		return ast
+	// Load entire file main.go into var
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Convert to string
+	source := string(data)
+	// Parse source into AST
+	ast := ParseGo(source, filename)
+	return ast
 }
+
 func main() {
 	conf.AutoRetina = true
 	InitGraphics()
 
 	boxes = map[string]*Box{}
-
 
 	ast := fileToAst("main.go")
 
@@ -278,16 +297,16 @@ func main() {
 		Y:           0,
 		W:           400,
 		H:           400,
-		Scale:1.0,
+		Scale:       1.0,
 		SplitLayout: "",
 		SplitRatio:  0.5,
 	}
 	top.AstNode = &Node{List: ast}
 	boxes[top.Id] = top
-	//BoxTree(top,100,0, ast, 0, true)
-	files :=DirBoxes(100,0,".")
+	// BoxTree(top,100,0, ast, 0, true)
+	files := DirBoxes(100, 0, ".")
 	files.Scale = 0.2
-	Add(top, 100,0,files)
+	Add(top, 100, 0, files)
 	fmt.Println("Starting main loop")
 	StartMain()
 }
@@ -322,13 +341,12 @@ func PrintBoxTree(t Box, indent int, newlines bool) {
 	}
 }
 
-func DirBoxes(x,y int,dir string) *Box {
+func DirBoxes(x, y int, dir string) *Box {
+	// recurse through the given directory and return a box tree
+	// of the files and directories
+	// if a file is a go file, parse it and add the ast to the box
+	// if a directory, recurse
 
-	//recurse through the given directory and return a box tree
-	//of the files and directories
-	//if a file is a go file, parse it and add the ast to the box
-	//if a directory, recurse
-	
 	dirbox := &Box{
 		Text:        dir,
 		Id:          "dir_" + strconv.Itoa(id),
@@ -336,12 +354,12 @@ func DirBoxes(x,y int,dir string) *Box {
 		Y:           y,
 		W:           100,
 		H:           100,
-		Scale:1.0,
+		Scale:       1.0,
 		SplitLayout: "free",
 		SplitRatio:  0.5,
 	}
 	id++
-	x=x+100
+	x = x + 100
 	boxes[dirbox.Id] = dirbox
 	files, err := ioutil.ReadDir(string(dir))
 	if err != nil {
@@ -349,7 +367,7 @@ func DirBoxes(x,y int,dir string) *Box {
 	}
 	for _, file := range files {
 		if file.IsDir() {
-			Add(dirbox,x,y, DirBoxes(x,y,dir +"/"+ file.Name()))
+			Add(dirbox, x, y, DirBoxes(x, y, dir+"/"+file.Name()))
 		} else {
 			if strings.HasSuffix(file.Name(), ".go") {
 				// Parse source into AST
@@ -357,17 +375,15 @@ func DirBoxes(x,y int,dir string) *Box {
 					continue
 				}
 				filepath := dir + "/" + file.Name()
-					//fileid:=         "file_" + strconv.Itoa(id)
-					AddBox(dirbox, x, y, file.Name(),nil)
-					ast := fileToAst(filepath)
-					BoxTree(dirbox,x,y, ast, 0, true)
+				// fileid:=         "file_" + strconv.Itoa(id)
+				AddBox(dirbox, x, y, file.Name(), nil)
+				ast := fileToAst(filepath)
+				BoxTree(dirbox, x, y, ast, 0, true)
 
 				id++
-			} 
-
+			}
 		}
-		y=y+100
+		y = y + 100
 	}
 	return dirbox
 }
-
