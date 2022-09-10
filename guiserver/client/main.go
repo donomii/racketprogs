@@ -1,124 +1,106 @@
+// #cgo pkg-config: sdl2
+
 package main
 
 // Make a gui layout module
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
+	"runtime"
+	"runtime/debug"
+	"strconv"
+	"strings"
 
-	"fmt"
-	"image/color"
+	. "../../autoparser"
+
 	//"math/rand"
 
 	"github.com/donomii/goof"
-	"github.com/go-p5/p5"
 )
 
-type Box struct {
-	Text        string
-	Type        string
-	Id          string
-	X, Y, W, H  int
-	SplitLayout string
-	SplitRatio  float64
-	Children    []*Box
-	Callback    func(*Box, *Box, string, int, int)
+type Conf struct {
+	WantTransparent bool
+	RetinaMode      bool
+	AutoRetina      bool
 }
+
+var conf Conf
+var (
+	currentEditor  *GlobalConfig
+	currentEditBox *Box
+)
 
 var (
 	top   *Box
 	boxes map[string]*Box
+	scale float64 = 0.5
 )
 
-func Add(b *Box, child *Box) {
-	b.Children = append(b.Children, child)
+const (
+	fontPath = "test.ttf"
+	fontSize = 12
+)
+
+type txtcall struct {
+	X, Y float64
+	Str  string
+	Size float64
 }
 
-func Remove(b *Box, id string) {
-	for i, child := range b.Children {
-		if child.Id == id {
-			b.Children = append(b.Children[:i], b.Children[i+1:]...)
-			return
-		}
-	}
+var TextList []txtcall
+
+// Make list of text to draw, defer drawing until box layer is finished
+func Text(x, y float64, str string, size float64) {
+	TextList = append(TextList, txtcall{x, y, str, size})
 }
 
-func Get(b *Box, id string) *Box {
-	if b.Id == id {
-		return b
-	}
-	for _, child := range b.Children {
-		res := Get(child, id)
-		if res != nil {
-			return res
-		}
-	}
-	return nil
-}
-
-var testbox *Box = &Box{
-	Text:        "TestWindow",
-	Type:        "window",
-	Id:          "testbox",
-	X:           50,
-	Y:           50,
-	W:           300,
-	H:           300,
-	SplitLayout: "horizontal",
-	SplitRatio:  0.5,
-	Children: []*Box{
-		{
-			Id: "testbox_child1",
-		},
-		{
-			Id: "testbox_child2",
-		},
-	},
-}
-
-var testlist []*Box
-
-func Render(b *Box, parent *Box, hoverX, hoverY int) []string {
+func Render(b *Box, parent *Box, hoverX, hoverY, offsetX, offsetY int, localScale float64) []string {
 	hoverTarget := []string{}
 
 	ch := b.Children
-	p5.TextSize(18)
-	p5.Text(b.Text, float64(b.X), float64(b.Y))
-	if b.Id != "" && hoverX >= b.X && hoverX <= b.X+b.W && hoverY >= b.Y && hoverY <= b.Y+b.H {
-		hoverTarget = []string{b.Id}
+
+	if b.Id != "" && hoverX >= int(scale*float64(b.X+offsetX)) && hoverX <= int(scale*float64(b.X+offsetX+b.W)) && hoverY >= int(scale*float64(b.Y+offsetY)) && hoverY <= int(scale*float64(b.Y+offsetY+b.H)) {
+		if b.Id != dragItem {
+			hoverTarget = []string{b.Id}
+		}
 	}
+
+	localScale = localScale * b.Scale
 
 	if ch != nil && len(ch) > 0 {
 		switch b.SplitLayout {
 		case "horizontal":
-			ch[0].X = b.X
-			ch[0].Y = b.Y
+			ch[0].X = b.X + offsetX
+			ch[0].Y = b.Y + offsetY
 			ch[0].W = int(float64(b.W) * b.SplitRatio)
 			ch[0].H = b.H
-			ch[1].X = ch[0].X + ch[0].W
-			ch[1].Y = b.Y
+			ch[1].X = ch[0].X + offsetX + ch[0].W
+			ch[1].Y = b.Y + offsetY
 			ch[1].W = b.W - ch[0].W
 			ch[1].H = b.H
 		case "vertical":
-			ch[0].X = b.X
-			ch[0].Y = b.Y
+			ch[0].X = b.X + offsetX
+			ch[0].Y = b.Y + offsetY
 			ch[0].W = b.W
 			ch[0].H = int(float64(b.H) * b.SplitRatio)
-			ch[1].X = b.X
-			ch[1].Y = ch[0].Y + ch[0].H
+			ch[1].X = b.X + offsetX
+			ch[1].Y = ch[0].Y + offsetY + ch[0].H
 			ch[1].W = b.W
 			ch[1].H = b.H - ch[0].H
+		case "free":
+			// Arbitrary layout
 		default:
 			panic("invalid split layout" + b.SplitLayout)
 
 		}
 	}
 
-	p5.StrokeWidth(2)
-	p5.Fill(color.RGBA{B: 255, A: 208})
-	p5.Quad(float64(b.X), float64(b.Y), float64(b.X+b.W), float64(b.Y), float64(b.X+b.W), float64(b.Y+b.H), float64(b.X), float64(b.Y+b.H))
+	drawBox(localScale*scale*float64(b.X+offsetX), localScale*scale*float64(b.Y+offsetY), localScale*scale*float64(b.W), localScale*scale*float64(b.H), 128, 0, 0, 255)
+	drawText(localScale*scale*float64(b.X+offsetX), localScale*scale*float64(b.Y+offsetY), b.Text, scale*18)
 	for _, child := range b.Children {
-		res := Render(child, b, hoverX, hoverY)
+		res := Render(child, b, hoverX, hoverY, b.X+offsetX, b.Y+offsetY, localScale)
 
 		hoverTarget = append(hoverTarget, res...)
 
@@ -126,92 +108,103 @@ func Render(b *Box, parent *Box, hoverX, hoverY int) []string {
 	return hoverTarget
 }
 
-func setup() {
-	p5.Canvas(400, 400)
-	p5.Background(color.Gray{Y: 220})
-}
-
 var (
-	lastPress              bool
-	dragItem			   string
-	clickTarget            string
-	dragStartX, dragStartY int
+	lastPress                    bool
+	dragItem                     string
+	clickTarget                  string
+	dragStartX, dragStartY       int
+	ItemPosStartX, ItemPosStartY int
 )
 
-
-func MoveToEnd(id string, boxes []*Box) {
-	for i, b := range boxes {
-		if b.Id == id {
-			boxes = append(boxes[:i], boxes[i+1:]...)
-			boxes = append(boxes, b)
-			return
-		}
-	}
-}
-
-func RenderAll(x, y int) []string {
+func RenderAll(x, y int, localScale float64) []string {
 	hoverTarget := []string{}
 	for _, b := range top.Children {
-		targets := Render(b, nil, x, y)
-		if len(targets) > 0  && targets[0] != dragItem {
+		targets := Render(b, nil, x, y, top.X, top.Y, localScale)
+		if len(targets) > 0 && targets[0] != dragItem {
 			hoverTarget = targets
 		}
 	}
 	return hoverTarget
 }
 
-func draw() {
-	mouseX := int(p5.Event.Mouse.Position.X)
-	mouseY := int(p5.Event.Mouse.Position.Y)
-
-	hoverTarget := RenderAll(int(p5.Event.Mouse.Position.X), int(p5.Event.Mouse.Position.Y))
-
-	event := ""
-	if !lastPress && p5.Event.Mouse.Pressed {
-		event = "press"
-		lastPress = true
-	} else if lastPress && !p5.Event.Mouse.Pressed {
-		event = "release"
-		lastPress = false
+func draw(mouseX, mouseY int, action string) {
+	//fmt.Printf("mscrx mscry %v,%v %v\n", mouseX, mouseY, action)
+	/*if scrollY > 1.0 {
+		scrollY = 1.0
 	}
-	switch event {
+	if scrollY < -1.0 {
+		scrollY = -1.0
+	}*/
+
+	hoverTarget := RenderAll(mouseX, mouseY, 1.0)
+	if len(hoverTarget) > 0 {
+		fmt.Printf("hover %v\n", hoverTarget[0])
+	}
+
+	switch action {
 	case "press":
-		fmt.Printf("Pressed at %v,%v\n", p5.Event.Mouse.Position.X, p5.Event.Mouse.Position.Y)
+		fmt.Printf("Pressed at %v,%v\n", mouseX, mouseY)
+		dragStartX = int(mouseX)
+		dragStartY = int(mouseY)
+
+		dragItem = top.Id
 		if len(hoverTarget) > 0 {
 			dragItem = hoverTarget[0]
 			clickTarget = hoverTarget[len(hoverTarget)-1]
-			dragStartX = int(p5.Event.Mouse.Position.X)
-			dragStartY = int(p5.Event.Mouse.Position.Y)
-			MoveToEnd(dragItem, top.Children)
+			MoveToEnd(dragItem, top.DrawOrderList)
 		}
+		dragItemBox := boxes[dragItem]
+		ItemPosStartX = dragItemBox.X
+		ItemPosStartY = dragItemBox.Y
+
 	case "release":
-		fmt.Printf("Released at %v,%v\n", p5.Event.Mouse.Position.X, p5.Event.Mouse.Position.Y)
+		fmt.Printf("Released at %v,%v\n", mouseX, mouseY, hoverTarget)
+		// If the mouse has moved the minimum distance to not be a click
 		if goof.AbsInt(mouseX-dragStartX) > 5 || goof.AbsInt(mouseY-dragStartY) > 5 {
 			fmt.Printf("Dragged from %v,%v to %v,%v\n", dragStartX, dragStartY, mouseX, mouseY)
+			// if it released over a box
 			if len(hoverTarget) > 0 {
 				ht := hoverTarget[0]
 				fmt.Println("Dropping over:", ht)
 
-				hoverTargetBox := boxes[ht]
-				dragItemBox := boxes[dragItem]
-				if hoverTargetBox != nil {
-					box := Get(hoverTargetBox, ht)
-					fmt.Printf("Found box: %+v\n", box)
-					if box != nil && box.Callback != nil {
-						box.Callback(dragItemBox, hoverTargetBox, "drop", mouseX, mouseY)
+				// Not released over the background
+				if dragItem != top.Id {
+					hoverTargetBox := boxes[ht]
+					dragItemBox := boxes[dragItem]
+					// If we were able to find the box we are dropping onto
+					if hoverTargetBox != nil {
+						box := SearchChildTrees(hoverTargetBox, ht)
+						fmt.Printf("Found box: %+v\n", box)
+						if box != nil && box.Callback != nil {
+							box.Callback(dragItemBox, hoverTargetBox, "drop", mouseX, mouseY)
+						}
 					}
 				}
 			}
 
 		} else {
-			fmt.Printf("Clicked at %v,%v\n", p5.Event.Mouse.Position.X, p5.Event.Mouse.Position.Y)
+			// It's a click
+			fmt.Printf("Clicked at %v,%v %v\n", mouseX, mouseY, hoverTarget)
+			if dragItem != "" {
+				dragItemBox := boxes[dragItem]
+				if dragItemBox != nil {
+
+					// Start editing ht
+					currentEditor = NewEditor()
+					currentEditBox = dragItemBox
+					ActiveBufferInsert(currentEditor, currentEditBox.Text)
+					fmt.Printf("Now editing %v\n", dragItem)
+
+				}
+			}
 			if len(hoverTarget) > 0 {
 				ht := hoverTarget[0]
 				fmt.Println("Hovering over:", ht)
 
 				activeBox := boxes[ht]
 				if activeBox != nil {
-					box := Get(activeBox, clickTarget)
+
+					box := SearchChildTrees(activeBox, clickTarget)
 					if box != nil && box.Callback != nil {
 						box.Callback(activeBox, nil, "click", mouseX, mouseY)
 					}
@@ -220,9 +213,33 @@ func draw() {
 		}
 		dragItem = ""
 		clickTarget = ""
+	case "wheel":
+		fmt.Printf("Wheel at %v,%v\n", mouseX, mouseY)
+		scale = scale + float64(mouseY)/100.0
+	case "wheel down":
+		if scale > 2 {
+			scale = scale - 1.0
+		} else {
+			if scale > 1 {
+				scale = scale - 0.1
+			} else {
+				scale = scale / 2
+			}
+		}
+	case "wheel up":
+		if scale > 2 {
+			scale = scale + 1.0
+		} else {
+			if scale > 1 {
+				scale = scale + 0.1
+			} else {
+				scale = scale * 2
+			}
+		}
+
 	default:
 		if dragItem != "" {
-			fmt.Printf("Dragging %v to %v,%v\n", dragItem, p5.Event.Mouse.Position.X, p5.Event.Mouse.Position.Y)
+			fmt.Printf("Dragging %v to %v,%v\n", dragItem, mouseX, mouseY)
 			if len(hoverTarget) > 0 {
 				fmt.Println("Hovering over:", hoverTarget[0])
 			}
@@ -230,8 +247,8 @@ func draw() {
 			if dragBox != nil {
 				// box := Get(dragBox, dragItem)
 				// if box != nil {
-				dragBox.X = int(p5.Event.Mouse.Position.X)
-				dragBox.Y = int(p5.Event.Mouse.Position.Y)
+				dragBox.X = ItemPosStartX + int(float64(int(mouseX)-dragStartX)/scale)
+				dragBox.Y = ItemPosStartY + int(float64(int(mouseY)-dragStartY)/scale)
 				//}
 			}
 
@@ -239,23 +256,34 @@ func draw() {
 	}
 }
 
-func main() {
-	testlist = []*Box{}
-	boxes = map[string]*Box{}
-	//Load entire file main.go into var
-	data, err := ioutil.ReadFile("main.go")
+func init() {
+	runtime.LockOSThread()
+	fmt.Println("Locked to main thread")
+	debug.SetGCPercent(-1)
+
+	currentEditor = NewEditor()
+}
+
+func fileToAst(filename string) []Node {
+	// Load entire file main.go into var
+	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Fatal(err)
 	}
-	//Convert to string
+	// Convert to string
 	source := string(data)
-	//Parse source into AST
-	ast:=ParseGo(source, "main.go")
-	//Print AST
-	BoxTree(ast, 0, true)
+	// Parse source into AST
+	ast := ParseGo(source, filename)
+	return ast
+}
 
+func main() {
+	conf.AutoRetina = true
+	InitGraphics()
 
-	// Generate 20 random testboxes
+	boxes = map[string]*Box{}
+
+	ast := fileToAst("main.go")
 
 	// dump boxes
 	for k, v := range boxes {
@@ -264,84 +292,98 @@ func main() {
 	top = &Box{
 		Text:        "TestWindow",
 		Type:        "top",
-		Id:          "test",
+		Id:          "top_test_1",
 		X:           0,
 		Y:           0,
 		W:           400,
 		H:           400,
+		Scale:       1.0,
 		SplitLayout: "",
 		SplitRatio:  0.5,
-		Children:    testlist,
 	}
-
-	p5.Run(setup, draw)
+	top.AstNode = &Node{List: ast}
+	boxes[top.Id] = top
+	// BoxTree(top,100,0, ast, 0, true)
+	files := DirBoxes(100, 0, ".")
+	files.Scale = 0.2
+	Add(top, 100, 0, files)
+	fmt.Println("Starting main loop")
+	StartMain()
 }
 
-var id int
-var cursorX, cursorY int = 0,50
+var (
+	id               int
+	cursorX, cursorY int = 0, 50
+)
 
-func AddBox(text string) {
-	b := &Box{
-		Id:   fmt.Sprintf("testbox_%v", id),
-		Text: text,
-		X:    cursorX,
-		Y:    cursorY,
-		W:    100,
-		H:    100,
-		Callback: func(from, to *Box, event string, x, y int) {
-			fmt.Printf("%v at %v,%v from %v, to %v\n", event, x, y, from.Id, to.Id)
-		},
-	}
-	id=id+1
-	cursorX=cursorX+100
-	boxes[b.Id] = b
-
-	testlist = append(testlist, b)
-}
-
-
-
-// lalala))) ululu
-func BoxTree(t []Node, indent int, newlines bool) {
-	for _, v := range t {
-		if v.List == nil {
-			if v.Str == "" {
-				// fmt.Print(".")
-				AddBox(v.Raw+ " ")
-			} else {
-				AddBox("『"+ v.Str+ "』")
-			}
+func PrintBoxTree(t Box, indent int, newlines bool) {
+	for _, z := range t.Children {
+		if len(z.Children) == 0 {
+			fmt.Printf("%v:%v\n", t.AstNode.Kind, z.Text)
 		} else {
-			if len(v.List) == 0 && (v.Note == "\n" || v.Note == "artifact") {
-				cursorY = cursorY + 100
-				cursorX = indent*100
-				continue
-			}
-			// If the current expression contains 3 or more sub expressions, break it across lines
-			if containsLists(v.List, 3) {
-				if countTree(v.List) > 50 {
 
-					cursorY = cursorY + 100
-				cursorX = (indent+1)*100
-				}
-				AddBox("(")
+			fmt.Print("\n")
+			PrintIndent(indent+1, " ")
+			fmt.Printf("%v:", t.AstNode.Kind)
+			fmt.Print("(")
 
-				BoxTree(v.List, indent+2, true)
-				cursorY = cursorY + 100
-				cursorX = indent*100
-				AddBox(")")
-			} else {
-				AddBox("(")
-				// fmt.Print(v.Note, "current length: ",len(v.List))
-				BoxTree(v.List, indent+2, false)
-				AddBox(")")
-
-			}
-		}
-		if newlines {
-			cursorY = cursorY + 100
-			cursorX = indent*100
+			PrintBoxTree(*z, indent+2, true)
+			fmt.Printf("\n")
+			PrintIndent(indent, " ")
+			fmt.Print(")\n")
 
 		}
 	}
+
+	if newlines {
+		fmt.Print("\n")
+		PrintIndent(indent, " ")
+	}
+}
+
+func DirBoxes(x, y int, dir string) *Box {
+	// recurse through the given directory and return a box tree
+	// of the files and directories
+	// if a file is a go file, parse it and add the ast to the box
+	// if a directory, recurse
+
+	dirbox := &Box{
+		Text:        dir,
+		Id:          "dir_" + strconv.Itoa(id),
+		X:           x,
+		Y:           y,
+		W:           100,
+		H:           100,
+		Scale:       1.0,
+		SplitLayout: "free",
+		SplitRatio:  0.5,
+	}
+	id++
+	x = x + 100
+	boxes[dirbox.Id] = dirbox
+	files, err := ioutil.ReadDir(string(dir))
+	if err != nil {
+		return dirbox
+	}
+	for _, file := range files {
+		if file.IsDir() {
+			Add(dirbox, x, y, DirBoxes(x, y, dir+"/"+file.Name()))
+		} else {
+			if strings.HasSuffix(file.Name(), ".go") {
+				// Parse source into AST
+				if err != nil {
+					continue
+				}
+				filepath := dir + "/" + file.Name()
+				// fileid:=         "file_" + strconv.Itoa(id)
+				AddBox(dirbox, x, y, file.Name(), nil)
+				ast := fileToAst(filepath)
+				BoxTree(dirbox, x, y, ast, 0, true)
+
+				id++
+			}
+		}
+		y = y + 100
+	}
+	return dirbox
 }

@@ -1,0 +1,66 @@
+{
+  "class": "Page",                        
+  "description": "A webpage",                  
+  "vectorIndexType": "hnsw",                
+  
+  "vectorizer": "text2vec-contextionary",   
+  "moduleConfig": {
+    "text2vec-contextionary": {  
+      "vectorizeClassName": false            
+    }
+  },
+  "properties": [      
+    {
+      "name": "Url",                     
+      "description": "Page Location",              
+      "dataType": [                         
+        "string"
+      ],
+      "moduleConfig": {                     
+        "text2vec-contextionary": {
+          "skip": true,                     
+          "vectorizePropertyName": false    
+        }
+      },
+      "indexInverted": false                 
+    },                     
+    {
+      "name": "Title",                     
+      "description": "Page title",              
+      "dataType": [                         
+        "string"
+      ],
+      "moduleConfig": {                     
+        "text2vec-contextionary": {
+          "skip": true,                     
+          "vectorizePropertyName": false    
+        }
+      },
+      "indexInverted": true                 
+    },
+    {
+      "name": "Content",                     
+      "description": "Page content",              
+      "dataType": [                         
+        "string"
+      ],
+      "moduleConfig": {                     
+        "text2vec-contextionary": {
+          "skip": false,                     
+          "vectorizePropertyName": false    
+        }
+      },
+      "indexInverted": true                 
+    }
+  ],
+  "invertedIndexConfig": {                  
+    "cleanupIntervalSeconds": 60,            
+    "stopwords": { 
+      "present": "en"                                   
+    },
+    "indexTimestamps": false                 
+  }
+	
+
+	
+}

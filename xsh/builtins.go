@@ -521,7 +521,7 @@ func builtin(s State, command []autoparser.Node, parent *autoparser.Node, f stri
 		s.Functions[S(args[0])] = Function{
 			Name:       S(args[0]),
 			Parameters: body[0],
-			Body:       autoparser.Node{argsNode.Raw, argsNode.Str, body[1:], argsNode.Note, argsNode.Line, argsNode.Column, argsNode.ChrPos, argsNode.File, argsNode.ScopeBarrier},
+			Body:       autoparser.Node{argsNode.Raw, argsNode.Str, body[1:], argsNode.Note, argsNode.Line, argsNode.Column, argsNode.ChrPos, argsNode.File, argsNode.ScopeBarrier, "FUNCTION"},
 		}
 
 		// fmt.Printf("%+v\n", s.Functions[S(args[0])])

@@ -110,12 +110,12 @@ func CopyTree(t autoparser.Node) autoparser.Node {
 	out := []autoparser.Node{}
 	for _, v := range t.List {
 		if v.List != nil {
-			out = append(out, autoparser.Node{v.Raw, v.Str, CopyTree(v).List, v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+			out = append(out, autoparser.Node{v.Raw, v.Str, CopyTree(v).List, v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier,v.Kind})
 		} else {
-			out = append(out, autoparser.Node{v.Raw, v.Str, v.List, v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+			out = append(out, autoparser.Node{v.Raw, v.Str, v.List, v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier,v.Kind})
 		}
 	}
-	r := autoparser.Node{t.Raw, t.Str, out, t.Note, t.Line, t.Column, t.ChrPos, t.File, t.ScopeBarrier}
+	r := autoparser.Node{t.Raw, t.Str, out, t.Note, t.Line, t.Column, t.ChrPos, t.File, t.ScopeBarrier,t.Kind}
 	return r
 }
 
@@ -155,7 +155,7 @@ func ReplaceArg(args, params []autoparser.Node, t autoparser.Node) autoparser.No
 					checkArgs(v.List, params)
 				}
 				// Recurse into it
-				out = append(out, autoparser.Node{v.Raw, v.Str, ReplaceArg(args, params, v).List, v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+				out = append(out, autoparser.Node{v.Raw, v.Str, ReplaceArg(args, params, v).List, v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier,v.Kind})
 			} else {
 				replaced := 0
 				for parami, param := range params {
@@ -179,7 +179,7 @@ func ReplaceArg(args, params []autoparser.Node, t autoparser.Node) autoparser.No
 			}
 		}
 	}
-	r := autoparser.Node{t.Raw, t.Str, out, t.Note, t.Line, t.Column, t.ChrPos, t.File, t.ScopeBarrier}
+	r := autoparser.Node{t.Raw, t.Str, out, t.Note, t.Line, t.Column, t.ChrPos, t.File, t.ScopeBarrier, t.Kind}
 	return r
 }
 
@@ -309,7 +309,7 @@ func Void(command autoparser.Node) autoparser.Node {
 	if command.ChrPos == 0 {
 		XshWarn("Warning: Create void with invalid position.  This is probably an error.  Code: %+v\n", command)
 	}
-	return autoparser.Node{"", "", nil, "VOID", command.Line, command.Column, command.ChrPos, command.File, command.ScopeBarrier}
+	return autoparser.Node{"", "", nil, "VOID", command.Line, command.Column, command.ChrPos, command.File, command.ScopeBarrier, "VOID"}
 }
 
 // Is the Node a List?
@@ -319,7 +319,7 @@ func isList(n autoparser.Node) bool {
 
 // Creates a new copy of the node
 func CopyNode(n autoparser.Node) autoparser.Node {
-	return autoparser.Node{n.Raw, n.Str, n.List, n.Note, n.Line, n.Column, n.ChrPos, n.File, n.ScopeBarrier}
+	return autoparser.Node{n.Raw, n.Str, n.List, n.Note, n.Line, n.Column, n.ChrPos, n.File, n.ScopeBarrier,n.Kind}
 }
 
 // Returns the node type
@@ -483,7 +483,7 @@ Given:
 			}
 			n:=command
 			// Add the extra arguments list to the end of args
-			varargList := autoparser.Node{"","", varArgs, "{", n.Line, n.Column, n.ChrPos, n.File, n.ScopeBarrier}
+			varargList := autoparser.Node{"","", varArgs, "{", n.Line, n.Column, n.ChrPos, n.File, n.ScopeBarrier, n.Kind}
 			args = append(args, varargList)
 		} 
 			// Check that the number of args is correct
@@ -909,6 +909,6 @@ func TreeMap(f func(autoparser.Node) autoparser.Node, t autoparser.Node) autopar
 			}
 		}
 	}
-	r := autoparser.Node{t.Raw, t.Str, out, t.Note, t.Line, t.Column, t.ChrPos, t.File, t.ScopeBarrier}
+	r := autoparser.Node{t.Raw, t.Str, out, t.Note, t.Line, t.Column, t.ChrPos, t.File, t.ScopeBarrier,t.Kind}
 	return r
 }

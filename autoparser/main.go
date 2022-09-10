@@ -18,6 +18,7 @@ type Node struct {
 	ChrPos       int
 	File         string
 	ScopeBarrier bool
+	Kind         string
 }
 
 func NewTree(s, filename string) []Node {
@@ -32,7 +33,7 @@ func NewTree(s, filename string) []Node {
 			line = line + 1
 			pos = 0
 		}
-		l = append(l, Node{v, "", nil, "", line, pos, chrpos, filename, false})
+		l = append(l, Node{v, "", nil, "", line, pos, chrpos, filename, false, "PARSED"})
 	}
 	return l
 }
@@ -82,14 +83,14 @@ func ParseXSH(code, filename string) Node {
 	// fmt.Printf("%+v\n", r)
 }
 
-func printIndent(i int, c string) {
+func PrintIndent(i int, c string) {
 	for j := 0; j < i; j++ {
 		fmt.Print(c)
 	}
 }
 
 // Count the number of (sub)lists in this list of Nodes
-func containsLists(l []Node, max int) bool {
+func ContainsLists(l []Node, max int) bool {
 	count := 0
 	for _, v := range l {
 		if v.List != nil {
@@ -100,11 +101,11 @@ func containsLists(l []Node, max int) bool {
 }
 
 // Recursively count the number of elements in a tree
-func countTree(t []Node) int {
+func CountTree(t []Node) int {
 	count := 0
 	for _, v := range t {
 		if v.List != nil {
-			count = count + countTree(v.List)
+			count = count + CountTree(v.List)
 		} else {
 			count = count + 1
 		}
@@ -125,21 +126,21 @@ func PrintTree(t []Node, indent int, newlines bool) {
 		} else {
 			if len(v.List) == 0 && (v.Note == "\n" || v.Note == "artifact") {
 				print("\n")
-				printIndent(indent, "_")
+				PrintIndent(indent, "_")
 				continue
 			}
 			// If the current expression contains 3 or more sub expressions, break it across lines
-			if containsLists(v.List, 3) {
-				if countTree(v.List) > 50 {
+			if ContainsLists(v.List, 3) {
+				if CountTree(v.List) > 50 {
 
 					fmt.Print("\n")
-					printIndent(indent+1, "_")
+					PrintIndent(indent+1, "_")
 				}
 				fmt.Print("(")
 
 				PrintTree(v.List, indent+2, true)
 				print("\n")
-				printIndent(indent, "_")
+				PrintIndent(indent, "_")
 				fmt.Print(")\n")
 			} else {
 				fmt.Print("(")
@@ -151,7 +152,7 @@ func PrintTree(t []Node, indent int, newlines bool) {
 		}
 		if newlines {
 			fmt.Print("\n")
-			printIndent(indent, "_")
+			PrintIndent(indent, "_")
 		}
 	}
 }
@@ -217,7 +218,7 @@ func MultiStringify(in []Node, stringDelimiters [][]string) ([]Node, []Node) {
 			var ret []Node
 			ret, in = MultiStringify(v.List, stringDelimiters)
 			i = -1
-			accum = append(accum, Node{Note: v.Raw, List: ret, Line: v.Line, Column: v.Column, ChrPos: v.ChrPos})
+			accum = append(accum, Node{Note: v.Raw, List: ret, Line: v.Line, Column: v.Column, ChrPos: v.ChrPos, Kind: "String"})
 		} else {
 
 			// Build a list of all possible string start characters
@@ -245,11 +246,11 @@ func MultiStringify(in []Node, stringDelimiters [][]string) ([]Node, []Node) {
 				sublist, in = Stringify(in[i+len(startChar):], startChar, endChar, escapeChar, endChar)
 				i = -1
 				if len(sublist) > 0 {
-					n := Node{Str: joinRaw(sublist), Note: startChar, File: sublist[0].File, Line: sublist[0].Line, Column: sublist[0].Column, ChrPos: sublist[0].ChrPos}
+					n := Node{Str: joinRaw(sublist), Note: startChar, File: sublist[0].File, Line: sublist[0].Line, Column: sublist[0].Column, ChrPos: sublist[0].ChrPos, Kind: "String"}
 					// fmt.Printf("Found node: %+v\n", n)
 					accum = append(accum, n)
 				} else {
-					n := Node{Str: "", Note: startChar, File: v.File, Line: v.Line, Column: v.Column, ChrPos: v.ChrPos}
+					n := Node{Str: "", Note: startChar, File: v.File, Line: v.Line, Column: v.Column, ChrPos: v.ChrPos, Kind: "String"}
 					accum = append(accum, n)
 				}
 
@@ -271,7 +272,7 @@ func Stringify(in []Node, start, end, escape, strMode string) ([]Node, []Node) {
 			var ret []Node
 			ret, in = Stringify(v.List, start, end, escape, strMode)
 			i = -1
-			accum = append(accum, Node{List: ret})
+			accum = append(accum, Node{List: ret, Str: "", Note: start, File: v.File, Line: v.Line, Column: v.Column, ChrPos: v.ChrPos, Kind: "List"})
 		} else {
 			if strMode != "" {
 				switch {
@@ -321,17 +322,17 @@ func Groupify(in []Node) ([]Node, []Node, int) {
 			var sublist []Node
 			sublist, in, i = Groupify(in[i+1:])
 			i = -1
-			accum = append(accum, Node{v.Raw, v.Str, sublist, "[", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier}) // Use the opening parenthesis to identify the list
+			accum = append(accum, Node{v.Raw, v.Str, sublist, "[", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier, "List"}) // Use the opening parenthesis to identify the list
 		case "{":
 			var sublist []Node
 			sublist, in, i = Groupify(in[i+1:])
 			i = -1
-			accum = append(accum, Node{v.Raw, v.Str, sublist, "{", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier}) // Use the opening parenthesis to identify the list
+			accum = append(accum, Node{v.Raw, v.Str, sublist, "{", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier, "List"}) // Use the opening parenthesis to identify the list
 		case "(":
 			var sublist []Node
 			sublist, in, i = Groupify(in[i+1:])
 			i = -1
-			accum = append(accum, Node{v.Raw, v.Str, sublist, "(", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier}) // Use the opening parenthesis to identify the list
+			accum = append(accum, Node{v.Raw, v.Str, sublist, "(", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier, "List"}) // Use the opening parenthesis to identify the list
 		case "]":
 			fallthrough
 		case "}":
@@ -364,9 +365,9 @@ func KeywordBreak(in []Node, keywords []string, preserveKeyword bool) []Node {
 					// 2.Capture the next next subtree (or more), join with the current node
 					//   e.g. a type or function definition, or a procedure call
 					if len(accum) > 0 {
-						output = append(output, Node{keyword, v.Str, accum, "artifact", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+						output = append(output, Node{keyword, v.Str, accum, "artifact", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier, "List"})
 					} else {
-						output = append(output, Node{keyword, v.Str, accum, "artifact", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+						output = append(output, Node{keyword, v.Str, accum, "artifact", v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier, "List"})
 					}
 
 					if !preserveKeyword {
@@ -383,7 +384,7 @@ func KeywordBreak(in []Node, keywords []string, preserveKeyword bool) []Node {
 				accum = append(accum, v)
 			}
 		} else {
-			accum = append(accum, Node{v.Raw, v.Str, KeywordBreak(v.List, keywords, preserveKeyword), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+			accum = append(accum, Node{v.Raw, v.Str, KeywordBreak(v.List, keywords, preserveKeyword), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier, "List"})
 		}
 	}
 	return append(output, accum...)
@@ -412,7 +413,7 @@ func GroupBinops(in []Node) []Node {
 		if v.List == nil {
 			accum = append(accum, v)
 		} else {
-			accum = append(accum, Node{v.Raw, v.Str, GroupBinops(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+			accum = append(accum, Node{v.Raw, v.Str, GroupBinops(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier, "List"})
 		}
 	}
 
@@ -443,7 +444,7 @@ func MergeNonWhiteSpace(in []Node) []Node {
 				}
 			}
 		} else {
-			accum = append(accum, Node{v.Raw, v.Str, MergeNonWhiteSpace(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+			accum = append(accum, Node{v.Raw, v.Str, MergeNonWhiteSpace(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier, "List"})
 		}
 	}
 
@@ -463,7 +464,7 @@ func StripNL(in []Node) []Node {
 				accum = append(accum, v)
 			}
 		} else {
-			accum = append(accum, Node{v.Raw, v.Str, StripNL(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+			accum = append(accum, Node{v.Raw, v.Str, StripNL(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier, "List"})
 		}
 	}
 	return append(output, accum...)
@@ -479,7 +480,7 @@ func StripEmptyLists(in []Node) []Node {
 		} else {
 			if len(v.List) == 0 {
 			} else {
-				accum = append(accum, Node{v.Raw, v.Str, StripNL(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+				accum = append(accum, Node{v.Raw, v.Str, StripNL(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier, "List"})
 			}
 		}
 	}
@@ -499,7 +500,7 @@ func StripWhiteSpace(in []Node) []Node {
 				accum = append(accum, v)
 			}
 		} else {
-			accum = append(accum, Node{v.Raw, v.Str, StripWhiteSpace(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier})
+			accum = append(accum, Node{v.Raw, v.Str, StripWhiteSpace(v.List), v.Note, v.Line, v.Column, v.ChrPos, v.File, v.ScopeBarrier, "List"})
 		}
 	}
 	return append(output, accum...)
