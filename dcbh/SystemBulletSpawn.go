@@ -1,11 +1,11 @@
 package main
 
 import (
+	"math/rand"
+
 	"github.com/EngoEngine/ecs"
 	"github.com/EngoEngine/engo"
 	"github.com/EngoEngine/engo/common"
-
-	"math/rand"
 )
 
 type Bullet struct {
@@ -15,6 +15,7 @@ type Bullet struct {
 	common.SpaceComponent
 	DirectionComponent
 	LifeTimeComponent
+	KindComponent
 }
 
 type BulletSpawnSystem struct {
@@ -43,7 +44,7 @@ func (rock *BulletSpawnSystem) Update(dt float32) {
 
 func NewBullet(world *ecs.World, position engo.Point) {
 	bull := Bullet{BasicEntity: ecs.NewBasic()}
-	bull.Name = "bullet"
+	bull.Kind = "bullet"
 
 	texture, _ := common.LoadedSprite("damnation.png")
 	bull.RenderComponent = common.RenderComponent{

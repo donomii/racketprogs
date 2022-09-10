@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/EngoEngine/ecs"
 	"github.com/EngoEngine/engo"
-	"github.com/EngoEngine/engo/common"
-	"log"
 )
 
 type DeathSystem struct {
@@ -30,11 +30,11 @@ func (d *DeathSystem) New(w *ecs.World) {
 	// Subscribe to ScoreMessage
 	engo.Mailbox.Listen("CollisionMessage", func(message engo.Message) {
 		//log.Printf("Received message: %v", message.(common.CollisionMessage))
-		_, isCollision := message.(common.CollisionMessage)
-		colMess := message.(common.CollisionMessage)
+		_, isCollision := message.(CollisionMessage)
+		colMess := message.(CollisionMessage)
 
 		if isCollision {
-			if colMess.Entity.Name == "Player" {
+			if colMess.Entity.Kind == "Player" {
 				player := colMess.Entity
 				d.Player.Damage(1)
 				engo.Mailbox.Dispatch(PlayerStateChangeMessage{BasicEntity: ecs.NewBasic(), Player: d.Player})
@@ -45,7 +45,7 @@ func (d *DeathSystem) New(w *ecs.World) {
 					log.Printf("Player is dead")
 					engo.SetSceneByName("Menu", false)
 				}
-			} else if colMess.To.Name == "Player" {
+			} else if colMess.To.Kind == "Player" {
 				player := colMess.To
 				d.Player.Damage(1)
 				engo.Mailbox.Dispatch(PlayerStateChangeMessage{BasicEntity: ecs.NewBasic(), Player: d.Player})
@@ -59,7 +59,7 @@ func (d *DeathSystem) New(w *ecs.World) {
 				}
 
 			} else {
-				if colMess.To.BasicEntity.Name == "enemy" && colMess.Entity.BasicEntity.Name == "bullet" {
+				if colMess.To.Kind == "enemy" && colMess.Entity.Kind == "bullet" {
 					d.Score++
 					//log.Printf("Collision: %+v, %+v", colMess.Entity.BasicEntity, colMess.To.BasicEntity)
 					log.Printf("Score: %+v", d.Score)

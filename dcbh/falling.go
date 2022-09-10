@@ -1,10 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"image/color"
 	"log"
-
-	"bytes"
 
 	"github.com/EngoEngine/ecs"
 	"github.com/EngoEngine/engo"
@@ -37,6 +36,7 @@ type Guy struct {
 	common.RenderComponent
 	common.SpaceComponent
 	CreatureComponent
+	KindComponent
 }
 
 type GameData struct {
@@ -88,7 +88,7 @@ func (*DefaultScene) Setup(u engo.Updater) {
 
 	// Create an entity
 	guy := Guy{BasicEntity: ecs.NewBasic()}
-	guy.Name = "Player"
+	guy.Kind = "Player"
 	w.AddSystem(&ChasingSystem{target: &guy, world: w})
 	w.AddSystem(&BulletSpawnSystem{target: &guy, world: w})
 	w.AddSystem(&BulletSystem{target: &guy, world: w})

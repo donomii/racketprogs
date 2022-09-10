@@ -1,11 +1,12 @@
 package main
 
 import (
+	"image/color"
+	"math/rand"
+
 	"github.com/EngoEngine/ecs"
 	"github.com/EngoEngine/engo"
 	"github.com/EngoEngine/engo/common"
-	"image/color"
-	"math/rand"
 )
 
 type Rock struct {
@@ -13,6 +14,7 @@ type Rock struct {
 	common.CollisionComponent
 	common.RenderComponent
 	common.SpaceComponent
+	KindComponent
 }
 
 type RockSpawnSystem struct {
@@ -40,7 +42,7 @@ func (rock *RockSpawnSystem) Update(dt float32) {
 
 func NewRock(world *ecs.World, position engo.Point) {
 	rock := Rock{BasicEntity: ecs.NewBasic()}
-	rock.Name = "enemy"
+	rock.Kind = "enemy"
 	switch rand.Intn(3) {
 	case 0:
 		yscale := 1.0 + rand.Float32()
