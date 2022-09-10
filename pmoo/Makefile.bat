@@ -5,5 +5,5 @@
 	go build -o build/queue.exe -v ../queue/
 	cd build 
 	mkdir objects
-	pmoo --init
-	type ..\create.txt | pmoo --raw --debug
+	REM pmoo --init
+	REM type ..\create.txt | pmoo --raw --debug
