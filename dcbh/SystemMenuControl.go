@@ -2,11 +2,11 @@ package main
 
 import (
 	"log"
+	//"log"
 
 	"github.com/EngoEngine/ecs"
 	"github.com/EngoEngine/engo"
 	"github.com/EngoEngine/engo/common"
-	//"log"
 )
 
 type MenuControlSystem struct {
@@ -33,7 +33,26 @@ func (c *MenuControlSystem) Remove(basic ecs.BasicEntity) {
 
 func (c *MenuControlSystem) Update(dt float32) {
 	speed := 400 * dt
+	engo.SetSceneByName("Game", false)
+	if engo.Input.Button("space").Down() {
+		log.Printf("Action button pressed")
+		engo.SetSceneByName("Game", false)
+	}
 
+	if engo.Input.Button(" ").Down() {
+		log.Printf("Action button pressed")
+		engo.SetSceneByName("Game", false)
+	}
+
+	if engo.Input.Button("action").Down() {
+		log.Printf("Action button pressed")
+		engo.SetSceneByName("Game", false)
+	}
+
+	if engo.Input.Button("action").JustPressed() {
+		log.Printf("Action button pressed")
+		engo.SetSceneByName("Game", false)
+	}
 	//log.Printf("MenuControlSystem update")
 	if engo.Input.Button("action").JustReleased() {
 		log.Printf("Action button pressed")

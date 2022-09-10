@@ -32,7 +32,7 @@ type Tile struct {
 
 type Guy struct {
 	ecs.BasicEntity
-	common.CollisionComponent
+	CollisionComponent
 	common.RenderComponent
 	common.SpaceComponent
 	CreatureComponent
@@ -72,7 +72,7 @@ func (*DefaultScene) Setup(u engo.Updater) {
 
 	// Add all of the systems
 	w.AddSystem(&common.RenderSystem{})
-	w.AddSystem(&common.CollisionSystem{Solids: 1 | 2})
+	w.AddSystem(&CollisionSystem{Solids: 1 | 2})
 
 	//w.AddSystem(&FallingSystem{})
 
@@ -104,7 +104,7 @@ func (*DefaultScene) Setup(u engo.Updater) {
 		Width:    texture.Width() * guy.RenderComponent.Scale.X,
 		Height:   texture.Height() * guy.RenderComponent.Scale.Y,
 	}
-	guy.CollisionComponent = common.CollisionComponent{
+	guy.CollisionComponent = CollisionComponent{
 		Main: 1, Group: 1,
 	}
 	guy.SetMaxHitPoints(10)
@@ -115,8 +115,8 @@ func (*DefaultScene) Setup(u engo.Updater) {
 		switch sys := system.(type) {
 		case *common.RenderSystem:
 			sys.Add(&guy.BasicEntity, &guy.RenderComponent, &guy.SpaceComponent)
-		case *common.CollisionSystem:
-			sys.Add(&guy.BasicEntity, &guy.CollisionComponent, &guy.SpaceComponent)
+		case *CollisionSystem:
+			sys.Add(&guy.BasicEntity, &guy.CollisionComponent, &guy.SpaceComponent, &guy.KindComponent)
 		case *ControlSystem:
 			sys.Add(&guy.BasicEntity, &guy.SpaceComponent)
 		}

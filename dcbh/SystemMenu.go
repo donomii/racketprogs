@@ -29,7 +29,7 @@ func (h *MenuTextSystem) New(w *ecs.World) {
 	h.text = Text{BasicEntity: ecs.NewBasic()}
 	h.text.RenderComponent.Drawable = common.Text{
 		Font: fnt,
-		Text: "Dungeon Crawl Bullet Hell.  Press Enter to start.",
+		Text: "Dungeon Crawl Bullet Hell.  Press any key to start.",
 	}
 	h.text.SetShader(common.TextHUDShader)
 	h.text.RenderComponent.SetZIndex(1001)

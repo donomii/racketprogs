@@ -11,7 +11,7 @@ import (
 
 type Rock struct {
 	ecs.BasicEntity
-	common.CollisionComponent
+	CollisionComponent
 	common.RenderComponent
 	common.SpaceComponent
 	KindComponent
@@ -108,14 +108,14 @@ func NewRock(world *ecs.World, position engo.Point) {
 			Rotation: 45 * rand.Float32(),
 		}
 	}
-	rock.CollisionComponent = common.CollisionComponent{Group: 1 | 2, Main: 1 | 2}
+	rock.CollisionComponent = CollisionComponent{Group: 1 | 2, Main: 1 | 2}
 
 	for _, system := range world.Systems() {
 		switch sys := system.(type) {
 		case *common.RenderSystem:
 			sys.Add(&rock.BasicEntity, &rock.RenderComponent, &rock.SpaceComponent)
-		case *common.CollisionSystem:
-			sys.Add(&rock.BasicEntity, &rock.CollisionComponent, &rock.SpaceComponent)
+		case *CollisionSystem:
+			sys.Add(&rock.BasicEntity, &rock.CollisionComponent, &rock.SpaceComponent, &rock.KindComponent)
 		case *FallingSystem:
 			sys.Add(&rock.BasicEntity, &rock.SpaceComponent)
 		case *ChasingSystem:

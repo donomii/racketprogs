@@ -10,7 +10,7 @@ import (
 
 type Bullet struct {
 	ecs.BasicEntity
-	common.CollisionComponent
+	CollisionComponent
 	common.RenderComponent
 	common.SpaceComponent
 	DirectionComponent
@@ -66,15 +66,15 @@ func NewBullet(world *ecs.World, position engo.Point) {
 		},
 	}
 
-	bull.CollisionComponent = common.CollisionComponent{Group: 2, Main: 2}
+	bull.CollisionComponent = CollisionComponent{Group: 2, Main: 2}
 	bull.LifeTimeComponent = LifeTimeComponent{MaxLifeTime: 3}
 
 	for _, system := range world.Systems() {
 		switch sys := system.(type) {
 		case *common.RenderSystem:
 			sys.Add(&bull.BasicEntity, &bull.RenderComponent, &bull.SpaceComponent)
-		case *common.CollisionSystem:
-			sys.Add(&bull.BasicEntity, &bull.CollisionComponent, &bull.SpaceComponent)
+		case *CollisionSystem:
+			sys.Add(&bull.BasicEntity, &bull.CollisionComponent, &bull.SpaceComponent, &bull.KindComponent)
 		case *BulletSystem:
 			sys.Add(&bull)
 		}
