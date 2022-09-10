@@ -109,12 +109,14 @@ func handleScroll(window *glfw.Window) {
 	window.SetScrollCallback(func(w *glfw.Window, xoff float64, yoff float64) {
 		if yoff > 0 {
 			log.Println("Scroll up")
+			draw_action = "wheel up"
 		} else {
 			log.Println("Scroll down")
+			draw_action = "wheel down"
 		}
 
 		mouseY = int(yoff)
-		draw_action = "wheel"
+		// draw_action = "wheel"
 	})
 }
 
